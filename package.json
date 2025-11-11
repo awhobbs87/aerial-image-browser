@@ -1,0 +1,48 @@
+{
+  "name": "tas-aerial-browser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply PHOTOS_DB",
+    "db:migrate:local": "wrangler d1 migrations apply PHOTOS_DB --local",
+    "type-check": "tsc --noEmit && cd frontend && npm run type-check",
+    "lint": "cd frontend && npm run lint",
+    "lint:fix": "cd frontend && npm run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:frontend": "cd frontend && npm run test",
+    "prepare": "husky install",
+    "release:patch": "npm version patch -m 'chore(release): %s'",
+    "release:minor": "npm version minor -m 'chore(release): %s'",
+    "release:major": "npm version major -m 'chore(release): %s'"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.7.2",
+    "vitest": "^1.0.4",
+    "wrangler": "^3.94.0"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,tsx}": ["cd frontend && npm run lint:fix"],
+    "src/**/*.ts": ["prettier --write"],
+    "*.md": ["prettier --write"]
+  }
+}

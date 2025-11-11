@@ -1,0 +1,24 @@
+name = "tas-aerial-browser"
+main = "src/index.ts"
+compatibility_date = "2024-11-11"
+node_compat = true
+
+[[kv_namespaces]]
+binding = "PHOTO_CACHE"
+id = "6b0c54bb697d44c5b8dd97f02141bfdf"
+
+[[d1_databases]]
+binding = "PHOTOS_DB"
+database_name = "tas-browser"
+database_id = "f71d5cc3-1fc3-4888-94bd-e73b02a4823f"
+
+[[r2_buckets]]
+binding = "TIFF_STORAGE"
+bucket_name = "tas-aerial-browser-tiffs"
+
+[[r2_buckets]]
+binding = "THUMBNAIL_STORAGE"
+bucket_name = "tas-aerial-browser-thumbnails"
+
+[vars]
+API_BASE_URL = "https://services.thelist.tas.gov.au/arcgis/rest/services/AerialPhotoViewer/AerialPhoto_TimeV2/MapServer"

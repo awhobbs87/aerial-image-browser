@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+    echo "📝 Linting frontend..."
+    cd frontend && npm run lint && cd ..
+fi
+
+echo "🔧 Type checking..."
+npm run type-check
+
+echo "✅ Pre-commit checks passed!"

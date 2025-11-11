@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+commit_msg=$(cat "$1")
+pattern="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,100}$"
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+    echo "❌ Invalid commit format!"
+    echo "Use: <type>(<scope>): <description>"
+    echo "Example: feat(api): add TIFF caching"
+    exit 1
+fi
