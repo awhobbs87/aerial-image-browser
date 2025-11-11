@@ -212,7 +212,6 @@ Create `wrangler.toml`:
 name = "tas-aerial-browser"
 main = "src/index.ts"
 compatibility_date = "2024-11-11"
-node_compat = true
 
 [[kv_namespaces]]
 binding = "PHOTO_CACHE"
