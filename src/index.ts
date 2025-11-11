@@ -1,152 +1,152 @@
-// Connection test endpoint - will be replaced in Stage 2
-interface Env {
-  PHOTO_CACHE: KVNamespace;
-  PHOTOS_DB: D1Database;
-  TIFF_STORAGE: R2Bucket;
-  THUMBNAIL_STORAGE: R2Bucket;
-  API_BASE_URL: string;
-}
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { api } from "./routes/api";
+import type { Bindings } from "./types";
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+const app = new Hono<{ Bindings: Bindings }>();
 
-    // Health check endpoint
-    if (url.pathname === "/health") {
-      const results: Record<string, any> = {
-        timestamp: new Date().toISOString(),
-        environment: "production",
-        connections: {},
-      };
+app.use(
+  "*",
+  cors({
+    origin: ["http://localhost:5173", "https://tas-aerial-browser.awhobbs.workers.dev"],
+    credentials: true,
+  })
+);
 
-      // Test D1 Database
-      try {
-        const tablesResult = await env.PHOTOS_DB.prepare(
-          "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        ).all();
+app.route("/api", api);
 
-        results.connections.d1 = {
-          status: "✅ Connected",
-          database: "tas-browser",
-          tables: tablesResult.results?.map((r: any) => r.name) || [],
-          tableCount: tablesResult.results?.length || 0,
-        };
-      } catch (error) {
-        results.connections.d1 = {
-          status: "❌ Error",
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+app.get("/", (c) =>
+  c.json({
+    name: "Tasmania Aerial Photos API",
+    version: "1.0.0",
+    endpoints: {
+      layers: "/api/layers",
+      searchLocation: "/api/search/location?lat=X&lon=Y&layers=0,1,2",
+      searchBounds: "/api/search/bounds?west=X&south=Y&east=Z&north=W&layers=0,1,2",
+      health: "/health",
+    },
+  })
+);
 
-      // Test KV Namespace
-      try {
-        const testKey = "connection-test";
-        const testValue = `Test at ${Date.now()}`;
+// Health check endpoint
+app.get("/health", async (c) => {
+  const results: Record<string, any> = {
+    timestamp: new Date().toISOString(),
+    environment: "production",
+    connections: {},
+  };
 
-        await env.PHOTO_CACHE.put(testKey, testValue, { expirationTtl: 60 });
-        const retrievedValue = await env.PHOTO_CACHE.get(testKey);
+  // Test D1 Database
+  try {
+    const tablesResult = await c.env.PHOTOS_DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+    ).all();
 
-        results.connections.kv = {
-          status: retrievedValue === testValue ? "✅ Connected" : "⚠️ Mismatch",
-          namespace: "PHOTO_CACHE",
-          writeTest: "success",
-          readTest: "success",
-          id: "6b0c54bb697d44c5b8dd97f02141bfdf",
-        };
-      } catch (error) {
-        results.connections.kv = {
-          status: "❌ Error",
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+    results.connections.d1 = {
+      status: "✅ Connected",
+      database: "tas-browser",
+      tables: tablesResult.results?.map((r: any) => r.name) || [],
+      tableCount: tablesResult.results?.length || 0,
+    };
+  } catch (error) {
+    results.connections.d1 = {
+      status: "❌ Error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 
-      // Test R2 TIFF Storage
-      try {
-        const testKey = "connection-test.txt";
-        const testContent = `Connection test at ${new Date().toISOString()}`;
+  // Test KV Namespace
+  try {
+    const testKey = "connection-test";
+    const testValue = `Test at ${Date.now()}`;
 
-        await env.TIFF_STORAGE.put(testKey, testContent);
-        const retrieved = await env.TIFF_STORAGE.get(testKey);
+    await c.env.PHOTO_CACHE.put(testKey, testValue, { expirationTtl: 60 });
+    const retrievedValue = await c.env.PHOTO_CACHE.get(testKey);
 
-        results.connections.r2_tiff = {
-          status: retrieved ? "✅ Connected" : "⚠️ Get failed",
-          bucket: "tas-aerial-browser-tiffs",
-          writeTest: "success",
-          readTest: retrieved ? "success" : "failed",
-        };
+    results.connections.kv = {
+      status: retrievedValue === testValue ? "✅ Connected" : "⚠️ Mismatch",
+      namespace: "PHOTO_CACHE",
+      writeTest: "success",
+      readTest: "success",
+      id: "6b0c54bb697d44c5b8dd97f02141bfdf",
+    };
+  } catch (error) {
+    results.connections.kv = {
+      status: "❌ Error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 
-        // Clean up test file
-        await env.TIFF_STORAGE.delete(testKey);
-      } catch (error) {
-        results.connections.r2_tiff = {
-          status: "❌ Error",
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+  // Test R2 TIFF Storage
+  try {
+    const testKey = "connection-test.txt";
+    const testContent = `Connection test at ${new Date().toISOString()}`;
 
-      // Test R2 Thumbnail Storage
-      try {
-        const testKey = "connection-test.txt";
-        const testContent = `Connection test at ${new Date().toISOString()}`;
+    await c.env.TIFF_STORAGE.put(testKey, testContent);
+    const retrieved = await c.env.TIFF_STORAGE.get(testKey);
 
-        await env.THUMBNAIL_STORAGE.put(testKey, testContent);
-        const retrieved = await env.THUMBNAIL_STORAGE.get(testKey);
+    results.connections.r2_tiff = {
+      status: retrieved ? "✅ Connected" : "⚠️ Get failed",
+      bucket: "tas-aerial-browser-tiffs",
+      writeTest: "success",
+      readTest: retrieved ? "success" : "failed",
+    };
 
-        results.connections.r2_thumbnail = {
-          status: retrieved ? "✅ Connected" : "⚠️ Get failed",
-          bucket: "tas-aerial-browser-thumbnails",
-          writeTest: "success",
-          readTest: retrieved ? "success" : "failed",
-        };
+    // Clean up test file
+    await c.env.TIFF_STORAGE.delete(testKey);
+  } catch (error) {
+    results.connections.r2_tiff = {
+      status: "❌ Error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 
-        // Clean up test file
-        await env.THUMBNAIL_STORAGE.delete(testKey);
-      } catch (error) {
-        results.connections.r2_thumbnail = {
-          status: "❌ Error",
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+  // Test R2 Thumbnail Storage
+  try {
+    const testKey = "connection-test.txt";
+    const testContent = `Connection test at ${new Date().toISOString()}`;
 
-      // Test API Base URL
-      results.connections.api_base_url = {
-        status: env.API_BASE_URL ? "✅ Configured" : "❌ Missing",
-        url: env.API_BASE_URL,
-      };
+    await c.env.THUMBNAIL_STORAGE.put(testKey, testContent);
+    const retrieved = await c.env.THUMBNAIL_STORAGE.get(testKey);
 
-      // Overall status
-      const allConnected = Object.values(results.connections).every(
-        (conn: any) => conn.status.startsWith("✅")
-      );
+    results.connections.r2_thumbnail = {
+      status: retrieved ? "✅ Connected" : "⚠️ Get failed",
+      bucket: "tas-aerial-browser-thumbnails",
+      writeTest: "success",
+      readTest: retrieved ? "success" : "failed",
+    };
 
-      results.overall = allConnected
-        ? "✅ All connections successful"
-        : "⚠️ Some connections failed";
+    // Clean up test file
+    await c.env.THUMBNAIL_STORAGE.delete(testKey);
+  } catch (error) {
+    results.connections.r2_thumbnail = {
+      status: "❌ Error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 
-      return new Response(JSON.stringify(results, null, 2), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
+  // Test API Base URL
+  results.connections.api_base_url = {
+    status: c.env.API_BASE_URL ? "✅ Configured" : "❌ Missing",
+    url: c.env.API_BASE_URL,
+  };
 
-    // Default response
-    return new Response(
-      JSON.stringify({
-        name: "Tasmania Aerial Photos API",
-        version: "1.0.0-dev",
-        status: "Connection test mode",
-        endpoints: {
-          health: "/health - Test all Cloudflare bindings (D1, KV, R2)",
-        },
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
-  },
-};
+  // Overall status
+  const allConnected = Object.values(results.connections).every(
+    (conn: any) => conn.status.startsWith("✅")
+  );
+
+  results.overall = allConnected
+    ? "✅ All connections successful"
+    : "⚠️ Some connections failed";
+
+  return c.json(results);
+});
+
+app.notFound((c) => c.json({ success: false, error: "Not found" }, 404));
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ success: false, error: "Internal error" }, 500);
+});
+
+export default app;
