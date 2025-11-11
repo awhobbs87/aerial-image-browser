@@ -1,6 +1,7 @@
 name = "tas-aerial-browser"
 main = "src/index.ts"
 compatibility_date = "2024-11-11"
+account_id = "7330403de4c2446fd5f3cc58548a9cd4"
 
 [[kv_namespaces]]
 binding = "PHOTO_CACHE"
