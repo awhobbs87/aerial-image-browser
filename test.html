@@ -1,37 +1,4 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { api } from "./routes/api";
-import type { Bindings } from "./types";
-
-const app = new Hono<{ Bindings: Bindings }>();
-
-app.use(
-  "*",
-  cors({
-    origin: ["http://localhost:5173", "https://tas-aerial-browser.awhobbs.workers.dev"],
-    credentials: true,
-  })
-);
-
-app.route("/api", api);
-
-app.get("/", (c) =>
-  c.json({
-    name: "Tasmania Aerial Photos API",
-    version: "1.0.0",
-    endpoints: {
-      layers: "/api/layers",
-      searchLocation: "/api/search/location?lat=X&lon=Y&layers=0,1,2",
-      searchBounds: "/api/search/bounds?west=X&south=Y&east=Z&north=W&layers=0,1,2",
-      health: "/health",
-      test: "/test",
-    },
-  })
-);
-
-// Test page endpoint
-app.get("/test", (c) => {
-  const html = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -326,8 +293,10 @@ app.get("/test", (c) => {
     </div>
 
     <script>
-        // Configuration - use relative path since served from same origin
-        const API_BASE = window.location.origin;
+        // Configuration
+        const API_BASE = 'https://tas-aerial-browser.awhobbs.workers.dev';
+        // For local testing, uncomment:
+        // const API_BASE = 'http://localhost:8787';
 
         // Test coordinates
         const HOBART = { lat: -42.8821, lon: 147.3272 };
@@ -345,12 +314,12 @@ app.get("/test", (c) => {
             const results = document.getElementById('results');
             results.style.display = 'block';
             document.getElementById('resultsTitle').textContent = 'Error';
-            document.getElementById('resultsContent').innerHTML = \`
+            document.getElementById('resultsContent').innerHTML = `
                 <div class="error">
-                    <strong>Error:</strong> \${error.message || error}
+                    <strong>Error:</strong> ${error.message || error}
                 </div>
-                <pre>\${JSON.stringify(error, null, 2)}</pre>
-            \`;
+                <pre>${JSON.stringify(error, null, 2)}</pre>
+            `;
         }
 
         function showStatus(data) {
@@ -361,12 +330,12 @@ app.get("/test", (c) => {
             let html = '';
             if (data.connections) {
                 Object.entries(data.connections).forEach(([key, value]) => {
-                    html += \`
+                    html += `
                         <div class="status-item">
-                            <span class="status-label">\${key.toUpperCase()}</span>
-                            <span class="status-value">\${value.status || value}</span>
+                            <span class="status-label">${key.toUpperCase()}</span>
+                            <span class="status-value">${value.status || value}</span>
                         </div>
-                    \`;
+                    `;
                 });
             }
 
@@ -377,16 +346,16 @@ app.get("/test", (c) => {
         async function testHealth() {
             showLoading();
             try {
-                const response = await fetch(\`\${API_BASE}/health\`);
+                const response = await fetch(`${API_BASE}/health`);
                 const data = await response.json();
 
                 showStatus(data);
 
                 document.getElementById('results').style.display = 'block';
                 document.getElementById('resultsTitle').textContent = 'Health Check Results';
-                document.getElementById('resultsContent').innerHTML = \`
-                    <pre>\${JSON.stringify(data, null, 2)}</pre>
-                \`;
+                document.getElementById('resultsContent').innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
             } catch (error) {
                 showError(error);
             }
@@ -395,14 +364,14 @@ app.get("/test", (c) => {
         async function testLayers() {
             showLoading();
             try {
-                const response = await fetch(\`\${API_BASE}/api/layers\`);
+                const response = await fetch(`${API_BASE}/api/layers`);
                 const data = await response.json();
 
                 document.getElementById('results').style.display = 'block';
                 document.getElementById('resultsTitle').textContent = 'Available Layers';
-                document.getElementById('resultsContent').innerHTML = \`
-                    <pre>\${JSON.stringify(data, null, 2)}</pre>
-                \`;
+                document.getElementById('resultsContent').innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
             } catch (error) {
                 showError(error);
             }
@@ -431,14 +400,14 @@ app.get("/test", (c) => {
         async function searchLocation(lat, lon, locationName) {
             showLoading();
             try {
-                const response = await fetch(\`\${API_BASE}/api/search/location?lat=\${lat}&lon=\${lon}&layers=0,1,2\`);
+                const response = await fetch(`${API_BASE}/api/search/location?lat=${lat}&lon=${lon}&layers=0,1,2`);
                 const data = await response.json();
 
                 if (!data.success) {
                     throw new Error(data.error || 'Search failed');
                 }
 
-                displayPhotos(data.data.photos, \`\${locationName} (\${lat}, \${lon})\`);
+                displayPhotos(data.data.photos, `${locationName} (${lat}, ${lon})`);
             } catch (error) {
                 showError(error);
             }
@@ -456,7 +425,7 @@ app.get("/test", (c) => {
                 };
 
                 const response = await fetch(
-                    \`\${API_BASE}/api/search/bounds?west=\${bounds.west}&south=\${bounds.south}&east=\${bounds.east}&north=\${bounds.north}&layers=0,1,2\`
+                    `${API_BASE}/api/search/bounds?west=${bounds.west}&south=${bounds.south}&east=${bounds.east}&north=${bounds.north}&layers=0,1,2`
                 );
                 const data = await response.json();
 
@@ -475,7 +444,7 @@ app.get("/test", (c) => {
             const content = document.getElementById('resultsContent');
 
             results.style.display = 'block';
-            document.getElementById('resultsTitle').textContent = \`\${title} - \${photos.length} photos found\`;
+            document.getElementById('resultsTitle').textContent = `${title} - ${photos.length} photos found`;
 
             if (photos.length === 0) {
                 content.innerHTML = '<div class="loading">No photos found for this location</div>';
@@ -485,7 +454,7 @@ app.get("/test", (c) => {
             let html = '<div class="photo-grid">';
 
             photos.forEach(photo => {
-                const layerBadge = \`badge-\${photo.layerType}\`;
+                const layerBadge = `badge-${photo.layerType}`;
                 const cachedBadge = photo.cached ? '<span class="badge badge-cached">TIFF Cached</span>' : '';
                 const thumbnailCachedBadge = photo.thumbnailCached ? '<span class="badge badge-cached">Thumb Cached</span>' : '';
 
@@ -493,52 +462,52 @@ app.get("/test", (c) => {
                 const thumbnailUrl = photo.THUMBNAIL_LINK || '';
                 const downloadUrl = photo.DOWNLOAD_LINK || '';
 
-                html += \`
+                html += `
                     <div class="photo-card">
-                        \${thumbnailUrl ? \`
-                            <img src="\${thumbnailUrl}"
-                                 alt="\${photo.IMAGE_NAME}"
+                        ${thumbnailUrl ? `
+                            <img src="${thumbnailUrl}"
+                                 alt="${photo.IMAGE_NAME}"
                                  class="photo-thumbnail"
-                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'300\\' height=\\'200\\'%3E%3Crect width=\\'300\\' height=\\'200\\' fill=\\'%23edf2f7\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-family=\\'sans-serif\\' font-size=\\'14\\' fill=\\'%23718096\\'%3ENo Thumbnail%3C/text%3E%3C/svg%3E'">
-                        \` : \`
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23edf2f7\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'14\' fill=\'%23718096\'%3ENo Thumbnail%3C/text%3E%3C/svg%3E'">
+                        ` : `
                             <div class="photo-thumbnail" style="display: flex; align-items: center; justify-content: center; color: #718096;">
                                 No Thumbnail Available
                             </div>
-                        \`}
+                        `}
                         <div class="photo-info">
                             <div style="margin-bottom: 8px;">
-                                <span class="badge \${layerBadge}">\${photo.layerType.toUpperCase()}</span>
-                                \${cachedBadge}
-                                \${thumbnailCachedBadge}
+                                <span class="badge ${layerBadge}">${photo.layerType.toUpperCase()}</span>
+                                ${cachedBadge}
+                                ${thumbnailCachedBadge}
                             </div>
-                            <div class="photo-title">\${photo.IMAGE_NAME || 'Unknown'}</div>
+                            <div class="photo-title">${photo.IMAGE_NAME || 'Unknown'}</div>
                             <div class="photo-meta">
-                                <strong>Date:</strong> \${photo.dateFormatted || 'Unknown'}
-                            </div>
-                            <div class="photo-meta">
-                                <strong>Scale:</strong> \${photo.scaleFormatted || 'N/A'}
+                                <strong>Date:</strong> ${photo.dateFormatted || 'Unknown'}
                             </div>
                             <div class="photo-meta">
-                                <strong>Type:</strong> \${photo.IMAGE_TYPE || 'N/A'}
+                                <strong>Scale:</strong> ${photo.scaleFormatted || 'N/A'}
                             </div>
                             <div class="photo-meta">
-                                <strong>Project:</strong> \${photo.PROJ_NAME || 'N/A'}
+                                <strong>Type:</strong> ${photo.IMAGE_TYPE || 'N/A'}
+                            </div>
+                            <div class="photo-meta">
+                                <strong>Project:</strong> ${photo.PROJ_NAME || 'N/A'}
                             </div>
                             <div class="photo-actions">
-                                \${downloadUrl ? \`
-                                    <a href="\${downloadUrl}" target="_blank">View TIFF</a>
-                                \` : \`
+                                ${downloadUrl ? `
+                                    <a href="${downloadUrl}" target="_blank">View TIFF</a>
+                                ` : `
                                     <a class="disabled">No TIFF Link</a>
-                                \`}
-                                \${thumbnailUrl ? \`
-                                    <a href="\${thumbnailUrl}" target="_blank">View Full Thumb</a>
-                                \` : \`
+                                `}
+                                ${thumbnailUrl ? `
+                                    <a href="${thumbnailUrl}" target="_blank">View Full Thumb</a>
+                                ` : `
                                     <a class="disabled">No Thumbnail</a>
-                                \`}
+                                `}
                             </div>
                         </div>
                     </div>
-                \`;
+                `;
             });
 
             html += '</div>';
@@ -551,130 +520,4 @@ app.get("/test", (c) => {
         });
     </script>
 </body>
-</html>`;
-
-  return c.html(html);
-});
-
-// Health check endpoint
-app.get("/health", async (c) => {
-  const results: Record<string, any> = {
-    timestamp: new Date().toISOString(),
-    environment: "production",
-    connections: {},
-  };
-
-  // Test D1 Database
-  try {
-    const tablesResult = await c.env.PHOTOS_DB.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-    ).all();
-
-    results.connections.d1 = {
-      status: "✅ Connected",
-      database: "tas-browser",
-      tables: tablesResult.results?.map((r: any) => r.name) || [],
-      tableCount: tablesResult.results?.length || 0,
-    };
-  } catch (error) {
-    results.connections.d1 = {
-      status: "❌ Error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-
-  // Test KV Namespace
-  try {
-    const testKey = "connection-test";
-    const testValue = `Test at ${Date.now()}`;
-
-    await c.env.PHOTO_CACHE.put(testKey, testValue, { expirationTtl: 60 });
-    const retrievedValue = await c.env.PHOTO_CACHE.get(testKey);
-
-    results.connections.kv = {
-      status: retrievedValue === testValue ? "✅ Connected" : "⚠️ Mismatch",
-      namespace: "PHOTO_CACHE",
-      writeTest: "success",
-      readTest: "success",
-      id: "6b0c54bb697d44c5b8dd97f02141bfdf",
-    };
-  } catch (error) {
-    results.connections.kv = {
-      status: "❌ Error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-
-  // Test R2 TIFF Storage
-  try {
-    const testKey = "connection-test.txt";
-    const testContent = `Connection test at ${new Date().toISOString()}`;
-
-    await c.env.TIFF_STORAGE.put(testKey, testContent);
-    const retrieved = await c.env.TIFF_STORAGE.get(testKey);
-
-    results.connections.r2_tiff = {
-      status: retrieved ? "✅ Connected" : "⚠️ Get failed",
-      bucket: "tas-aerial-browser-tiffs",
-      writeTest: "success",
-      readTest: retrieved ? "success" : "failed",
-    };
-
-    // Clean up test file
-    await c.env.TIFF_STORAGE.delete(testKey);
-  } catch (error) {
-    results.connections.r2_tiff = {
-      status: "❌ Error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-
-  // Test R2 Thumbnail Storage
-  try {
-    const testKey = "connection-test.txt";
-    const testContent = `Connection test at ${new Date().toISOString()}`;
-
-    await c.env.THUMBNAIL_STORAGE.put(testKey, testContent);
-    const retrieved = await c.env.THUMBNAIL_STORAGE.get(testKey);
-
-    results.connections.r2_thumbnail = {
-      status: retrieved ? "✅ Connected" : "⚠️ Get failed",
-      bucket: "tas-aerial-browser-thumbnails",
-      writeTest: "success",
-      readTest: retrieved ? "success" : "failed",
-    };
-
-    // Clean up test file
-    await c.env.THUMBNAIL_STORAGE.delete(testKey);
-  } catch (error) {
-    results.connections.r2_thumbnail = {
-      status: "❌ Error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-
-  // Test API Base URL
-  results.connections.api_base_url = {
-    status: c.env.API_BASE_URL ? "✅ Configured" : "❌ Missing",
-    url: c.env.API_BASE_URL,
-  };
-
-  // Overall status
-  const allConnected = Object.values(results.connections).every(
-    (conn: any) => conn.status.startsWith("✅")
-  );
-
-  results.overall = allConnected
-    ? "✅ All connections successful"
-    : "⚠️ Some connections failed";
-
-  return c.json(results);
-});
-
-app.notFound((c) => c.json({ success: false, error: "Not found" }, 404));
-app.onError((err, c) => {
-  console.error(err);
-  return c.json({ success: false, error: "Internal error" }, 500);
-});
-
-export default app;
+</html>

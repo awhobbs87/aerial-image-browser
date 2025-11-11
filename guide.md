@@ -9,11 +9,11 @@
 A modern web application for browsing Tasmania's aerial photography archives with:
 
 - Cloudflare Workers API (TypeScript + Hono)
-- React 18 frontend (TypeScript + Tailwind CSS v4)
+- React 19 frontend (TypeScript + Material UI + Tailwind CSS v4)
 - Interactive Leaflet maps
-- R2 TIFF caching
+- R2 TIFF caching with proxy endpoints
 - D1 user database
-- Mobile-responsive design
+- Mobile-responsive design with dark/light mode
 
 **Data Source:** Tasmania DPIPWE public ArcGIS REST API  
 **Time:** 20-25 hours over 2-4 weeks  
@@ -310,9 +310,11 @@ Update `frontend/package.json` scripts:
 Install frontend dependencies:
 
 ```bash
-npm install @tanstack/react-query @tanstack/react-router axios date-fns leaflet lucide-react react-leaflet
+npm install react@19 react-dom@19
+npm install @tanstack/react-query @tanstack/react-router axios date-fns leaflet react-leaflet
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
 
-npm install -D @types/leaflet @testing-library/react @testing-library/jest-dom vitest jsdom postcss tailwindcss@next @tailwindcss/postcss prettier prettier-plugin-tailwindcss eslint-plugin-react-hooks
+npm install -D @types/react@19 @types/react-dom@19 @types/leaflet @testing-library/react @testing-library/jest-dom vitest jsdom postcss tailwindcss@next @tailwindcss/postcss prettier prettier-plugin-tailwindcss eslint-plugin-react-hooks
 
 cd ..
 ```
@@ -805,7 +807,7 @@ git push
 
 ## 📊 Progress Tracking
 
-**Last Updated:** 2025-11-11
+**Last Updated:** 2025-11-12
 
 ### Completed Stages
 
@@ -818,7 +820,8 @@ git push
   - Root package.json with comprehensive scripts
   - TypeScript and Wrangler configuration
   - Husky git hooks for linting and commit validation
-  - React 18 frontend initialized with Vite
+  - React 19 frontend initialized with Vite
+  - Material UI (MUI) for React 19 components
   - Tailwind CSS v4 configured
   - React Query setup
   - D1 database schema created (users, favorites, search_history)
@@ -834,13 +837,68 @@ git push
   - All connections verified: D1 ✅, KV ✅, R2 TIFF ✅, R2 Thumbnail ✅
   - Worker deployed: https://tas-aerial-browser.awhobbs.workers.dev
 
+- ✅ **Stage 2: Core API Development** (Completed)
+  - TypeScript types created (`Bindings`, `PhotoAttributes`, `EnhancedPhoto`)
+  - ArcGIS client implemented with point and bounds queries
+  - Fixed spatial reference issue (added `inSR=4326` parameter)
+  - Cache manager with KV get/set operations
+  - R2 manager with TIFF and thumbnail operations
+  - API routes implemented:
+    - `GET /api/layers` - Returns ArcGIS layer metadata (with KV caching)
+    - `GET /api/search/location?lat=X&lon=Y` - Search by coordinates
+    - `GET /api/search/bounds?west=X&south=Y&east=Z&north=W` - Search by bounding box
+  - Test page deployed at `/test` with interactive UI
+  - Verified with Tasmania coordinates: Hobart (499 photos), Launceston (331 photos)
+
+- ✅ **Stage 3: TIFF Caching & Proxying** (Completed)
+  - TIFF proxy endpoint: `GET /api/tiff/:layerId/:imageName`
+    - Downloads TIFFs from ArcGIS on first request (X-Cache: MISS)
+    - Caches in R2 TIFF_STORAGE bucket
+    - Serves from R2 on subsequent requests (X-Cache: HIT)
+    - Tested with 67.29 MB TIFF file (1462_029.tif)
+  - Thumbnail proxy endpoint: `GET /api/thumbnail/:layerId/:imageName`
+    - Downloads thumbnails from ArcGIS on first request
+    - Caches in R2 THUMBNAIL_STORAGE bucket
+    - Serves from R2 on subsequent requests
+    - Tested with 244 KB thumbnail (1437_025.jpg)
+  - Both endpoints set proper content-type headers and long cache durations
+  - Verified files stored in R2 buckets successfully
+
+- ✅ **Stage 4 & 5: React Frontend with Material UI** (Completed)
+  - **TypeScript Types** (`frontend/src/types/api.ts`)
+    - Mirrored all backend types
+    - `PhotoAttributes`, `EnhancedPhoto`, `LayerType`
+    - API response types with full type safety
+  - **API Client** (`frontend/src/lib/apiClient.ts`)
+    - Axios-based singleton client
+    - Type-safe methods: `searchByLocation()`, `searchByBounds()`, `getLayers()`
+    - Helper methods: `getThumbnailUrl()`, `getTiffUrl()`
+    - Error handling and interceptors
+  - **MUI Theme** (`frontend/src/theme.ts`)
+    - Light and dark themes with custom palettes
+    - Component overrides for Cards, Buttons, Chips
+    - Professional typography
+  - **React Query Hooks** (`frontend/src/hooks/usePhotos.ts`)
+    - `useSearchLocation`, `useSearchBounds`, `useLayers`
+    - Automatic caching and refetching
+  - **Material UI Components**
+    - `AppBar` - Header with dark/light mode toggle
+    - `SearchBar` - Lat/lon input + location presets (Hobart, Launceston, etc.)
+    - `PhotoCard` - Card with thumbnail, metadata, layer badges, actions
+    - `PhotoGrid` - Responsive grid with pagination (12 photos/page)
+  - **App.tsx** - Complete layout
+    - QueryClientProvider + ThemeProvider
+    - AppBar + main content + footer
+    - Welcome screen + search + results display
+    - Favorites functionality (client-side)
+  - **Vite Configuration**
+    - API proxy to deployed worker
+    - Dev server on port 5173
+  - Frontend running at: http://localhost:5173
+
 ### Remaining Stages
 
-- 🔴 **Stage 2: Core API Development** (Next)
-- 🔴 **Stage 3: TIFF Caching & Proxying**
-- 🔴 **Stage 4: React Frontend Components**
-- 🔴 **Stage 5: React Query Hooks & API Client**
-- 🔴 **Stage 6: Leaflet Maps Integration**
+- 🔴 **Stage 6: Leaflet Maps Integration** (Next)
 - 🔴 **Stage 7: Filtering & Search UI**
 - 🔴 **Stage 8: D1 Favorites System**
 - 🔴 **Stage 9: Mobile Optimization**
@@ -848,10 +906,14 @@ git push
 
 **Notes:**
 
-- Stage 0 & 1 took ~1 hour
+- Stages 0-5 completed in ~3 sessions
 - Fixed deprecated `node_compat` issue in wrangler.toml
-- Added comprehensive connection health checks
+- Fixed ArcGIS spatial reference issue (missing `inSR` parameter)
 - All Cloudflare bindings verified and operational
+- Test page available at: https://tas-aerial-browser.awhobbs.workers.dev/test
+- API fully functional with caching working correctly
+- Frontend fully functional with Material UI and dark/light mode
+- React 19 with Material UI provides modern, responsive interface
 
 ---
 
@@ -923,69 +985,65 @@ After each stage:
 
 ---
 
-## 🚀 Next Session: Core API & Testing
+## 🚀 Next Session: Leaflet Maps Integration
 
 ### Session Goals
 
-Build and test the core API functionality to verify the system can interact with the Tasmania ArcGIS service, store TIFFs/thumbnails, and perform searches.
+Add interactive Leaflet maps to visualize photo footprints and enable map-based searching.
 
-### Phase 1: Core API Implementation (Stage 2)
-
-**Tasks:**
-1. Create TypeScript types (`src/types/index.ts`)
-   - `Bindings`, `PhotoAttributes`, `EnhancedPhoto` interfaces
-2. Build ArcGIS client (`src/lib/arcgis.ts`)
-   - Query by point (lat/lon)
-   - Query by bounds (bbox)
-   - Get layers metadata
-3. Implement Cache manager (`src/lib/cache.ts`)
-   - KV get/set operations with TTL
-4. Implement R2 manager (`src/lib/r2.ts`)
-   - Check TIFF existence
-   - Check thumbnail existence
-5. Create API routes (`src/routes/api.ts`)
-   - `GET /api/layers` - Get available layers
-   - `GET /api/search/location?lat=X&lon=Y` - Search by point
-   - `GET /api/search/bounds?west=X&south=Y&east=Z&north=W` - Search by bbox
-6. Build main Hono worker (`src/index.ts`)
-   - CORS configuration
-   - Route integration
-   - Error handling
-
-### Phase 2: API Testing & TIFF Proxying (Stage 3)
+### Phase 1: Leaflet Setup (Stage 6)
 
 **Tasks:**
-1. Test ArcGIS queries with real Tasmania coordinates
-   - Example: Hobart area (lat: -42.8821, lon: 147.3272)
-   - Verify photo metadata returned
-2. Build TIFF proxy endpoint
-   - `GET /api/tiff/:layerId/:imageName` - Download/cache TIFF from ArcGIS
-   - Store in R2 TIFF_STORAGE bucket
-   - Return cached version on subsequent requests
-3. Build thumbnail endpoint
-   - `GET /api/thumbnail/:layerId/:imageName` - Get/cache thumbnail
-   - Store in R2 THUMBNAIL_STORAGE bucket
-4. Create manual test suite
-   - Test search endpoints with curl/browser
-   - Verify TIFF downloads and caching
-   - Confirm R2 storage working
-   - Check KV cache hit rates
+1. Import Leaflet CSS in `index.css`
+   ```css
+   @import "tailwindcss";
+   @import "leaflet/dist/leaflet.css";
+   ```
 
-### Phase 3: Frontend Foundation (Stage 4 Start)
+2. Fix Leaflet marker icons (known Vite issue)
+   ```typescript
+   // In a utility file or map component
+   import L from 'leaflet';
+   import markerIcon from 'leaflet/dist/images/marker-icon.png';
+   import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+   import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+   delete L.Icon.Default.prototype._getIconUrl;
+   L.Icon.Default.mergeOptions({
+     iconUrl: markerIcon,
+     iconRetinaUrl: markerIcon2x,
+     shadowUrl: markerShadow,
+   });
+   ```
+
+### Phase 2: Map Components (Stage 6)
 
 **Tasks:**
-1. Create API client (`frontend/src/lib/apiClient.ts`)
-   - Axios instance with worker base URL
-   - Type-safe request functions
-2. Build basic React components
-   - `SearchBar.tsx` - Location/coordinates input
-   - `PhotoCard.tsx` - Display photo metadata
-   - `PhotoGrid.tsx` - Display search results
-   - `LoadingSpinner.tsx` - Loading states
-3. Update `App.tsx` with basic layout
-   - Header with search
-   - Results grid
-   - Basic styling with Tailwind
+1. **MapView Component** (`frontend/src/components/MapView.tsx`)
+   - React-Leaflet MapContainer
+   - TileLayer with OpenStreetMap
+   - Center on Tasmania by default
+   - Click handler to search location
+   - Zoom controls
+
+2. **PhotoMarkers Component** (`frontend/src/components/PhotoMarkers.tsx`)
+   - Display polygon footprints for photos
+   - Use different colors for layer types (aerial/ortho/digital)
+   - Popup with photo metadata on click
+   - Highlight on hover
+
+3. **MapSearchBar Component** (integrate with existing SearchBar)
+   - Add "Search on map" option
+   - Display current map center coordinates
+   - "Use map location" button
+
+### Phase 3: Update App Layout (Stage 6)
+
+**Tasks:**
+1. Add MUI Tabs or Toggle for Grid/Map view
+2. Create split view option (map on left, photos on right)
+3. Update PhotoCard to show "Show on map" button
+4. Sync map and photo selection
 
 ### 📋 Prompt for Next Session
 
@@ -993,46 +1051,61 @@ Build and test the core API functionality to verify the system can interact with
 I'm continuing work on the Tasmania Aerial Browser project.
 
 Current status:
-- Stage 0 & 1 complete (repo setup, foundation, all Cloudflare resources created)
-- Worker deployed at https://tas-aerial-browser.awhobbs.workers.dev
-- Health check confirms all bindings working (D1, KV, R2)
+- ✅ Stage 0-1: Foundation complete (Cloudflare resources, worker setup)
+- ✅ Stage 2: Core API with ArcGIS integration (499 photos in Hobart, 331 in Launceston)
+- ✅ Stage 3: TIFF/thumbnail caching with R2 (verified working)
+- ✅ Stage 4-5: React 19 frontend with Material UI complete
+  - Frontend running at http://localhost:5173
+  - SearchBar with location presets, PhotoGrid with pagination
+  - Dark/light mode toggle, responsive design
+  - React Query hooks for data fetching
 
-Next tasks:
-1. Build Stage 2 (Core API) following guide.md:
-   - TypeScript types, ArcGIS client, Cache/R2 managers
-   - API routes for /api/layers and /api/search/*
-   - Update main Hono worker with routes and CORS
+Worker API: https://tas-aerial-browser.awhobbs.workers.dev
+Test page: https://tas-aerial-browser.awhobbs.workers.dev/test
 
-2. Build Stage 3 (TIFF Caching & Testing):
-   - Create TIFF proxy endpoint to download and cache images
-   - Create thumbnail endpoint
-   - Test with real Tasmania coordinates (Hobart: -42.8821, 147.3272)
-   - Verify R2 storage and KV caching working
+Next tasks (Stage 6 - Leaflet Maps):
+1. Import Leaflet CSS and fix marker icon issue (Vite)
+2. Build MapView component:
+   - React-Leaflet MapContainer centered on Tasmania
+   - OpenStreetMap tiles
+   - Click to search location
+3. Build PhotoMarkers component:
+   - Display polygon footprints from photo geometries
+   - Color-coded by layer type (aerial/ortho/digital)
+   - Popups with photo metadata
+4. Integrate map with existing UI:
+   - Add Grid/Map view toggle
+   - "Show on map" button in PhotoCards
+   - Sync selected photo between map and grid
+5. Optional: Split view (map + photo grid side-by-side)
 
-3. Start Stage 4 (Frontend):
-   - Build API client with TypeScript types
-   - Create basic React components (SearchBar, PhotoCard, PhotoGrid)
-   - Update App.tsx with search and results display
-
-Please follow the guide.md structure and test thoroughly at each step. Let's start with Stage 2.
+The photos returned from the API include geometry data that can be used to draw polygons on the map. Use react-leaflet for the map implementation.
 ```
 
 ### Testing Checklist
 
 After implementation, verify:
-- [ ] `/api/layers` returns Tasmania layer information
-- [ ] `/api/search/location?lat=-42.8821&lon=147.3272` returns aerial photos
-- [ ] `/api/search/bounds?west=147.0&south=-43.0&east=147.5&north=-42.5` works
-- [ ] TIFF download stores in R2 and returns cached version on second request
-- [ ] Thumbnails download and cache properly
-- [ ] KV cache stores layer metadata for 24 hours
-- [ ] Frontend can search and display results
-- [ ] Error handling works (invalid coords, network errors)
+- [x] `/api/layers` returns Tasmania layer information
+- [x] `/api/search/location?lat=-42.8821&lon=147.3272` returns aerial photos
+- [x] `/api/search/bounds?west=147.0&south=-43.0&east=147.5&north=-42.5` works
+- [x] TIFF download stores in R2 and returns cached version on second request
+- [x] Thumbnails download and cache properly
+- [x] KV cache stores layer metadata for 24 hours
+- [x] Frontend can search and display results with Material UI
+- [x] Dark/light mode toggle works
+- [x] Mobile responsive layout
+- [x] Error handling works (invalid coords, network errors)
+- [x] Loading states show MUI skeletons/spinners
+- [ ] Map displays photo footprints
+- [ ] Map click to search location
+- [ ] Photo selection syncs between grid and map
+- [ ] Favorites persist in D1 database
+- [ ] Production deployment successful
 
 ---
 
 **Version:** 1.0.0-dev
-**Last Updated:** 2025-11-11
-**Status:** Foundation Complete - Ready for API Development
+**Last Updated:** 2025-11-12
+**Status:** Frontend Complete - Ready for Maps Integration
 
-🎯 **Current Focus:** Build and test core API with real Tasmania data, then create frontend interface.
+🎯 **Current Focus:** Integrate Leaflet maps to visualize photo footprints and enable map-based searching.
