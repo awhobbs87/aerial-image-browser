@@ -805,27 +805,53 @@ git push
 
 ## 📊 Progress Tracking
 
-Update after each stage:
+**Last Updated:** 2025-11-11
 
-```markdown
-- ✅ Stage 0: Repository Setup
-- ✅ Stage 1: Project Foundation
-- ✅ Stage 2: Core API
-- 🔴 Stage 3: TIFF Caching
-- 🔴 Stage 4: React Frontend
-- 🔴 Stage 5: React Query
-- 🔴 Stage 6: Maps
-- 🔴 Stage 7: Filtering
-- 🔴 Stage 8: Favorites
-- 🔴 Stage 9: Mobile
-- 🔴 Stage 10: Production
+### Completed Stages
+
+- ✅ **Stage 0: Repository Setup** (Completed)
+  - Created `.gitignore`, `LICENSE`, updated guide.md with consistent naming
+  - Initial commit and push to GitHub
+  - Repository: https://github.com/awhobbs87/aerial-image-browser
+
+- ✅ **Stage 1: Project Foundation** (Completed)
+  - Root package.json with comprehensive scripts
+  - TypeScript and Wrangler configuration
+  - Husky git hooks for linting and commit validation
+  - React 18 frontend initialized with Vite
+  - Tailwind CSS v4 configured
+  - React Query setup
+  - D1 database schema created (users, favorites, search_history)
+  - Vitest configuration
+  - All Cloudflare resources created:
+    - KV Namespace: `6b0c54bb697d44c5b8dd97f02141bfdf`
+    - D1 Database: `f71d5cc3-1fc3-4888-94bd-e73b02a4823f`
+    - R2 Buckets: tiffs and thumbnails
+    - Account ID configured
+
+- ✅ **Connection Testing** (Completed)
+  - Health check endpoint deployed at `/health`
+  - All connections verified: D1 ✅, KV ✅, R2 TIFF ✅, R2 Thumbnail ✅
+  - Worker deployed: https://tas-aerial-browser.awhobbs.workers.dev
+
+### Remaining Stages
+
+- 🔴 **Stage 2: Core API Development** (Next)
+- 🔴 **Stage 3: TIFF Caching & Proxying**
+- 🔴 **Stage 4: React Frontend Components**
+- 🔴 **Stage 5: React Query Hooks & API Client**
+- 🔴 **Stage 6: Leaflet Maps Integration**
+- 🔴 **Stage 7: Filtering & Search UI**
+- 🔴 **Stage 8: D1 Favorites System**
+- 🔴 **Stage 9: Mobile Optimization**
+- 🔴 **Stage 10: Production Deployment & Testing**
 
 **Notes:**
 
-- Stage 1 took X hours
-- Challenges: [list]
-- Next: Start Stage 3
-```
+- Stage 0 & 1 took ~1 hour
+- Fixed deprecated `node_compat` issue in wrangler.toml
+- Added comprehensive connection health checks
+- All Cloudflare bindings verified and operational
 
 ---
 
@@ -897,19 +923,116 @@ After each stage:
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Next Session: Core API & Testing
 
-1. Complete Stage 0 (repository setup)
-2. Work through Stage 1 (foundation)
-3. Build Stage 2 (API)
-4. Continue with remaining stages
+### Session Goals
 
-For detailed instructions on Stages 3-10, refer to the full BUILD_WITH_CLAUDE_CODE.md guide or ask Claude Code to generate the next stage based on your progress.
+Build and test the core API functionality to verify the system can interact with the Tasmania ArcGIS service, store TIFFs/thumbnails, and perform searches.
+
+### Phase 1: Core API Implementation (Stage 2)
+
+**Tasks:**
+1. Create TypeScript types (`src/types/index.ts`)
+   - `Bindings`, `PhotoAttributes`, `EnhancedPhoto` interfaces
+2. Build ArcGIS client (`src/lib/arcgis.ts`)
+   - Query by point (lat/lon)
+   - Query by bounds (bbox)
+   - Get layers metadata
+3. Implement Cache manager (`src/lib/cache.ts`)
+   - KV get/set operations with TTL
+4. Implement R2 manager (`src/lib/r2.ts`)
+   - Check TIFF existence
+   - Check thumbnail existence
+5. Create API routes (`src/routes/api.ts`)
+   - `GET /api/layers` - Get available layers
+   - `GET /api/search/location?lat=X&lon=Y` - Search by point
+   - `GET /api/search/bounds?west=X&south=Y&east=Z&north=W` - Search by bbox
+6. Build main Hono worker (`src/index.ts`)
+   - CORS configuration
+   - Route integration
+   - Error handling
+
+### Phase 2: API Testing & TIFF Proxying (Stage 3)
+
+**Tasks:**
+1. Test ArcGIS queries with real Tasmania coordinates
+   - Example: Hobart area (lat: -42.8821, lon: 147.3272)
+   - Verify photo metadata returned
+2. Build TIFF proxy endpoint
+   - `GET /api/tiff/:layerId/:imageName` - Download/cache TIFF from ArcGIS
+   - Store in R2 TIFF_STORAGE bucket
+   - Return cached version on subsequent requests
+3. Build thumbnail endpoint
+   - `GET /api/thumbnail/:layerId/:imageName` - Get/cache thumbnail
+   - Store in R2 THUMBNAIL_STORAGE bucket
+4. Create manual test suite
+   - Test search endpoints with curl/browser
+   - Verify TIFF downloads and caching
+   - Confirm R2 storage working
+   - Check KV cache hit rates
+
+### Phase 3: Frontend Foundation (Stage 4 Start)
+
+**Tasks:**
+1. Create API client (`frontend/src/lib/apiClient.ts`)
+   - Axios instance with worker base URL
+   - Type-safe request functions
+2. Build basic React components
+   - `SearchBar.tsx` - Location/coordinates input
+   - `PhotoCard.tsx` - Display photo metadata
+   - `PhotoGrid.tsx` - Display search results
+   - `LoadingSpinner.tsx` - Loading states
+3. Update `App.tsx` with basic layout
+   - Header with search
+   - Results grid
+   - Basic styling with Tailwind
+
+### 📋 Prompt for Next Session
+
+```
+I'm continuing work on the Tasmania Aerial Browser project.
+
+Current status:
+- Stage 0 & 1 complete (repo setup, foundation, all Cloudflare resources created)
+- Worker deployed at https://tas-aerial-browser.awhobbs.workers.dev
+- Health check confirms all bindings working (D1, KV, R2)
+
+Next tasks:
+1. Build Stage 2 (Core API) following guide.md:
+   - TypeScript types, ArcGIS client, Cache/R2 managers
+   - API routes for /api/layers and /api/search/*
+   - Update main Hono worker with routes and CORS
+
+2. Build Stage 3 (TIFF Caching & Testing):
+   - Create TIFF proxy endpoint to download and cache images
+   - Create thumbnail endpoint
+   - Test with real Tasmania coordinates (Hobart: -42.8821, 147.3272)
+   - Verify R2 storage and KV caching working
+
+3. Start Stage 4 (Frontend):
+   - Build API client with TypeScript types
+   - Create basic React components (SearchBar, PhotoCard, PhotoGrid)
+   - Update App.tsx with search and results display
+
+Please follow the guide.md structure and test thoroughly at each step. Let's start with Stage 2.
+```
+
+### Testing Checklist
+
+After implementation, verify:
+- [ ] `/api/layers` returns Tasmania layer information
+- [ ] `/api/search/location?lat=-42.8821&lon=147.3272` returns aerial photos
+- [ ] `/api/search/bounds?west=147.0&south=-43.0&east=147.5&north=-42.5` works
+- [ ] TIFF download stores in R2 and returns cached version on second request
+- [ ] Thumbnails download and cache properly
+- [ ] KV cache stores layer metadata for 24 hours
+- [ ] Frontend can search and display results
+- [ ] Error handling works (invalid coords, network errors)
 
 ---
 
-**Version:** 1.0.0  
-**Last Updated:** 2024-11-11  
-**Status:** Ready to Start
+**Version:** 1.0.0-dev
+**Last Updated:** 2025-11-11
+**Status:** Foundation Complete - Ready for API Development
 
-🎉 **You're ready to build!** Start with Stage 0.
+🎯 **Current Focus:** Build and test core API with real Tasmania data, then create frontend interface.
