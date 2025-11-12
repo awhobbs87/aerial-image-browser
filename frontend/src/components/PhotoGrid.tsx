@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Grid2, Typography, Box, Pagination, Paper, CircularProgress } from "@mui/material";
+import { Typography, Box, Pagination, Paper, CircularProgress, Grid } from "@mui/material";
 import { Image as ImageIcon } from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
 import type { EnhancedPhoto } from "../types/api";
@@ -9,6 +9,7 @@ interface PhotoGridProps {
   loading?: boolean;
   error?: Error | null;
   onFavorite?: (photo: EnhancedPhoto) => void;
+  onShowOnMap?: (photo: EnhancedPhoto) => void;
   favorites?: Set<string>;
 }
 
@@ -19,6 +20,7 @@ export default function PhotoGrid({
   loading = false,
   error = null,
   onFavorite,
+  onShowOnMap,
   favorites = new Set(),
 }: PhotoGridProps) {
   const [page, setPage] = useState(1);
@@ -96,17 +98,18 @@ export default function PhotoGrid({
       </Box>
 
       {/* Photo grid */}
-      <Grid2 container spacing={3}>
+      <Grid container spacing={3}>
         {currentPhotos.map((photo) => (
-          <Grid2 key={`${photo.layerId}-${photo.OBJECTID}`} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <Grid item key={`${photo.layerId}-${photo.OBJECTID}`} xs={12} sm={6} md={4} lg={3}>
             <PhotoCard
               photo={photo}
               onFavorite={onFavorite}
+              onShowOnMap={onShowOnMap}
               isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
             />
-          </Grid2>
+          </Grid>
         ))}
-      </Grid2>
+      </Grid>
 
       {/* Pagination */}
       {totalPages > 1 && (

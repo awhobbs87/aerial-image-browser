@@ -898,8 +898,8 @@ git push
 
 ### Remaining Stages
 
-- 🔴 **Stage 6: Leaflet Maps Integration** (Next)
-- 🔴 **Stage 7: Filtering & Search UI**
+- ✅ **Stage 6: Leaflet Maps Integration** (Complete)
+- 🔴 **Stage 7: Filtering & Search UI** (Next)
 - 🔴 **Stage 8: D1 Favorites System**
 - 🔴 **Stage 9: Mobile Optimization**
 - 🔴 **Stage 10: Production Deployment & Testing**
@@ -1059,27 +1059,32 @@ Current status:
   - SearchBar with location presets, PhotoGrid with pagination
   - Dark/light mode toggle, responsive design
   - React Query hooks for data fetching
+- ✅ Stage 6: Leaflet Maps Integration complete
+  - MapView component with OpenStreetMap tiles centered on Tasmania
+  - PhotoMarkers component rendering polygon footprints
+  - Color-coded by layer type (aerial: blue, ortho: green, digital: red)
+  - Selected photos highlighted in gold
+  - Popups with photo metadata
+  - Grid/Map view toggle with Material UI ToggleButtonGroup
+  - "Show on map" button in PhotoCards
+  - Photo selection synced between grid and map views
+  - Map click to search location
 
 Worker API: https://tas-aerial-browser.awhobbs.workers.dev
 Test page: https://tas-aerial-browser.awhobbs.workers.dev/test
+Frontend (Production): https://tas-aerial-explorer.pages.dev
 
-Next tasks (Stage 6 - Leaflet Maps):
-1. Import Leaflet CSS and fix marker icon issue (Vite)
-2. Build MapView component:
-   - React-Leaflet MapContainer centered on Tasmania
-   - OpenStreetMap tiles
-   - Click to search location
-3. Build PhotoMarkers component:
-   - Display polygon footprints from photo geometries
-   - Color-coded by layer type (aerial/ortho/digital)
-   - Popups with photo metadata
-4. Integrate map with existing UI:
-   - Add Grid/Map view toggle
-   - "Show on map" button in PhotoCards
-   - Sync selected photo between map and grid
-5. Optional: Split view (map + photo grid side-by-side)
-
-The photos returned from the API include geometry data that can be used to draw polygons on the map. Use react-leaflet for the map implementation.
+Next tasks (Stage 7 - Filtering & Search UI):
+1. Add filter controls to SearchBar:
+   - Date range picker (MUI DatePicker)
+   - Scale range slider
+   - Image type checkboxes (aerial/ortho/digital)
+   - Project name autocomplete
+2. Update API to support filter parameters
+3. Add advanced search panel (collapsible)
+4. Add search history / recent searches (stored in localStorage)
+5. Add "Clear filters" button
+6. Optional: Save favorite search queries to D1
 ```
 
 ### Testing Checklist
@@ -1096,16 +1101,20 @@ After implementation, verify:
 - [x] Mobile responsive layout
 - [x] Error handling works (invalid coords, network errors)
 - [x] Loading states show MUI skeletons/spinners
-- [ ] Map displays photo footprints
-- [ ] Map click to search location
-- [ ] Photo selection syncs between grid and map
+- [x] Map displays photo footprints as colored polygons
+- [x] Map click to search location
+- [x] Photo selection syncs between grid and map
+- [x] Grid/Map view toggle works
+- [x] "Show on map" button in PhotoCards
+- [x] Production deployment successful (Cloudflare Pages)
 - [ ] Favorites persist in D1 database
-- [ ] Production deployment successful
+- [ ] Advanced filters (date, scale, type)
+- [ ] Search history functionality
 
 ---
 
 **Version:** 1.0.0-dev
 **Last Updated:** 2025-11-12
-**Status:** Frontend Complete - Ready for Maps Integration
+**Status:** Maps Integration Complete - Ready for Filtering & Advanced Search
 
-🎯 **Current Focus:** Integrate Leaflet maps to visualize photo footprints and enable map-based searching.
+🎯 **Current Focus:** Add advanced filtering capabilities (date range, scale, image type, project name) and search history functionality.

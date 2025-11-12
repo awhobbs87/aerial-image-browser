@@ -25,6 +25,7 @@ function enhancePhoto(
 
   return {
     ...attrs,
+    geometry: feature.geometry, // Include geometry for map polygons
     layerId,
     layerType,
     dateFormatted: formatDate(attrs.FLY_DATE || attrs.CAPTURE_START_DATE),
@@ -65,17 +66,12 @@ api.get("/search/location", async (c) => {
 
   const photos = results.flat() as EnhancedPhoto[];
 
-  await Promise.all(
-    photos.map(async (photo) => {
-      if (photo.IMAGE_NAME) {
-        photo.cached = await r2.hasTiff(photo.IMAGE_NAME, photo.layerId);
-        photo.thumbnailCached = await r2.hasThumbnail(
-          photo.IMAGE_NAME,
-          photo.layerId
-        );
-      }
-    })
-  );
+  // Set default cache status (checking R2 for hundreds of photos exceeds subrequest limit)
+  // Cache status can be checked individually when needed
+  photos.forEach((photo) => {
+    photo.cached = false;
+    photo.thumbnailCached = false;
+  });
 
   photos.sort((a, b) => (b.FLY_DATE || 0) - (a.FLY_DATE || 0));
 
@@ -111,29 +107,14 @@ api.get("/search/bounds", async (c) => {
 
   const photos = results.flat() as EnhancedPhoto[];
 
-  // Only check R2 cache status for reasonable result sets to avoid timeouts
-  if (photos.length <= 100) {
-    await Promise.all(
-      photos.map(async (photo) => {
-        if (photo.IMAGE_NAME) {
-          photo.cached = await r2.hasTiff(photo.IMAGE_NAME, photo.layerId);
-          photo.thumbnailCached = await r2.hasThumbnail(
-            photo.IMAGE_NAME,
-            photo.layerId
-          );
-        } else {
-          photo.cached = false;
-          photo.thumbnailCached = false;
-        }
-      })
-    );
-  } else {
-    // For large result sets, default to false to avoid timeout
-    photos.forEach((photo) => {
-      photo.cached = false;
-      photo.thumbnailCached = false;
-    });
-  }
+  // Set default cache status (checking R2 for hundreds of photos exceeds subrequest limit)
+  // Cache status can be checked individually when needed
+  photos.forEach((photo) => {
+    photo.cached = false;
+    photo.thumbnailCached = false;
+  });
+
+  photos.sort((a, b) => (b.FLY_DATE || 0) - (a.FLY_DATE || 0));
 
   return c.json({ success: true, data: { count: photos.length, photos } });
 });

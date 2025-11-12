@@ -16,6 +16,7 @@ import {
   FavoriteBorder,
   Image as ImageIcon,
   CheckCircle,
+  Map as MapIcon,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -23,6 +24,7 @@ import apiClient from "../lib/apiClient";
 interface PhotoCardProps {
   photo: EnhancedPhoto;
   onFavorite?: (photo: EnhancedPhoto) => void;
+  onShowOnMap?: (photo: EnhancedPhoto) => void;
   isFavorite?: boolean;
 }
 
@@ -35,6 +37,7 @@ const LAYER_TYPE_COLORS: Record<LayerType, "primary" | "success" | "error"> = {
 export default function PhotoCard({
   photo,
   onFavorite,
+  onShowOnMap,
   isFavorite = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
@@ -47,6 +50,12 @@ export default function PhotoCard({
   const handleFavorite = () => {
     if (onFavorite) {
       onFavorite(photo);
+    }
+  };
+
+  const handleShowOnMap = () => {
+    if (onShowOnMap) {
+      onShowOnMap(photo);
     }
   };
 
@@ -122,15 +131,25 @@ export default function PhotoCard({
       </CardContent>
 
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
-        <Tooltip title="Download TIFF">
-          <IconButton
-            color="primary"
-            onClick={handleDownload}
-            disabled={!photo.DOWNLOAD_LINK}
-          >
-            <Download />
-          </IconButton>
-        </Tooltip>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Tooltip title="Download TIFF">
+            <IconButton
+              color="primary"
+              onClick={handleDownload}
+              disabled={!photo.DOWNLOAD_LINK}
+            >
+              <Download />
+            </IconButton>
+          </Tooltip>
+
+          {onShowOnMap && photo.geometry && (
+            <Tooltip title="Show on map">
+              <IconButton color="primary" onClick={handleShowOnMap}>
+                <MapIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
 
         <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"}>
           <IconButton color="error" onClick={handleFavorite}>

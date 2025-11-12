@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios from "axios";
 import type {
   ApiResponse,
   SearchLocationResponse,
@@ -8,7 +8,7 @@ import type {
 } from "../types/api";
 
 class ApiClient {
-  private client: AxiosInstance;
+  private client: ReturnType<typeof axios.create>;
 
   constructor(baseURL: string) {
     this.client = axios.create({

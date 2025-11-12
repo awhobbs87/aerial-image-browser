@@ -1,10 +1,21 @@
 import { useState, useMemo } from "react";
-import { ThemeProvider, CssBaseline, Container, Box, Typography } from "@mui/material";
+import {
+  ThemeProvider,
+  CssBaseline,
+  Container,
+  Box,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+  Paper,
+} from "@mui/material";
+import { GridView, Map as MapIcon } from "@mui/icons-material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
 import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
+import MapView from "./components/MapView";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -20,10 +31,14 @@ const queryClient = new QueryClient({
   },
 });
 
+type ViewMode = "grid" | "map";
+
 function AppContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchParams, setSearchParams] = useState<LocationSearchParams | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
 
   // Use React Query hook for fetching photos
   const { data, isLoading, error } = useSearchLocation(searchParams);
@@ -55,6 +70,23 @@ function AppContent() {
     });
   };
 
+  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+    }
+  };
+
+  const handlePhotoSelect = (photo: EnhancedPhoto) => {
+    setSelectedPhoto(photo);
+    // Auto-switch to map view when "Show on map" is clicked
+    setViewMode("map");
+  };
+
+  const handleMapClick = (lat: number, lon: number) => {
+    // Update search when clicking on map
+    handleSearch(lat, lon);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -65,13 +97,48 @@ function AppContent() {
           <SearchBar onSearch={handleSearch} loading={isLoading} />
 
           {searchParams && (
-            <PhotoGrid
-              photos={data?.photos || []}
-              loading={isLoading}
-              error={error as Error}
-              onFavorite={handleFavorite}
-              favorites={favorites}
-            />
+            <>
+              {/* View Toggle */}
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                <Paper elevation={1}>
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={handleViewModeChange}
+                    aria-label="view mode"
+                    size="small"
+                  >
+                    <ToggleButton value="grid" aria-label="grid view">
+                      <GridView sx={{ mr: 1 }} />
+                      Grid
+                    </ToggleButton>
+                    <ToggleButton value="map" aria-label="map view">
+                      <MapIcon sx={{ mr: 1 }} />
+                      Map
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Paper>
+              </Box>
+
+              {/* Conditional rendering based on view mode */}
+              {viewMode === "grid" ? (
+                <PhotoGrid
+                  photos={data?.photos || []}
+                  loading={isLoading}
+                  error={error as Error}
+                  onFavorite={handleFavorite}
+                  favorites={favorites}
+                  onShowOnMap={handlePhotoSelect}
+                />
+              ) : (
+                <MapView
+                  photos={data?.photos || []}
+                  selectedPhoto={selectedPhoto}
+                  onPhotoClick={setSelectedPhoto}
+                  onMapClick={handleMapClick}
+                />
+              )}
+            </>
           )}
 
           {!searchParams && (

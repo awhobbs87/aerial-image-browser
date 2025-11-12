@@ -1,7 +1,7 @@
-import { createTheme, ThemeOptions } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
 
 // Common theme options
-const commonTheme: ThemeOptions = {
+const commonTheme = {
   typography: {
     fontFamily: [
       "-apple-system",
