@@ -8,7 +8,17 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:5173", "https://tas-aerial-browser.awhobbs.workers.dev"],
+    origin: (origin) => {
+      const allowed = [
+        "http://localhost:5173",
+        "https://tas-aerial-browser.awhobbs.workers.dev",
+      ];
+      // Allow all Cloudflare Pages deployments (production and previews)
+      if (origin.endsWith(".tas-aerial-explorer.pages.dev")) {
+        return origin;
+      }
+      return allowed.includes(origin) ? origin : allowed[0];
+    },
     credentials: true,
   })
 );
