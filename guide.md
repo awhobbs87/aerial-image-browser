@@ -900,10 +900,10 @@ git push
 
 - ✅ **Stage 6: Leaflet Maps Integration** (Complete)
 - ✅ **Stage 7: Filtering & Search UI** (Complete)
-- 🔴 **Stage 8: User Features & Optimization** (Next)
-- 🔴 **Stage 8: D1 Favorites System**
-- 🔴 **Stage 9: Mobile Optimization**
-- 🔴 **Stage 10: Production Deployment & Testing**
+- 🔴 **Stage 8: Enhanced Search UX & Polish** (Next)
+- 🔴 **Stage 9: Performance Optimization**
+- 🔴 **Stage 10: Mobile Optimization & PWA**
+- 🔴 **Stage 11: Production Deployment & Testing**
 
 **Notes:**
 
@@ -1083,24 +1083,34 @@ Worker API: https://tas-aerial-browser.awhobbs.workers.dev
 Test page: https://tas-aerial-browser.awhobbs.workers.dev/test
 Frontend (Production): https://tas-aerial-explorer.pages.dev
 
-Next tasks (Stage 8 - User Features & Optimization):
-1. Search history with localStorage:
-   - Store recent searches (last 10)
-   - Quick access dropdown in SearchBar
-   - Clear history option
-2. D1 Favorites System:
-   - User authentication (optional)
-   - Save/unsave photos to favorites
-   - View favorites page
-   - Export favorites list
-3. Performance optimizations:
+Next tasks (Stage 8 - Enhanced Search UX & Polish):
+1. Improve Search Interface:
+   - Add geocoding for street address search (use Nominatim/OpenStreetMap API)
+   - Search box with autocomplete suggestions
+   - "Search near me" button using browser geolocation
+   - Recent searches dropdown with quick access
+   - Clear/elegant search input design
+   - Search by place name (e.g., "Hobart CBD", "Mount Wellington")
+2. Polish Filter Panel Styling:
+   - Redesign filter panel with modern, slick appearance
+   - Better visual hierarchy and spacing
+   - Smooth animations for expand/collapse
+   - Floating action button for filters on mobile
+   - Filter chips showing active filters
+   - Inline filter results count preview
+3. Search History with localStorage:
+   - Store recent searches (last 10) with timestamps
+   - Quick access from search dropdown
+   - Clear individual or all history
+   - Show search location name (not just coordinates)
+4. Performance optimizations:
    - Lazy load photo thumbnails
    - Virtualized list for large result sets
    - Cache search results client-side
-4. Mobile optimizations:
-   - Touch-friendly map controls
-   - Bottom sheet for filters on mobile
-   - Responsive filter panel layout
+5. D1 Favorites System (optional):
+   - Save/unsave photos to favorites
+   - View favorites page
+   - Export favorites list
 ```
 
 ### Testing Checklist
@@ -1135,6 +1145,6 @@ After implementation, verify:
 
 **Version:** 1.0.0-dev
 **Last Updated:** 2025-11-12
-**Status:** Advanced Filtering Complete - Ready for User Features & Optimization
+**Status:** Advanced Filtering Complete - Ready for Search UX Enhancement
 
-🎯 **Current Focus:** Implement search history with localStorage, D1 favorites system, and performance optimizations for mobile and large result sets.
+🎯 **Current Focus:** Implement intuitive street address search with geocoding, polish filter panel styling for a modern slick appearance, add search history with localStorage, and improve overall search user experience.
