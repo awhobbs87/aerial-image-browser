@@ -1,6 +1,26 @@
-import { useState } from "react";
-import { Typography, Box, Pagination, Paper, CircularProgress, Grid } from "@mui/material";
-import { Image as ImageIcon } from "@mui/icons-material";
+import { useState, useMemo } from "react";
+import {
+  Typography,
+  Box,
+  Pagination,
+  Paper,
+  CircularProgress,
+  Grid,
+  ToggleButtonGroup,
+  ToggleButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  Stack,
+} from "@mui/material";
+import {
+  Image as ImageIcon,
+  SortByAlpha,
+  ExpandMore,
+  ViewModule,
+  ViewList,
+} from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
 import type { EnhancedPhoto } from "../types/api";
 
@@ -15,6 +35,9 @@ interface PhotoGridProps {
 
 const PHOTOS_PER_PAGE = 12;
 
+type SortOrder = "newest" | "oldest";
+type GroupBy = "none" | "year" | "decade";
+
 export default function PhotoGrid({
   photos,
   loading = false,
@@ -24,17 +47,61 @@ export default function PhotoGrid({
   favorites = new Set(),
 }: PhotoGridProps) {
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [groupBy, setGroupBy] = useState<GroupBy>("none");
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Sort and group photos
+  const processedPhotos = useMemo(() => {
+    // Sort photos
+    const sorted = [...photos].sort((a, b) => {
+      const dateA = a.FLY_DATE || 0;
+      const dateB = b.FLY_DATE || 0;
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    // Group photos if needed
+    if (groupBy === "none") {
+      return { ungrouped: sorted };
+    }
+
+    const grouped: Record<string, EnhancedPhoto[]> = {};
+
+    sorted.forEach((photo) => {
+      if (!photo.FLY_DATE) {
+        if (!grouped["Unknown"]) grouped["Unknown"] = [];
+        grouped["Unknown"].push(photo);
+        return;
+      }
+
+      const date = new Date(photo.FLY_DATE);
+      const year = date.getFullYear();
+      let key: string;
+
+      if (groupBy === "year") {
+        key = year.toString();
+      } else {
+        // decade
+        const decade = Math.floor(year / 10) * 10;
+        key = `${decade}s`;
+      }
+
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(photo);
+    });
+
+    return grouped;
+  }, [photos, sortOrder, groupBy]);
+
   // Calculate pagination
-  const totalPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);
+  const allPhotos = groupBy === "none" ? processedPhotos.ungrouped || [] : Object.values(processedPhotos).flat();
+  const totalPages = Math.ceil(allPhotos.length / PHOTOS_PER_PAGE);
   const startIndex = (page - 1) * PHOTOS_PER_PAGE;
   const endIndex = startIndex + PHOTOS_PER_PAGE;
-  const currentPhotos = photos.slice(startIndex, endIndex);
 
   // Loading state
   if (loading) {
@@ -85,34 +152,137 @@ export default function PhotoGrid({
     );
   }
 
+  // Render grouped or ungrouped results
+  const renderPhotos = () => {
+    if (groupBy === "none") {
+      const currentPhotos = allPhotos.slice(startIndex, endIndex);
+      return (
+        <Grid container spacing={3}>
+          {currentPhotos.map((photo) => (
+            <Grid item key={`${photo.layerId}-${photo.OBJECTID}`} xs={12} sm={6} lg={12}>
+              <PhotoCard
+                photo={photo}
+                onFavorite={onFavorite}
+                onShowOnMap={onShowOnMap}
+                isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      );
+    }
+
+    // Render grouped photos
+    const groupKeys = Object.keys(processedPhotos).sort((a, b) => {
+      if (a === "Unknown") return 1;
+      if (b === "Unknown") return -1;
+      return sortOrder === "newest" ? b.localeCompare(a) : a.localeCompare(b);
+    });
+
+    return (
+      <Stack spacing={2}>
+        {groupKeys.map((groupKey) => {
+          const groupPhotos = processedPhotos[groupKey];
+          return (
+            <Accordion key={groupKey} defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Typography variant="h6">{groupKey}</Typography>
+                  <Chip label={`${groupPhotos.length} photos`} size="small" color="primary" />
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  {groupPhotos.map((photo) => (
+                    <Grid
+                      item
+                      key={`${photo.layerId}-${photo.OBJECTID}`}
+                      xs={12}
+                      sm={6}
+                      lg={12}
+                    >
+                      <PhotoCard
+                        photo={photo}
+                        onFavorite={onFavorite}
+                        onShowOnMap={onShowOnMap}
+                        isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
+      </Stack>
+    );
+  };
+
   return (
     <Box>
-      {/* Results header */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h6" color="text.secondary">
-          Found {photos.length} photo{photos.length !== 1 ? "s" : ""}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Page {page} of {totalPages}
-        </Typography>
-      </Box>
+      {/* Results header with controls */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+        <Stack spacing={2}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+            <Typography variant="h6" color="text.secondary">
+              Found {photos.length} photo{photos.length !== 1 ? "s" : ""}
+            </Typography>
+            {groupBy === "none" && (
+              <Typography variant="body2" color="text.secondary">
+                Page {page} of {totalPages}
+              </Typography>
+            )}
+          </Box>
 
-      {/* Photo grid */}
-      <Grid container spacing={3}>
-        {currentPhotos.map((photo) => (
-          <Grid item key={`${photo.layerId}-${photo.OBJECTID}`} xs={12} sm={6} md={4} lg={3}>
-            <PhotoCard
-              photo={photo}
-              onFavorite={onFavorite}
-              onShowOnMap={onShowOnMap}
-              isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
-            />
-          </Grid>
-        ))}
-      </Grid>
+          {/* Sort and Group Controls */}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+                Sort by:
+              </Typography>
+              <ToggleButtonGroup
+                value={sortOrder}
+                exclusive
+                onChange={(_e, value) => value && setSortOrder(value)}
+                size="small"
+              >
+                <ToggleButton value="newest">Newest First</ToggleButton>
+                <ToggleButton value="oldest">Oldest First</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+                Group by:
+              </Typography>
+              <ToggleButtonGroup
+                value={groupBy}
+                exclusive
+                onChange={(_e, value) => {
+                  if (value) {
+                    setGroupBy(value);
+                    setPage(1); // Reset to first page when changing grouping
+                  }
+                }}
+                size="small"
+              >
+                <ToggleButton value="none">
+                  <ViewModule sx={{ mr: 0.5, fontSize: 18 }} />
+                  None
+                </ToggleButton>
+                <ToggleButton value="year">By Year</ToggleButton>
+                <ToggleButton value="decade">By Decade</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Photo grid or grouped display */}
+      {renderPhotos()}
+
+      {/* Pagination (only for ungrouped) */}
+      {groupBy === "none" && totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Pagination
             count={totalPages}

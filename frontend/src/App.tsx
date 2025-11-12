@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense, useEffect } from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -9,6 +9,7 @@ import {
   ToggleButton,
   Paper,
   CircularProgress,
+  useMediaQuery,
 } from "@mui/material";
 import { GridView, Map as MapIcon } from "@mui/icons-material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -38,13 +39,43 @@ const queryClient = new QueryClient({
 });
 
 type ViewMode = "grid" | "map";
+type ThemeMode = "light" | "dark" | "system";
+
+// Helper function to get the initial theme preference
+const getInitialTheme = (): ThemeMode => {
+  const stored = localStorage.getItem("themeMode");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
+
+// Helper function to determine if dark mode should be active
+const shouldUseDarkMode = (themeMode: ThemeMode, prefersDark: boolean): boolean => {
+  if (themeMode === "system") {
+    return prefersDark;
+  }
+  return themeMode === "dark";
+};
 
 function AppContent() {
-  const [darkMode, setDarkMode] = useState(false);
+  // Check system preference for dark mode
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  // Track user's theme preference (light, dark, or system)
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
+
+  // Calculate actual dark mode state based on preference and system
+  const darkMode = useMemo(
+    () => shouldUseDarkMode(themeMode, prefersDarkMode),
+    [themeMode, prefersDarkMode]
+  );
+
   const [searchParams, setSearchParams] = useState<LocationSearchParams | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
+  const [searchCenter, setSearchCenter] = useState<[number, number] | null>(null);
   const [filters, setFilters] = useState<Filters>({
     startDate: null,
     endDate: null,
@@ -57,14 +88,24 @@ function AppContent() {
     },
   });
 
+  // Persist theme preference to localStorage
+  useEffect(() => {
+    localStorage.setItem("themeMode", themeMode);
+  }, [themeMode]);
+
   // Use React Query hook for fetching photos
   const { data, isLoading, error } = useSearchLocation(searchParams);
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
   const handleToggleDarkMode = useCallback(() => {
-    setDarkMode(!darkMode);
-  }, [darkMode]);
+    setThemeMode((prev) => {
+      // Cycle through: light -> dark -> system -> light
+      if (prev === "light") return "dark";
+      if (prev === "dark") return "system";
+      return "light";
+    });
+  }, []);
 
   const handleSearch = useCallback(
     (lat: number, lon: number, locationName?: string) => {
@@ -84,6 +125,9 @@ function AppContent() {
         maxScale: filters.maxScale,
         imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
       });
+
+      // Set search center for map to zoom to
+      setSearchCenter([lat, lon]);
 
       // Store location name for display (optional)
       if (locationName) {
@@ -133,96 +177,143 @@ function AppContent() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <AppBar darkMode={darkMode} onToggleDarkMode={handleToggleDarkMode} />
+        <AppBar darkMode={darkMode} themeMode={themeMode} onToggleDarkMode={handleToggleDarkMode} />
 
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-          <SearchBar onSearch={handleSearch} loading={isLoading} />
+        {/* Desktop: Two-column layout, Mobile: Single column */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            minHeight: 0, // Important for flexbox scrolling
+          }}
+        >
+          {/* Left Sidebar - Search, Filters, Results */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: "40%" },
+              display: "flex",
+              flexDirection: "column",
+              borderRight: { md: 1 },
+              borderColor: { md: "divider" },
+              overflowY: "auto",
+              maxHeight: { xs: "none", md: "calc(100vh - 64px)" }, // 64px = AppBar height
+            }}
+          >
+            <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1 }}>
+              <SearchBar onSearch={handleSearch} loading={isLoading} />
+              <FilterPanel filters={filters} onFiltersChange={setFilters} />
 
-          <FilterPanel filters={filters} onFiltersChange={setFilters} />
+              {searchParams && (
+                <>
+                  {/* Mobile-only View Toggle */}
+                  <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 3 }}>
+                    <Paper elevation={1}>
+                      <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={handleViewModeChange}
+                        aria-label="view mode"
+                        size="small"
+                      >
+                        <ToggleButton value="grid" aria-label="grid view">
+                          <GridView sx={{ mr: 1 }} />
+                          Grid
+                        </ToggleButton>
+                        <ToggleButton value="map" aria-label="map view">
+                          <MapIcon sx={{ mr: 1 }} />
+                          Map
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Paper>
+                  </Box>
 
-          {searchParams && (
-            <>
-              {/* View Toggle */}
-              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                <Paper elevation={1}>
-                  <ToggleButtonGroup
-                    value={viewMode}
-                    exclusive
-                    onChange={handleViewModeChange}
-                    aria-label="view mode"
-                    size="small"
-                  >
-                    <ToggleButton value="grid" aria-label="grid view">
-                      <GridView sx={{ mr: 1 }} />
-                      Grid
-                    </ToggleButton>
-                    <ToggleButton value="map" aria-label="map view">
-                      <MapIcon sx={{ mr: 1 }} />
-                      Map
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </Paper>
-              </Box>
-
-              {/* Conditional rendering based on view mode */}
-              {viewMode === "grid" ? (
-                <PhotoGrid
-                  photos={data?.photos || []}
-                  loading={isLoading}
-                  error={error as Error}
-                  onFavorite={handleFavorite}
-                  favorites={favorites}
-                  onShowOnMap={handlePhotoSelect}
-                />
-              ) : (
-                <Suspense
-                  fallback={
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        minHeight: 400,
-                      }}
-                    >
-                      <Box sx={{ textAlign: "center" }}>
-                        <CircularProgress size={60} />
-                        <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
-                          Loading map...
-                        </Typography>
-                      </Box>
-                    </Box>
-                  }
-                >
-                  <MapView
-                    photos={data?.photos || []}
-                    selectedPhoto={selectedPhoto}
-                    onPhotoClick={setSelectedPhoto}
-                    onMapClick={handleMapClick}
-                  />
-                </Suspense>
+                  {/* Results Grid (always visible on desktop, conditional on mobile) */}
+                  <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
+                    <PhotoGrid
+                      photos={data?.photos || []}
+                      loading={isLoading}
+                      error={error as Error}
+                      onFavorite={handleFavorite}
+                      favorites={favorites}
+                      onShowOnMap={handlePhotoSelect}
+                    />
+                  </Box>
+                </>
               )}
-            </>
-          )}
 
-          {!searchParams && (
-            <Box
-              sx={{
-                textAlign: "center",
-                py: 8,
-                px: 2,
-              }}
-            >
-              <Typography variant="h4" gutterBottom color="text.secondary">
-                Welcome to Tasmania Aerial Photos
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: "auto" }}>
-                Search for historical and recent aerial photography from across Tasmania. Enter
-                coordinates or select a location above to get started.
-              </Typography>
-            </Box>
-          )}
-        </Container>
+              {!searchParams && (
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 8,
+                    px: 2,
+                  }}
+                >
+                  <Typography variant="h4" gutterBottom color="text.secondary">
+                    Welcome to Tasmania Aerial Photos
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ maxWidth: 600, mx: "auto" }}
+                  >
+                    Search for historical and recent aerial photography from across Tasmania. Enter
+                    coordinates or select a location above to get started.
+                  </Typography>
+                </Box>
+              )}
+            </Container>
+          </Box>
+
+          {/* Right Side - Persistent Map (desktop only, or mobile when map mode active) */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: "60%" },
+              display: {
+                xs: searchParams && viewMode === "map" ? "block" : "none",
+                md: searchParams ? "block" : "none",
+              },
+              position: "relative",
+              minHeight: { xs: "500px", md: "auto" },
+            }}
+          >
+            {searchParams && (
+              <Suspense
+                fallback={
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: "100%",
+                      width: "100%",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                    }}
+                  >
+                    <Box sx={{ textAlign: "center" }}>
+                      <CircularProgress size={60} />
+                      <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
+                        Loading map...
+                      </Typography>
+                    </Box>
+                  </Box>
+                }
+              >
+                <MapView
+                  photos={data?.photos || []}
+                  selectedPhoto={selectedPhoto}
+                  onPhotoClick={setSelectedPhoto}
+                  onMapClick={handleMapClick}
+                  searchCenter={searchCenter}
+                  autoZoom={true}
+                />
+              </Suspense>
+            )}
+          </Box>
+        </Box>
 
         {/* Footer */}
         <Box

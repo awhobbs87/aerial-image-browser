@@ -18,6 +18,8 @@ import {
   Paper,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -30,6 +32,7 @@ import {
   PhotoSizeSelectActual,
   Image,
   Close,
+  HelpOutline,
 } from "@mui/icons-material";
 import { format } from "date-fns";
 
@@ -376,19 +379,29 @@ export default function FilterPanel({ filters, onFiltersChange }: FilterPanelPro
 
               {/* Scale Range Filter */}
               <Box>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <PhotoSizeSelectActual fontSize="small" color="secondary" />
-                  Photo Scale Range
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <PhotoSizeSelectActual fontSize="small" color="secondary" />
+                    Photo Scale Range
+                  </Typography>
+                  <Tooltip
+                    title="Photo scale indicates the level of detail. 1:5,000 means 1 cm on the photo equals 50 meters on the ground (high detail). 1:50,000 means 1 cm equals 500 meters (lower detail, wider coverage)."
+                    arrow
+                    placement="top"
+                  >
+                    <IconButton size="small">
+                      <HelpOutline fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 3, display: "block" }}>
                   Lower scales (e.g., 1:5K) show more detail, higher scales (e.g., 1:50K) show
                   wider areas
@@ -426,19 +439,45 @@ export default function FilterPanel({ filters, onFiltersChange }: FilterPanelPro
 
               {/* Layer Type Filter */}
               <Box>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Image fontSize="small" color="success" />
-                  Image Types
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Image fontSize="small" color="success" />
+                    Image Types
+                  </Typography>
+                  <Tooltip
+                    title={
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                          Image Types:
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Aerial:</strong> Traditional aerial photographs taken from aircraft
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Ortho:</strong> Orthophotographs - geometrically corrected aerial
+                          images
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Digital:</strong> Modern digital aerial photography
+                        </Typography>
+                      </Box>
+                    }
+                    arrow
+                    placement="top"
+                  >
+                    <IconButton size="small">
+                      <HelpOutline fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
                 <ToggleButtonGroup
                   value={Object.entries(filters.layerTypes)
                     .filter(([, checked]) => checked)
