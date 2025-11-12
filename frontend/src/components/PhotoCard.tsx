@@ -61,9 +61,9 @@ function PhotoCard({
 
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={200} />
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Stack spacing={1}>
+      <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+      <CardContent sx={{ flexGrow: 1, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+        <Stack spacing={0.75}>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
             <Chip
               label={photo.layerType.toUpperCase()}
@@ -83,64 +83,45 @@ function PhotoCard({
             )}
           </Box>
 
-          <Typography variant="h6" component="div" sx={{ fontSize: "1rem", fontWeight: 600 }}>
+          <Typography variant="subtitle2" component="div" sx={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.3 }}>
             {photo.IMAGE_NAME}
           </Typography>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
             <strong>Date:</strong> {photo.dateFormatted || "Unknown"}
           </Typography>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
             <strong>Scale:</strong> {photo.scaleFormatted || "N/A"}
           </Typography>
-
-          {photo.IMAGE_TYPE && (
-            <Typography variant="body2" color="text.secondary">
-              <strong>Type:</strong> {photo.IMAGE_TYPE}
-            </Typography>
-          )}
-
-          {photo.PROJ_NAME && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <strong>Project:</strong> {photo.PROJ_NAME}
-            </Typography>
-          )}
         </Stack>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
-        <Box sx={{ display: "flex", gap: 1 }}>
+      <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Download TIFF">
             <IconButton
+              size="small"
               color="primary"
               onClick={handleDownload}
               disabled={!photo.DOWNLOAD_LINK}
             >
-              <Download />
+              <Download fontSize="small" />
             </IconButton>
           </Tooltip>
 
           {onShowOnMap && photo.geometry && (
             <Tooltip title="Show on map">
-              <IconButton color="primary" onClick={handleShowOnMap}>
-                <MapIcon />
+              <IconButton size="small" color="primary" onClick={handleShowOnMap}>
+                <MapIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
         </Box>
 
         <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"}>
-          <IconButton color="error" onClick={handleFavorite}>
-            {isFavorite ? <Favorite /> : <FavoriteBorder />}
+          <IconButton size="small" color="error" onClick={handleFavorite}>
+            {isFavorite ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
         </Tooltip>
       </CardActions>

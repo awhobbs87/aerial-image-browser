@@ -8,7 +8,7 @@ interface PhotoMarkersProps {
   onPhotoClick?: (photo: EnhancedPhoto) => void;
 }
 
-// Enhanced color mapping for different layer types with better contrast and visibility
+// Enhanced color mapping for different layer types with minimal visual interference
 const LAYER_COLORS: Record<
   LayerType,
   { color: string; fillColor: string; fillOpacity: number; weight: number }
@@ -16,29 +16,29 @@ const LAYER_COLORS: Record<
   aerial: {
     color: '#4c51bf', // Deeper indigo for better contrast
     fillColor: '#667eea',
-    fillOpacity: 0.15, // Reduced opacity to see overlapping polygons
-    weight: 2,
+    fillOpacity: 0.05, // Very low opacity to not hide the map
+    weight: 1.5,
   },
   ortho: {
     color: '#2f855a', // Deeper green
     fillColor: '#48bb78',
-    fillOpacity: 0.15,
-    weight: 2,
+    fillOpacity: 0.05,
+    weight: 1.5,
   },
   digital: {
     color: '#c53030', // Deeper red
     fillColor: '#f56565',
-    fillOpacity: 0.15,
-    weight: 2,
+    fillOpacity: 0.05,
+    weight: 1.5,
   },
 };
 
-// Selected photo styling
+// Selected photo styling - more prominent but still not too intrusive
 const SELECTED_STYLE = {
   color: '#d69e2e', // Gold border
   fillColor: '#ecc94b', // Lighter gold fill
-  fillOpacity: 0.35,
-  weight: 3,
+  fillOpacity: 0.20, // Reduced from 0.35
+  weight: 2.5,
 };
 
 export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: PhotoMarkersProps) {
@@ -79,8 +79,8 @@ export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: Ph
                 const layer = e.target;
                 if (!isSelected) {
                   layer.setStyle({
-                    weight: 3,
-                    fillOpacity: 0.3,
+                    weight: 2.5,
+                    fillOpacity: 0.15,
                   });
                 }
               },

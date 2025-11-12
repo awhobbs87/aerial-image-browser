@@ -164,8 +164,8 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
     <Paper
       elevation={3}
       sx={{
-        p: 3,
-        mb: 3,
+        p: 2,
+        mb: 2,
         background: (theme) =>
           theme.palette.mode === "dark"
             ? "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)"
@@ -174,7 +174,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
           theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={1.5}>
         <Box>
           <Typography
             variant="h5"

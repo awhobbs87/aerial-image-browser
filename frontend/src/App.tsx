@@ -200,7 +200,7 @@ function AppContent() {
               maxHeight: { xs: "none", md: "calc(100vh - 64px)" }, // 64px = AppBar height
             }}
           >
-            <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1 }}>
+            <Container maxWidth="lg" sx={{ py: 2, flexGrow: 1 }}>
               <SearchBar onSearch={handleSearch} loading={isLoading} />
               <FilterPanel filters={filters} onFiltersChange={setFilters} />
 
