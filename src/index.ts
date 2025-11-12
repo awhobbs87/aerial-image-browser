@@ -14,10 +14,15 @@ app.use(
         "https://tas-aerial-browser.awhobbs.workers.dev",
       ];
       // Allow all Cloudflare Pages deployments (production and previews)
-      if (origin.endsWith(".tas-aerial-explorer.pages.dev")) {
+      if (origin?.endsWith(".tas-aerial-explorer.pages.dev")) {
         return origin;
       }
-      return allowed.includes(origin) ? origin : allowed[0];
+      // Allow specific origins
+      if (allowed.includes(origin)) {
+        return origin;
+      }
+      // Default: allow the request origin (permissive for public API)
+      return origin;
     },
     credentials: true,
   })
