@@ -902,8 +902,9 @@ git push
 - ✅ **Stage 7: Filtering & Search UI** (Complete)
 - ✅ **Stage 8: Enhanced Search UX & Polish** (Complete)
 - ✅ **Stage 9: Performance Optimization** (Complete)
-- 🔴 **Stage 10: Mobile Optimization & PWA** (Next)
-- 🔴 **Stage 11: Production Deployment & Testing**
+- 🔴 **Stage 10: Advanced Interface & UX Improvements** (Next)
+- 🔴 **Stage 11: Mobile Optimization & PWA**
+- 🔴 **Stage 12: Production Deployment & Testing**
 
 **Notes:**
 
@@ -1112,24 +1113,63 @@ Worker API: https://tas-aerial-browser.awhobbs.workers.dev
 Test page: https://tas-aerial-browser.awhobbs.workers.dev/test
 Frontend (Production): https://tas-aerial-explorer.pages.dev
 
-Next tasks (Stage 10 - Mobile Optimization & PWA):
-1. Mobile optimization:
-   - Improve mobile responsive layout
-   - Touch-friendly UI elements
-   - Mobile-optimized search and filters
-   - Bottom navigation for mobile
-   - Improved mobile map interactions
-2. Progressive Web App (PWA):
-   - Add service worker for offline support
-   - Create manifest.json
-   - Add install prompt
-   - Cache static assets
-   - Offline fallback page
-3. Additional polish:
-   - Loading skeletons for better perceived performance
-   - Error boundaries for graceful error handling
-   - Analytics integration (optional)
-   - SEO optimization
+Next tasks (Stage 10 - Advanced Interface & UX Improvements):
+1. Dark Mode & Theme Enhancements:
+   - Implement system-responsive dark mode (auto-detect OS preference)
+   - useMediaQuery for prefers-color-scheme
+   - Persist user's theme choice in localStorage
+   - Improved color palette for both light and dark modes
+   - Better contrast and visual hierarchy
+
+2. Desktop Layout Overhaul:
+   - Two-column layout: Sidebar (left) + Map (right)
+   - Sidebar contains: SearchBar, FilterPanel, Results
+   - Persistent map always visible on the right
+   - Resizable sidebar (optional drag handle)
+   - Map takes 50-60% of screen width
+   - Results scrollable within sidebar
+
+3. Map Improvements:
+   - Better polygon overlay styling (reduced opacity, stroke weight)
+   - Distinct colors for overlapping polygons
+   - Polygon click to filter/highlight results
+   - Stacked/offset polygons to reduce crowding
+   - Cluster markers for dense areas (optional)
+   - Better contrast for selected photos
+   - Improved popup design with photo preview
+
+4. Address Search Enhancement:
+   - Auto-zoom map to searched location
+   - Show location marker on map
+   - Pan map to center on search result
+   - Display results sorted by distance from search point
+   - Clear visual indication of search center
+
+5. Results View Options:
+   - Group by year/decade toggle
+   - Sort: Earliest → Latest, Latest → Earliest
+   - Collapsible year groups with photo counts
+   - Timeline view option (optional)
+   - Compact/Comfortable/Large card size options
+
+6. Date Range Slider (Optional):
+   - Replace date pickers with dual-handle range slider
+   - Show year labels along timeline
+   - Quick presets: "Last decade", "1900s", "2000s"
+   - Visual histogram of photo distribution by year
+
+7. Tooltips & Help:
+   - Info tooltips explaining scale (1:5K vs 1:50K)
+   - Help text for image types (aerial/ortho/digital)
+   - "?" icons next to technical terms
+   - Onboarding tour for first-time users (optional)
+
+8. Visual Polish:
+   - Refined color scheme (better gradients)
+   - Consistent spacing and padding
+   - Subtle shadows and depth
+   - Smooth transitions and animations
+   - Professional typography hierarchy
 ```
 
 ### Testing Checklist
@@ -1175,6 +1215,6 @@ After implementation, verify:
 
 **Version:** 1.0.0-dev
 **Last Updated:** 2025-11-12
-**Status:** Performance Optimization Complete - Ready for Mobile & PWA
+**Status:** Performance Optimization Complete - Ready for Advanced Interface Improvements
 
-🎯 **Current Focus:** Stage 9 complete! Lazy loading, code splitting, memoization, and caching optimizations implemented. Bundle size reduced with MapView in separate chunk (162KB). Next up: Mobile optimization and PWA features.
+🎯 **Current Focus:** Stage 9 complete! Lazy loading, code splitting, memoization, and caching optimizations implemented. Bundle size reduced with MapView in separate chunk (162KB). Next up: Advanced interface improvements including desktop sidebar layout, system-responsive dark mode, map overlay enhancements, address search zoom, results grouping by year, and comprehensive tooltips.
