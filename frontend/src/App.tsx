@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -8,6 +8,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Paper,
+  CircularProgress,
 } from "@mui/material";
 import { GridView, Map as MapIcon } from "@mui/icons-material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,19 +16,23 @@ import { lightTheme, darkTheme } from "./theme";
 import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
-import MapView from "./components/MapView";
 import FilterPanel, { type Filters } from "./components/FilterPanel";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
-// Create Query Client
+// Lazy load MapView component for better initial load performance
+const MapView = lazy(() => import("./components/MapView"));
+
+// Create Query Client with optimized caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
-      retry: 1,
+      staleTime: 1000 * 60 * 10, // 10 minutes - data stays fresh longer
+      gcTime: 1000 * 60 * 60, // 60 minutes - keep in cache for 1 hour
+      retry: 2, // Retry failed requests twice
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: false, // Don't refetch if data exists
     },
   },
 });
@@ -57,35 +62,38 @@ function AppContent() {
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
-  const handleToggleDarkMode = () => {
+  const handleToggleDarkMode = useCallback(() => {
     setDarkMode(!darkMode);
-  };
+  }, [darkMode]);
 
-  const handleSearch = (lat: number, lon: number, locationName?: string) => {
-    // Convert filters to API format
-    const activeLayerTypes = [];
-    if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
-    if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
-    if (filters.layerTypes.digital) activeLayerTypes.push("digital");
+  const handleSearch = useCallback(
+    (lat: number, lon: number, locationName?: string) => {
+      // Convert filters to API format
+      const activeLayerTypes = [];
+      if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
+      if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
+      if (filters.layerTypes.digital) activeLayerTypes.push("digital");
 
-    setSearchParams({
-      lat,
-      lon,
-      layers: [0, 1, 2],
-      startDate: filters.startDate?.toISOString(),
-      endDate: filters.endDate?.toISOString(),
-      minScale: filters.minScale,
-      maxScale: filters.maxScale,
-      imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
-    });
+      setSearchParams({
+        lat,
+        lon,
+        layers: [0, 1, 2],
+        startDate: filters.startDate?.toISOString(),
+        endDate: filters.endDate?.toISOString(),
+        minScale: filters.minScale,
+        maxScale: filters.maxScale,
+        imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
+      });
 
-    // Store location name for display (optional)
-    if (locationName) {
-      console.log("Searching for:", locationName);
-    }
-  };
+      // Store location name for display (optional)
+      if (locationName) {
+        console.log("Searching for:", locationName);
+      }
+    },
+    [filters]
+  );
 
-  const handleFavorite = (photo: EnhancedPhoto) => {
+  const handleFavorite = useCallback((photo: EnhancedPhoto) => {
     const key = `${photo.layerId}-${photo.OBJECTID}`;
     setFavorites((prev) => {
       const newFavorites = new Set(prev);
@@ -96,24 +104,30 @@ function AppContent() {
       }
       return newFavorites;
     });
-  };
+  }, []);
 
-  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
-    }
-  };
+  const handleViewModeChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+      if (newMode !== null) {
+        setViewMode(newMode);
+      }
+    },
+    []
+  );
 
-  const handlePhotoSelect = (photo: EnhancedPhoto) => {
+  const handlePhotoSelect = useCallback((photo: EnhancedPhoto) => {
     setSelectedPhoto(photo);
     // Auto-switch to map view when "Show on map" is clicked
     setViewMode("map");
-  };
+  }, []);
 
-  const handleMapClick = (lat: number, lon: number) => {
-    // Update search when clicking on map
-    handleSearch(lat, lon);
-  };
+  const handleMapClick = useCallback(
+    (lat: number, lon: number) => {
+      // Update search when clicking on map
+      handleSearch(lat, lon);
+    },
+    [handleSearch]
+  );
 
   return (
     <ThemeProvider theme={theme}>
@@ -161,12 +175,32 @@ function AppContent() {
                   onShowOnMap={handlePhotoSelect}
                 />
               ) : (
-                <MapView
-                  photos={data?.photos || []}
-                  selectedPhoto={selectedPhoto}
-                  onPhotoClick={setSelectedPhoto}
-                  onMapClick={handleMapClick}
-                />
+                <Suspense
+                  fallback={
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: 400,
+                      }}
+                    >
+                      <Box sx={{ textAlign: "center" }}>
+                        <CircularProgress size={60} />
+                        <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
+                          Loading map...
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                >
+                  <MapView
+                    photos={data?.photos || []}
+                    selectedPhoto={selectedPhoto}
+                    onPhotoClick={setSelectedPhoto}
+                    onMapClick={handleMapClick}
+                  />
+                </Suspense>
               )}
             </>
           )}

@@ -1,6 +1,6 @@
+import { memo } from "react";
 import {
   Card,
-  CardMedia,
   CardContent,
   CardActions,
   Typography,
@@ -14,12 +14,12 @@ import {
   Download,
   Favorite,
   FavoriteBorder,
-  Image as ImageIcon,
   CheckCircle,
   Map as MapIcon,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
+import LazyImage from "./LazyImage";
 
 interface PhotoCardProps {
   photo: EnhancedPhoto;
@@ -34,7 +34,7 @@ const LAYER_TYPE_COLORS: Record<LayerType, "primary" | "success" | "error"> = {
   digital: "error",
 };
 
-export default function PhotoCard({
+function PhotoCard({
   photo,
   onFavorite,
   onShowOnMap,
@@ -61,20 +61,7 @@ export default function PhotoCard({
 
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <CardMedia
-        component="img"
-        height="200"
-        image={thumbnailUrl}
-        alt={photo.IMAGE_NAME}
-        sx={{
-          objectFit: "cover",
-          bgcolor: "grey.200",
-        }}
-        onError={(e: any) => {
-          e.target.src =
-            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23999'%3ENo Thumbnail%3C/text%3E%3C/svg%3E";
-        }}
-      />
+      <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={200} />
       <CardContent sx={{ flexGrow: 1 }}>
         <Stack spacing={1}>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
@@ -160,3 +147,5 @@ export default function PhotoCard({
     </Card>
   );
 }
+
+export default memo(PhotoCard);
