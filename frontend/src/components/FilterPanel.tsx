@@ -13,11 +13,25 @@ import {
   Button,
   Stack,
   Typography,
+  Chip,
+  Divider,
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { ExpandMore, FilterList, Clear } from "@mui/icons-material";
+import {
+  ExpandMore,
+  FilterList,
+  Clear,
+  CalendarToday,
+  PhotoSizeSelectActual,
+  Image,
+  Close,
+} from "@mui/icons-material";
+import { format } from "date-fns";
 
 export interface Filters {
   startDate: Date | null;
@@ -82,6 +96,33 @@ export default function FilterPanel({ filters, onFiltersChange }: FilterPanelPro
     });
   };
 
+  const clearDateFilter = () => {
+    onFiltersChange({
+      ...filters,
+      startDate: null,
+      endDate: null,
+    });
+  };
+
+  const clearScaleFilter = () => {
+    onFiltersChange({
+      ...filters,
+      minScale: null,
+      maxScale: null,
+    });
+  };
+
+  const resetLayerTypes = () => {
+    onFiltersChange({
+      ...filters,
+      layerTypes: {
+        aerial: true,
+        ortho: true,
+        digital: true,
+      },
+    });
+  };
+
   const hasActiveFilters =
     filters.startDate !== null ||
     filters.endDate !== null ||
@@ -91,133 +132,375 @@ export default function FilterPanel({ filters, onFiltersChange }: FilterPanelPro
     !filters.layerTypes.ortho ||
     !filters.layerTypes.digital;
 
+  const hasDateFilter = filters.startDate !== null || filters.endDate !== null;
+  const hasScaleFilter = filters.minScale !== null || filters.maxScale !== null;
+  const hasLayerFilter =
+    !filters.layerTypes.aerial || !filters.layerTypes.ortho || !filters.layerTypes.digital;
+
+  // Format active filters for display
+  const getDateFilterLabel = () => {
+    if (filters.startDate && filters.endDate) {
+      return `${format(filters.startDate, "MMM yyyy")} - ${format(filters.endDate, "MMM yyyy")}`;
+    } else if (filters.startDate) {
+      return `From ${format(filters.startDate, "MMM yyyy")}`;
+    } else if (filters.endDate) {
+      return `Until ${format(filters.endDate, "MMM yyyy")}`;
+    }
+    return "";
+  };
+
+  const getScaleFilterLabel = () => {
+    const defaultMin = scaleMarks[0].value;
+    const defaultMax = scaleMarks[scaleMarks.length - 1].value;
+    const min = filters.minScale || defaultMin;
+    const max = filters.maxScale || defaultMax;
+
+    if (min !== defaultMin || max !== defaultMax) {
+      return `1:${(min / 1000).toFixed(0)}K - 1:${(max / 1000).toFixed(0)}K`;
+    }
+    return "";
+  };
+
+  const getLayerFilterLabel = () => {
+    const active = [];
+    if (filters.layerTypes.aerial) active.push("Aerial");
+    if (filters.layerTypes.ortho) active.push("Ortho");
+    if (filters.layerTypes.digital) active.push("Digital");
+
+    if (active.length === 0) return "No types selected";
+    if (active.length === 3) return "";
+    return active.join(", ");
+  };
+
   return (
-    <Accordion
-      expanded={expanded}
-      onChange={() => setExpanded(!expanded)}
-      sx={{ mb: 2 }}
-    >
-      <AccordionSummary expandIcon={<ExpandMore />}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <FilterList />
-          <Typography variant="h6">Advanced Filters</Typography>
-          {hasActiveFilters && (
-            <Typography variant="caption" color="primary" sx={{ ml: 1 }}>
-              (Active)
-            </Typography>
-          )}
+    <Box sx={{ mb: 3 }}>
+      {/* Active Filters Chips */}
+      {hasActiveFilters && (
+        <Box sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {hasDateFilter && (
+              <Chip
+                icon={<CalendarToday />}
+                label={getDateFilterLabel()}
+                onDelete={clearDateFilter}
+                color="primary"
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  "& .MuiChip-deleteIcon": {
+                    color: "inherit",
+                  },
+                }}
+              />
+            )}
+            {hasScaleFilter && (
+              <Chip
+                icon={<PhotoSizeSelectActual />}
+                label={getScaleFilterLabel()}
+                onDelete={clearScaleFilter}
+                color="secondary"
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  "& .MuiChip-deleteIcon": {
+                    color: "inherit",
+                  },
+                }}
+              />
+            )}
+            {hasLayerFilter && (
+              <Chip
+                icon={<Image />}
+                label={getLayerFilterLabel()}
+                onDelete={resetLayerTypes}
+                color="success"
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  "& .MuiChip-deleteIcon": {
+                    color: "inherit",
+                  },
+                }}
+              />
+            )}
+            <Chip
+              icon={<Clear />}
+              label="Clear All"
+              onClick={handleClearFilters}
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                "&:hover": {
+                  background: (theme) => theme.palette.action.hover,
+                },
+              }}
+            />
+          </Stack>
         </Box>
-      </AccordionSummary>
+      )}
 
-      <AccordionDetails>
-        <Stack spacing={3}>
-          {/* Date Range Filter */}
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Date Range</FormLabel>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 2 }}>
-                <DatePicker
-                  label="Start Date"
-                  value={filters.startDate}
-                  onChange={(date) =>
-                    onFiltersChange({ ...filters, startDate: date })
-                  }
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      fullWidth: true,
-                    },
-                  }}
-                />
-                <DatePicker
-                  label="End Date"
-                  value={filters.endDate}
-                  onChange={(date) =>
-                    onFiltersChange({ ...filters, endDate: date })
-                  }
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </Stack>
-            </LocalizationProvider>
-          </FormControl>
-
-          {/* Scale Range Filter */}
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Scale Range</FormLabel>
-            <Box sx={{ px: 2, pt: 3 }}>
-              <Slider
-                value={[
-                  filters.minScale || scaleMarks[0].value,
-                  filters.maxScale || scaleMarks[scaleMarks.length - 1].value,
-                ]}
-                onChange={handleScaleChange}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `1:${value.toLocaleString()}`}
-                min={scaleMarks[0].value}
-                max={scaleMarks[scaleMarks.length - 1].value}
-                marks={scaleMarks}
-                step={1000}
+      {/* Filter Panel */}
+      <Paper
+        elevation={3}
+        sx={{
+          overflow: "hidden",
+          background: (theme) =>
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, #f7fafc 100%)",
+          border: (theme) =>
+            theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
+        }}
+      >
+        <Accordion
+          expanded={expanded}
+          onChange={() => setExpanded(!expanded)}
+          elevation={0}
+          sx={{
+            background: "transparent",
+            "&:before": {
+              display: "none",
+            },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMore />}
+            sx={{
+              px: 3,
+              py: 1.5,
+              "& .MuiAccordionSummary-content": {
+                my: 1,
+              },
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
+              <FilterList
+                sx={{
+                  color: hasActiveFilters ? "primary.main" : "text.secondary",
+                }}
               />
-            </Box>
-          </FormControl>
-
-          {/* Layer Type Filter */}
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Image Types</FormLabel>
-            <FormGroup row sx={{ mt: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filters.layerTypes.aerial}
-                    onChange={() => handleLayerTypeChange("aerial")}
-                    color="primary"
-                  />
-                }
-                label="Aerial"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filters.layerTypes.ortho}
-                    onChange={() => handleLayerTypeChange("ortho")}
-                    color="success"
-                  />
-                }
-                label="Ortho"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filters.layerTypes.digital}
-                    onChange={() => handleLayerTypeChange("digital")}
-                    color="error"
-                  />
-                }
-                label="Digital"
-              />
-            </FormGroup>
-          </FormControl>
-
-          {/* Clear Filters Button */}
-          {hasActiveFilters && (
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                variant="outlined"
-                startIcon={<Clear />}
-                onClick={handleClearFilters}
-                size="small"
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  background: hasActiveFilters
+                    ? (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    : "none",
+                  WebkitBackgroundClip: hasActiveFilters ? "text" : "unset",
+                  WebkitTextFillColor: hasActiveFilters ? "transparent" : "inherit",
+                  backgroundClip: hasActiveFilters ? "text" : "unset",
+                }}
               >
-                Clear Filters
-              </Button>
+                Advanced Filters
+              </Typography>
+              {hasActiveFilters && (
+                <Chip
+                  label="Active"
+                  size="small"
+                  color="primary"
+                  sx={{
+                    ml: "auto",
+                    fontWeight: 700,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              )}
             </Box>
-          )}
-        </Stack>
-      </AccordionDetails>
-    </Accordion>
+          </AccordionSummary>
+
+          <Divider />
+
+          <AccordionDetails
+            sx={{
+              p: 3,
+            }}
+          >
+            <Stack spacing={4}>
+              {/* Date Range Filter */}
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <CalendarToday fontSize="small" color="primary" />
+                  Date Range
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <DatePicker
+                      label="Start Date"
+                      value={filters.startDate}
+                      onChange={(date) => onFiltersChange({ ...filters, startDate: date })}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          sx: {
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                            },
+                          },
+                        },
+                      }}
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={filters.endDate}
+                      onChange={(date) => onFiltersChange({ ...filters, endDate: date })}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          sx: {
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  </Stack>
+                </LocalizationProvider>
+              </Box>
+
+              <Divider />
+
+              {/* Scale Range Filter */}
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    mb: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <PhotoSizeSelectActual fontSize="small" color="secondary" />
+                  Photo Scale Range
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 3, display: "block" }}>
+                  Lower scales (e.g., 1:5K) show more detail, higher scales (e.g., 1:50K) show
+                  wider areas
+                </Typography>
+                <Box sx={{ px: 2, pt: 2 }}>
+                  <Slider
+                    value={[
+                      filters.minScale || scaleMarks[0].value,
+                      filters.maxScale || scaleMarks[scaleMarks.length - 1].value,
+                    ]}
+                    onChange={handleScaleChange}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `1:${value.toLocaleString()}`}
+                    min={scaleMarks[0].value}
+                    max={scaleMarks[scaleMarks.length - 1].value}
+                    marks={scaleMarks}
+                    step={1000}
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 20,
+                        height: 20,
+                      },
+                      "& .MuiSlider-track": {
+                        height: 6,
+                      },
+                      "& .MuiSlider-rail": {
+                        height: 6,
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Divider />
+
+              {/* Layer Type Filter */}
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Image fontSize="small" color="success" />
+                  Image Types
+                </Typography>
+                <ToggleButtonGroup
+                  value={Object.entries(filters.layerTypes)
+                    .filter(([, checked]) => checked)
+                    .map(([type]) => type)}
+                  onChange={(_event, newTypes) => {
+                    onFiltersChange({
+                      ...filters,
+                      layerTypes: {
+                        aerial: newTypes.includes("aerial"),
+                        ortho: newTypes.includes("ortho"),
+                        digital: newTypes.includes("digital"),
+                      },
+                    });
+                  }}
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <ToggleButton
+                    value="aerial"
+                    sx={{
+                      flex: 1,
+                      minWidth: 100,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Aerial
+                  </ToggleButton>
+                  <ToggleButton
+                    value="ortho"
+                    sx={{
+                      flex: 1,
+                      minWidth: 100,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Ortho
+                  </ToggleButton>
+                  <ToggleButton
+                    value="digital"
+                    sx={{
+                      flex: 1,
+                      minWidth: 100,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Digital
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+      </Paper>
+    </Box>
   );
 }

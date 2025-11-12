@@ -61,7 +61,7 @@ function AppContent() {
     setDarkMode(!darkMode);
   };
 
-  const handleSearch = (lat: number, lon: number) => {
+  const handleSearch = (lat: number, lon: number, locationName?: string) => {
     // Convert filters to API format
     const activeLayerTypes = [];
     if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
@@ -78,6 +78,11 @@ function AppContent() {
       maxScale: filters.maxScale,
       imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
     });
+
+    // Store location name for display (optional)
+    if (locationName) {
+      console.log("Searching for:", locationName);
+    }
   };
 
   const handleFavorite = (photo: EnhancedPhoto) => {
