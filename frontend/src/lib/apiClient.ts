@@ -48,16 +48,23 @@ class ApiClient {
   async searchByLocation(
     params: LocationSearchParams
   ): Promise<SearchLocationResponse> {
-    const { lat, lon, layers = [0, 1, 2] } = params;
+    const { lat, lon, layers = [0, 1, 2], ...filters } = params;
+    const queryParams: Record<string, string> = {
+      lat: lat.toString(),
+      lon: lon.toString(),
+      layers: layers.join(","),
+    };
+
+    // Add filter parameters if provided
+    if (filters.startDate) queryParams.startDate = filters.startDate;
+    if (filters.endDate) queryParams.endDate = filters.endDate;
+    if (filters.minScale) queryParams.minScale = filters.minScale.toString();
+    if (filters.maxScale) queryParams.maxScale = filters.maxScale.toString();
+    if (filters.imageTypes?.length) queryParams.imageTypes = filters.imageTypes.join(",");
+
     const response = await this.client.get<ApiResponse<SearchLocationResponse>>(
       "/api/search/location",
-      {
-        params: {
-          lat,
-          lon,
-          layers: layers.join(","),
-        },
-      }
+      { params: queryParams }
     );
 
     if (!response.data.success || !response.data.data) {
@@ -73,18 +80,25 @@ class ApiClient {
   async searchByBounds(
     params: BoundsSearchParams
   ): Promise<SearchLocationResponse> {
-    const { west, south, east, north, layers = [0, 1, 2] } = params;
+    const { west, south, east, north, layers = [0, 1, 2], ...filters } = params;
+    const queryParams: Record<string, string> = {
+      west: west.toString(),
+      south: south.toString(),
+      east: east.toString(),
+      north: north.toString(),
+      layers: layers.join(","),
+    };
+
+    // Add filter parameters if provided
+    if (filters.startDate) queryParams.startDate = filters.startDate;
+    if (filters.endDate) queryParams.endDate = filters.endDate;
+    if (filters.minScale) queryParams.minScale = filters.minScale.toString();
+    if (filters.maxScale) queryParams.maxScale = filters.maxScale.toString();
+    if (filters.imageTypes?.length) queryParams.imageTypes = filters.imageTypes.join(",");
+
     const response = await this.client.get<ApiResponse<SearchLocationResponse>>(
       "/api/search/bounds",
-      {
-        params: {
-          west,
-          south,
-          east,
-          north,
-          layers: layers.join(","),
-        },
-      }
+      { params: queryParams }
     );
 
     if (!response.data.success || !response.data.data) {

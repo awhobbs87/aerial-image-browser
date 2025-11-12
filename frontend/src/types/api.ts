@@ -62,13 +62,21 @@ export interface LayersResponse {
 }
 
 // Search params
-export interface LocationSearchParams {
+export interface FilterParams {
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
+  minScale?: number;
+  maxScale?: number;
+  imageTypes?: string[]; // ["aerial", "ortho", "digital"]
+}
+
+export interface LocationSearchParams extends FilterParams {
   lat: number;
   lon: number;
   layers?: number[];
 }
 
-export interface BoundsSearchParams {
+export interface BoundsSearchParams extends FilterParams {
   west: number;
   south: number;
   east: number;

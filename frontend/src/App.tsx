@@ -16,6 +16,7 @@ import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
 import MapView from "./components/MapView";
+import FilterPanel, { type Filters } from "./components/FilterPanel";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -39,6 +40,17 @@ function AppContent() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
+  const [filters, setFilters] = useState<Filters>({
+    startDate: null,
+    endDate: null,
+    minScale: null,
+    maxScale: null,
+    layerTypes: {
+      aerial: true,
+      ortho: true,
+      digital: true,
+    },
+  });
 
   // Use React Query hook for fetching photos
   const { data, isLoading, error } = useSearchLocation(searchParams);
@@ -50,10 +62,21 @@ function AppContent() {
   };
 
   const handleSearch = (lat: number, lon: number) => {
+    // Convert filters to API format
+    const activeLayerTypes = [];
+    if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
+    if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
+    if (filters.layerTypes.digital) activeLayerTypes.push("digital");
+
     setSearchParams({
       lat,
       lon,
       layers: [0, 1, 2],
+      startDate: filters.startDate?.toISOString(),
+      endDate: filters.endDate?.toISOString(),
+      minScale: filters.minScale,
+      maxScale: filters.maxScale,
+      imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
     });
   };
 
@@ -95,6 +118,8 @@ function AppContent() {
 
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
           <SearchBar onSearch={handleSearch} loading={isLoading} />
+
+          <FilterPanel filters={filters} onFiltersChange={setFilters} />
 
           {searchParams && (
             <>

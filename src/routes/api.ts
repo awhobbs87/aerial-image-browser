@@ -33,6 +33,46 @@ function enhancePhoto(
   };
 }
 
+function applyFilters(
+  photos: EnhancedPhoto[],
+  filters: {
+    startDate?: string;
+    endDate?: string;
+    minScale?: number;
+    maxScale?: number;
+    imageTypes?: string[];
+  }
+): EnhancedPhoto[] {
+  return photos.filter((photo) => {
+    // Date filtering
+    if (filters.startDate && photo.FLY_DATE) {
+      const startDate = new Date(filters.startDate).getTime();
+      if (photo.FLY_DATE < startDate) return false;
+    }
+    if (filters.endDate && photo.FLY_DATE) {
+      const endDate = new Date(filters.endDate).getTime();
+      if (photo.FLY_DATE > endDate) return false;
+    }
+
+    // Scale filtering
+    if (filters.minScale && photo.SCALE && photo.SCALE < filters.minScale) {
+      return false;
+    }
+    if (filters.maxScale && photo.SCALE && photo.SCALE > filters.maxScale) {
+      return false;
+    }
+
+    // Image type filtering
+    if (filters.imageTypes && filters.imageTypes.length > 0) {
+      if (!filters.imageTypes.includes(photo.layerType)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 api.get("/layers", async (c) => {
   const cache = new CacheManager(c.env.PHOTO_CACHE);
   const cached = await cache.get("layers:all");
@@ -54,6 +94,15 @@ api.get("/search/location", async (c) => {
     return c.json({ success: false, error: "Invalid coordinates" }, 400);
   }
 
+  // Parse filter parameters
+  const filters = {
+    startDate: c.req.query("startDate"),
+    endDate: c.req.query("endDate"),
+    minScale: c.req.query("minScale") ? parseFloat(c.req.query("minScale")!) : undefined,
+    maxScale: c.req.query("maxScale") ? parseFloat(c.req.query("maxScale")!) : undefined,
+    imageTypes: c.req.query("imageTypes")?.split(","),
+  };
+
   const client = new ArcGISClient(c.env.API_BASE_URL);
   const r2 = new R2Manager(c.env.TIFF_STORAGE, c.env.THUMBNAIL_STORAGE);
 
@@ -64,7 +113,10 @@ api.get("/search/location", async (c) => {
     })
   );
 
-  const photos = results.flat() as EnhancedPhoto[];
+  let photos = results.flat() as EnhancedPhoto[];
+
+  // Apply filters
+  photos = applyFilters(photos, filters);
 
   // Set default cache status (checking R2 for hundreds of photos exceeds subrequest limit)
   // Cache status can be checked individually when needed
@@ -89,6 +141,16 @@ api.get("/search/bounds", async (c) => {
   }
 
   const layers = (c.req.query("layers") || "0,1,2").split(",").map(Number);
+
+  // Parse filter parameters
+  const filters = {
+    startDate: c.req.query("startDate"),
+    endDate: c.req.query("endDate"),
+    minScale: c.req.query("minScale") ? parseFloat(c.req.query("minScale")!) : undefined,
+    maxScale: c.req.query("maxScale") ? parseFloat(c.req.query("maxScale")!) : undefined,
+    imageTypes: c.req.query("imageTypes")?.split(","),
+  };
+
   const client = new ArcGISClient(c.env.API_BASE_URL);
   const r2 = new R2Manager(c.env.TIFF_STORAGE, c.env.THUMBNAIL_STORAGE);
 
@@ -105,7 +167,10 @@ api.get("/search/bounds", async (c) => {
     })
   );
 
-  const photos = results.flat() as EnhancedPhoto[];
+  let photos = results.flat() as EnhancedPhoto[];
+
+  // Apply filters
+  photos = applyFilters(photos, filters);
 
   // Set default cache status (checking R2 for hundreds of photos exceeds subrequest limit)
   // Cache status can be checked individually when needed
