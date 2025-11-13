@@ -124,21 +124,23 @@ class ApiClient {
   }
 
   /**
-   * Get thumbnail URL (proxied through worker)
+   * Get thumbnail URL (converted to WebP via WASM)
    */
   getThumbnailUrl(imageName: string, layerId: number): string {
     // Remove .tif extension if present
     const cleanName = imageName.replace(/\.tif$/i, "");
-    return `${this.client.defaults.baseURL}/api/thumbnail/${layerId}/${cleanName}`;
+    // Use conversion endpoint for thumbnails - WebP at Q:85, resized
+    return `${this.client.defaults.baseURL}/api/image/${layerId}/${cleanName}?format=webp&quality=85&size=thumbnail`;
   }
 
   /**
-   * Get TIFF URL (proxied through worker)
+   * Get full image URL (converted to high-quality WebP via WASM)
    */
   getTiffUrl(imageName: string, layerId: number): string {
     // Remove .tif extension if present
     const cleanName = imageName.replace(/\.tif$/i, "");
-    return `${this.client.defaults.baseURL}/api/tiff/${layerId}/${cleanName}`;
+    // Use conversion endpoint for full images - WebP at Q:95 for maximum quality while reducing size
+    return `${this.client.defaults.baseURL}/api/image/${layerId}/${cleanName}?format=webp&quality=95&size=full`;
   }
 
   /**

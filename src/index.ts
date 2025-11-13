@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { api } from "./routes/api";
+import { convert } from "./routes/convert";
 import type { Bindings } from "./types";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -29,6 +30,7 @@ app.use(
 );
 
 app.route("/api", api);
+app.route("/api", convert);
 
 app.get("/", (c) =>
   c.json({
@@ -38,6 +40,7 @@ app.get("/", (c) =>
       layers: "/api/layers",
       searchLocation: "/api/search/location?lat=X&lon=Y&layers=0,1,2",
       searchBounds: "/api/search/bounds?west=X&south=Y&east=Z&north=W&layers=0,1,2",
+      imageConvert: "/api/image/:layerId/:imageName?format=webp&quality=95&size=full",
       health: "/health",
       test: "/test",
     },

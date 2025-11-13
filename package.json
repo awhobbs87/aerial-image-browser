@@ -38,11 +38,18 @@
     "wrangler": "^3.94.0"
   },
   "dependencies": {
-    "hono": "^4.6.14"
+    "hono": "^4.6.14",
+    "wasm-vips": "^0.0.16"
   },
   "lint-staged": {
-    "frontend/src/**/*.{ts,tsx}": ["cd frontend && npm run lint:fix"],
-    "src/**/*.ts": ["prettier --write"],
-    "*.md": ["prettier --write"]
+    "frontend/src/**/*.{ts,tsx}": [
+      "cd frontend && npm run lint:fix"
+    ],
+    "src/**/*.ts": [
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
   }
 }
