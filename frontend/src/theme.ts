@@ -1,4 +1,5 @@
 import { createTheme } from "@mui/material/styles";
+import { shadows, shadowsDark } from "./theme/tokens";
 
 // Common theme options with enhanced visual polish
 const commonTheme = {
@@ -15,23 +16,39 @@ const commonTheme = {
     h1: {
       fontWeight: 700,
       letterSpacing: "-0.02em",
+      lineHeight: 1.2,
     },
     h2: {
       fontWeight: 600,
       letterSpacing: "-0.01em",
+      lineHeight: 1.3,
     },
     h3: {
       fontWeight: 600,
       letterSpacing: "-0.01em",
+      lineHeight: 1.3,
     },
     h4: {
       fontWeight: 600,
+      lineHeight: 1.4,
     },
     h5: {
       fontWeight: 600,
+      lineHeight: 1.4,
     },
     h6: {
       fontWeight: 600,
+      lineHeight: 1.4,
+    },
+    body1: {
+      lineHeight: 1.5,
+    },
+    body2: {
+      lineHeight: 1.5,
+    },
+    caption: {
+      lineHeight: 1.4,
+      letterSpacing: "0.025em",
     },
     button: {
       fontWeight: 600,
@@ -39,7 +56,7 @@ const commonTheme = {
     },
   },
   shape: {
-    borderRadius: 12, // Increased for more modern look
+    borderRadius: 12,
   },
   transitions: {
     duration: {
@@ -62,11 +79,9 @@ const commonTheme = {
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
             transform: "translateY(-6px)",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
           },
         },
       },
@@ -81,11 +96,11 @@ const commonTheme = {
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
             transform: "translateY(-1px)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           },
-        },
-        contained: {
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          "&:focus-visible": {
+            outline: "3px solid #6366f1",
+            outlineOffset: "2px",
+          },
         },
       },
     },
@@ -98,6 +113,21 @@ const commonTheme = {
           "&:hover": {
             transform: "scale(1.05)",
           },
+          "&:focus-visible": {
+            outline: "2px solid #6366f1",
+            outlineOffset: "2px",
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&:focus-visible": {
+            outline: "2px solid #6366f1",
+            outlineOffset: "2px",
+          },
         },
       },
     },
@@ -105,15 +135,6 @@ const commonTheme = {
       styleOverrides: {
         root: {
           backgroundImage: "none",
-        },
-        elevation1: {
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        },
-        elevation2: {
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        },
-        elevation3: {
-          boxShadow: "0 8px 16px rgba(0,0,0,0.12)",
         },
       },
     },
@@ -140,106 +161,176 @@ const commonTheme = {
           "&.Mui-selected": {
             transform: "scale(1.02)",
           },
+          "&:focus-visible": {
+            outline: "2px solid #6366f1",
+            outlineOffset: "2px",
+          },
+        },
+      },
+    },
+    MuiSlider: {
+      styleOverrides: {
+        root: {
+          "&:focus-visible": {
+            outline: "2px solid #6366f1",
+            outlineOffset: "2px",
+          },
         },
       },
     },
   },
 };
 
-// Light theme with enhanced color palette
+// Light theme with enhanced color palette and custom shadows
 export const lightTheme = createTheme({
   ...commonTheme,
   palette: {
     mode: "light",
     primary: {
-      main: "#667eea",
-      light: "#8fa3f0",
-      dark: "#5568d3",
+      main: "#6366f1",
+      light: "#818cf8",
+      dark: "#4f46e5",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#764ba2",
-      light: "#9b6ec8",
-      dark: "#5a3679",
+      main: "#8b5cf6",
+      light: "#a78bfa",
+      dark: "#7c3aed",
       contrastText: "#ffffff",
     },
     success: {
-      main: "#48bb78",
-      light: "#68d391",
-      dark: "#38a169",
+      main: "#10b981",
+      light: "#34d399",
+      dark: "#059669",
     },
     error: {
-      main: "#f56565",
-      light: "#fc8181",
-      dark: "#e53e3e",
+      main: "#ef4444",
+      light: "#f87171",
+      dark: "#dc2626",
     },
     warning: {
-      main: "#ed8936",
-      light: "#f6ad55",
-      dark: "#dd6b20",
+      main: "#f59e0b",
+      light: "#fbbf24",
+      dark: "#d97706",
     },
     info: {
-      main: "#4299e1",
-      light: "#63b3ed",
-      dark: "#3182ce",
+      main: "#3b82f6",
+      light: "#60a5fa",
+      dark: "#2563eb",
     },
     background: {
-      default: "#f7fafc",
+      default: "#f8fafc",
       paper: "#ffffff",
     },
     text: {
-      primary: "#1a202c",
-      secondary: "#718096",
+      primary: "#1e293b",
+      secondary: "#64748b",
     },
     divider: "rgba(0, 0, 0, 0.08)",
   },
+  shadows: [
+    "none",
+    shadows.sm,
+    shadows.md,
+    shadows.lg,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+    shadows.xl,
+  // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
+  ] as any,
 });
 
-// Dark theme with enhanced color palette
+// Dark theme with enhanced color palette and softer shadows
 export const darkTheme = createTheme({
   ...commonTheme,
   palette: {
     mode: "dark",
     primary: {
-      main: "#8fa3f0",
-      light: "#b3c2f5",
-      dark: "#667eea",
+      main: "#818cf8",
+      light: "#a5b4fc",
+      dark: "#6366f1",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#9b6ec8",
-      light: "#bb95dc",
-      dark: "#764ba2",
+      main: "#a78bfa",
+      light: "#c4b5fd",
+      dark: "#8b5cf6",
       contrastText: "#ffffff",
     },
     success: {
-      main: "#68d391",
-      light: "#9ae6b4",
-      dark: "#48bb78",
+      main: "#34d399",
+      light: "#6ee7b7",
+      dark: "#10b981",
     },
     error: {
-      main: "#fc8181",
-      light: "#feb2b2",
-      dark: "#f56565",
+      main: "#f87171",
+      light: "#fca5a5",
+      dark: "#ef4444",
     },
     warning: {
-      main: "#f6ad55",
-      light: "#fbd38d",
-      dark: "#ed8936",
+      main: "#fbbf24",
+      light: "#fcd34d",
+      dark: "#f59e0b",
     },
     info: {
-      main: "#63b3ed",
-      light: "#90cdf4",
-      dark: "#4299e1",
+      main: "#60a5fa",
+      light: "#93c5fd",
+      dark: "#3b82f6",
     },
     background: {
-      default: "#1a202c",
-      paper: "#2d3748",
+      default: "#0f172a",
+      paper: "#1e293b",
     },
     text: {
-      primary: "#f7fafc",
-      secondary: "#cbd5e0",
+      primary: "#f1f5f9",
+      secondary: "#cbd5e1",
     },
-    divider: "rgba(255, 255, 255, 0.12)",
+    divider: "rgba(255, 255, 255, 0.1)",
   },
+  shadows: [
+    "none",
+    shadowsDark.sm,
+    shadowsDark.md,
+    shadowsDark.lg,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+    shadowsDark.xl,
+  // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
+  ] as any,
 });

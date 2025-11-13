@@ -11,7 +11,6 @@ import {
   Tooltip,
 } from "@mui/material";
 import {
-  Download,
   Favorite,
   FavoriteBorder,
   CheckCircle,
@@ -22,6 +21,7 @@ import {
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
+import { layerTypeColors, borderRadius, fontSize, iconSize } from "../theme/tokens";
 
 interface PhotoCardProps {
   photo: EnhancedPhoto;
@@ -35,6 +35,12 @@ const LAYER_TYPE_COLORS: Record<LayerType, "primary" | "success" | "error"> = {
   aerial: "primary",
   ortho: "success",
   digital: "error",
+};
+
+const LAYER_TYPE_LABELS: Record<LayerType, string> = {
+  aerial: "AERIAL",
+  ortho: "ORTHO",
+  digital: "DIGITAL",
 };
 
 function PhotoCard({
@@ -76,82 +82,194 @@ function PhotoCard({
 
   return (
     <Card
-      sx={{ height: "100%", display: "flex", flexDirection: "column", transition: "all 0.2s" }}
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: `${borderRadius.lg}px`,
+        overflow: "hidden",
+        position: "relative",
+        borderLeft: `4px solid ${layerTypeColors[photo.layerType].border}`,
+      }}
       onMouseEnter={() => onPhotoHover?.(photo)}
       onMouseLeave={() => onPhotoHover?.(null)}
     >
-      <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+      {/* Thumbnail with inner shadow */}
+      <Box
+        sx={{
+          position: "relative",
+          height: 150,
+          overflow: "hidden",
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.1)',
+            pointerEvents: 'none',
+          },
+        }}
+      >
+        <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+      </Box>
+
       <CardContent sx={{ flexGrow: 1, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-        <Stack spacing={0.75}>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+        <Stack spacing={1}>
+          {/* Chips row */}
+          <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
             <Chip
-              label={photo.layerType.toUpperCase()}
+              label={LAYER_TYPE_LABELS[photo.layerType]}
               color={LAYER_TYPE_COLORS[photo.layerType]}
               size="small"
+              sx={{
+                fontSize: fontSize.xs,
+                height: 22,
+                fontWeight: 600,
+                letterSpacing: '0.5px',
+              }}
             />
             {photo.cached && (
-              <Tooltip title="TIFF cached in R2">
+              <Tooltip title="TIFF cached in R2 - faster loading" arrow placement="top">
                 <Chip
-                  icon={<CheckCircle />}
+                  icon={<CheckCircle sx={{ fontSize: `${iconSize.sm}px !important` }} />}
                   label="Cached"
                   color="success"
                   size="small"
                   variant="outlined"
+                  sx={{
+                    fontSize: fontSize.xs,
+                    height: 22,
+                    fontWeight: 600,
+                  }}
                 />
               </Tooltip>
             )}
           </Box>
 
-          <Typography variant="subtitle2" component="div" sx={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.3 }}>
-            {photo.IMAGE_NAME}
-          </Typography>
+          {/* Metadata with improved hierarchy */}
+          <Box>
+            {/* Date - most prominent */}
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                fontSize: fontSize.md,
+                fontWeight: 600,
+                lineHeight: 1.4,
+                mb: 0.5,
+                color: 'text.primary',
+              }}
+            >
+              {photo.dateFormatted || "Unknown Date"}
+            </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
-            <strong>Date:</strong> {photo.dateFormatted || "Unknown"}
-          </Typography>
+            {/* Scale - secondary */}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontSize: fontSize.sm,
+                fontWeight: 500,
+                mb: 0.5,
+              }}
+            >
+              {photo.scaleFormatted || "N/A"}
+            </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
-            <strong>Scale:</strong> {photo.scaleFormatted || "N/A"}
-          </Typography>
+            {/* Image name - tertiary, subdued */}
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                fontSize: fontSize.xs,
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                opacity: 0.8,
+              }}
+              title={photo.IMAGE_NAME}
+            >
+              {photo.IMAGE_NAME}
+            </Typography>
+          </Box>
         </Stack>
       </CardContent>
 
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Tooltip title="View image">
+          <Tooltip title="View full resolution image" arrow placement="top">
             <IconButton
               size="small"
               color="primary"
               onClick={handleViewImage}
               disabled={!photo.DOWNLOAD_LINK}
+              sx={{
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                },
+              }}
             >
-              <Visibility fontSize="small" />
+              <Visibility sx={{ fontSize: iconSize.md }} />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Download original TIFF">
+          <Tooltip title="Download original TIFF file" arrow placement="top">
             <IconButton
               size="small"
               color="primary"
               onClick={handleDownloadTiff}
               disabled={!photo.DOWNLOAD_LINK}
+              sx={{
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                },
+              }}
             >
-              <GetApp fontSize="small" />
+              <GetApp sx={{ fontSize: iconSize.md }} />
             </IconButton>
           </Tooltip>
 
           {onShowOnMap && photo.geometry && (
-            <Tooltip title="Show on map">
-              <IconButton size="small" color="primary" onClick={handleShowOnMap}>
-                <MapIcon fontSize="small" />
+            <Tooltip title="Show on map" arrow placement="top">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={handleShowOnMap}
+                sx={{
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                <MapIcon sx={{ fontSize: iconSize.md }} />
               </IconButton>
             </Tooltip>
           )}
         </Box>
 
-        <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"}>
-          <IconButton size="small" color="error" onClick={handleFavorite}>
-            {isFavorite ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+        <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={handleFavorite}
+            sx={{
+              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              '&:hover': {
+                transform: 'scale(1.15) rotate(5deg)',
+              },
+            }}
+          >
+            {isFavorite ? (
+              <Favorite sx={{ fontSize: iconSize.md }} />
+            ) : (
+              <FavoriteBorder sx={{ fontSize: iconSize.md }} />
+            )}
           </IconButton>
         </Tooltip>
       </CardActions>

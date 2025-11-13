@@ -53,13 +53,23 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
         selectedScales: availableScales,
       });
     }
-  }, [availableScales, filters, onFiltersChange]);
+  }, [availableScales.length]); // Only run when availableScales changes
 
   const formatScale = (scale: number): string => {
     if (scale >= 1000) {
       return `1:${(scale / 1000).toFixed(0)}K`;
     }
     return `1:${scale}`;
+  };
+
+  const handleLayerTypeChange = (type: "aerial" | "ortho" | "digital") => {
+    onFiltersChange({
+      ...filters,
+      layerTypes: {
+        ...filters.layerTypes,
+        [type]: !filters.layerTypes[type],
+      },
+    });
   };
 
   const handleScaleToggle = (scale: number) => {
@@ -248,7 +258,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  mb: 1,
+                  mb: 0.25,
                   display: "flex",
                   alignItems: "center",
                   gap: 0.5,

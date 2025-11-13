@@ -3,7 +3,6 @@ import apiClient from "../lib/apiClient";
 import type {
   LocationSearchParams,
   BoundsSearchParams,
-  SearchLocationResponse,
   LayersResponse,
 } from "../types/api";
 

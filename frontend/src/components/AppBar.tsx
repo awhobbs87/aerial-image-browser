@@ -1,4 +1,4 @@
-import { AppBar as MuiAppBar, Toolbar, Typography, IconButton, Box, Tooltip } from "@mui/material";
+import { AppBar as MuiAppBar, Toolbar, Typography, IconButton, Tooltip } from "@mui/material";
 import {
   Brightness4,
   Brightness7,
@@ -7,12 +7,11 @@ import {
 } from "@mui/icons-material";
 
 interface AppBarProps {
-  darkMode: boolean;
   themeMode: "light" | "dark" | "system";
   onToggleDarkMode: () => void;
 }
 
-export default function AppBar({ darkMode, themeMode, onToggleDarkMode }: AppBarProps) {
+export default function AppBar({ themeMode, onToggleDarkMode }: AppBarProps) {
   const getThemeIcon = () => {
     if (themeMode === "system") return <BrightnessAuto />;
     if (themeMode === "dark") return <Brightness4 />;

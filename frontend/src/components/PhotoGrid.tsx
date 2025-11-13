@@ -16,10 +16,8 @@ import {
 } from "@mui/material";
 import {
   Image as ImageIcon,
-  SortByAlpha,
   ExpandMore,
   ViewModule,
-  ViewList,
 } from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
 import type { EnhancedPhoto } from "../types/api";

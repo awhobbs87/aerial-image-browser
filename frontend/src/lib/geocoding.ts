@@ -27,6 +27,15 @@ export interface SearchSuggestion {
   importance: number;
 }
 
+interface NominatimResult {
+  place_id: string;
+  display_name: string;
+  lat: string;
+  lon: string;
+  type: string;
+  importance: number;
+}
+
 class GeocodingService {
   private baseUrl = "https://nominatim.openstreetmap.org";
   private userAgent = "TasmaniaAerialPhotoBrowser/1.0";
@@ -69,14 +78,14 @@ class GeocodingService {
         throw new Error("Geocoding request failed");
       }
 
-      const data = await response.json();
+      const data: NominatimResult[] = await response.json();
 
       console.log(`Geocoding search for "${query}": found ${data.length} results`);
 
       // Filter and prioritize Tasmania results
       // Use slightly wider bounds to catch edge cases
       const filtered = data
-        .filter((item: any) => {
+        .filter((item) => {
           const lat = parseFloat(item.lat);
           const lon = parseFloat(item.lon);
           // Wider bounds to catch more results (Tasmania + buffer)
@@ -90,7 +99,7 @@ class GeocodingService {
 
       console.log(`After filtering: ${filtered.length} results in Tasmania`);
 
-      return filtered.map((item: any) => ({
+      return filtered.map((item) => ({
         placeId: item.place_id,
         displayName: item.display_name,
         lat: parseFloat(item.lat),
