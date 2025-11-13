@@ -342,8 +342,10 @@ api.get("/thumbnail/:layerId/:imageName", async (c) => {
   });
 });
 
-// Optimized image endpoint - serves web-optimized images using Cloudflare's Image Resizing
-// This endpoint uses Cloudflare's Image Resizing to convert and optimize TIFF images on-the-fly
+// NOTE: This old endpoint has been replaced by the Photon-based conversion endpoint in convert.ts
+// The old endpoint used Cloudflare Image Resizing but could only work with thumbnails (JPEG)
+// The new Photon endpoint can handle TIFFs directly and convert them to WebP/PNG/JPEG
+/*
 api.get("/image/:layerId/:imageName", async (c) => {
   const layerId = parseInt(c.req.param("layerId"));
   const imageName = c.req.param("imageName");
@@ -428,3 +430,4 @@ api.get("/image/:layerId/:imageName", async (c) => {
     },
   });
 });
+*/

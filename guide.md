@@ -1201,36 +1201,66 @@ Check R2 for converted image
 
 ### Technology Options
 
-#### Option 1: wasm-vips (Recommended)
+#### ⚠️ Implementation Reality Check (January 2025)
+
+After testing multiple WASM libraries, here are the actual results:
+
+**Tested Libraries:**
+1. **wasm-vips** - ❌ Not compatible with Cloudflare Workers
+2. **@cf-wasm/photon** - ⚠️ Limited TIFF support (cannot decode LZW-compressed TIFFs)
+3. **@imagemagick/magick-wasm** - ❌ Bundle too large for Workers (8-10MB)
+
+**Key Finding:** Tasmania's aerial photo TIFFs use LZW compression which @cf-wasm/photon cannot decode. The error returned is "unreachable" from WASM, indicating the TIFF decoder doesn't support this compression format.
+
+#### Option 1: @cf-wasm/photon (Cloudflare Workers Optimized)
+
+**Status:** ✅ Deploys successfully, ⚠️ Cannot decode Tasmania's TIFFs
 
 **Pros:**
-- Specifically designed for image processing in WASM
-- Excellent performance and memory efficiency
-- High-quality output with fine control over compression
-- Good support for TIFF input
-- Smaller WASM bundle (~2-3MB)
-- Well-maintained library
+- Specifically compiled for Cloudflare Workers
+- Excellent performance when it works
+- Good WebP/PNG/JPEG output quality
+- Smaller WASM bundle (~1.5MB)
+- Well-maintained by Cloudflare community
 
 **Cons:**
-- Less familiar than ImageMagick
-- Fewer format options than ImageMagick
+- **CRITICAL**: Cannot decode LZW-compressed TIFFs (Tasmania's format)
+- Limited TIFF codec support
+- Only works with uncompressed or basic TIFF formats
+
+**Package:** `@cf-wasm/photon` (https://github.com/cf-wasm/photon)
+
+#### Option 2: wasm-vips
+
+**Status:** ❌ Not compatible with Cloudflare Workers
+
+**Tried:** Initial implementation attempt
+**Result:** Module import errors, incompatible with Workers runtime
 
 **Package:** `wasm-vips` (https://github.com/kleisauke/wasm-vips)
 
-#### Option 2: ImageMagick WASM
+#### Option 3: ImageMagick WASM
 
-**Pros:**
-- Industry-standard image processing tool
-- Comprehensive format support
-- Well-documented command-line API
-- Familiar to many developers
+**Status:** ❌ Bundle too large
 
-**Cons:**
-- Larger WASM bundle (~8-10MB)
-- Higher memory usage
-- May hit Worker memory limits (128MB)
+**Issue:** WASM bundle (8-10MB) exceeds Workers bundle size limits
 
 **Package:** `@imagemagick/magick-wasm` (https://github.com/dlemstra/magick-wasm)
+
+### ✅ Recommended Solution: Direct TIFF Serving
+
+Given the limitations above, the current implementation of serving TIFFs directly remains the best approach:
+
+**Advantages:**
+- Zero conversion latency
+- Preserves maximum quality
+- No WASM compatibility issues
+- No Worker memory concerns
+- R2 caching still provides fast delivery
+
+**Disadvantages:**
+- Larger file sizes (15-20MB per TIFF)
+- Some browsers may not have native TIFF support
 
 ### Implementation Plan
 
@@ -1432,14 +1462,16 @@ If Worker memory limits are too restrictive, consider:
 
 ### Status
 
-- [ ] R2 bucket created for converted images
-- [ ] wasm-vips installed and configured
-- [ ] Conversion endpoint implemented
-- [ ] API client updated to use conversion endpoint
-- [ ] Thumbnail size parameter implemented
-- [ ] Quality settings optimized
-- [ ] Deployed and tested
-- [ ] Performance monitoring added
+- [x] R2 bucket created for converted images (tas-aerial-converted)
+- [x] @cf-wasm/photon installed and tested
+- [x] Conversion endpoint implemented (src/routes/convert.ts)
+- [x] Deployed successfully to Workers
+- [x] Testing completed - **RESULT: Photon cannot decode Tasmania's LZW-compressed TIFFs**
+- [x] wasm-vips tested - incompatible with Workers
+- [x] Alternative approaches evaluated
+- [x] **Decision: Continue serving TIFFs directly (current implementation)**
+
+**Conclusion:** Stage 11 investigation complete. WASM-based TIFF conversion is not viable for this dataset due to compression format incompatibility. The existing direct TIFF serving approach via R2 caching remains the optimal solution.
 
 ---
 

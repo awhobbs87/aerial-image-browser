@@ -1,18 +1,8 @@
 import { Hono } from "hono";
-import Vips from "wasm-vips";
+import { PhotonImage, SamplingFilter, resize } from "@cf-wasm/photon/workerd";
 import type { Bindings } from "../types";
 
 export const convert = new Hono<{ Bindings: Bindings }>();
-
-// Initialize vips (lazy load to reduce cold start impact)
-let vips: any = null;
-
-async function getVips() {
-  if (!vips) {
-    vips = await Vips();
-  }
-  return vips;
-}
 
 /**
  * Image conversion endpoint
@@ -46,9 +36,14 @@ convert.get("/image/:layerId/:imageName", async (c) => {
     // Check R2 cache first
     const cached = await c.env.CONVERTED_IMAGES.get(r2Key);
     if (cached) {
+      const contentType =
+        format === "webp" ? "image/webp" :
+        format === "png" ? "image/png" :
+        "image/jpeg";
+
       return new Response(cached.body, {
         headers: {
-          "Content-Type": format === "webp" ? "image/webp" : "image/png",
+          "Content-Type": contentType,
           "Cache-Control": "public, max-age=31536000, immutable",
           "X-Cache": "HIT",
           "Access-Control-Allow-Origin": "*",
@@ -57,7 +52,9 @@ convert.get("/image/:layerId/:imageName", async (c) => {
     }
 
     // Check if TIFF exists in R2 first
-    const tiffKey = `layer${layerId}/${imageName}`;
+    // R2Manager uses format: tiff/{layerId}/{imageName}.tif
+    const cleanImageName = imageName.replace(/\.tif$/i, "");
+    const tiffKey = `tiff/${layerId}/${cleanImageName}.tif`;
     const tiffFromR2 = await c.env.TIFF_STORAGE.get(tiffKey);
 
     let tiffBuffer: ArrayBuffer;
@@ -75,38 +72,88 @@ convert.get("/image/:layerId/:imageName", async (c) => {
       }, 404);
     }
 
-    // Convert using wasm-vips
-    const vipsInstance = await getVips();
+    // Convert using Photon
+    console.log(`Converting TIFF: ${imageName}, size: ${tiffBuffer.byteLength} bytes`);
 
-    // Load image from buffer
-    const image = vipsInstance.Image.newFromBuffer(new Uint8Array(tiffBuffer));
+    let inputImage: typeof PhotonImage.prototype;
+    try {
+      inputImage = PhotonImage.new_from_byteslice(new Uint8Array(tiffBuffer));
+      console.log(`Image loaded: ${inputImage.get_width()}x${inputImage.get_height()}`);
+    } catch (error) {
+      console.error("Failed to load TIFF with Photon:", error);
+      return c.json({
+        error: "Photon cannot decode this TIFF format",
+        details: error instanceof Error ? error.message : "Unknown error",
+        hint: "This TIFF may use an unsupported compression or color space"
+      }, 500);
+    }
 
-    let processedImage = image;
+    let outputImage: typeof PhotonImage.prototype;
 
     // Resize if thumbnail requested
     if (size === "thumbnail") {
-      // Resize to 400px width, maintain aspect ratio
-      const scale = 400 / image.width;
-      processedImage = image.resize(scale);
+      try {
+        // Resize to 400px width, maintain aspect ratio
+        const originalWidth = inputImage.get_width();
+        const originalHeight = inputImage.get_height();
+        const targetWidth = 400;
+        const targetHeight = Math.round((targetWidth / originalWidth) * originalHeight);
+
+        console.log(`Resizing from ${originalWidth}x${originalHeight} to ${targetWidth}x${targetHeight}`);
+
+        outputImage = resize(
+          inputImage,
+          targetWidth,
+          targetHeight,
+          SamplingFilter.Lanczos3  // High quality resizing
+        );
+
+        inputImage.free(); // Free original image memory
+      } catch (error) {
+        inputImage.free();
+        console.error("Failed to resize image:", error);
+        return c.json({
+          error: "Failed to resize image",
+          details: error instanceof Error ? error.message : "Unknown error"
+        }, 500);
+      }
+    } else {
+      outputImage = inputImage;
     }
 
     // Convert to target format
     let outputBuffer: Uint8Array;
-    if (format === "webp") {
-      outputBuffer = processedImage.webpsaveBuffer({
-        Q: quality,
-        effort: 6  // Balance between quality and speed
-      });
-    } else {
-      outputBuffer = processedImage.pngsaveBuffer({
-        compression: 6  // Balance between size and speed
-      });
+    let contentType: string;
+
+    try {
+      if (format === "webp") {
+        outputBuffer = outputImage.get_bytes_webp();
+        contentType = "image/webp";
+      } else if (format === "png") {
+        outputBuffer = outputImage.get_bytes();
+        contentType = "image/png";
+      } else {
+        // JPEG fallback
+        outputBuffer = outputImage.get_bytes_jpeg(quality);
+        contentType = "image/jpeg";
+      }
+
+      console.log(`Converted to ${format}: ${outputBuffer.byteLength} bytes`);
+    } catch (error) {
+      outputImage.free();
+      console.error("Failed to encode output:", error);
+      return c.json({
+        error: "Failed to encode output image",
+        details: error instanceof Error ? error.message : "Unknown error"
+      }, 500);
     }
+
+    outputImage.free(); // Free processed image memory
 
     // Store in R2
     await c.env.CONVERTED_IMAGES.put(r2Key, outputBuffer, {
       httpMetadata: {
-        contentType: format === "webp" ? "image/webp" : "image/png",
+        contentType,
         cacheControl: "public, max-age=31536000, immutable",
       },
     });
@@ -114,7 +161,7 @@ convert.get("/image/:layerId/:imageName", async (c) => {
     // Return converted image
     return new Response(outputBuffer, {
       headers: {
-        "Content-Type": format === "webp" ? "image/webp" : "image/png",
+        "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
         "X-Cache": "MISS",
         "X-Conversion-Time": `${Date.now()}ms`,
