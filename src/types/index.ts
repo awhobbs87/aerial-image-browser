@@ -3,7 +3,6 @@ export interface Bindings {
   PHOTOS_DB: D1Database;
   TIFF_STORAGE: R2Bucket;
   THUMBNAIL_STORAGE: R2Bucket;
-  CONVERTED_IMAGES: R2Bucket;
   API_BASE_URL: string;
 }
 

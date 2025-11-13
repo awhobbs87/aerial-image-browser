@@ -20,9 +20,5 @@ bucket_name = "tas-aerial-browser-tiffs"
 binding = "THUMBNAIL_STORAGE"
 bucket_name = "tas-aerial-browser-thumbnails"
 
-[[r2_buckets]]
-binding = "CONVERTED_IMAGES"
-bucket_name = "tas-aerial-converted"
-
 [vars]
 API_BASE_URL = "https://services.thelist.tas.gov.au/arcgis/rest/services/AerialPhotoViewer/AerialPhoto_TimeV2/MapServer"
