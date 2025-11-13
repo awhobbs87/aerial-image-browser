@@ -1,0 +1,41 @@
+{
+  "name": "Tasmania Aerial Photo Explorer",
+  "short_name": "TAS Aerial",
+  "description": "Explore historical and recent aerial photography from across Tasmania",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "navigation"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Search Hobart",
+      "short_name": "Hobart",
+      "description": "Search aerial photos in Hobart area",
+      "url": "/?lat=-42.8821&lon=147.3272",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

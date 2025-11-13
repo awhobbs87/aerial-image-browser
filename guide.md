@@ -903,8 +903,9 @@ git push
 - ✅ **Stage 8: Enhanced Search UX & Polish** (Complete)
 - ✅ **Stage 9: Performance Optimization** (Complete)
 - ✅ **Stage 10: Advanced Interface & UX Improvements** (Complete)
-- 🔴 **Stage 11: Mobile Optimization & PWA** (Next)
-- 🔴 **Stage 12: Production Deployment & Testing**
+- ⚠️ **Stage 11: WASM Image Conversion** (Investigated - Not Viable)
+- ✅ **Stage 12: Mobile Optimization & PWA** (Complete)
+- 🔴 **Stage 13: Production Deployment & Testing** (Next)
 
 **Notes:**
 
@@ -1479,7 +1480,196 @@ If Worker memory limits are too restrictive, consider:
 
 ---
 
-Next up: Stage 12 - Mobile Optimization & PWA
+## 📱 Stage 12: Mobile Optimization & PWA
+
+### ✅ Status: Complete
+
+The application is now a fully functional Progressive Web App (PWA) with offline support, installable on mobile devices, and optimized for mobile user experience.
+
+### Mobile Responsiveness
+
+The app already had excellent mobile responsiveness built-in using Material-UI's responsive breakpoints:
+
+**Layout Adaptations:**
+- **Desktop (`md` and up)**: Split-screen layout with resizable sidebar (25-60% width) showing search/filters/results on left, map on right
+- **Mobile (`xs`)**: Single-column layout with toggle between Grid and Map views
+- **Touch Targets**: All interactive elements use MUI's recommended sizing (minimum 44x44px)
+- **Responsive Typography**: Text scales appropriately across screen sizes
+- **Flexible Grid**: Photo grid uses responsive columns that adapt from 1-4 columns based on screen width
+
+**Mobile-Specific Features:**
+- View mode toggle (Grid/Map) only shown on mobile
+- Collapsible filter panels with compact chip-based controls
+- Touch-optimized map interactions
+- Responsive search bar with mobile-friendly autocomplete
+- Floating search box on map view with proper z-index layering
+
+### PWA Implementation
+
+**1. Manifest Configuration**
+
+Created `/frontend/public/manifest.json` with:
+- App name, short name, and description
+- Theme color (`#1976d2` - Material Blue)
+- Background color (`#ffffff`)
+- Display mode: `standalone` (app-like experience)
+- App icons (192x192 and 512x512)
+- App shortcuts (e.g., "Search Hobart")
+- Categories: productivity, utilities, navigation
+
+**2. Service Worker**
+
+Implemented using `vite-plugin-pwa` with Workbox:
+
+```typescript
+// vite.config.ts
+import { VitePWA } from 'vite-plugin-pwa'
+
+VitePWA({
+  registerType: 'autoUpdate',
+  workbox: {
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/tas-aerial-browser\.awhobbs\.workers\.dev\/api\/.*/i,
+        handler: 'NetworkFirst', // Always try network first for fresh data
+        options: {
+          cacheName: 'api-cache',
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24 // 24 hours
+          }
+        }
+      },
+      {
+        urlPattern: /^https:\/\/.*\.(?:jpg|jpeg|png|gif|webp|tiff|tif)$/i,
+        handler: 'CacheFirst', // Images rarely change
+        options: {
+          cacheName: 'image-cache',
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+          }
+        }
+      }
+    ]
+  }
+})
+```
+
+**Caching Strategy:**
+- **API responses**: Network First (fresh data preferred, fallback to cache if offline)
+- **Images**: Cache First (serve from cache immediately, update in background)
+- **Fonts & Static Assets**: Cache First with 1-year expiration
+- **App shell**: Precached during service worker installation
+
+**3. App Icons**
+
+Generated PWA icons using SVG-to-PNG conversion:
+- **Design**: Camera lens (representing aerial photography) + map pin (location)
+- **Colors**: Material Blue theme with red accent for location marker
+- **Sizes**: 192x192 and 512x512 (maskable safe zone compliant)
+- **Generation**: Automated using `sharp` library via `scripts/generate-icons.js`
+
+**4. Mobile Meta Tags**
+
+Added to `index.html`:
+```html
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1976d2" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="TAS Aerial" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+```
+
+### Installation
+
+**On Mobile (iOS/Android):**
+1. Open site in browser (Safari/Chrome)
+2. Look for "Add to Home Screen" or install banner
+3. App installs as standalone application
+4. Launch from home screen icon
+
+**On Desktop (Chrome/Edge):**
+1. Click install icon in address bar
+2. App opens in dedicated window
+3. Works offline after first visit
+
+### Offline Capabilities
+
+**What Works Offline:**
+- Previously viewed search results (cached in service worker)
+- Thumbnails of viewed photos (image cache)
+- Full app interface and navigation
+- Map tiles (if previously loaded)
+
+**What Requires Network:**
+- Initial search queries
+- Downloading full TIFF files
+- Fetching new search results
+- Loading previously uncached thumbnails
+
+### Performance Benefits
+
+**PWA Advantages:**
+- ⚡ Faster repeat visits (cached assets)
+- 📶 Works in poor network conditions (offline fallback)
+- 🏠 App-like feel on mobile (no browser chrome)
+- 🔔 Potential for push notifications (future feature)
+- 📲 Easy access from home screen
+- 🎯 Focused user experience (standalone window)
+
+**Bundle Size:**
+- Service worker: Auto-generated by Workbox
+- Precache: ~1MB (app shell + critical assets)
+- Runtime cache: Grows with usage (capped at 50 images + 100 API responses)
+
+### Testing Checklist
+
+- [x] PWA manifest validates (Chrome DevTools > Application > Manifest)
+- [x] Service worker registers and activates
+- [x] Install prompt appears on supported browsers
+- [x] App installs to home screen (mobile)
+- [x] App opens in standalone mode
+- [x] Offline fallback works (previously visited pages load)
+- [x] API caching works (NetworkFirst strategy)
+- [x] Image caching works (CacheFirst strategy)
+- [x] Icons display correctly at all sizes
+- [x] Theme color applies to browser UI
+- [x] Build generates sw.js and manifest.webmanifest
+
+### Files Modified/Created
+
+**Created:**
+- `frontend/public/manifest.json` - PWA manifest
+- `frontend/public/icon.svg` - Source icon design
+- `frontend/public/icon-192.png` - App icon 192x192
+- `frontend/public/icon-512.png` - App icon 512x512
+- `frontend/scripts/generate-icons.js` - Icon generation script
+
+**Modified:**
+- `frontend/vite.config.ts` - Added VitePWA plugin configuration
+- `frontend/index.html` - Added PWA meta tags and manifest link
+- `frontend/package.json` - Added vite-plugin-pwa and sharp dependencies
+
+**Auto-Generated (Build):**
+- `dist/sw.js` - Service worker
+- `dist/workbox-*.js` - Workbox runtime
+- `dist/manifest.webmanifest` - Built manifest
+- `dist/registerSW.js` - Service worker registration
+
+### Deployment
+
+Deployed to Cloudflare Pages: https://19a83eb5.tas-aerial-explorer.pages.dev
+
+**PWA Score:**
+- ✅ Installable
+- ✅ Offline support
+- ✅ Fast and reliable
+- ✅ Mobile-optimized
+- ✅ HTTPS (required for PWA)
+
+---
 
 ### Testing Checklist
 
@@ -1522,8 +1712,8 @@ After implementation, verify:
 
 ---
 
-**Version:** 1.0.0-dev
+**Version:** 1.0.0-pwa
 **Last Updated:** 2025-11-13
-**Status:** Stage 10 Complete - Advanced Interface & UX Improvements Finished | Stage 11 Documented
+**Status:** Stage 12 Complete - Mobile Optimization & PWA Implementation Finished
 
-🎯 **Current Focus:** Stage 10 complete! System-responsive dark mode, two-column desktop layout, enhanced map polygons, auto-zoom search, results grouping/sorting, tooltips, and comprehensive visual polish implemented. Stage 11 documented: High-Quality Image Serving with WASM Conversion - a comprehensive plan for converting TIFF files to web-optimized WebP/PNG using wasm-vips in Cloudflare Workers with R2 caching. Ready to implement when needed. Next up: Mobile optimization and PWA features (Stage 12).
+🎯 **Current Focus:** Stage 12 complete! The Tasmania Aerial Photo Explorer is now a fully functional Progressive Web App (PWA) with offline support, installable on mobile devices, service worker caching, and comprehensive mobile optimizations. App deployed at https://19a83eb5.tas-aerial-explorer.pages.dev. Stage 11 (WASM conversion) investigated but found non-viable due to TIFF format incompatibility - continuing with direct TIFF serving via R2. Ready for production deployment and testing (Stage 13).

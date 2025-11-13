@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Right-click each canvas and "Save image as..."</p>
+    
+    <h2>192x192</h2>
+    <canvas id="icon192" width="192" height="192"></canvas>
+    
+    <h2>512x512</h2>
+    <canvas id="icon512" width="512" height="512"></canvas>
+    
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const center = size / 2;
+            
+            // Background
+            ctx.fillStyle = '#1976d2';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Camera lens outer ring
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(center, center * 0.78, size * 0.234, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Camera lens
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(center, center * 0.78, size * 0.176, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#1565c0';
+            ctx.beginPath();
+            ctx.arc(center, center * 0.78, size * 0.137, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#0d47a1';
+            ctx.beginPath();
+            ctx.arc(center, center * 0.78, size * 0.078, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Lens highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(center - size * 0.031, center * 0.72, size * 0.039, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Map location marker
+            ctx.save();
+            ctx.translate(center, center * 1.33);
+            
+            // Marker pin
+            ctx.fillStyle = '#ff5722';
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.117);
+            ctx.bezierCurveTo(-size * 0.039, -size * 0.117, -size * 0.068, -size * 0.088, -size * 0.068, -size * 0.049);
+            ctx.bezierCurveTo(-size * 0.068, -size * 0.01, 0, size * 0.039, 0, size * 0.117);
+            ctx.bezierCurveTo(0, size * 0.039, size * 0.068, -size * 0.01, size * 0.068, -size * 0.049);
+            ctx.bezierCurveTo(size * 0.068, -size * 0.088, size * 0.039, -size * 0.117, 0, -size * 0.117);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner circle
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.049, size * 0.029, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        drawIcon(document.getElementById('icon192'));
+        drawIcon(document.getElementById('icon512'));
+    </script>
+</body>
+</html>
