@@ -5,6 +5,7 @@ import { shadows, shadowsDark } from "./theme/tokens";
 const commonTheme = {
   typography: {
     fontFamily: [
+      "Inter",
       "-apple-system",
       "BlinkMacSystemFont",
       '"Segoe UI"',
@@ -41,9 +42,11 @@ const commonTheme = {
       lineHeight: 1.4,
     },
     body1: {
-      lineHeight: 1.5,
+      fontSize: "1.1rem",
+      lineHeight: 1.6,
     },
     body2: {
+      fontSize: "1rem",
       lineHeight: 1.5,
     },
     caption: {
@@ -98,7 +101,7 @@ const commonTheme = {
             transform: "translateY(-1px)",
           },
           "&:focus-visible": {
-            outline: "3px solid #6366f1",
+            outline: "3px solid #004d40",
             outlineOffset: "2px",
           },
         },
@@ -114,7 +117,7 @@ const commonTheme = {
             transform: "scale(1.05)",
           },
           "&:focus-visible": {
-            outline: "2px solid #6366f1",
+            outline: "2px solid #004d40",
             outlineOffset: "2px",
           },
         },
@@ -125,7 +128,7 @@ const commonTheme = {
         root: {
           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:focus-visible": {
-            outline: "2px solid #6366f1",
+            outline: "2px solid #004d40",
             outlineOffset: "2px",
           },
         },
@@ -172,7 +175,7 @@ const commonTheme = {
       styleOverrides: {
         root: {
           "&:focus-visible": {
-            outline: "2px solid #6366f1",
+            outline: "2px solid #004d40",
             outlineOffset: "2px",
           },
         },
@@ -187,15 +190,15 @@ export const lightTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#6366f1",
-      light: "#818cf8",
-      dark: "#4f46e5",
+      main: "#004d40", // Deep, earthy green
+      light: "#39796b",
+      dark: "#00251a",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#8b5cf6",
-      light: "#a78bfa",
-      dark: "#7c3aed",
+      main: "#455a64", // Cool, slate blue
+      light: "#718792",
+      dark: "#1c313a",
       contrastText: "#ffffff",
     },
     success: {
@@ -209,7 +212,7 @@ export const lightTheme = createTheme({
       dark: "#dc2626",
     },
     warning: {
-      main: "#f59e0b",
+      main: "#f59e0b", // Warm, golden yellow
       light: "#fbbf24",
       dark: "#d97706",
     },
@@ -219,14 +222,14 @@ export const lightTheme = createTheme({
       dark: "#2563eb",
     },
     background: {
-      default: "#f8fafc",
+      default: "#f5f5f5", // Warm gray
       paper: "#ffffff",
     },
     text: {
-      primary: "#1e293b",
-      secondary: "#64748b",
+      primary: "#212121",
+      secondary: "#757575",
     },
-    divider: "rgba(0, 0, 0, 0.08)",
+    divider: "rgba(0, 0, 0, 0.12)",
   },
   shadows: [
     "none",
@@ -264,15 +267,15 @@ export const darkTheme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#818cf8",
-      light: "#a5b4fc",
-      dark: "#6366f1",
+      main: "#39796b", // Lighter green for dark mode
+      light: "#6ab7a7",
+      dark: "#004d40",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#a78bfa",
-      light: "#c4b5fd",
-      dark: "#8b5cf6",
+      main: "#718792", // Lighter blue for dark mode
+      light: "#a1b8c1",
+      dark: "#455a64",
       contrastText: "#ffffff",
     },
     success: {
@@ -286,7 +289,7 @@ export const darkTheme = createTheme({
       dark: "#ef4444",
     },
     warning: {
-      main: "#fbbf24",
+      main: "#fbbf24", // Same yellow for dark mode
       light: "#fcd34d",
       dark: "#f59e0b",
     },
@@ -296,14 +299,14 @@ export const darkTheme = createTheme({
       dark: "#3b82f6",
     },
     background: {
-      default: "#0f172a",
-      paper: "#1e293b",
+      default: "#121212", // Dark gray
+      paper: "#1e1e1e",
     },
     text: {
-      primary: "#f1f5f9",
-      secondary: "#cbd5e1",
+      primary: "#e0e0e0",
+      secondary: "#bdbdbd",
     },
-    divider: "rgba(255, 255, 255, 0.1)",
+    divider: "rgba(255, 255, 255, 0.12)",
   },
   shadows: [
     "none",
