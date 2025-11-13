@@ -341,7 +341,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                   borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.15)",
                   "&:hover": {
                     borderColor: "primary.main",
-                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.1)" : "rgba(99, 102, 241, 0.05)",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(8, 145, 178, 0.1)" : "rgba(8, 145, 178, 0.05)",
                   },
                 }}
               />
@@ -363,12 +363,12 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
               textTransform: "none",
               fontWeight: 600,
               background: (theme) => theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
-                : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                ? "linear-gradient(135deg, #0891b2 0%, #10b981 100%)"
+                : "linear-gradient(135deg, #0891b2 0%, #10b981 100%)",
               "&:hover": {
                 background: (theme) => theme.palette.mode === "dark"
-                  ? "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
-                  : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                  ? "linear-gradient(135deg, #0e7490 0%, #059669 100%)"
+                  : "linear-gradient(135deg, #0e7490 0%, #059669 100%)",
               },
             }}
           >

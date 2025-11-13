@@ -12,6 +12,7 @@ import {
   useMediaQuery,
   IconButton,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import { GridView, Map as MapIcon, ExpandLess, Search as SearchIcon } from "@mui/icons-material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -345,21 +346,153 @@ function AppContent() {
                 <Box
                   sx={{
                     textAlign: "center",
-                    py: 8,
-                    px: 2,
+                    py: 6,
+                    px: 3,
                   }}
                 >
-                  <Typography variant="h4" gutterBottom color="text.secondary">
-                    Welcome to Tasmania Aerial Photos
+                  {/* Hero Icon */}
+                  <Box
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      mx: "auto",
+                      mb: 3,
+                      borderRadius: "50%",
+                      background: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "linear-gradient(135deg, rgba(0, 77, 64, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)"
+                          : "linear-gradient(135deg, rgba(0, 77, 64, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: (theme) =>
+                        theme.palette.mode === "dark" ? "2px solid rgba(0, 77, 64, 0.3)" : "2px solid rgba(0, 77, 64, 0.2)",
+                    }}
+                  >
+                    <SearchIcon sx={{ fontSize: 60, color: "primary.main" }} />
+                  </Box>
+
+                  {/* Welcome Text */}
+                  <Typography
+                    variant="h4"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 700,
+                      background: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "linear-gradient(135deg, #39796b 0%, #10b981 100%)"
+                          : "linear-gradient(135deg, #004d40 0%, #10b981 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                      mb: 2,
+                    }}
+                  >
+                    Explore Tasmania's Aerial History
                   </Typography>
+
                   <Typography
                     variant="body1"
                     color="text.secondary"
-                    sx={{ maxWidth: 600, mx: "auto" }}
+                    sx={{ maxWidth: 600, mx: "auto", mb: 4, lineHeight: 1.7 }}
                   >
-                    Search for historical and recent aerial photography from across Tasmania. Enter
-                    coordinates or select a location above to get started.
+                    Discover decades of aerial photography from across Tasmania. Search by location, filter by
+                    date and scale, and explore the landscape through time.
                   </Typography>
+
+                  {/* Quick Start Cards */}
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                      gap: 2,
+                      maxWidth: 800,
+                      mx: "auto",
+                      mt: 4,
+                    }}
+                  >
+                    {[
+                      {
+                        icon: <SearchIcon sx={{ fontSize: 32 }} />,
+                        title: "Search Any Location",
+                        description: "Enter coordinates or search by place name",
+                      },
+                      {
+                        icon: <MapIcon sx={{ fontSize: 32 }} />,
+                        title: "Explore on Map",
+                        description: "Click anywhere on the map to discover photos",
+                      },
+                      {
+                        icon: <GridView sx={{ fontSize: 32 }} />,
+                        title: "Filter & Sort",
+                        description: "Refine results by date, scale, and image type",
+                      },
+                    ].map((feature, index) => (
+                      <Paper
+                        key={index}
+                        elevation={2}
+                        sx={{
+                          p: 3,
+                          textAlign: "center",
+                          transition: "all 0.3s ease",
+                          cursor: "default",
+                          borderRadius: 3,
+                          border: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "1px solid rgba(255, 255, 255, 0.1)"
+                              : "1px solid rgba(0, 0, 0, 0.08)",
+                          "&:hover": {
+                            transform: "translateY(-4px)",
+                            boxShadow: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "0 12px 24px rgba(0, 0, 0, 0.5)"
+                                : "0 12px 24px rgba(0, 77, 64, 0.15)",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            color: "primary.main",
+                            mb: 1.5,
+                          }}
+                        >
+                          {feature.icon}
+                        </Box>
+                        <Typography variant="h6" gutterBottom fontWeight={600} fontSize="0.95rem">
+                          {feature.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" fontSize="0.85rem">
+                          {feature.description}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+
+                  {/* Popular locations hint */}
+                  <Box sx={{ mt: 5 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                      Popular locations to start:
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
+                      {["Hobart", "Launceston", "Devonport", "Burnie"].map((city) => (
+                        <Chip
+                          key={city}
+                          label={city}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            fontSize: "0.75rem",
+                            cursor: "pointer",
+                            "&:hover": {
+                              borderColor: "primary.main",
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                            },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
                 </Box>
               )}
             </Container>

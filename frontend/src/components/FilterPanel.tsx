@@ -20,6 +20,9 @@ import {
   PhotoSizeSelectActual,
   Image,
   HelpOutline,
+  History as HistoryIcon,
+  TrendingUp,
+  ZoomIn,
 } from "@mui/icons-material";
 import { format } from "date-fns";
 
@@ -39,6 +42,46 @@ interface FilterPanelProps {
   onFiltersChange: (filters: Filters) => void;
   availableScales?: number[]; // Scales available in current result set
 }
+
+// Filter presets
+const FILTER_PRESETS = [
+  {
+    id: "historical",
+    label: "Historical",
+    icon: HistoryIcon,
+    description: "Photos before 1980",
+    filters: {
+      startDate: null,
+      endDate: new Date("1980-01-01"),
+      selectedScales: [],
+      layerTypes: { aerial: true, ortho: true, digital: false },
+    },
+  },
+  {
+    id: "modern",
+    label: "Modern",
+    icon: TrendingUp,
+    description: "Photos from 2000 onwards",
+    filters: {
+      startDate: new Date("2000-01-01"),
+      endDate: null,
+      selectedScales: [],
+      layerTypes: { aerial: true, ortho: true, digital: true },
+    },
+  },
+  {
+    id: "high-detail",
+    label: "High Detail",
+    icon: ZoomIn,
+    description: "Scale 1:5,000 or smaller",
+    filters: {
+      startDate: null,
+      endDate: null,
+      selectedScales: [], // Will be populated dynamically
+      layerTypes: { aerial: true, ortho: true, digital: true },
+    },
+  },
+] as const;
 
 export default function FilterPanel({ filters, onFiltersChange, availableScales = [] }: FilterPanelProps) {
 
@@ -113,6 +156,22 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
     });
   };
 
+  const applyPreset = (presetId: string) => {
+    const preset = FILTER_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    // For high-detail preset, filter scales <= 5000
+    let selectedScales = preset.filters.selectedScales;
+    if (presetId === "high-detail") {
+      selectedScales = availableScales.filter((scale) => scale <= 5000);
+    }
+
+    onFiltersChange({
+      ...preset.filters,
+      selectedScales,
+    });
+  };
+
   const hasActiveFilters =
     filters.startDate !== null ||
     filters.endDate !== null ||
@@ -159,6 +218,51 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
 
   return (
     <Box sx={{ mb: 1.5 }}>
+      {/* Filter Presets */}
+      <Box sx={{ mb: 1.5 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 600,
+            mb: 0.75,
+            display: "block",
+            fontSize: "0.7rem",
+            color: "text.secondary",
+          }}
+        >
+          QUICK FILTERS
+        </Typography>
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+          {FILTER_PRESETS.map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <Tooltip key={preset.id} title={preset.description} arrow placement="top">
+                <Chip
+                  icon={<Icon sx={{ fontSize: 14 }} />}
+                  label={preset.label}
+                  onClick={() => applyPreset(preset.id)}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 28,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                      transform: "translateY(-1px)",
+                    },
+                  }}
+                />
+              </Tooltip>
+            );
+          })}
+        </Stack>
+      </Box>
+
       {/* Active Filters Chips - More compact */}
       {hasActiveFilters && (
         <Box sx={{ mb: 0.75 }}>
@@ -333,8 +437,8 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                             filters.selectedScales.includes(scale)
                               ? undefined
                               : theme.palette.mode === "dark"
-                              ? "rgba(156, 39, 176, 0.1)"
-                              : "rgba(156, 39, 176, 0.05)",
+                              ? "rgba(8, 145, 178, 0.1)"
+                              : "rgba(8, 145, 178, 0.05)",
                         },
                       }}
                     />

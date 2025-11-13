@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,11 +16,11 @@ import {
   CheckCircle,
   Map as MapIcon,
   Visibility,
-  GetApp,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
+import PhotoPreviewModal from "./PhotoPreviewModal";
 import { layerTypeColors, borderRadius, fontSize, iconSize } from "../theme/tokens";
 
 interface PhotoCardProps {
@@ -51,21 +51,11 @@ function PhotoCard({
   isFavorite = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
-  const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleViewImage = () => {
-    // Open TIFF directly to preserve maximum quality for zooming
-    window.open(tiffUrl, "_blank");
-  };
-
-  const handleDownloadTiff = () => {
-    // Create a download link that forces download
-    const link = document.createElement('a');
-    link.href = tiffUrl;
-    link.download = photo.IMAGE_NAME;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Open preview modal instead of directly opening TIFF
+    setPreviewOpen(true);
   };
 
   const handleFavorite = () => {
@@ -81,7 +71,9 @@ function PhotoCard({
   };
 
   return (
-    <Card
+    <>
+      <PhotoPreviewModal photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <Card
       sx={{
         height: "100%",
         display: "flex",
@@ -200,7 +192,7 @@ function PhotoCard({
 
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Tooltip title="View full resolution image" arrow placement="top">
+          <Tooltip title="Preview image" arrow placement="top">
             <IconButton
               size="small"
               color="primary"
@@ -214,23 +206,6 @@ function PhotoCard({
               }}
             >
               <Visibility sx={{ fontSize: iconSize.md }} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Download original TIFF file" arrow placement="top">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={handleDownloadTiff}
-              disabled={!photo.DOWNLOAD_LINK}
-              sx={{
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                },
-              }}
-            >
-              <GetApp sx={{ fontSize: iconSize.md }} />
             </IconButton>
           </Tooltip>
 
@@ -274,6 +249,7 @@ function PhotoCard({
         </Tooltip>
       </CardActions>
     </Card>
+    </>
   );
 }
 

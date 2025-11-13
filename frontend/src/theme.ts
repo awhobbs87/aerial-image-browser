@@ -165,7 +165,7 @@ const commonTheme = {
             transform: "scale(1.02)",
           },
           "&:focus-visible": {
-            outline: "2px solid #6366f1",
+            outline: "2px solid #004d40",
             outlineOffset: "2px",
           },
         },
@@ -196,9 +196,9 @@ export const lightTheme = createTheme({
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#455a64", // Cool, slate blue
-      light: "#718792",
-      dark: "#1c313a",
+      main: "#0891b2", // Cyan - matches layer colors
+      light: "#22d3ee",
+      dark: "#0e7490",
       contrastText: "#ffffff",
     },
     success: {
@@ -273,9 +273,9 @@ export const darkTheme = createTheme({
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#718792", // Lighter blue for dark mode
-      light: "#a1b8c1",
-      dark: "#455a64",
+      main: "#22d3ee", // Lighter cyan for dark mode
+      light: "#67e8f9",
+      dark: "#0891b2",
       contrastText: "#ffffff",
     },
     success: {

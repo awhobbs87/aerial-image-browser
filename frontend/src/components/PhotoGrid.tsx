@@ -20,6 +20,7 @@ import {
   ViewModule,
 } from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
+import PhotoCardSkeleton from "./PhotoCardSkeleton";
 import type { EnhancedPhoto } from "../types/api";
 
 interface PhotoGridProps {
@@ -103,16 +104,17 @@ export default function PhotoGrid({
   const startIndex = (page - 1) * PHOTOS_PER_PAGE;
   const endIndex = startIndex + PHOTOS_PER_PAGE;
 
-  // Loading state
+  // Loading state - show skeleton cards
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 400 }}>
-        <Box sx={{ textAlign: "center" }}>
-          <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
-            Searching for photos...
-          </Typography>
-        </Box>
+      <Box>
+        <Grid container spacing={3}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Grid item key={`skeleton-${index}`} xs={12} sm={6} lg={12}>
+              <PhotoCardSkeleton />
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     );
   }

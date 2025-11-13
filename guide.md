@@ -1,6 +1,8 @@
 # 🏗️ Tasmania Aerial Photo Explorer - Complete Project Guide
 
-**Progressive Web App | Version 1.0.0-pwa | Current Status: Production Ready**
+**Progressive Web App | Version 1.1.0 | Current Status: Production Ready**
+
+**Last Updated:** 2025-11-14
 
 ---
 
@@ -8,7 +10,8 @@
 
 A modern Progressive Web App for exploring Tasmania's historical and recent aerial photography archives.
 
-**Live Deployment:** https://19a83eb5.tas-aerial-explorer.pages.dev
+**Live Deployment:** https://4f2efe80.tas-aerial-explorer.pages.dev
+**Backend API:** https://tas-aerial-browser.awhobbs.workers.dev
 **Repository:** https://github.com/awhobbs87/aerial-image-browser
 
 ### Technology Stack
@@ -45,6 +48,7 @@ Tasmania DPIPWE ArcGIS REST API - 3 layers of aerial photography (aerial, ortho,
 - ✅ Dynamic scale filter (chip-based buttons showing only available scales)
 - ✅ Date range filtering
 - ✅ Layer type filtering (aerial/ortho/digital)
+- ✅ **Filter presets** (Historical, Modern, High Detail)
 - ✅ Photo grid with responsive columns (1-4 columns based on screen size)
 - ✅ Results grouping by year and sorting options
 - ✅ Favorite photos (local state)
@@ -53,17 +57,19 @@ Tasmania DPIPWE ArcGIS REST API - 3 layers of aerial photography (aerial, ortho,
 - ✅ TIFF direct serving via R2 cache
 - ✅ Thumbnail serving via R2 cache
 - ✅ On-demand caching (first request caches, subsequent requests fast)
-- ✅ View full TIFF in new window
-- ✅ Download TIFF option
+- ✅ **Photo preview modal** with metadata before viewing full TIFF
+- ✅ View full TIFF in new window with file size warnings
 
 ### User Interface
 - ✅ Dark/Light/System theme modes
+- ✅ **Refined color scheme** (earthy green/cyan/amber, removed purple accents)
 - ✅ Responsive design (desktop split-view, mobile toggle Grid/Map)
 - ✅ Resizable sidebar on desktop (25-60% width)
 - ✅ Touch-optimized controls (44px minimum targets)
 - ✅ Floating search box on map
 - ✅ Material Design components throughout
-- ✅ Loading skeletons and progress indicators
+- ✅ **Skeleton loading states** for better perceived performance
+- ✅ **Enhanced welcome screen** with feature cards and hero section
 - ✅ Error handling with user-friendly messages
 
 ### Progressive Web App
@@ -88,6 +94,8 @@ tas-aerial-explorer/
 │   │   │   ├── FilterPanel.tsx     # Dynamic filters (date, scale, type)
 │   │   │   ├── PhotoGrid.tsx       # Responsive photo grid
 │   │   │   ├── PhotoCard.tsx       # Individual photo card
+│   │   │   ├── PhotoCardSkeleton.tsx # Loading skeleton component
+│   │   │   ├── PhotoPreviewModal.tsx # Photo preview dialog
 │   │   │   └── MapView.tsx         # Leaflet map with polygons (lazy loaded)
 │   │   ├── hooks/
 │   │   │   └── usePhotos.ts        # React Query hooks for API
@@ -352,6 +360,76 @@ Base URL: `https://tas-aerial-browser.awhobbs.workers.dev`
 - ✅ Offline support for viewed content
 - ✅ App-like experience (no browser chrome)
 - ✅ Fast repeat visits (precached assets)
+
+### Stage 13: UI/UX Refinements ✅
+**Status: Complete (2025-11-14)**
+
+**Color Scheme Overhaul:**
+- Removed all purple accents from theme
+- Implemented earthy color palette:
+  * Primary: Deep teal green (#004d40)
+  * Secondary: Cyan (#0891b2)
+  * Success: Emerald (#10b981)
+  * Warning: Amber (#f59e0b)
+- Updated layer type colors: Aerial (Cyan), Ortho (Emerald), Digital (Amber)
+- Refined shadows with green tints instead of purple
+- Updated all hover states, gradients, and focus indicators
+
+**Loading Experience:**
+- Created PhotoCardSkeleton component with wave animation
+- Replaced spinner with 6 skeleton cards during loading
+- Matches PhotoCard layout exactly for seamless transitions
+- Dark/light mode aware skeleton styles
+
+**Photo Preview Modal:**
+- New PhotoPreviewModal component for preview before downloading
+- Shows thumbnail with loading spinner
+- Displays comprehensive metadata (date, scale, location, filename)
+- File size warning (~15-20 MB) before opening full TIFF
+- Prevents surprise large downloads
+- Clean dialog design with "View Full Resolution" CTA
+
+**Filter Presets:**
+- Added "Quick Filters" section at top of FilterPanel
+- Three smart presets with icons:
+  * **Historical** (pre-1980, excludes digital)
+  * **Modern** (post-2000, all types)
+  * **High Detail** (scale ≤1:5,000, dynamically filters)
+- Smooth hover animations and tooltips
+- One-click filter application
+
+**Enhanced Welcome Screen:**
+- Redesigned empty state with hero section
+- Large gradient icon with green theme
+- Gradient text heading: "Explore Tasmania's Aerial History"
+- Three feature cards explaining core functionality
+- Hover lift animations on cards
+- Popular locations chips (Hobart, Launceston, Devonport, Burnie)
+- Much more engaging onboarding experience
+
+**Component Improvements:**
+- Removed redundant download button from PhotoCard
+- Updated PhotoCard to use preview modal
+- Cleaner action button layout
+- Better visual hierarchy throughout
+
+**Files Modified:**
+- `frontend/src/theme/tokens.ts` - Color system tokens
+- `frontend/src/theme.ts` - Theme configuration
+- `frontend/src/components/PhotoCard.tsx` - Modal integration
+- `frontend/src/components/PhotoGrid.tsx` - Skeleton loading
+- `frontend/src/components/FilterPanel.tsx` - Filter presets
+- `frontend/src/components/SearchBar.tsx` - Color updates
+- `frontend/src/App.tsx` - Welcome screen redesign
+
+**Files Created:**
+- `frontend/src/components/PhotoCardSkeleton.tsx`
+- `frontend/src/components/PhotoPreviewModal.tsx`
+
+**Deployment:**
+- Backend: https://tas-aerial-browser.awhobbs.workers.dev
+- Frontend: https://4f2efe80.tas-aerial-explorer.pages.dev
+- Version ID: bc11e761-5a55-42e6-a64f-721949f004c6
 
 ---
 
@@ -737,9 +815,9 @@ npx wrangler r2 bucket info tas-aerial-browser-tiffs
 
 ## 📈 Project Status
 
-**Version:** 1.0.0-pwa
-**Last Updated:** 2025-11-13
-**Status:** Production Ready - Stage 12 Complete
+**Version:** 1.1.0
+**Last Updated:** 2025-11-14
+**Status:** Production Ready - Stage 13 Complete
 
 ### Completed Stages
 - ✅ Stage 0: Repository Setup
@@ -754,9 +832,10 @@ npx wrangler r2 bucket info tas-aerial-browser-tiffs
 - ✅ Stage 10: Advanced Interface & UX
 - ⚠️ Stage 11: WASM Image Conversion (Investigated - Not Viable)
 - ✅ Stage 12: Mobile Optimization & PWA
+- ✅ Stage 13: UI/UX Refinements
 
 ### Current Focus
-Tasmania Aerial Photo Explorer is now a fully functional Progressive Web App with offline support, installable on mobile devices, service worker caching, and comprehensive mobile optimizations. The application is production-ready and deployed.
+Tasmania Aerial Photo Explorer is now a fully functional Progressive Web App with refined UI/UX, modern color scheme, enhanced loading states, photo preview functionality, filter presets, and an engaging welcome experience. The application is production-ready and deployed with all major features complete.
 
 ### Next Steps (Optional)
 - Stage 13: User authentication and persistent favorites

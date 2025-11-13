@@ -37,10 +37,10 @@ export const fontSize = {
 } as const;
 
 export const shadows = {
-  sm: '0 1px 3px rgba(99, 102, 241, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-  md: '0 4px 12px rgba(99, 102, 241, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08)',
-  lg: '0 8px 24px rgba(99, 102, 241, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)',
-  xl: '0 12px 32px rgba(99, 102, 241, 0.25), 0 6px 12px rgba(0, 0, 0, 0.12)',
+  sm: '0 1px 3px rgba(0, 77, 64, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+  md: '0 4px 12px rgba(0, 77, 64, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08)',
+  lg: '0 8px 24px rgba(0, 77, 64, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)',
+  xl: '0 12px 32px rgba(0, 77, 64, 0.25), 0 6px 12px rgba(0, 0, 0, 0.12)',
 } as const;
 
 export const shadowsDark = {
@@ -52,22 +52,22 @@ export const shadowsDark = {
 
 export const layerTypeColors = {
   aerial: {
-    main: '#6366f1',
-    light: '#818cf8',
-    dark: '#4f46e5',
-    border: '#6366f1',
+    main: '#0891b2', // Cyan
+    light: '#22d3ee',
+    dark: '#0e7490',
+    border: '#0891b2',
   },
   ortho: {
-    main: '#10b981',
+    main: '#10b981', // Emerald (keep green)
     light: '#34d399',
     dark: '#059669',
     border: '#10b981',
   },
   digital: {
-    main: '#ef4444',
-    light: '#f87171',
-    dark: '#dc2626',
-    border: '#ef4444',
+    main: '#f59e0b', // Amber (instead of red)
+    light: '#fbbf24',
+    dark: '#d97706',
+    border: '#f59e0b',
   },
 } as const;
 
@@ -106,6 +106,6 @@ export const glassmorphism = {
 export const focusRing = {
   width: '3px',
   offset: '2px',
-  color: '#6366f1',
+  color: '#004d40',
   style: 'solid',
 } as const;
