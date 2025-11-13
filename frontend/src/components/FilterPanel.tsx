@@ -258,7 +258,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  mb: 0.25,
+                  mb: 1,
                   display: "flex",
                   alignItems: "center",
                   gap: 0.5,

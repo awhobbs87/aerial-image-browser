@@ -50,7 +50,7 @@ export default function PhotoGrid({
 }: PhotoGridProps) {
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
-  const [groupBy, setGroupBy] = useState<GroupBy>("none");
+  const [groupBy, setGroupBy] = useState<GroupBy>("year");
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
