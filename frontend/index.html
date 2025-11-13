@@ -2,12 +2,61 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📸</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta name="description" content="Explore historical and recent aerial photography from across Tasmania" />
+
+    <!-- Disable Pinterest browser extension -->
+    <meta name="pinterest" content="nopin" />
+    <meta name="pinterest-rich-pin" content="false" />
+
+    <title>Tasmania Aerial Photo Explorer</title>
+
+    <style>
+      /* Block Pinterest browser extensions and overlays */
+      span[data-pin-log="button_pinit_bookmarklet"],
+      span[data-pin-log="button_pinit"],
+      [data-pin-href],
+      a[data-pin-do],
+      .PIN_1615645266892_embed_grid,
+      .PIN_1615645266892_buttonWrapper {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Additional Pinterest blocking script -->
+    <script>
+      // Block Pinterest browser extension from injecting content
+      (function() {
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.nodeType === 1) {
+                // Remove Pinterest injected elements
+                if (node.getAttribute && (
+                  node.getAttribute('data-pin-href') ||
+                  node.getAttribute('data-pin-do') ||
+                  (node.className && typeof node.className === 'string' && node.className.includes('PIN_'))
+                )) {
+                  node.remove();
+                }
+              }
+            });
+          });
+        });
+
+        observer.observe(document.documentElement, {
+          childList: true,
+          subtree: true
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -30,6 +30,7 @@ interface PhotoGridProps {
   error?: Error | null;
   onFavorite?: (photo: EnhancedPhoto) => void;
   onShowOnMap?: (photo: EnhancedPhoto) => void;
+  onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   favorites?: Set<string>;
 }
 
@@ -44,6 +45,7 @@ export default function PhotoGrid({
   error = null,
   onFavorite,
   onShowOnMap,
+  onPhotoHover,
   favorites = new Set(),
 }: PhotoGridProps) {
   const [page, setPage] = useState(1);
@@ -164,6 +166,7 @@ export default function PhotoGrid({
                 photo={photo}
                 onFavorite={onFavorite}
                 onShowOnMap={onShowOnMap}
+                onPhotoHover={onPhotoHover}
                 isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
               />
             </Grid>
@@ -205,6 +208,7 @@ export default function PhotoGrid({
                         photo={photo}
                         onFavorite={onFavorite}
                         onShowOnMap={onShowOnMap}
+                        onPhotoHover={onPhotoHover}
                         isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
                       />
                     </Grid>
@@ -221,39 +225,62 @@ export default function PhotoGrid({
   return (
     <Box>
       {/* Results header with controls */}
-      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-        <Stack spacing={2}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
-            <Typography variant="h6" color="text.secondary">
-              Found {photos.length} photo{photos.length !== 1 ? "s" : ""}
-            </Typography>
-            {groupBy === "none" && (
-              <Typography variant="body2" color="text.secondary">
+      <Paper
+        elevation={1}
+        sx={{
+          p: 1.5,
+          mb: 2,
+          background: (theme) =>
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)"
+              : "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+        }}
+      >
+        <Stack spacing={1.25}>
+          {/* Header with count and pagination */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Chip
+              label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
+              color="primary"
+              size="small"
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                height: 28,
+              }}
+            />
+            {groupBy === "none" && totalPages > 1 && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
                 Page {page} of {totalPages}
               </Typography>
             )}
           </Box>
 
-          {/* Sort and Group Controls */}
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Compact Sort and Group Controls */}
+          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "flex-start" }}>
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
-                Sort by:
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.25, display: "block", fontSize: "0.7rem", fontWeight: 600 }}>
+                SORT
               </Typography>
               <ToggleButtonGroup
                 value={sortOrder}
                 exclusive
                 onChange={(_e, value) => value && setSortOrder(value)}
                 size="small"
+                sx={{ height: 28 }}
               >
-                <ToggleButton value="newest">Newest First</ToggleButton>
-                <ToggleButton value="oldest">Oldest First</ToggleButton>
+                <ToggleButton value="newest" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                  Newest
+                </ToggleButton>
+                <ToggleButton value="oldest" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                  Oldest
+                </ToggleButton>
               </ToggleButtonGroup>
             </Box>
 
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
-                Group by:
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.25, display: "block", fontSize: "0.7rem", fontWeight: 600 }}>
+                GROUP
               </Typography>
               <ToggleButtonGroup
                 value={groupBy}
@@ -261,17 +288,22 @@ export default function PhotoGrid({
                 onChange={(_e, value) => {
                   if (value) {
                     setGroupBy(value);
-                    setPage(1); // Reset to first page when changing grouping
+                    setPage(1);
                   }
                 }}
                 size="small"
+                sx={{ height: 28 }}
               >
-                <ToggleButton value="none">
-                  <ViewModule sx={{ mr: 0.5, fontSize: 18 }} />
+                <ToggleButton value="none" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                  <ViewModule sx={{ mr: 0.5, fontSize: 16 }} />
                   None
                 </ToggleButton>
-                <ToggleButton value="year">By Year</ToggleButton>
-                <ToggleButton value="decade">By Decade</ToggleButton>
+                <ToggleButton value="year" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                  Year
+                </ToggleButton>
+                <ToggleButton value="decade" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                  Decade
+                </ToggleButton>
               </ToggleButtonGroup>
             </Box>
           </Box>

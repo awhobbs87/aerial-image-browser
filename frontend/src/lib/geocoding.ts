@@ -35,20 +35,28 @@ class GeocodingService {
    * Search for locations by query string (address, place name, etc.)
    */
   async searchLocations(query: string, limit: number = 5): Promise<SearchSuggestion[]> {
-    if (!query || query.length < 3) {
+    if (!query || query.length < 2) {
       return [];
     }
 
     try {
+      // If query doesn't mention Tasmania or TAS, append it for better results
+      const enhancedQuery = query.toLowerCase().includes('tasmania') ||
+                           query.toLowerCase().includes('tas') ||
+                           query.toLowerCase().includes('hobart') ||
+                           query.toLowerCase().includes('launceston')
+        ? query
+        : `${query}, Tasmania, Australia`;
+
       const params = new URLSearchParams({
-        q: query,
+        q: enhancedQuery,
         format: "json",
         addressdetails: "1",
-        limit: limit.toString(),
+        limit: (limit * 3).toString(), // Request more to filter
         countrycodes: "au", // Limit to Australia
-        // Bias results towards Tasmania
+        // Strongly bias results towards Tasmania
         viewbox: "143.8,-43.7,148.5,-39.5",
-        bounded: "0",
+        bounded: "0", // Don't strictly bound - filter in code instead for better results
       });
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
@@ -63,7 +71,26 @@ class GeocodingService {
 
       const data = await response.json();
 
-      return data.map((item: any) => ({
+      console.log(`Geocoding search for "${query}": found ${data.length} results`);
+
+      // Filter and prioritize Tasmania results
+      // Use slightly wider bounds to catch edge cases
+      const filtered = data
+        .filter((item: any) => {
+          const lat = parseFloat(item.lat);
+          const lon = parseFloat(item.lon);
+          // Wider bounds to catch more results (Tasmania + buffer)
+          const inBounds = lat >= -44.0 && lat <= -39.2 && lon >= 143.5 && lon <= 148.8;
+          if (!inBounds) {
+            console.log(`Filtered out: ${item.display_name} (${lat}, ${lon})`);
+          }
+          return inBounds;
+        })
+        .slice(0, limit);
+
+      console.log(`After filtering: ${filtered.length} results in Tasmania`);
+
+      return filtered.map((item: any) => ({
         placeId: item.place_id,
         displayName: item.display_name,
         lat: parseFloat(item.lat),

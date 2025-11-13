@@ -16,6 +16,8 @@ import {
   FavoriteBorder,
   CheckCircle,
   Map as MapIcon,
+  Visibility,
+  GetApp,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -25,6 +27,7 @@ interface PhotoCardProps {
   photo: EnhancedPhoto;
   onFavorite?: (photo: EnhancedPhoto) => void;
   onShowOnMap?: (photo: EnhancedPhoto) => void;
+  onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   isFavorite?: boolean;
 }
 
@@ -38,13 +41,25 @@ function PhotoCard({
   photo,
   onFavorite,
   onShowOnMap,
+  onPhotoHover,
   isFavorite = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
 
-  const handleDownload = () => {
+  const handleViewImage = () => {
+    // Open TIFF directly to preserve maximum quality for zooming
     window.open(tiffUrl, "_blank");
+  };
+
+  const handleDownloadTiff = () => {
+    // Create a download link that forces download
+    const link = document.createElement('a');
+    link.href = tiffUrl;
+    link.download = photo.IMAGE_NAME;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleFavorite = () => {
@@ -60,7 +75,11 @@ function PhotoCard({
   };
 
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Card
+      sx={{ height: "100%", display: "flex", flexDirection: "column", transition: "all 0.2s" }}
+      onMouseEnter={() => onPhotoHover?.(photo)}
+      onMouseLeave={() => onPhotoHover?.(null)}
+    >
       <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
       <CardContent sx={{ flexGrow: 1, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
         <Stack spacing={0.75}>
@@ -99,14 +118,25 @@ function PhotoCard({
 
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Tooltip title="Download TIFF">
+          <Tooltip title="View image">
             <IconButton
               size="small"
               color="primary"
-              onClick={handleDownload}
+              onClick={handleViewImage}
               disabled={!photo.DOWNLOAD_LINK}
             >
-              <Download fontSize="small" />
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Download original TIFF">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={handleDownloadTiff}
+              disabled={!photo.DOWNLOAD_LINK}
+            >
+              <GetApp fontSize="small" />
             </IconButton>
           </Tooltip>
 

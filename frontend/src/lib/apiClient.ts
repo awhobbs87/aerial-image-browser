@@ -140,6 +140,35 @@ class ApiClient {
     const cleanName = imageName.replace(/\.tif$/i, "");
     return `${this.client.defaults.baseURL}/api/tiff/${layerId}/${cleanName}`;
   }
+
+  /**
+   * Get optimized image URL using Cloudflare Image Resizing
+   * Converts TIFFs to web-optimized formats (WebP, JPEG) with optional resizing
+   */
+  getOptimizedImageUrl(
+    imageName: string,
+    layerId: number,
+    options?: {
+      width?: number;
+      height?: number;
+      quality?: number;
+      format?: "auto" | "webp" | "jpeg" | "png";
+    }
+  ): string {
+    // Remove .tif extension if present
+    const cleanName = imageName.replace(/\.tif$/i, "");
+    const baseUrl = `${this.client.defaults.baseURL}/api/image/${layerId}/${cleanName}`;
+
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (options?.width) params.set("width", options.width.toString());
+    if (options?.height) params.set("height", options.height.toString());
+    if (options?.quality) params.set("quality", options.quality.toString());
+    if (options?.format) params.set("format", options.format);
+
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  }
 }
 
 // Create a singleton instance

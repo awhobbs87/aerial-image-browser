@@ -1149,7 +1149,7 @@ Worker API: https://tas-aerial-browser.awhobbs.workers.dev
 Test page: https://tas-aerial-browser.awhobbs.workers.dev/test
 Frontend (Local): http://localhost:5174
 Frontend (Production): https://tas-aerial-explorer.pages.dev
-Frontend (Latest Deploy): https://3b930c7c.tas-aerial-explorer.pages.dev
+Frontend (Latest Deploy): https://63cb79f9.tas-aerial-explorer.pages.dev
 
 **Stage 10 Complete!** ✅
 
@@ -1162,7 +1162,288 @@ All advanced interface and UX improvements have been successfully implemented. T
 - Comprehensive tooltips and help text
 - Professional visual polish throughout
 
-Next up: Stage 11 - Mobile Optimization & PWA
+---
+
+## 🖼️ Stage 11: High-Quality Image Serving with WASM Conversion
+
+### Overview
+
+Currently, the application serves TIFF files directly for maximum quality, but TIFFs are large (~15-20MB) and not optimized for web viewing. This stage implements a WASM-based image conversion system that:
+
+1. Converts TIFF files to web-optimized PNG or WebP format
+2. Preserves all fine details for zooming to see buildings and structures
+3. Caches converted images in R2 for fast subsequent access
+4. Uses progressive enhancement (first request slow, then cached)
+
+### Architecture
+
+```
+User Request
+    ↓
+Worker Endpoint (/api/thumbnail or /api/tiff)
+    ↓
+Check R2 for converted image
+    ↓
+    ├─ Found → Serve from R2 (fast)
+    ↓
+    └─ Not Found → Process TIFF
+        ↓
+        Fetch original TIFF from source
+        ↓
+        Load WASM library (vips or ImageMagick)
+        ↓
+        Convert TIFF → PNG/WebP with quality settings
+        ↓
+        Store in R2 with cache headers
+        ↓
+        Serve converted image
+```
+
+### Technology Options
+
+#### Option 1: wasm-vips (Recommended)
+
+**Pros:**
+- Specifically designed for image processing in WASM
+- Excellent performance and memory efficiency
+- High-quality output with fine control over compression
+- Good support for TIFF input
+- Smaller WASM bundle (~2-3MB)
+- Well-maintained library
+
+**Cons:**
+- Less familiar than ImageMagick
+- Fewer format options than ImageMagick
+
+**Package:** `wasm-vips` (https://github.com/kleisauke/wasm-vips)
+
+#### Option 2: ImageMagick WASM
+
+**Pros:**
+- Industry-standard image processing tool
+- Comprehensive format support
+- Well-documented command-line API
+- Familiar to many developers
+
+**Cons:**
+- Larger WASM bundle (~8-10MB)
+- Higher memory usage
+- May hit Worker memory limits (128MB)
+
+**Package:** `@imagemagick/magick-wasm` (https://github.com/dlemstra/magick-wasm)
+
+### Implementation Plan
+
+#### 11.1 - Setup R2 Bucket for Converted Images
+
+```bash
+# Create R2 bucket for converted images
+npx wrangler r2 bucket create tas-aerial-converted
+
+# Update wrangler.toml
+```
+
+**wrangler.toml additions:**
+```toml
+[[r2_buckets]]
+binding = "CONVERTED_IMAGES"
+bucket_name = "tas-aerial-converted"
+preview_bucket_name = "tas-aerial-converted-preview"
+```
+
+#### 11.2 - Install WASM Library
+
+```bash
+npm install wasm-vips
+```
+
+#### 11.3 - Create Image Conversion Worker Route
+
+**src/routes/convert.ts:**
+```typescript
+import { Hono } from 'hono';
+import Vips from 'wasm-vips';
+
+const app = new Hono<{ Bindings: Env }>();
+
+// Initialize vips (lazy load)
+let vips: any = null;
+
+async function getVips() {
+  if (!vips) {
+    vips = await Vips();
+  }
+  return vips;
+}
+
+app.get('/api/image/:layerId/:imageName', async (c) => {
+  const { layerId, imageName } = c.req.param();
+  const format = c.req.query('format') || 'png'; // png or webp
+  const quality = parseInt(c.req.query('quality') || '95', 10);
+
+  // Generate R2 key for converted image
+  const r2Key = `converted/${layerId}/${imageName}.${format}`;
+
+  // Check R2 cache first
+  const cached = await c.env.CONVERTED_IMAGES.get(r2Key);
+  if (cached) {
+    return new Response(cached.body, {
+      headers: {
+        'Content-Type': format === 'webp' ? 'image/webp' : 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
+  // Fetch original TIFF
+  const tiffUrl = `https://data.thelist.tas.gov.au/.../${imageName}`;
+  const tiffResponse = await fetch(tiffUrl);
+
+  if (!tiffResponse.ok) {
+    return c.json({ error: 'TIFF not found' }, 404);
+  }
+
+  const tiffBuffer = await tiffResponse.arrayBuffer();
+
+  // Convert using wasm-vips
+  const vipsInstance = await getVips();
+  const image = vipsInstance.Image.newFromBuffer(tiffBuffer);
+
+  // Resize if needed (optional - preserve full quality)
+  // const resized = image.resize(0.5);
+
+  // Convert to target format
+  let outputBuffer: Buffer;
+  if (format === 'webp') {
+    outputBuffer = image.webpsaveBuffer({ Q: quality, effort: 6 });
+  } else {
+    outputBuffer = image.pngsaveBuffer({ compression: 6 });
+  }
+
+  // Store in R2
+  await c.env.CONVERTED_IMAGES.put(r2Key, outputBuffer, {
+    httpMetadata: {
+      contentType: format === 'webp' ? 'image/webp' : 'image/png',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+  });
+
+  return new Response(outputBuffer, {
+    headers: {
+      'Content-Type': format === 'webp' ? 'image/webp' : 'image/png',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Cache': 'MISS',
+    },
+  });
+});
+
+export default app;
+```
+
+#### 11.4 - Update API Client to Use Conversion Endpoint
+
+**frontend/src/lib/apiClient.ts:**
+```typescript
+// Change getTiffUrl and getThumbnailUrl to use conversion endpoint
+getTiffUrl(imageName: string, layerId: number): string {
+  return `${this.baseUrl}/api/image/${layerId}/${imageName}?format=webp&quality=95`;
+}
+
+getThumbnailUrl(imageName: string, layerId: number): string {
+  return `${this.baseUrl}/api/image/${layerId}/${imageName}?format=webp&quality=85&size=thumbnail`;
+}
+```
+
+#### 11.5 - Add Size Parameter for Thumbnails
+
+Enhance the conversion endpoint to support thumbnail generation:
+
+```typescript
+const size = c.req.query('size'); // 'thumbnail' | 'full'
+
+if (size === 'thumbnail') {
+  // Resize to 400px width, maintain aspect ratio
+  const resized = image.resize(400 / image.width);
+  outputBuffer = resized.webpsaveBuffer({ Q: quality, effort: 6 });
+} else {
+  // Full quality conversion
+  outputBuffer = image.webpsaveBuffer({ Q: quality, effort: 6 });
+}
+```
+
+### Quality Settings
+
+**For Maximum Detail Preservation:**
+- PNG: `compression: 6` (balance between size and speed)
+- WebP: `Q: 95`, `effort: 6` (near-lossless, excellent detail)
+- For thumbnails: `Q: 85` (good balance)
+
+**For Smaller File Sizes:**
+- PNG: `compression: 9` (maximum compression)
+- WebP: `Q: 80-85`, `effort: 6` (still high quality)
+
+### Benefits
+
+1. **Quality Preservation**: WebP at Q:95 preserves fine details for zooming
+2. **File Size Reduction**: ~80-90% smaller than TIFF (20MB → 2-4MB)
+3. **Browser Compatibility**: WebP/PNG work in all modern browsers
+4. **Progressive Enhancement**: First load slow, subsequent loads instant
+5. **Caching**: R2 stores converted images permanently
+6. **Cost Efficiency**: Only convert once per image
+
+### Trade-offs
+
+1. **First Request Latency**: 5-15 seconds for initial conversion
+2. **Worker Memory**: Requires sufficient memory (recommend 512MB-1GB Worker)
+3. **WASM Bundle Size**: Adds 2-3MB to Worker bundle
+4. **Cold Start**: WASM initialization takes ~500ms
+
+### Testing
+
+```bash
+# Test conversion endpoint
+curl "https://tas-aerial-browser.awhobbs.workers.dev/api/image/0/1437_025.tif?format=webp&quality=95"
+
+# Check R2 cache
+npx wrangler r2 object list tas-aerial-converted
+
+# Test with different quality settings
+curl "...?format=webp&quality=80"
+curl "...?format=png"
+```
+
+### Performance Benchmarks (Expected)
+
+- **TIFF Size**: 15-20MB
+- **WebP (Q:95)**: 2-4MB (80-85% reduction)
+- **WebP (Q:85)**: 1-2MB (90-93% reduction)
+- **PNG**: 8-12MB (40-50% reduction)
+- **First Conversion**: 5-15 seconds
+- **Cached Response**: <100ms
+
+### Alternative: External Processing
+
+If Worker memory limits are too restrictive, consider:
+
+1. **Pre-processing**: Batch convert all TIFFs offline and store in R2
+2. **External Service**: Use Cloudflare Images or Imgix for on-demand conversion
+3. **Hybrid Approach**: Pre-convert thumbnails, on-demand convert full images
+
+### Status
+
+- [ ] R2 bucket created for converted images
+- [ ] wasm-vips installed and configured
+- [ ] Conversion endpoint implemented
+- [ ] API client updated to use conversion endpoint
+- [ ] Thumbnail size parameter implemented
+- [ ] Quality settings optimized
+- [ ] Deployed and tested
+- [ ] Performance monitoring added
+
+---
+
+Next up: Stage 12 - Mobile Optimization & PWA
 
 ### Testing Checklist
 
@@ -1206,7 +1487,7 @@ After implementation, verify:
 ---
 
 **Version:** 1.0.0-dev
-**Last Updated:** 2025-11-12
-**Status:** Stage 10 Complete - Advanced Interface & UX Improvements Finished
+**Last Updated:** 2025-11-13
+**Status:** Stage 10 Complete - Advanced Interface & UX Improvements Finished | Stage 11 Documented
 
-🎯 **Current Focus:** Stage 10 complete! System-responsive dark mode, two-column desktop layout, enhanced map polygons, auto-zoom search, results grouping/sorting, tooltips, and comprehensive visual polish implemented. Application now has a professional, modern interface with excellent UX. Next up: Mobile optimization and PWA features (Stage 11).
+🎯 **Current Focus:** Stage 10 complete! System-responsive dark mode, two-column desktop layout, enhanced map polygons, auto-zoom search, results grouping/sorting, tooltips, and comprehensive visual polish implemented. Stage 11 documented: High-Quality Image Serving with WASM Conversion - a comprehensive plan for converting TIFF files to web-optimized WebP/PNG using wasm-vips in Cloudflare Workers with R2 caching. Ready to implement when needed. Next up: Mobile optimization and PWA features (Stage 12).

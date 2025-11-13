@@ -11,6 +11,7 @@ interface MapViewProps {
   onMapClick?: (lat: number, lon: number) => void;
   onPhotoClick?: (photo: EnhancedPhoto) => void;
   selectedPhoto?: EnhancedPhoto | null;
+  hoveredPhoto?: EnhancedPhoto | null;
   center?: [number, number];
   zoom?: number;
   searchCenter?: [number, number] | null;
@@ -69,6 +70,7 @@ export default function MapView({
   onMapClick,
   onPhotoClick,
   selectedPhoto,
+  hoveredPhoto,
   center = [-42.0, 147.0], // Tasmania center
   zoom = 8,
   searchCenter = null,
@@ -92,9 +94,11 @@ export default function MapView({
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
       >
+        {/* Satellite imagery from Esri World Imagery */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={19}
         />
 
         <MapEventHandler onMapClick={onMapClick} />
@@ -117,6 +121,7 @@ export default function MapView({
           <PhotoMarkers
             photos={photos}
             selectedPhoto={selectedPhoto}
+            hoveredPhoto={hoveredPhoto}
             onPhotoClick={onPhotoClick}
           />
         )}

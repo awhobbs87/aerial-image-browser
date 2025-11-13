@@ -10,8 +10,10 @@ import {
   Paper,
   CircularProgress,
   useMediaQuery,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { GridView, Map as MapIcon } from "@mui/icons-material";
+import { GridView, Map as MapIcon, ExpandLess, Search as SearchIcon } from "@mui/icons-material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
 import AppBar from "./components/AppBar";
@@ -75,12 +77,15 @@ function AppContent() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
+  const [hoveredPhoto, setHoveredPhoto] = useState<EnhancedPhoto | null>(null);
   const [searchCenter, setSearchCenter] = useState<[number, number] | null>(null);
+  const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(40); // percentage
+  const [isResizing, setIsResizing] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     startDate: null,
     endDate: null,
-    minScale: null,
-    maxScale: null,
+    selectedScales: [],
     layerTypes: {
       aerial: true,
       ortho: true,
@@ -95,6 +100,28 @@ function AppContent() {
 
   // Use React Query hook for fetching photos
   const { data, isLoading, error } = useSearchLocation(searchParams);
+
+  // Extract available scales from fetched photos
+  const availableScales = useMemo(() => {
+    if (!data?.photos) return [];
+    const scalesSet = new Set<number>();
+    data.photos.forEach(photo => {
+      if (photo.SCALE && photo.SCALE > 0) {
+        scalesSet.add(photo.SCALE);
+      }
+    });
+    return Array.from(scalesSet).sort((a, b) => a - b);
+  }, [data?.photos]);
+
+  // Filter photos by selected scales (client-side)
+  const filteredPhotos = useMemo(() => {
+    if (!data?.photos) return [];
+    if (filters.selectedScales.length === 0) return data.photos;
+
+    return data.photos.filter(photo =>
+      photo.SCALE && filters.selectedScales.includes(photo.SCALE)
+    );
+  }, [data?.photos, filters.selectedScales]);
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
@@ -115,14 +142,13 @@ function AppContent() {
       if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
       if (filters.layerTypes.digital) activeLayerTypes.push("digital");
 
+      // Note: Scale filtering will be done client-side after fetching
       setSearchParams({
         lat,
         lon,
         layers: [0, 1, 2],
         startDate: filters.startDate?.toISOString(),
         endDate: filters.endDate?.toISOString(),
-        minScale: filters.minScale,
-        maxScale: filters.maxScale,
         imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
       });
 
@@ -173,10 +199,54 @@ function AppContent() {
     [handleSearch]
   );
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return;
+      e.preventDefault();
+
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      // Constrain between 25% and 60%
+      if (newWidth >= 25 && newWidth <= 60) {
+        setSidebarWidth(newWidth);
+      }
+    },
+    [isResizing]
+  );
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          ...(isResizing && {
+            userSelect: 'none',
+            cursor: 'col-resize',
+          }),
+        }}
+      >
         <AppBar darkMode={darkMode} themeMode={themeMode} onToggleDarkMode={handleToggleDarkMode} />
 
         {/* Desktop: Two-column layout, Mobile: Single column */}
@@ -191,18 +261,46 @@ function AppContent() {
           {/* Left Sidebar - Search, Filters, Results */}
           <Box
             sx={{
-              width: { xs: "100%", md: "40%" },
+              width: { xs: "100%", md: `${sidebarWidth}%` },
               display: "flex",
               flexDirection: "column",
               borderRight: { md: 1 },
               borderColor: { md: "divider" },
               overflowY: "auto",
               maxHeight: { xs: "none", md: "calc(100vh - 64px)" }, // 64px = AppBar height
+              position: "relative",
             }}
           >
+            {/* Resize handle */}
+            <Box
+              onMouseDown={handleMouseDown}
+              sx={{
+                display: { xs: "none", md: "block" },
+                position: "absolute",
+                right: -2,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                cursor: "col-resize",
+                bgcolor: "transparent",
+                zIndex: 1001,
+                userSelect: 'none',
+                "&:hover": {
+                  bgcolor: "primary.main",
+                  opacity: 0.5,
+                },
+                ...(isResizing && {
+                  bgcolor: "primary.main",
+                  opacity: 0.7,
+                }),
+              }}
+            />
             <Container maxWidth="lg" sx={{ py: 2, flexGrow: 1 }}>
-              <SearchBar onSearch={handleSearch} loading={isLoading} />
-              <FilterPanel filters={filters} onFiltersChange={setFilters} />
+              <FilterPanel
+                filters={filters}
+                onFiltersChange={setFilters}
+                availableScales={availableScales}
+              />
 
               {searchParams && (
                 <>
@@ -231,12 +329,13 @@ function AppContent() {
                   {/* Results Grid (always visible on desktop, conditional on mobile) */}
                   <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
                     <PhotoGrid
-                      photos={data?.photos || []}
+                      photos={filteredPhotos}
                       loading={isLoading}
                       error={error as Error}
                       onFavorite={handleFavorite}
                       favorites={favorites}
                       onShowOnMap={handlePhotoSelect}
+                      onPhotoHover={setHoveredPhoto}
                     />
                   </Box>
                 </>
@@ -269,15 +368,63 @@ function AppContent() {
           {/* Right Side - Persistent Map (desktop only, or mobile when map mode active) */}
           <Box
             sx={{
-              width: { xs: "100%", md: "60%" },
+              width: { xs: "100%", md: `${100 - sidebarWidth}%` },
               display: {
                 xs: searchParams && viewMode === "map" ? "block" : "none",
-                md: searchParams ? "block" : "none",
+                md: "block", // Always show on desktop to contain floating search
               },
               position: "relative",
               minHeight: { xs: "500px", md: "auto" },
             }}
           >
+            {/* Floating Search Box - Always visible */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                zIndex: 1000,
+                maxWidth: 400,
+                width: { xs: "calc(100% - 32px)", sm: "auto" },
+              }}
+            >
+              <Box
+                sx={{
+                  transition: "all 0.3s ease-in-out",
+                  transform: searchBoxExpanded ? "translateY(0)" : "translateY(-100%)",
+                  opacity: searchBoxExpanded ? 1 : 0,
+                  pointerEvents: searchBoxExpanded ? "auto" : "none",
+                }}
+              >
+                <SearchBar onSearch={handleSearch} loading={isLoading} />
+              </Box>
+              <Tooltip title={searchBoxExpanded ? "Hide search" : "Show search"} placement="left">
+                <IconButton
+                  onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
+                  sx={{
+                    position: "absolute",
+                    bottom: -48,
+                    right: 8,
+                    bgcolor: searchBoxExpanded ? "background.paper" : "primary.main",
+                    color: searchBoxExpanded ? "text.primary" : "primary.contrastText",
+                    boxShadow: 3,
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    "&:hover": {
+                      bgcolor: "primary.main",
+                      color: "primary.contrastText",
+                      boxShadow: 6,
+                      transform: "scale(1.05)",
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }}
+                  size="medium"
+                  aria-label={searchBoxExpanded ? "Hide search" : "Show search"}
+                >
+                  {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+
             {searchParams && (
               <Suspense
                 fallback={
@@ -303,8 +450,9 @@ function AppContent() {
                 }
               >
                 <MapView
-                  photos={data?.photos || []}
+                  photos={filteredPhotos}
                   selectedPhoto={selectedPhoto}
+                  hoveredPhoto={hoveredPhoto}
                   onPhotoClick={setSelectedPhoto}
                   onMapClick={handleMapClick}
                   searchCenter={searchCenter}
@@ -313,27 +461,6 @@ function AppContent() {
               </Suspense>
             )}
           </Box>
-        </Box>
-
-        {/* Footer */}
-        <Box
-          component="footer"
-          sx={{
-            py: 3,
-            px: 2,
-            mt: "auto",
-            backgroundColor: (theme) =>
-              theme.palette.mode === "light" ? theme.palette.grey[200] : theme.palette.grey[800],
-          }}
-        >
-          <Container maxWidth="xl">
-            <Typography variant="body2" color="text.secondary" align="center">
-              Data source: Tasmania DPIPWE ArcGIS REST API
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 0.5 }}>
-              © {new Date().getFullYear()} Tasmania Aerial Photo Browser
-            </Typography>
-          </Container>
         </Box>
       </Box>
     </ThemeProvider>

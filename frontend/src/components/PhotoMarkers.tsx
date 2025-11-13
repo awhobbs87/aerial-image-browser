@@ -5,43 +5,55 @@ import type { EnhancedPhoto, LayerType } from '../types/api';
 interface PhotoMarkersProps {
   photos: EnhancedPhoto[];
   selectedPhoto?: EnhancedPhoto | null;
+  hoveredPhoto?: EnhancedPhoto | null;
   onPhotoClick?: (photo: EnhancedPhoto) => void;
 }
 
-// Enhanced color mapping for different layer types with minimal visual interference
+// Invisible by default - only visible on hover or when selected
 const LAYER_COLORS: Record<
   LayerType,
-  { color: string; fillColor: string; fillOpacity: number; weight: number }
+  { color: string; fillColor: string; fillOpacity: number; weight: number; opacity: number }
 > = {
   aerial: {
-    color: '#4c51bf', // Deeper indigo for better contrast
+    color: '#4c51bf',
     fillColor: '#667eea',
-    fillOpacity: 0.05, // Very low opacity to not hide the map
-    weight: 1.5,
+    fillOpacity: 0,
+    weight: 0, // Completely invisible borders by default
+    opacity: 0, // Hide borders completely
   },
   ortho: {
-    color: '#2f855a', // Deeper green
+    color: '#2f855a',
     fillColor: '#48bb78',
-    fillOpacity: 0.05,
-    weight: 1.5,
+    fillOpacity: 0,
+    weight: 0,
+    opacity: 0,
   },
   digital: {
-    color: '#c53030', // Deeper red
+    color: '#c53030',
     fillColor: '#f56565',
-    fillOpacity: 0.05,
-    weight: 1.5,
+    fillOpacity: 0,
+    weight: 0,
+    opacity: 0,
   },
 };
 
-// Selected photo styling - more prominent but still not too intrusive
+// Selected photo styling - slightly more visible but still subtle
 const SELECTED_STYLE = {
   color: '#d69e2e', // Gold border
   fillColor: '#ecc94b', // Lighter gold fill
-  fillOpacity: 0.20, // Reduced from 0.35
-  weight: 2.5,
+  fillOpacity: 0.08, // Very subtle fill
+  weight: 2,
 };
 
-export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: PhotoMarkersProps) {
+// Hovered photo styling - more prominent
+const HOVER_STYLE = {
+  color: '#3b82f6', // Blue border
+  fillColor: '#60a5fa', // Lighter blue fill
+  fillOpacity: 0.15, // More visible
+  weight: 3,
+};
+
+export default function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: PhotoMarkersProps) {
   return (
     <>
       {photos.map((photo) => {
@@ -51,7 +63,11 @@ export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: Ph
         }
 
         const isSelected = selectedPhoto?.OBJECTID === photo.OBJECTID && selectedPhoto?.layerId === photo.layerId;
+        const isHovered = hoveredPhoto?.OBJECTID === photo.OBJECTID && hoveredPhoto?.layerId === photo.layerId;
         const colorConfig = LAYER_COLORS[photo.layerType];
+
+        // Determine which style to use (priority: hovered > selected > default)
+        const styleToUse = isHovered ? HOVER_STYLE : isSelected ? SELECTED_STYLE : null;
 
         // Convert ArcGIS rings to Leaflet polygon positions
         // ArcGIS format: [[[lon, lat], [lon, lat], ...]]
@@ -63,11 +79,11 @@ export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: Ph
             key={`${photo.layerId}-${photo.OBJECTID}`}
             positions={positions}
             pathOptions={{
-              color: isSelected ? SELECTED_STYLE.color : colorConfig.color,
-              fillColor: isSelected ? SELECTED_STYLE.fillColor : colorConfig.fillColor,
-              fillOpacity: isSelected ? SELECTED_STYLE.fillOpacity : colorConfig.fillOpacity,
-              weight: isSelected ? SELECTED_STYLE.weight : colorConfig.weight,
-              dashArray: isSelected ? undefined : '5, 5', // Dashed lines for unselected polygons
+              color: styleToUse ? styleToUse.color : colorConfig.color,
+              fillColor: styleToUse ? styleToUse.fillColor : colorConfig.fillColor,
+              fillOpacity: styleToUse ? styleToUse.fillOpacity : colorConfig.fillOpacity,
+              weight: styleToUse ? styleToUse.weight : colorConfig.weight,
+              opacity: styleToUse ? 1 : colorConfig.opacity,
             }}
             eventHandlers={{
               click: () => {
@@ -79,8 +95,9 @@ export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: Ph
                 const layer = e.target;
                 if (!isSelected) {
                   layer.setStyle({
-                    weight: 2.5,
-                    fillOpacity: 0.15,
+                    weight: 2,
+                    opacity: 0.6,
+                    fillOpacity: 0.05,
                   });
                 }
               },
@@ -89,6 +106,7 @@ export default function PhotoMarkers({ photos, selectedPhoto, onPhotoClick }: Ph
                 if (!isSelected) {
                   layer.setStyle({
                     weight: colorConfig.weight,
+                    opacity: colorConfig.opacity,
                     fillOpacity: colorConfig.fillOpacity,
                   });
                 }

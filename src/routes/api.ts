@@ -341,3 +341,90 @@ api.get("/thumbnail/:layerId/:imageName", async (c) => {
     },
   });
 });
+
+// Optimized image endpoint - serves web-optimized images using Cloudflare's Image Resizing
+// This endpoint uses Cloudflare's Image Resizing to convert and optimize TIFF images on-the-fly
+api.get("/image/:layerId/:imageName", async (c) => {
+  const layerId = parseInt(c.req.param("layerId"));
+  const imageName = c.req.param("imageName");
+
+  // Get optional transformation parameters
+  const width = c.req.query("width") ? parseInt(c.req.query("width")!) : undefined;
+  const height = c.req.query("height") ? parseInt(c.req.query("height")!) : undefined;
+  const quality = c.req.query("quality") ? parseInt(c.req.query("quality")!) : 100; // Default to maximum quality
+  const format = c.req.query("format") || "auto"; // auto, webp, jpeg, png
+
+  if (isNaN(layerId) || !imageName) {
+    return c.json({ success: false, error: "Invalid parameters" }, 400);
+  }
+
+  // Remove .tif extension if provided
+  const cleanImageName = imageName.replace(/\.tif$/i, "");
+
+  // Search for the specific image by name to get download link
+  const params = new URLSearchParams({
+    f: "json",
+    where: `IMAGE_NAME='${cleanImageName}.tif'`,
+    outFields: "DOWNLOAD_LINK,THUMBNAIL_LINK",
+    returnGeometry: "false",
+  });
+
+  const searchResponse = await fetch(
+    `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+  );
+  const searchData = await searchResponse.json();
+
+  if (!searchData.features || searchData.features.length === 0) {
+    return c.json(
+      { success: false, error: "Image not found in ArcGIS" },
+      404
+    );
+  }
+
+  // Use THUMBNAIL_LINK for Image Resizing (JPEG format works with Cloudflare Image Resizing)
+  // Note: DOWNLOAD_LINK returns TIFF which Image Resizing doesn't support
+  const sourceLink = searchData.features[0].attributes.THUMBNAIL_LINK;
+
+  if (!sourceLink) {
+    return c.json(
+      { success: false, error: "No thumbnail link available" },
+      404
+    );
+  }
+
+  // Build Image Resizing options
+  const resizeOptions: Record<string, string> = {
+    format: format,
+    quality: quality.toString(),
+  };
+
+  if (width) resizeOptions.width = width.toString();
+  if (height) resizeOptions.height = height.toString();
+  if (width || height) resizeOptions.fit = "scale-down"; // Preserve aspect ratio
+
+  // Apply Cloudflare Image Resizing
+  // Note: This requires the "cf" property which is only available on Cloudflare Workers
+  // We use THUMBNAIL_LINK (JPEG) instead of DOWNLOAD_LINK (TIFF) because Image Resizing only supports JPEG, PNG, GIF, WebP
+  const optimizedResponse = await fetch(sourceLink, {
+    cf: {
+      image: resizeOptions as any,
+    },
+  });
+
+  if (!optimizedResponse.ok) {
+    return c.json(
+      { success: false, error: "Failed to optimize image" },
+      502
+    );
+  }
+
+  // Return optimized image
+  return new Response(optimizedResponse.body, {
+    headers: {
+      "Content-Type": optimizedResponse.headers.get("Content-Type") || "image/jpeg",
+      "Content-Disposition": "inline", // Display inline, not as download
+      "Cache-Control": "public, max-age=31536000",
+      "X-Optimized": "true",
+    },
+  });
+});

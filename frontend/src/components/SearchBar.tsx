@@ -58,18 +58,18 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
   // Fetch suggestions as user types
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (searchQuery.length < 3) {
+      if (searchQuery.length < 2) {
         setSuggestions([]);
         return;
       }
 
       setIsSearching(true);
-      const results = await geocodingService.searchLocations(searchQuery, 5);
+      const results = await geocodingService.searchLocations(searchQuery, 10); // Request more results
       setSuggestions(results);
       setIsSearching(false);
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, 300);
+    const debounceTimer = setTimeout(fetchSuggestions, 200); // Faster response
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
@@ -143,7 +143,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
     const options: SearchOption[] = [];
 
     // Add suggestions if searching
-    if (searchQuery.length >= 3) {
+    if (searchQuery.length >= 2) {
       options.push(...suggestions.map((s) => ({ type: "suggestion" as const, data: s })));
     }
 
@@ -162,42 +162,29 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
 
   return (
     <Paper
-      elevation={3}
+      elevation={4}
       sx={{
-        p: 2,
-        mb: 2,
+        overflow: "hidden",
+        borderRadius: 2.5,
         background: (theme) =>
           theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)"
-            : "linear-gradient(135deg, #ffffff 0%, #f7fafc 100%)",
+            ? "rgba(30, 41, 59, 0.75)"
+            : "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)", // Safari support
         border: (theme) =>
-          theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
+          theme.palette.mode === "dark"
+            ? "1px solid rgba(255, 255, 255, 0.1)"
+            : "1px solid rgba(255, 255, 255, 0.8)",
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+            : "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
       }}
     >
-      <Stack spacing={1.5}>
-        <Box>
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              background: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Search for Aerial Photos
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Search by address, place name, or click "Near Me" to use your location
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+      <Stack spacing={0}>
+        {/* Main search input */}
+        <Box sx={{ p: 1.5 }}>
           <Autocomplete
             freeSolo
             fullWidth
@@ -209,22 +196,34 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
               return option.data.name;
             }}
             inputValue={searchQuery}
-            onInputChange={(_event, newValue) => setSearchQuery(newValue)}
+            onInputChange={(_event, newValue) => {
+              setSearchQuery(newValue);
+            }}
             onChange={(_event, value) => {
-              if (typeof value !== "string") {
+              if (typeof value !== "string" && value !== null) {
                 handleOptionSelect(value);
               }
             }}
             loading={isSearching}
+            filterOptions={(x) => x}
             renderOption={(props, option) => {
               if (typeof option === "string") return null;
 
               return (
-                <ListItem {...props} key={`${option.type}-${JSON.stringify(option.data)}`}>
-                  <ListItemIcon>
-                    {option.type === "suggestion" && <Place color="primary" />}
-                    {option.type === "history" && <History color="action" />}
-                    {option.type === "preset" && <TravelExplore color="secondary" />}
+                <ListItem
+                  {...props}
+                  key={`${option.type}-${JSON.stringify(option.data)}`}
+                  sx={{
+                    py: 1,
+                    "&:hover": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.1)" : "rgba(99, 102, 241, 0.05)",
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    {option.type === "suggestion" && <Place color="primary" sx={{ fontSize: 20 }} />}
+                    {option.type === "history" && <History color="action" sx={{ fontSize: 20 }} />}
+                    {option.type === "preset" && <TravelExplore color="secondary" sx={{ fontSize: 20 }} />}
                   </ListItemIcon>
                   <ListItemText
                     primary={
@@ -241,14 +240,20 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                         ? option.data.type
                         : "Quick location"
                     }
+                    primaryTypographyProps={{ fontSize: "0.875rem" }}
+                    secondaryTypographyProps={{ fontSize: "0.75rem" }}
                   />
                   {option.type === "history" && (
                     <IconButton
                       size="small"
                       onClick={(e) => handleRemoveHistoryItem(option.data.id, e)}
-                      sx={{ ml: 1 }}
+                      sx={{
+                        ml: 1,
+                        opacity: 0.6,
+                        "&:hover": { opacity: 1 }
+                      }}
                     >
-                      <Delete fontSize="small" />
+                      <Delete sx={{ fontSize: 18 }} />
                     </IconButton>
                   )}
                 </ListItem>
@@ -257,47 +262,114 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Try 'Hobart', '123 Main St', or any Tasmania location..."
+                placeholder="Search location..."
                 variant="outlined"
+                size="small"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    fontSize: "0.875rem",
+                    "& fieldset": {
+                      borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "primary.main",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "primary.main",
+                    },
+                  },
+                }}
                 InputProps={{
                   ...params.InputProps,
-                  startAdornment: <Search sx={{ mr: 1, color: "action.active" }} />,
+                  startAdornment: <Search sx={{ mr: 0.5, color: "action.active", fontSize: 20 }} />,
                   endAdornment: (
                     <>
-                      {isSearching && <CircularProgress size={20} />}
+                      {isSearching && <CircularProgress size={16} />}
                       {params.InputProps.endAdornment}
                     </>
                   ),
                 }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    fontSize: "1.1rem",
-                    py: 0.5,
-                  },
-                }}
               />
             )}
             noOptionsText={
-              searchQuery.length < 3
+              searchQuery.length < 2
                 ? history.length === 0
-                  ? "Start typing an address or place name..."
-                  : "Recent searches will appear here"
-                : "No locations found. Try a different search term."
+                  ? "Type to search..."
+                  : "Recent searches"
+                : "No locations found"
             }
+            componentsProps={{
+              popper: {
+                sx: {
+                  "& .MuiAutocomplete-listbox": {
+                    maxHeight: "300px",
+                  }
+                }
+              }
+            }}
           />
+        </Box>
 
+        <Divider sx={{ opacity: 0.6 }} />
+
+        {/* Action buttons row */}
+        <Box sx={{
+          display: "flex",
+          gap: 1,
+          p: 1.5,
+          pt: 1,
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}>
+          {/* Quick location chips */}
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", flex: 1 }}>
+            {LOCATION_PRESETS.map((preset) => (
+              <Chip
+                key={preset.name}
+                label={preset.name}
+                onClick={() =>
+                  handleOptionSelect({
+                    type: "preset",
+                    data: preset,
+                  })
+                }
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: "0.7rem",
+                  height: 24,
+                  borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.15)",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.1)" : "rgba(99, 102, 241, 0.05)",
+                  },
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* Near me button */}
           <Button
             variant="contained"
             onClick={handleSearchNearMe}
             disabled={geolocating || loading}
-            startIcon={geolocating ? <CircularProgress size={20} /> : <MyLocation />}
+            startIcon={geolocating ? <CircularProgress size={14} /> : <MyLocation sx={{ fontSize: 16 }} />}
+            size="small"
             sx={{
-              height: 56,
-              px: 3,
+              fontSize: "0.75rem",
+              height: 28,
+              px: 1.5,
               whiteSpace: "nowrap",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              textTransform: "none",
+              fontWeight: 600,
+              background: (theme) => theme.palette.mode === "dark"
+                ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
+                : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
               "&:hover": {
-                background: "linear-gradient(135deg, #5568d3 0%, #5a3679 100%)",
+                background: (theme) => theme.palette.mode === "dark"
+                  ? "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
+                  : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
               },
             }}
           >
@@ -305,46 +377,29 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
           </Button>
         </Box>
 
-        {/* Quick location chips */}
-        {searchQuery.length === 0 && (
+        {/* Clear history button - only show when there's history and no search query */}
+        {history.length > 0 && searchQuery.length === 0 && (
           <>
-            <Divider sx={{ my: 1 }} />
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-                Quick Locations:
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                {LOCATION_PRESETS.map((preset) => (
-                  <Chip
-                    key={preset.name}
-                    label={preset.name}
-                    onClick={() =>
-                      handleOptionSelect({
-                        type: "preset",
-                        data: preset,
-                      })
-                    }
-                    icon={<Place />}
-                    variant="outlined"
-                    sx={{
-                      "&:hover": {
-                        background: (theme) => theme.palette.action.hover,
-                      },
-                    }}
-                  />
-                ))}
-              </Box>
+            <Divider sx={{ opacity: 0.6 }} />
+            <Box sx={{ px: 1.5, py: 1, display: "flex", justifyContent: "center" }}>
+              <Button
+                size="small"
+                startIcon={<Delete sx={{ fontSize: 16 }} />}
+                onClick={handleClearHistory}
+                sx={{
+                  fontSize: "0.7rem",
+                  textTransform: "none",
+                  color: "text.secondary",
+                  "&:hover": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.05)",
+                    color: "error.main",
+                  }
+                }}
+              >
+                Clear History
+              </Button>
             </Box>
           </>
-        )}
-
-        {/* Clear history button */}
-        {history.length > 0 && searchQuery.length === 0 && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button size="small" startIcon={<Delete />} onClick={handleClearHistory}>
-              Clear Search History
-            </Button>
-          </Box>
         )}
       </Stack>
     </Paper>
