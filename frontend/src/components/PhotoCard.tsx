@@ -16,6 +16,7 @@ import {
   CheckCircle,
   Map as MapIcon,
   Visibility,
+  OpenInNew,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -165,35 +166,33 @@ function PhotoCard({
             )}
           </Box>
 
-          {/* Metadata with improved hierarchy */}
+          {/* Metadata with compact hierarchy */}
           <Box>
-            {/* Date - most prominent */}
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{
-                fontSize: fontSize.md,
-                fontWeight: 600,
-                lineHeight: 1.4,
-                mb: 0.5,
-                color: 'text.primary',
-              }}
-            >
-              {photo.dateFormatted || "Unknown Date"}
-            </Typography>
-
-            {/* Scale - secondary */}
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                fontSize: fontSize.sm,
-                fontWeight: 500,
-                mb: 0.5,
-              }}
-            >
-              {photo.scaleFormatted || "N/A"}
-            </Typography>
+            {/* Date and Scale on same line */}
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.25 }}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  fontSize: fontSize.sm,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: 'text.primary',
+                }}
+              >
+                {photo.dateFormatted || "Unknown Date"}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: fontSize.xs,
+                  fontWeight: 500,
+                }}
+              >
+                {photo.scaleFormatted || "N/A"}
+              </Typography>
+            </Box>
 
             {/* Image name - tertiary, subdued */}
             <Typography
@@ -205,7 +204,7 @@ function PhotoCard({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                opacity: 0.8,
+                opacity: 0.7,
               }}
               title={photo.IMAGE_NAME}
             >
@@ -232,6 +231,40 @@ function PhotoCard({
             >
               <Visibility sx={{ fontSize: iconSize.md }} />
             </IconButton>
+          </Tooltip>
+
+          <Tooltip title="View full resolution image (long-press on iOS to download)" arrow placement="top">
+            <Box
+              component="a"
+              href={photo.DOWNLOAD_LINK || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                color: 'warning.main',
+                textDecoration: 'none',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                ...(photo.DOWNLOAD_LINK ? {
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                    bgcolor: 'action.hover',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                  },
+                } : {
+                  opacity: 0.38,
+                  pointerEvents: 'none',
+                }),
+              }}
+            >
+              <OpenInNew sx={{ fontSize: iconSize.md }} />
+            </Box>
           </Tooltip>
 
           {onShowOnMap && photo.geometry && (

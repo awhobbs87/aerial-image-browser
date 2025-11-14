@@ -21,6 +21,7 @@ import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
 import FilterPanel, { type Filters } from "./components/FilterPanel";
+import FavoritesModal from "./components/FavoritesModal";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -78,6 +79,7 @@ function AppContent() {
 
   const [searchParams, setSearchParams] = useState<LocationSearchParams | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
   const [hoveredPhoto, setHoveredPhoto] = useState<EnhancedPhoto | null>(null);
@@ -135,12 +137,26 @@ function AppContent() {
   // Filter photos by selected scales (client-side)
   const filteredPhotos = useMemo(() => {
     if (!data?.photos) return [];
-    if (filters.selectedScales.length === 0) return data.photos;
 
-    return data.photos.filter(photo =>
-      photo.SCALE && filters.selectedScales.includes(photo.SCALE)
-    );
+    let photos = data.photos;
+
+    // Filter by scale if specified
+    if (filters.selectedScales.length > 0) {
+      photos = photos.filter(photo =>
+        photo.SCALE && filters.selectedScales.includes(photo.SCALE)
+      );
+    }
+
+    return photos;
   }, [data?.photos, filters.selectedScales]);
+
+  // Get favorite photos for modal
+  const favoritePhotos = useMemo(() => {
+    if (!data?.photos) return [];
+    return data.photos.filter(photo =>
+      favorites.has(`${photo.layerId}-${photo.OBJECTID}`)
+    );
+  }, [data?.photos, favorites]);
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
@@ -181,6 +197,10 @@ function AppContent() {
     },
     [filters]
   );
+
+  const handleViewFavorites = useCallback(() => {
+    setFavoritesModalOpen(true);
+  }, []);
 
   const handleFavorite = useCallback((photo: EnhancedPhoto) => {
     const key = `${photo.layerId}-${photo.OBJECTID}`;
@@ -266,7 +286,13 @@ function AppContent() {
           }),
         }}
       >
-        <AppBar darkMode={darkMode} themeMode={themeMode} onToggleDarkMode={handleToggleDarkMode} />
+        <AppBar
+          darkMode={darkMode}
+          themeMode={themeMode}
+          onToggleDarkMode={handleToggleDarkMode}
+          favoritesCount={favorites.size}
+          onViewFavorites={handleViewFavorites}
+        />
 
         {/* Desktop: Two-column layout, Mobile: Single column */}
         <Box
@@ -648,6 +674,19 @@ function AppContent() {
           </Typography>
         </Box>
       </Box>
+
+      {/* Favorites Modal */}
+      <FavoritesModal
+        open={favoritesModalOpen}
+        onClose={() => setFavoritesModalOpen(false)}
+        favoritePhotos={favoritePhotos}
+        favorites={favorites}
+        onFavorite={handleFavorite}
+        onShowOnMap={(photo) => {
+          handlePhotoSelect(photo);
+          setFavoritesModalOpen(false);
+        }}
+      />
     </ThemeProvider>
   );
 }

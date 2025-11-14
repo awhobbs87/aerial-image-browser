@@ -42,15 +42,9 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
   if (!photo) return null;
 
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
-  const webpUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
 
-  // Estimate file size (WebP is typically 2-5MB, much smaller than 15-20MB TIFF)
-  const estimatedSize = "~2-5 MB";
-
-  const handleOpenFullImage = () => {
-    window.open(webpUrl, "_blank");
-    onClose();
-  };
+  // Estimate file size for TIFF
+  const estimatedSize = "~10-30 MB";
 
   const handleClose = () => {
     setImageLoaded(false);
@@ -231,10 +225,10 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
               }}
             >
               <Typography variant="body2" color="warning.dark" fontWeight={600}>
-                Full Resolution Image
+                Full Resolution TIFF
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                Opening the full resolution WebP image ({estimatedSize}). Optimized for faster loading.
+                Opens the original high-resolution TIFF file ({estimatedSize}). On iOS: long-press the link to download.
               </Typography>
             </Box>
           </Stack>
@@ -248,11 +242,22 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           Close
         </Button>
         <Button
-          onClick={handleOpenFullImage}
+          component="a"
+          href={photo.DOWNLOAD_LINK || undefined}
+          target="_blank"
+          rel="noopener noreferrer"
           variant="contained"
           startIcon={<OpenInNew />}
           disabled={!photo.DOWNLOAD_LINK}
           size="large"
+          sx={{
+            textDecoration: 'none',
+            ...(photo.DOWNLOAD_LINK && {
+              '&:active': {
+                transform: 'scale(0.98)',
+              },
+            }),
+          }}
         >
           View Full Resolution
         </Button>

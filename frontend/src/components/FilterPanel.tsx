@@ -5,9 +5,13 @@ import {
   Typography,
   Chip,
   Divider,
-  Paper,
   Tooltip,
   Slider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Clear,
@@ -18,6 +22,8 @@ import {
   History as HistoryIcon,
   TrendingUp,
   ZoomIn,
+  ExpandMore,
+  FilterList,
 } from "@mui/icons-material";
 
 export interface Filters {
@@ -117,6 +123,8 @@ const SCALE_CATEGORIES = [
 ];
 
 export default function FilterPanel({ filters, onFiltersChange, availableScales = [], dateRange = null }: FilterPanelProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Group available scales into categories
   const scaleCategories = React.useMemo(() => {
@@ -420,8 +428,9 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
         </Box>
       )}
 
-      {/* Compact Filter Panel - No accordion */}
-      <Paper
+      {/* Compact Filter Panel - Collapsible on mobile */}
+      <Accordion
+        defaultExpanded={!isMobile}
         elevation={2}
         sx={{
           overflow: "hidden",
@@ -429,15 +438,33 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
             theme.palette.mode === "dark" ? "#2d3748" : "#ffffff",
           border: (theme) =>
             theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
-          transition: "all 0.2s ease-in-out",
+          '&:before': {
+            display: 'none',
+          },
         }}
       >
-        <Box sx={{ p: 1.25 }}>
-          <Stack spacing={1.5}>
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          sx={{
+            minHeight: 48,
+            '& .MuiAccordionSummary-content': {
+              margin: '12px 0',
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FilterList sx={{ fontSize: 20, color: 'primary.main' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Filters
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 1 }}>
+          <Stack spacing={1}>
             {/* Date Range Filter - Slider */}
             {dateRange && (
               <Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <CalendarToday sx={{ fontSize: 13, color: "primary.main" }} />
                     <Typography
@@ -452,15 +479,18 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                       DATE RANGE
                     </Typography>
                   </Box>
-                  <Tooltip
-                    title="Drag to select year range"
-                    arrow
-                    placement="top"
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      color: "primary.main",
+                    }}
                   >
-                    <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
-                  </Tooltip>
+                    {sliderValue[0]} - {sliderValue[1]}
+                  </Typography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 0.5 }}>
+                <Box sx={{ px: 3, py: 0, pb: 4 }}>
                   <Slider
                     value={sliderValue}
                     onChange={handleYearRangeChange}
@@ -473,38 +503,37 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                     ]}
                     sx={{
                       color: "primary.main",
+                      height: 4,
+                      mb: 1,
                       "& .MuiSlider-thumb": {
-                        width: 16,
-                        height: 16,
+                        width: 14,
+                        height: 14,
                       },
                       "& .MuiSlider-mark": {
                         display: "none",
                       },
                       "& .MuiSlider-markLabel": {
-                        fontSize: "0.65rem",
+                        fontSize: "0.6rem",
                         fontWeight: 600,
                         color: "text.secondary",
+                        top: 24,
+                        "&:first-of-type": {
+                          left: "8px !important",
+                          transform: "translateX(0%)",
+                        },
+                        "&:last-of-type": {
+                          left: "auto !important",
+                          right: "8px !important",
+                          transform: "translateX(0%)",
+                        },
                       },
                       "& .MuiSlider-valueLabel": {
-                        fontSize: "0.7rem",
+                        fontSize: "0.65rem",
                         fontWeight: 600,
                         bgcolor: "primary.main",
                       },
                     }}
                   />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      display: "block",
-                      textAlign: "center",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      color: "primary.main",
-                      mt: 0.5,
-                    }}
-                  >
-                    {sliderValue[0]} - {sliderValue[1]}
-                  </Typography>
                 </Box>
               </Box>
             )}
@@ -514,7 +543,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
             {/* Scale Filter - Simplified Categories */}
             {scaleCategories.length > 0 && (
               <Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <PhotoSizeSelectActual sx={{ fontSize: 13, color: "secondary.main" }} />
                     <Typography
@@ -537,7 +566,11 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                     <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
                   </Tooltip>
                 </Box>
-                <Stack spacing={0.75}>
+                <Box sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: 0.5,
+                }}>
                   {scaleCategories.map((category) => {
                     const isSelected = selectedCategories.has(category.id);
                     return (
@@ -547,10 +580,11 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 1,
-                            px: 1.5,
-                            py: 1,
-                            borderRadius: 1,
+                            justifyContent: "center",
+                            gap: 0.5,
+                            px: 0.75,
+                            py: 0.5,
+                            borderRadius: 0.75,
                             cursor: "pointer",
                             transition: "all 0.15s ease-in-out",
                             border: (theme) => isSelected
@@ -570,47 +604,28 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                                 : theme.palette.mode === "dark"
                                 ? "0 2px 6px rgba(0, 0, 0, 0.3)"
                                 : "0 2px 6px rgba(0, 0, 0, 0.1)",
-                              bgcolor: (theme) => isSelected
-                                ? theme.palette.mode === "dark"
-                                  ? `${theme.palette[category.color].main}30`
-                                  : `${theme.palette[category.color].main}15`
-                                : theme.palette.mode === "dark"
-                                ? "rgba(74, 85, 104, 0.3)"
-                                : "rgba(226, 232, 240, 0.5)",
                             },
                             "&:active": {
                               transform: "translateY(0)",
                             },
                           }}
                         >
-                          <Typography sx={{ fontSize: "1.2rem" }}>{category.icon}</Typography>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: "0.75rem",
-                                color: isSelected ? `${category.color}.main` : "text.primary",
-                              }}
-                            >
-                              {category.label}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontSize: "0.65rem",
-                                color: "text.secondary",
-                                display: "block",
-                              }}
-                            >
-                              {category.count} photo{category.count !== 1 ? 's' : ''}
-                            </Typography>
-                          </Box>
+                          <Typography sx={{ fontSize: "0.95rem" }}>{category.icon}</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                              color: isSelected ? `${category.color}.main` : "text.primary",
+                            }}
+                          >
+                            {category.label}
+                          </Typography>
                         </Box>
                       </Tooltip>
                     );
                   })}
-                </Stack>
+                </Box>
               </Box>
             )}
 
@@ -618,7 +633,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
 
             {/* Layer Type Filter - Modern Toggle Pills */}
             <Box>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <Image sx={{ fontSize: 13, color: "success.main" }} />
                   <Typography
@@ -665,9 +680,9 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        height: 32,
-                        borderRadius: 1,
-                        fontSize: "0.72rem",
+                        height: 26,
+                        borderRadius: 0.75,
+                        fontSize: "0.68rem",
                         fontWeight: 700,
                         cursor: "pointer",
                         transition: "all 0.15s ease-in-out",
@@ -691,13 +706,6 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                             : theme.palette.mode === "dark"
                             ? "0 2px 6px rgba(0, 0, 0, 0.3)"
                             : "0 2px 6px rgba(0, 0, 0, 0.1)",
-                          bgcolor: (theme) => isSelected
-                            ? theme.palette.mode === "dark"
-                              ? "rgba(0, 77, 64, 0.25)"
-                              : "rgba(0, 77, 64, 0.15)"
-                            : theme.palette.mode === "dark"
-                            ? "rgba(74, 85, 104, 0.3)"
-                            : "rgba(226, 232, 240, 0.5)",
                         },
                         "&:active": {
                           transform: "translateY(0)",
@@ -711,8 +719,8 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
               </Box>
             </Box>
           </Stack>
-        </Box>
-      </Paper>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 }

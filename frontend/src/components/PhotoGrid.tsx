@@ -4,7 +4,6 @@ import {
   Box,
   Pagination,
   Paper,
-  Grid,
   ToggleButtonGroup,
   ToggleButton,
   Accordion,
@@ -121,14 +120,21 @@ export default function PhotoGrid({
   // Loading state - show skeleton cards
   if (loading) {
     return (
-      <Box>
-        <Grid container spacing={3}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Grid item key={`skeleton-${index}`} xs={12} sm={6} lg={12}>
-              <PhotoCardSkeleton />
-            </Grid>
-          ))}
-        </Grid>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(2, 1fr)',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(2, 1fr)',
+            lg: 'repeat(1, 1fr)',
+          },
+          gap: 2,
+        }}
+      >
+        {Array.from({ length: 6 }).map((_, index) => (
+          <PhotoCardSkeleton key={`skeleton-${index}`} />
+        ))}
       </Box>
     );
   }
@@ -173,26 +179,30 @@ export default function PhotoGrid({
     if (groupBy === "none") {
       const currentPhotos = allPhotos.slice(startIndex, endIndex);
       return (
-        <Grid container spacing={3}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, 1fr)',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(2, 1fr)',
+              lg: 'repeat(1, 1fr)',
+            },
+            gap: 2,
+          }}
+        >
           {currentPhotos.map((photo, index) => (
-            <Grid
-              item
+            <PhotoCard
               key={`${photo.layerId}-${photo.OBJECTID}`}
-              xs={12}
-              sm={6}
-              lg={12}
-            >
-              <PhotoCard
-                photo={photo}
-                onFavorite={onFavorite}
-                onShowOnMap={onShowOnMap}
-                onPhotoHover={onPhotoHover}
-                onThumbnailClick={() => handleOpenGallery(startIndex + index)}
-                isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
-              />
-            </Grid>
+              photo={photo}
+              onFavorite={onFavorite}
+              onShowOnMap={onShowOnMap}
+              onPhotoHover={onPhotoHover}
+              onThumbnailClick={() => handleOpenGallery(startIndex + index)}
+              isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+            />
           ))}
-        </Grid>
+        </Box>
       );
     }
 
@@ -220,7 +230,18 @@ export default function PhotoGrid({
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <Grid container spacing={3}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: 'repeat(2, 1fr)',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(2, 1fr)',
+                      lg: 'repeat(1, 1fr)',
+                    },
+                    gap: 2,
+                  }}
+                >
                   {groupPhotos.map((photo) => {
                     const photoIndex = allPhotos.findIndex(
                       (p) =>
@@ -228,27 +249,20 @@ export default function PhotoGrid({
                         p.OBJECTID === photo.OBJECTID,
                     );
                     return (
-                      <Grid
-                        item
+                      <PhotoCard
                         key={`${photo.layerId}-${photo.OBJECTID}`}
-                        xs={12}
-                        sm={6}
-                        lg={12}
-                      >
-                        <PhotoCard
-                          photo={photo}
-                          onFavorite={onFavorite}
-                          onShowOnMap={onShowOnMap}
-                          onPhotoHover={onPhotoHover}
-                          onThumbnailClick={() => handleOpenGallery(photoIndex)}
-                          isFavorite={favorites.has(
-                            `${photo.layerId}-${photo.OBJECTID}`,
-                          )}
-                        />
-                      </Grid>
+                        photo={photo}
+                        onFavorite={onFavorite}
+                        onShowOnMap={onShowOnMap}
+                        onPhotoHover={onPhotoHover}
+                        onThumbnailClick={() => handleOpenGallery(photoIndex)}
+                        isFavorite={favorites.has(
+                          `${photo.layerId}-${photo.OBJECTID}`,
+                        )}
+                      />
                     );
                   })}
-                </Grid>
+                </Box>
               </AccordionDetails>
             </Accordion>
           );

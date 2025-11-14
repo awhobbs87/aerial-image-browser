@@ -20,6 +20,7 @@ import {
   Fullscreen,
   CalendarToday,
   PhotoSizeSelectActual,
+  Download,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -77,6 +78,18 @@ export default function PhotoGallery({
       setCurrentIndex((prev) => prev - 1);
     }
   }, [currentIndex]);
+
+  const handleDownload = useCallback(() => {
+    if (currentPhoto?.DOWNLOAD_LINK) {
+      const link = document.createElement('a');
+      link.href = currentPhoto.DOWNLOAD_LINK;
+      link.download = currentPhoto.IMAGE_NAME || 'aerial-photo.tif';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [currentPhoto]);
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 0.25, 3));
@@ -213,6 +226,14 @@ export default function PhotoGallery({
               </IconButton>
             </>
           )}
+          <IconButton
+            onClick={handleDownload}
+            sx={{ color: "white" }}
+            size="small"
+            disabled={!currentPhoto?.DOWNLOAD_LINK}
+          >
+            <Download />
+          </IconButton>
           <IconButton onClick={onClose} sx={{ color: "white" }} size="small">
             <Close />
           </IconButton>

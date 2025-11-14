@@ -126,11 +126,6 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
     }
   };
 
-  const handleClearHistory = () => {
-    searchHistory.clearHistory();
-    setHistory([]);
-  };
-
   const handleRemoveHistoryItem = (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
     searchHistory.removeSearch(id);
@@ -376,30 +371,6 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
           </Button>
         </Box>
 
-        {/* Clear history button - only show when there's history and no search query */}
-        {history.length > 0 && searchQuery.length === 0 && (
-          <>
-            <Divider sx={{ opacity: 0.6 }} />
-            <Box sx={{ px: 1.5, py: 1, display: "flex", justifyContent: "center" }}>
-              <Button
-                size="small"
-                startIcon={<Delete sx={{ fontSize: 16 }} />}
-                onClick={handleClearHistory}
-                sx={{
-                  fontSize: "0.7rem",
-                  textTransform: "none",
-                  color: "text.secondary",
-                  "&:hover": {
-                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.05)",
-                    color: "error.main",
-                  }
-                }}
-              >
-                Clear History
-              </Button>
-            </Box>
-          </>
-        )}
       </Stack>
     </Paper>
   );
