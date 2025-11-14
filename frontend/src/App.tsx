@@ -297,6 +297,11 @@ function AppContent() {
               }}
             />
             <Container maxWidth="lg" sx={{ py: 2, flexGrow: 1 }}>
+              {/* Search Bar - Mobile only in sidebar, Desktop in floating box on map */}
+              <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                <SearchBar onSearch={handleSearch} loading={isLoading} />
+              </Box>
+
               <FilterPanel
                 filters={filters}
                 onFiltersChange={setFilters}
@@ -510,15 +515,16 @@ function AppContent() {
               minHeight: { xs: "500px", md: "auto" },
             }}
           >
-            {/* Floating Search Box - Always visible */}
+            {/* Floating Search Box - Desktop only */}
             <Box
               sx={{
+                display: { xs: "none", md: "block" },
                 position: "absolute",
                 top: 16,
                 right: 16,
                 zIndex: 1000,
                 maxWidth: 400,
-                width: { xs: "calc(100% - 32px)", sm: "auto" },
+                width: "auto",
               }}
             >
               <Box

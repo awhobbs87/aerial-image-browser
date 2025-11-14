@@ -18,9 +18,11 @@ import {
   Image as ImageIcon,
   ExpandMore,
   ViewModule,
+  Collections,
 } from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
 import PhotoCardSkeleton from "./PhotoCardSkeleton";
+import PhotoGallery from "./PhotoGallery";
 import type { EnhancedPhoto } from "../types/api";
 
 interface PhotoGridProps {
@@ -50,10 +52,17 @@ export default function PhotoGrid({
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [groupBy, setGroupBy] = useState<GroupBy>("year");
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleOpenGallery = (index: number) => {
+    setGalleryStartIndex(index);
+    setGalleryOpen(true);
   };
 
   // Sort and group photos
@@ -160,13 +169,14 @@ export default function PhotoGrid({
       const currentPhotos = allPhotos.slice(startIndex, endIndex);
       return (
         <Grid container spacing={3}>
-          {currentPhotos.map((photo) => (
+          {currentPhotos.map((photo, index) => (
             <Grid item key={`${photo.layerId}-${photo.OBJECTID}`} xs={12} sm={6} lg={12}>
               <PhotoCard
                 photo={photo}
                 onFavorite={onFavorite}
                 onShowOnMap={onShowOnMap}
                 onPhotoHover={onPhotoHover}
+                onThumbnailClick={() => handleOpenGallery(startIndex + index)}
                 isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
               />
             </Grid>
@@ -196,23 +206,29 @@ export default function PhotoGrid({
               </AccordionSummary>
               <AccordionDetails>
                 <Grid container spacing={3}>
-                  {groupPhotos.map((photo) => (
-                    <Grid
-                      item
-                      key={`${photo.layerId}-${photo.OBJECTID}`}
-                      xs={12}
-                      sm={6}
-                      lg={12}
-                    >
-                      <PhotoCard
-                        photo={photo}
-                        onFavorite={onFavorite}
-                        onShowOnMap={onShowOnMap}
-                        onPhotoHover={onPhotoHover}
-                        isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
-                      />
-                    </Grid>
-                  ))}
+                  {groupPhotos.map((photo) => {
+                    const photoIndex = allPhotos.findIndex(
+                      (p) => p.layerId === photo.layerId && p.OBJECTID === photo.OBJECTID
+                    );
+                    return (
+                      <Grid
+                        item
+                        key={`${photo.layerId}-${photo.OBJECTID}`}
+                        xs={12}
+                        sm={6}
+                        lg={12}
+                      >
+                        <PhotoCard
+                          photo={photo}
+                          onFavorite={onFavorite}
+                          onShowOnMap={onShowOnMap}
+                          onPhotoHover={onPhotoHover}
+                          onThumbnailClick={() => handleOpenGallery(photoIndex)}
+                          isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+                        />
+                      </Grid>
+                    );
+                  })}
                 </Grid>
               </AccordionDetails>
             </Accordion>
@@ -224,6 +240,13 @@ export default function PhotoGrid({
 
   return (
     <Box>
+      <PhotoGallery
+        photos={allPhotos}
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        initialIndex={galleryStartIndex}
+      />
+
       {/* Results header with controls */}
       <Paper
         elevation={1}
@@ -239,16 +262,36 @@ export default function PhotoGrid({
         <Stack spacing={1.25}>
           {/* Header with count and pagination */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-            <Chip
-              label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
-              color="primary"
-              size="small"
-              sx={{
-                fontWeight: 600,
-                fontSize: "0.8rem",
-                height: 28,
-              }}
-            />
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Chip
+                label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
+                color="primary"
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                  height: 28,
+                }}
+              />
+              <Chip
+                icon={<Collections sx={{ fontSize: 16 }} />}
+                label="Gallery View"
+                onClick={() => handleOpenGallery(0)}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  height: 28,
+                  cursor: "pointer",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                  },
+                }}
+              />
+            </Box>
             {groupBy === "none" && totalPages > 1 && (
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
                 Page {page} of {totalPages}

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:frontend:*)",
+      "Bash(npm install)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(npx eslint:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(source:*)",
+      "Bash(nvm install:*)",
+      "Bash(nvm use:*)",
+      "Bash(CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer)",
+      "Bash(CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer --commit-dirty=true)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(frontend): implement comprehensive UI/UX improvements\n\n- Update color scheme: remove purple accents, implement earthy green/cyan/amber palette\n- Add PhotoCardSkeleton component with wave animation for better loading states\n- Create PhotoPreviewModal component to preview photos before downloading large TIFFs\n- Add filter presets (Historical, Modern, High Detail) for quick filtering\n- Redesign welcome screen with hero section, feature cards, and popular locations\n- Remove redundant download button from PhotoCard\n- Update all hover states, shadows, and focus indicators to new color scheme\n- Improve visual hierarchy and user onboarding experience\n\nFiles modified:\n- frontend/src/theme/tokens.ts - Updated color system\n- frontend/src/theme.ts - Theme configuration\n- frontend/src/components/PhotoCard.tsx - Modal integration, removed download button\n- frontend/src/components/PhotoGrid.tsx - Skeleton loading states\n- frontend/src/components/FilterPanel.tsx - Filter presets\n- frontend/src/components/SearchBar.tsx - Color updates\n- frontend/src/App.tsx - Welcome screen redesign\n- guide.md - Documentation updates for Stage 13\n\nFiles created:\n- frontend/src/components/PhotoCardSkeleton.tsx\n- frontend/src/components/PhotoPreviewModal.tsx\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

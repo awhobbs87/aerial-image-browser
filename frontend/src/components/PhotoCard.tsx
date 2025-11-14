@@ -28,6 +28,7 @@ interface PhotoCardProps {
   onFavorite?: (photo: EnhancedPhoto) => void;
   onShowOnMap?: (photo: EnhancedPhoto) => void;
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
+  onThumbnailClick?: (photo: EnhancedPhoto) => void;
   isFavorite?: boolean;
 }
 
@@ -48,6 +49,7 @@ function PhotoCard({
   onFavorite,
   onShowOnMap,
   onPhotoHover,
+  onThumbnailClick,
   isFavorite = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
@@ -56,6 +58,12 @@ function PhotoCard({
   const handleViewImage = () => {
     // Open preview modal instead of directly opening TIFF
     setPreviewOpen(true);
+  };
+
+  const handleThumbnailClick = () => {
+    if (onThumbnailClick) {
+      onThumbnailClick(photo);
+    }
   };
 
   const handleFavorite = () => {
@@ -88,10 +96,12 @@ function PhotoCard({
     >
       {/* Thumbnail with inner shadow */}
       <Box
+        onClick={handleThumbnailClick}
         sx={{
           position: "relative",
           height: 150,
           overflow: "hidden",
+          cursor: onThumbnailClick ? 'pointer' : 'default',
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -102,6 +112,21 @@ function PhotoCard({
             boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.1)',
             pointerEvents: 'none',
           },
+          ...(onThumbnailClick && {
+            '&:hover': {
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgcolor: 'rgba(0, 0, 0, 0.3)',
+                zIndex: 1,
+                pointerEvents: 'none',
+              },
+            },
+          }),
         }}
       >
         <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
