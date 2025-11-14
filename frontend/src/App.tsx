@@ -24,7 +24,7 @@ import FilterPanel, { type Filters } from "./components/FilterPanel";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.5.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));

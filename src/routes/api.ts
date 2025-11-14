@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { ArcGISClient } from "../lib/arcgis";
 import { CacheManager } from "../lib/cache";
 import { R2Manager } from "../lib/r2";
+import { convertTiffToWebP, estimateSizeReduction } from "../lib/imageConversion";
 import type { Bindings, EnhancedPhoto } from "../types";
 
 export const api = new Hono<{ Bindings: Bindings }>();
@@ -261,6 +262,132 @@ api.get("/tiff/:layerId/:imageName", async (c) => {
       "X-Cache": "MISS",
     },
   });
+});
+
+// WebP conversion endpoint - converts TIFF to WebP with caching in R2
+api.get("/webp/:layerId/:imageName", async (c) => {
+  const layerId = parseInt(c.req.param("layerId"));
+  const imageName = c.req.param("imageName");
+
+  if (isNaN(layerId) || !imageName) {
+    return c.json({ success: false, error: "Invalid parameters" }, 400);
+  }
+
+  // Remove .tif extension if provided
+  const cleanImageName = imageName.replace(/\.tif$/i, "");
+
+  const r2 = new R2Manager(c.env.TIFF_STORAGE, c.env.THUMBNAIL_STORAGE);
+
+  // Check if WebP is already cached in R2
+  const cachedWebP = await r2.getWebP(cleanImageName, layerId);
+  if (cachedWebP) {
+    console.log(`WebP cache HIT for ${cleanImageName}`);
+    return new Response(cachedWebP.body, {
+      headers: {
+        "Content-Type": "image/webp",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Cache": "HIT",
+        "X-Image-Format": "webp",
+      },
+    });
+  }
+
+  console.log(`WebP cache MISS for ${cleanImageName}, converting from TIFF`);
+
+  // Check if TIFF is cached
+  let tiffBuffer: ArrayBuffer;
+  const cachedTiff = await r2.getTiff(cleanImageName, layerId);
+
+  if (cachedTiff) {
+    console.log(`Using cached TIFF for ${cleanImageName}`);
+    tiffBuffer = await cachedTiff.arrayBuffer();
+  } else {
+    console.log(`Fetching TIFF from ArcGIS for ${cleanImageName}`);
+
+    // Search for the specific image by name to get download link
+    const params = new URLSearchParams({
+      f: "json",
+      where: `IMAGE_NAME='${cleanImageName}.tif'`,
+      outFields: "DOWNLOAD_LINK",
+      returnGeometry: "false",
+    });
+
+    const searchResponse = await fetch(
+      `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+    );
+    const searchData = await searchResponse.json() as { features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }> };
+
+    if (!searchData.features || searchData.features.length === 0) {
+      return c.json(
+        { success: false, error: "Image not found in ArcGIS" },
+        404
+      );
+    }
+
+    const downloadLink = searchData.features[0].attributes.DOWNLOAD_LINK;
+    if (!downloadLink) {
+      return c.json(
+        { success: false, error: "No download link available" },
+        404
+      );
+    }
+
+    // Download from ArcGIS
+    const tiffResponse = await fetch(downloadLink);
+    if (!tiffResponse.ok) {
+      return c.json(
+        { success: false, error: "Failed to download TIFF from ArcGIS" },
+        502
+      );
+    }
+
+    tiffBuffer = await tiffResponse.arrayBuffer();
+
+    // Cache the TIFF for future use
+    await r2.putTiff(cleanImageName, layerId, tiffBuffer);
+  }
+
+  try {
+    // Convert TIFF to WebP with high quality (95)
+    // Optional: Add maxWidth/maxHeight for mobile optimization
+    const webpBuffer = await convertTiffToWebP(tiffBuffer, {
+      quality: 95, // High quality to preserve details
+    });
+
+    // Cache the WebP in R2
+    await r2.putWebP(cleanImageName, layerId, webpBuffer);
+
+    const originalSize = tiffBuffer.byteLength;
+    const webpSize = webpBuffer.byteLength;
+    const reduction = ((1 - webpSize / originalSize) * 100).toFixed(1);
+
+    console.log(
+      `Converted ${cleanImageName}: ${(originalSize / 1024 / 1024).toFixed(2)}MB TIFF → ${(webpSize / 1024 / 1024).toFixed(2)}MB WebP (${reduction}% reduction)`
+    );
+
+    // Return WebP to user
+    return new Response(webpBuffer, {
+      headers: {
+        "Content-Type": "image/webp",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Cache": "MISS",
+        "X-Image-Format": "webp",
+        "X-Original-Size": originalSize.toString(),
+        "X-Converted-Size": webpSize.toString(),
+        "X-Size-Reduction": `${reduction}%`,
+      },
+    });
+  } catch (error) {
+    console.error(`Error converting TIFF to WebP for ${cleanImageName}:`, error);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to convert image to WebP",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
+  }
 });
 
 // Thumbnail proxy endpoint - downloads and caches thumbnails from ArcGIS

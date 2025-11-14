@@ -142,6 +142,16 @@ class ApiClient {
   }
 
   /**
+   * Get WebP URL (TIFF converted to WebP on edge)
+   * This provides significantly smaller file sizes while maintaining quality
+   */
+  getWebPUrl(imageName: string, layerId: number): string {
+    // Remove .tif extension if present
+    const cleanName = imageName.replace(/\.tif$/i, "");
+    return `${this.client.defaults.baseURL}/api/webp/${layerId}/${cleanName}`;
+  }
+
+  /**
    * Get optimized image URL using Cloudflare Image Resizing
    * Converts TIFFs to web-optimized formats (WebP, JPEG) with optional resizing
    */

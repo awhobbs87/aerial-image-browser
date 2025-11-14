@@ -38,7 +38,8 @@
     "wrangler": "^4.48.0"
   },
   "dependencies": {
-    "hono": "^4.6.14"
+    "hono": "^4.6.14",
+    "utif2": "^4.1.0"
   },
   "lint-staged": {
     "frontend/src/**/*.{ts,tsx}": [

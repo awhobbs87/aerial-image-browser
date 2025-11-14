@@ -42,13 +42,13 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
   if (!photo) return null;
 
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
-  const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
+  const webpUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
 
-  // Estimate file size (TIFFs are typically 15-20MB)
-  const estimatedSize = "~15-20 MB";
+  // Estimate file size (WebP is typically 2-5MB, much smaller than 15-20MB TIFF)
+  const estimatedSize = "~2-5 MB";
 
   const handleOpenFullImage = () => {
-    window.open(tiffUrl, "_blank");
+    window.open(webpUrl, "_blank");
     onClose();
   };
 
@@ -234,7 +234,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                 Full Resolution Image
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                Opening the full TIFF file ({estimatedSize}). First load may be slow.
+                Opening the full resolution WebP image ({estimatedSize}). Optimized for faster loading.
               </Typography>
             </Box>
           </Stack>

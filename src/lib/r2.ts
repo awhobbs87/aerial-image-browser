@@ -43,4 +43,28 @@ export class R2Manager {
       },
     });
   }
+
+  async getWebP(imageName: string, layerId: number): Promise<R2ObjectBody | null> {
+    const key = `webp/${layerId}/${imageName}.webp`;
+    return await this.tiffBucket.get(key);
+  }
+
+  async putWebP(imageName: string, layerId: number, data: ArrayBuffer | ReadableStream): Promise<void> {
+    const key = `webp/${layerId}/${imageName}.webp`;
+    await this.tiffBucket.put(key, data, {
+      httpMetadata: {
+        contentType: "image/webp",
+      },
+      customMetadata: {
+        "converted-from": "tiff",
+        "conversion-quality": "95",
+      },
+    });
+  }
+
+  async hasWebP(imageName: string, layerId: number): Promise<boolean> {
+    const key = `webp/${layerId}/${imageName}.webp`;
+    const obj = await this.tiffBucket.head(key);
+    return obj !== null;
+  }
 }
