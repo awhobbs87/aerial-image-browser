@@ -4,7 +4,6 @@ import {
   Box,
   Pagination,
   Paper,
-  CircularProgress,
   Grid,
   ToggleButtonGroup,
   ToggleButton,
@@ -55,7 +54,10 @@ export default function PhotoGrid({
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
-  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    value: number,
+  ) => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -108,7 +110,10 @@ export default function PhotoGrid({
   }, [photos, sortOrder, groupBy]);
 
   // Calculate pagination
-  const allPhotos = groupBy === "none" ? processedPhotos.ungrouped || [] : Object.values(processedPhotos).flat();
+  const allPhotos =
+    groupBy === "none"
+      ? processedPhotos.ungrouped || []
+      : Object.values(processedPhotos).flat();
   const totalPages = Math.ceil(allPhotos.length / PHOTOS_PER_PAGE);
   const startIndex = (page - 1) * PHOTOS_PER_PAGE;
   const endIndex = startIndex + PHOTOS_PER_PAGE;
@@ -170,7 +175,13 @@ export default function PhotoGrid({
       return (
         <Grid container spacing={3}>
           {currentPhotos.map((photo, index) => (
-            <Grid item key={`${photo.layerId}-${photo.OBJECTID}`} xs={12} sm={6} lg={12}>
+            <Grid
+              item
+              key={`${photo.layerId}-${photo.OBJECTID}`}
+              xs={12}
+              sm={6}
+              lg={12}
+            >
               <PhotoCard
                 photo={photo}
                 onFavorite={onFavorite}
@@ -201,14 +212,20 @@ export default function PhotoGrid({
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Typography variant="h6">{groupKey}</Typography>
-                  <Chip label={`${groupPhotos.length} photos`} size="small" color="primary" />
+                  <Chip
+                    label={`${groupPhotos.length} photos`}
+                    size="small"
+                    color="primary"
+                  />
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
                 <Grid container spacing={3}>
                   {groupPhotos.map((photo) => {
                     const photoIndex = allPhotos.findIndex(
-                      (p) => p.layerId === photo.layerId && p.OBJECTID === photo.OBJECTID
+                      (p) =>
+                        p.layerId === photo.layerId &&
+                        p.OBJECTID === photo.OBJECTID,
                     );
                     return (
                       <Grid
@@ -224,7 +241,9 @@ export default function PhotoGrid({
                           onShowOnMap={onShowOnMap}
                           onPhotoHover={onPhotoHover}
                           onThumbnailClick={() => handleOpenGallery(photoIndex)}
-                          isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+                          isFavorite={favorites.has(
+                            `${photo.layerId}-${photo.OBJECTID}`,
+                          )}
                         />
                       </Grid>
                     );
@@ -261,7 +280,15 @@ export default function PhotoGrid({
       >
         <Stack spacing={1.25}>
           {/* Header with count and pagination */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Chip
                 label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
@@ -287,22 +314,44 @@ export default function PhotoGrid({
                   "&:hover": {
                     borderColor: "primary.main",
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                      theme.palette.mode === "dark"
+                        ? "rgba(0, 77, 64, 0.1)"
+                        : "rgba(0, 77, 64, 0.05)",
                   },
                 }}
               />
             </Box>
             {groupBy === "none" && totalPages > 1 && (
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: "0.75rem" }}
+              >
                 Page {page} of {totalPages}
               </Typography>
             )}
           </Box>
 
           {/* Compact Sort and Group Controls */}
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+            }}
+          >
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.25, display: "block", fontSize: "0.7rem", fontWeight: 600 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  mb: 0.25,
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                }}
+              >
                 SORT
               </Typography>
               <ToggleButtonGroup
@@ -312,17 +361,32 @@ export default function PhotoGrid({
                 size="small"
                 sx={{ height: 28 }}
               >
-                <ToggleButton value="newest" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                <ToggleButton
+                  value="newest"
+                  sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}
+                >
                   Newest
                 </ToggleButton>
-                <ToggleButton value="oldest" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                <ToggleButton
+                  value="oldest"
+                  sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}
+                >
                   Oldest
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
 
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.25, display: "block", fontSize: "0.7rem", fontWeight: 600 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  mb: 0.25,
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                }}
+              >
                 GROUP
               </Typography>
               <ToggleButtonGroup
@@ -337,14 +401,23 @@ export default function PhotoGrid({
                 size="small"
                 sx={{ height: 28 }}
               >
-                <ToggleButton value="none" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                <ToggleButton
+                  value="none"
+                  sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}
+                >
                   <ViewModule sx={{ mr: 0.5, fontSize: 16 }} />
                   None
                 </ToggleButton>
-                <ToggleButton value="year" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                <ToggleButton
+                  value="year"
+                  sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}
+                >
                   Year
                 </ToggleButton>
-                <ToggleButton value="decade" sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}>
+                <ToggleButton
+                  value="decade"
+                  sx={{ px: 1, fontSize: "0.7rem", textTransform: "none" }}
+                >
                   Decade
                 </ToggleButton>
               </ToggleButtonGroup>
