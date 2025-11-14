@@ -738,6 +738,11 @@ Time: ~2-3s first conversion, <100ms cached
 - ✅ Automatic - transparent to users
 - ✅ Scales globally via Cloudflare edge network
 
+**Deployment:**
+- Backend: https://tas-aerial-browser.awhobbs.workers.dev
+- Frontend: https://34e3ea4c.tas-aerial-explorer.pages.dev
+- Worker Version: 9b962e02-25cc-4541-a14e-e768eb8f5909
+
 ---
 
 ## 🚀 Deployment
