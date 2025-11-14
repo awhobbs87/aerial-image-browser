@@ -24,7 +24,7 @@ import FilterPanel, { type Filters } from "./components/FilterPanel";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -114,6 +114,22 @@ function AppContent() {
       }
     });
     return Array.from(scalesSet).sort((a, b) => a - b);
+  }, [data?.photos]);
+
+  // Calculate date range from photos
+  const dateRange = useMemo(() => {
+    if (!data?.photos || data.photos.length === 0) return null;
+
+    const years = data.photos
+      .map(photo => photo.FLY_DATE ? new Date(photo.FLY_DATE).getFullYear() : null)
+      .filter((year): year is number => year !== null);
+
+    if (years.length === 0) return null;
+
+    return {
+      min: Math.min(...years),
+      max: Math.max(...years),
+    };
   }, [data?.photos]);
 
   // Filter photos by selected scales (client-side)
@@ -308,6 +324,7 @@ function AppContent() {
                 filters={filters}
                 onFiltersChange={setFilters}
                 availableScales={availableScales}
+                dateRange={dateRange}
               />
 
               {searchParams && (

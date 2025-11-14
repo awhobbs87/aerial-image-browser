@@ -7,10 +7,8 @@ import {
   Divider,
   Paper,
   Tooltip,
+  Slider,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import {
   Clear,
   CalendarToday,
@@ -21,7 +19,6 @@ import {
   TrendingUp,
   ZoomIn,
 } from "@mui/icons-material";
-import { format } from "date-fns";
 
 export interface Filters {
   startDate: Date | null;
@@ -38,6 +35,7 @@ interface FilterPanelProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   availableScales?: number[]; // Scales available in current result set
+  dateRange?: { min: number; max: number } | null; // Min/max years from search results
 }
 
 // Filter presets
@@ -80,10 +78,26 @@ const FILTER_PRESETS = [
   },
 ];
 
-export default function FilterPanel({ filters, onFiltersChange, availableScales = [] }: FilterPanelProps) {
+export default function FilterPanel({ filters, onFiltersChange, availableScales = [], dateRange = null }: FilterPanelProps) {
 
   // Sort and format available scales
   const sortedScales = [...availableScales].sort((a, b) => a - b);
+
+  // Calculate year range for slider
+  const yearRange = React.useMemo(() => {
+    if (dateRange) {
+      return [dateRange.min, dateRange.max];
+    }
+    // Default fallback range
+    return [1940, new Date().getFullYear()];
+  }, [dateRange]);
+
+  // Get current slider values from filters
+  const sliderValue = React.useMemo(() => {
+    const startYear = filters.startDate ? new Date(filters.startDate).getFullYear() : yearRange[0];
+    const endYear = filters.endDate ? new Date(filters.endDate).getFullYear() : yearRange[1];
+    return [startYear, endYear];
+  }, [filters.startDate, filters.endDate, yearRange]);
 
   // Auto-select all scales when they first become available (if none are selected)
   React.useEffect(() => {
@@ -133,6 +147,17 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
       startDate: null,
       endDate: null,
     });
+  };
+
+  const handleYearRangeChange = (_event: Event, newValue: number | number[]) => {
+    if (Array.isArray(newValue)) {
+      const [startYear, endYear] = newValue;
+      onFiltersChange({
+        ...filters,
+        startDate: new Date(startYear, 0, 1),
+        endDate: new Date(endYear, 11, 31),
+      });
+    }
   };
 
   const clearScaleFilter = () => {
@@ -185,11 +210,16 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
   // Format active filters for display
   const getDateFilterLabel = () => {
     if (filters.startDate && filters.endDate) {
-      return `${format(filters.startDate, "MMM yyyy")} - ${format(filters.endDate, "MMM yyyy")}`;
+      const startYear = new Date(filters.startDate).getFullYear();
+      const endYear = new Date(filters.endDate).getFullYear();
+      // Only show if not the full range
+      if (startYear !== yearRange[0] || endYear !== yearRange[1]) {
+        return `${startYear} - ${endYear}`;
+      }
     } else if (filters.startDate) {
-      return `From ${format(filters.startDate, "MMM yyyy")}`;
+      return `From ${new Date(filters.startDate).getFullYear()}`;
     } else if (filters.endDate) {
-      return `Until ${format(filters.endDate, "MMM yyyy")}`;
+      return `Until ${new Date(filters.endDate).getFullYear()}`;
     }
     return "";
   };
@@ -344,71 +374,82 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
       >
         <Box sx={{ p: 1.25 }}>
           <Stack spacing={1.5}>
-            {/* Date Range Filter - Compact Inline */}
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <CalendarToday sx={{ fontSize: 13, color: "primary.main" }} />
+            {/* Date Range Filter - Slider */}
+            {dateRange && (
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <CalendarToday sx={{ fontSize: 13, color: "primary.main" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.7rem",
+                        letterSpacing: "0.02em",
+                        color: "text.primary",
+                      }}
+                    >
+                      DATE RANGE
+                    </Typography>
+                  </Box>
+                  <Tooltip
+                    title="Drag to select year range"
+                    arrow
+                    placement="top"
+                  >
+                    <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
+                  </Tooltip>
+                </Box>
+                <Box sx={{ px: 1.5, py: 0.5 }}>
+                  <Slider
+                    value={sliderValue}
+                    onChange={handleYearRangeChange}
+                    valueLabelDisplay="auto"
+                    min={yearRange[0]}
+                    max={yearRange[1]}
+                    marks={[
+                      { value: yearRange[0], label: yearRange[0].toString() },
+                      { value: yearRange[1], label: yearRange[1].toString() },
+                    ]}
+                    sx={{
+                      color: "primary.main",
+                      "& .MuiSlider-thumb": {
+                        width: 16,
+                        height: 16,
+                      },
+                      "& .MuiSlider-mark": {
+                        display: "none",
+                      },
+                      "& .MuiSlider-markLabel": {
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        color: "text.secondary",
+                      },
+                      "& .MuiSlider-valueLabel": {
+                        fontSize: "0.7rem",
+                        fontWeight: 600,
+                        bgcolor: "primary.main",
+                      },
+                    }}
+                  />
                   <Typography
                     variant="caption"
                     sx={{
-                      fontWeight: 700,
-                      fontSize: "0.7rem",
-                      letterSpacing: "0.02em",
-                      color: "text.primary",
+                      display: "block",
+                      textAlign: "center",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: "primary.main",
+                      mt: 0.5,
                     }}
                   >
-                    DATE RANGE
+                    {sliderValue[0]} - {sliderValue[1]}
                   </Typography>
                 </Box>
               </Box>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Stack direction="row" spacing={0.75} sx={{ width: "100%" }}>
-                  <DatePicker
-                    label="From"
-                    value={filters.startDate}
-                    onChange={(date) => onFiltersChange({ ...filters, startDate: date })}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        sx: {
-                          "& .MuiInputBase-root": {
-                            fontSize: "0.75rem",
-                            height: 32,
-                          },
-                          "& .MuiInputLabel-root": {
-                            fontSize: "0.75rem",
-                          },
-                        },
-                      },
-                    }}
-                  />
-                  <DatePicker
-                    label="To"
-                    value={filters.endDate}
-                    onChange={(date) => onFiltersChange({ ...filters, endDate: date })}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        sx: {
-                          "& .MuiInputBase-root": {
-                            fontSize: "0.75rem",
-                            height: 32,
-                          },
-                          "& .MuiInputLabel-root": {
-                            fontSize: "0.75rem",
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </Stack>
-              </LocalizationProvider>
-            </Box>
+            )}
 
-            <Divider sx={{ my: 0.5 }} />
+            {dateRange && <Divider sx={{ my: 0.5 }} />}
 
             {/* Scale Filter - Compact Grid */}
             {sortedScales.length > 0 && (

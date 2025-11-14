@@ -1,6 +1,6 @@
 # 🏗️ Tasmania Aerial Photo Explorer - Complete Project Guide
 
-**Progressive Web App | Version 1.2.0 | Current Status: Production Ready**
+**Progressive Web App | Version 1.3.0 | Current Status: Production Ready**
 
 **Last Updated:** 2025-11-14
 
@@ -506,6 +506,68 @@ Base URL: `https://tas-aerial-browser.awhobbs.workers.dev`
 **Deployment:**
 - Backend: https://tas-aerial-browser.awhobbs.workers.dev
 - Frontend: https://7df5e50e.tas-aerial-explorer.pages.dev
+
+---
+
+### Stage 15: Performance Optimization & Date Range Slider ✅
+**Status: Complete (2025-11-14)**
+
+**Lazy Loading Improvements:**
+- Improved LazyImage component with better intersection observer
+- Increased rootMargin from 50px to 200px for smoother loading
+- Images now start loading well before entering viewport
+- Prevents page crashes from loading too many thumbnails at once
+- Better user experience with less layout shift
+
+**Date Range Slider:**
+- Replaced date picker inputs with intuitive range slider
+- Dynamically calculates min/max years from search results
+- Shows available date range based on actual photo data
+- Smooth slider interaction with real-time updates
+- Displays selected range (e.g., "1940 - 1950")
+- More compact and user-friendly interface
+- Eliminates need for @mui/x-date-pickers dependency
+
+**Dynamic Date Range Calculation:**
+- Automatically extracts year range from photo results
+- Calculates min/max years from FLY_DATE field
+- Updates slider bounds when new search is performed
+- Falls back to sensible defaults (1940 - current year)
+- Only shows date filter if photos have date data
+
+**Performance Benefits:**
+- Reduced bundle size: 846KB → 671KB (-20.7%)
+- Removed date-fns dependency
+- Removed @mui/x-date-pickers dependency
+- Faster initial page load
+- Better memory usage with lazy loading
+- Smoother scrolling with optimized image loading
+
+**User Experience:**
+- More intuitive date selection with visual feedback
+- See full range of available dates at a glance
+- Drag handles to select desired range
+- Value labels show during interaction
+- Year markers at min/max positions
+- Compact design saves vertical space
+
+**Files Modified:**
+- `frontend/package.json` - Bump version to 1.3.0
+- `frontend/src/App.tsx` - Add dateRange calculation and prop, update version
+- `frontend/src/components/FilterPanel.tsx` - Replace DatePickers with Slider
+- `frontend/src/components/LazyImage.tsx` - Improve rootMargin to 200px
+- `guide.md` - Stage 15 documentation, update to v1.3.0
+
+**Technical Details:**
+- Uses MUI Slider component for smooth interactions
+- Year-based filtering (start of year to end of year)
+- Memoized calculations for performance
+- Proper TypeScript typing throughout
+- Conditional rendering when date range unavailable
+
+**Deployment:**
+- Backend: https://tas-aerial-browser.awhobbs.workers.dev
+- Frontend: https://227cc462.tas-aerial-explorer.pages.dev
 
 ---
 

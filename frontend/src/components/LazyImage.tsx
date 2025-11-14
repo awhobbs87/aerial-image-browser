@@ -34,7 +34,7 @@ export default function LazyImage({
         });
       },
       {
-        rootMargin: "50px", // Start loading 50px before the image enters viewport
+        rootMargin: "200px", // Start loading 200px before the image enters viewport
         threshold: 0.01,
       }
     );
