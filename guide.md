@@ -1,6 +1,6 @@
 # 🏗️ Tasmania Aerial Photo Explorer - Complete Project Guide
 
-**Progressive Web App | Version 1.3.0 | Current Status: Production Ready**
+**Progressive Web App | Version 1.4.0 | Current Status: Production Ready**
 
 **Last Updated:** 2025-11-14
 
@@ -568,6 +568,70 @@ Base URL: `https://tas-aerial-browser.awhobbs.workers.dev`
 **Deployment:**
 - Backend: https://tas-aerial-browser.awhobbs.workers.dev
 - Frontend: https://227cc462.tas-aerial-explorer.pages.dev
+
+---
+
+### Stage 16: Simplified Scale Filter ✅
+**Status: Complete (2025-11-14)**
+
+**Problem:** The original scale filter showed too many individual scale options (e.g., 1:2.5K, 1:5K, 1:10K, 1:15K, 1:25K, etc.), which was overwhelming for novice users who don't understand map scales.
+
+**Solution:** Grouped scales into 4 simple, intuitive categories with icons and descriptions:
+
+**Scale Categories:**
+1. **🔍 Very Detailed** - Best quality, smallest area (≤1:5,000)
+   - For examining specific buildings, small features
+   - Highest resolution available
+
+2. **📸 Detailed** - Good quality, medium area (1:5,001 - 1:15,000)
+   - Balance of detail and coverage
+   - Common for neighborhood-level viewing
+
+3. **🗺️ Standard** - Standard quality, larger area (1:15,001 - 1:40,000)
+   - Broader coverage with good detail
+   - Suitable for town/suburb viewing
+
+4. **🌍 Overview** - Wide coverage, less detail (>1:40,000)
+   - Regional/district views
+   - Lower resolution, larger geographic area
+
+**User Experience Improvements:**
+- **Visual Design**: Each category has an emoji icon and color coding
+- **Clear Descriptions**: Explains what each category is good for
+- **Photo Count**: Shows how many photos are in each category
+- **Simplified Selection**: Click to toggle categories on/off
+- **Better Labels**: "DETAIL LEVEL" instead of "SCALE"
+- **Hover Tooltips**: Additional context on hover
+- **Smooth Animations**: Lift effect and colored shadows on hover
+
+**Technical Implementation:**
+- Moved SCALE_CATEGORIES constant outside component for performance
+- Categories dynamically filter available scales into groups
+- State management with Set for efficient category toggling
+- Automatic category selection on initial load (all selected by default)
+- Effects update filter state when categories change
+- Fixed all React Hook dependency warnings
+
+**Accessibility:**
+- Clear visual hierarchy with icons and labels
+- Descriptive tooltips for additional context
+- Color-coded by category (success, primary, secondary, warning)
+- Touch-friendly tap targets (larger boxes vs small chips)
+
+**Files Modified:**
+- `frontend/package.json` - Bump version to 1.4.0
+- `frontend/src/App.tsx` - Update version to 1.4.0
+- `frontend/src/components/FilterPanel.tsx` - Complete scale filter redesign
+- `guide.md` - Stage 16 documentation, update to v1.4.0
+
+**Before vs After:**
+- Before: 10+ individual scale chips (1:2.5K, 1:5K, 1:10K, etc.)
+- After: 4 simple categories (Very Detailed, Detailed, Standard, Overview)
+- Much more beginner-friendly and intuitive!
+
+**Deployment:**
+- Backend: https://tas-aerial-browser.awhobbs.workers.dev
+- Frontend: https://e6055368.tas-aerial-explorer.pages.dev
 
 ---
 

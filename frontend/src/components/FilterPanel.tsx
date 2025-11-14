@@ -78,10 +78,89 @@ const FILTER_PRESETS = [
   },
 ];
 
+// Define scale categories for simplified filtering
+const SCALE_CATEGORIES = [
+  {
+    id: 'very-detailed',
+    label: 'Very Detailed',
+    description: 'Best quality, smallest area (1:5,000 or smaller)',
+    icon: '🔍',
+    maxScale: 5000,
+    color: 'success' as const,
+  },
+  {
+    id: 'detailed',
+    label: 'Detailed',
+    description: 'Good quality, medium area (1:5,000 - 1:15,000)',
+    icon: '📸',
+    minScale: 5001,
+    maxScale: 15000,
+    color: 'primary' as const,
+  },
+  {
+    id: 'standard',
+    label: 'Standard',
+    description: 'Standard quality, larger area (1:15,000 - 1:40,000)',
+    icon: '🗺️',
+    minScale: 15001,
+    maxScale: 40000,
+    color: 'secondary' as const,
+  },
+  {
+    id: 'overview',
+    label: 'Overview',
+    description: 'Wide coverage, less detail (larger than 1:40,000)',
+    icon: '🌍',
+    minScale: 40001,
+    color: 'warning' as const,
+  },
+];
+
 export default function FilterPanel({ filters, onFiltersChange, availableScales = [], dateRange = null }: FilterPanelProps) {
 
-  // Sort and format available scales
-  const sortedScales = [...availableScales].sort((a, b) => a - b);
+  // Group available scales into categories
+  const scaleCategories = React.useMemo(() => {
+    return SCALE_CATEGORIES.map(category => {
+      const scales = availableScales.filter(scale => {
+        if (category.minScale && category.maxScale) {
+          return scale >= category.minScale && scale <= category.maxScale;
+        } else if (category.maxScale) {
+          return scale <= category.maxScale;
+        } else if (category.minScale) {
+          return scale >= category.minScale;
+        }
+        return false;
+      });
+      return { ...category, scales, count: scales.length };
+    }).filter(cat => cat.count > 0);
+  }, [availableScales]);
+
+  // Track which categories are selected
+  const [selectedCategories, setSelectedCategories] = React.useState<Set<string>>(new Set());
+
+  // Initialize selected categories to include all when scales first load
+  React.useEffect(() => {
+    if (availableScales.length > 0 && selectedCategories.size === 0) {
+      setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
+    }
+  }, [availableScales.length, selectedCategories.size, scaleCategories]);
+
+  // Update filters when categories change
+  React.useEffect(() => {
+    if (selectedCategories.size === 0) return;
+
+    const selectedScales = scaleCategories
+      .filter(cat => selectedCategories.has(cat.id))
+      .flatMap(cat => cat.scales);
+
+    if (selectedScales.length > 0 &&
+        JSON.stringify(selectedScales.sort()) !== JSON.stringify([...filters.selectedScales].sort())) {
+      onFiltersChange({
+        ...filters,
+        selectedScales,
+      });
+    }
+  }, [selectedCategories, scaleCategories, filters, onFiltersChange]);
 
   // Calculate year range for slider
   const yearRange = React.useMemo(() => {
@@ -99,32 +178,15 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
     return [startYear, endYear];
   }, [filters.startDate, filters.endDate, yearRange]);
 
-  // Auto-select all scales when they first become available (if none are selected)
-  React.useEffect(() => {
-    if (availableScales.length > 0 && filters.selectedScales.length === 0) {
-      onFiltersChange({
-        ...filters,
-        selectedScales: availableScales,
-      });
-    }
-  }, [availableScales, filters, onFiltersChange]);
-
-  const formatScale = (scale: number): string => {
-    if (scale >= 1000) {
-      return `1:${(scale / 1000).toFixed(0)}K`;
-    }
-    return `1:${scale}`;
-  };
-
-  const handleScaleToggle = (scale: number) => {
-    const currentScales = filters.selectedScales;
-    const newScales = currentScales.includes(scale)
-      ? currentScales.filter(s => s !== scale)
-      : [...currentScales, scale];
-
-    onFiltersChange({
-      ...filters,
-      selectedScales: newScales,
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
     });
   };
 
@@ -161,10 +223,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
   };
 
   const clearScaleFilter = () => {
-    onFiltersChange({
-      ...filters,
-      selectedScales: [],
-    });
+    setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
   };
 
   const resetLayerTypes = () => {
@@ -225,11 +284,12 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
   };
 
   const getScaleFilterLabel = () => {
-    if (filters.selectedScales.length === 0) return "";
-    if (filters.selectedScales.length === 1) {
-      return formatScale(filters.selectedScales[0]);
-    }
-    return `${filters.selectedScales.length} scales`;
+    if (selectedCategories.size === 0) return "No scales selected";
+    if (selectedCategories.size === scaleCategories.length) return "";
+    const labels = scaleCategories
+      .filter(cat => selectedCategories.has(cat.id))
+      .map(cat => cat.label);
+    return labels.join(", ");
   };
 
   const getLayerFilterLabel = () => {
@@ -451,8 +511,8 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
 
             {dateRange && <Divider sx={{ my: 0.5 }} />}
 
-            {/* Scale Filter - Compact Grid */}
-            {sortedScales.length > 0 && (
+            {/* Scale Filter - Simplified Categories */}
+            {scaleCategories.length > 0 && (
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -466,80 +526,95 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                         color: "text.primary",
                       }}
                     >
-                      SCALE
+                      DETAIL LEVEL
                     </Typography>
                   </Box>
                   <Tooltip
-                    title="Smaller scales = more detail"
+                    title="Choose quality level based on your needs"
                     arrow
                     placement="top"
                   >
                     <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
                   </Tooltip>
                 </Box>
-                <Box sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))",
-                  gap: 0.5,
-                }}>
-                  {sortedScales.map((scale) => {
-                    const isSelected = filters.selectedScales.includes(scale);
+                <Stack spacing={0.75}>
+                  {scaleCategories.map((category) => {
+                    const isSelected = selectedCategories.has(category.id);
                     return (
-                      <Box
-                        key={scale}
-                        onClick={() => handleScaleToggle(scale)}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 28,
-                          borderRadius: 0.75,
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          transition: "all 0.15s ease-in-out",
-                          border: (theme) => isSelected
-                            ? `1.5px solid ${theme.palette.secondary.main}`
-                            : `1px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
-                          bgcolor: (theme) => isSelected
-                            ? theme.palette.mode === "dark"
-                              ? "rgba(8, 145, 178, 0.2)"
-                              : "rgba(8, 145, 178, 0.1)"
-                            : "transparent",
-                          color: isSelected
-                            ? "secondary.main"
-                            : "text.secondary",
-                          "&:hover": {
-                            transform: "translateY(-1px)",
-                            boxShadow: (theme) => isSelected
-                              ? theme.palette.mode === "dark"
-                                ? "0 2px 8px rgba(8, 145, 178, 0.3)"
-                                : "0 2px 8px rgba(8, 145, 178, 0.2)"
-                              : theme.palette.mode === "dark"
-                              ? "0 2px 6px rgba(0, 0, 0, 0.3)"
-                              : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                      <Tooltip key={category.id} title={category.description} arrow placement="top">
+                        <Box
+                          onClick={() => handleCategoryToggle(category.id)}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            px: 1.5,
+                            py: 1,
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease-in-out",
+                            border: (theme) => isSelected
+                              ? `1.5px solid ${theme.palette[category.color].main}`
+                              : `1px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
                             bgcolor: (theme) => isSelected
                               ? theme.palette.mode === "dark"
-                                ? "rgba(8, 145, 178, 0.25)"
-                                : "rgba(8, 145, 178, 0.15)"
-                              : theme.palette.mode === "dark"
-                              ? "rgba(74, 85, 104, 0.3)"
-                              : "rgba(226, 232, 240, 0.5)",
-                          },
-                          "&:active": {
-                            transform: "translateY(0)",
-                          },
-                        }}
-                      >
-                        {formatScale(scale)}
-                      </Box>
+                                ? `${theme.palette[category.color].main}20`
+                                : `${theme.palette[category.color].main}10`
+                              : "transparent",
+                            "&:hover": {
+                              transform: "translateY(-1px)",
+                              boxShadow: (theme) => isSelected
+                                ? theme.palette.mode === "dark"
+                                  ? `0 2px 8px ${theme.palette[category.color].main}40`
+                                  : `0 2px 8px ${theme.palette[category.color].main}30`
+                                : theme.palette.mode === "dark"
+                                ? "0 2px 6px rgba(0, 0, 0, 0.3)"
+                                : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                              bgcolor: (theme) => isSelected
+                                ? theme.palette.mode === "dark"
+                                  ? `${theme.palette[category.color].main}30`
+                                  : `${theme.palette[category.color].main}15`
+                                : theme.palette.mode === "dark"
+                                ? "rgba(74, 85, 104, 0.3)"
+                                : "rgba(226, 232, 240, 0.5)",
+                            },
+                            "&:active": {
+                              transform: "translateY(0)",
+                            },
+                          }}
+                        >
+                          <Typography sx={{ fontSize: "1.2rem" }}>{category.icon}</Typography>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                color: isSelected ? `${category.color}.main` : "text.primary",
+                              }}
+                            >
+                              {category.label}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontSize: "0.65rem",
+                                color: "text.secondary",
+                                display: "block",
+                              }}
+                            >
+                              {category.count} photo{category.count !== 1 ? 's' : ''}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Tooltip>
                     );
                   })}
-                </Box>
+                </Stack>
               </Box>
             )}
 
-            {sortedScales.length > 0 && <Divider sx={{ my: 0.5 }} />}
+            {scaleCategories.length > 0 && <Divider sx={{ my: 0.5 }} />}
 
             {/* Layer Type Filter - Modern Toggle Pills */}
             <Box>
