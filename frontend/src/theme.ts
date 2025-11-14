@@ -258,6 +258,7 @@ export const lightTheme = createTheme({
     shadows.xl,
     shadows.xl,
   // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any,
 });
 
@@ -335,5 +336,6 @@ export const darkTheme = createTheme({
     shadowsDark.xl,
     shadowsDark.xl,
   // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any,
 });

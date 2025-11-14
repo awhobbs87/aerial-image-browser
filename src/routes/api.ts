@@ -221,7 +221,7 @@ api.get("/tiff/:layerId/:imageName", async (c) => {
   const searchResponse = await fetch(
     `${c.env.API_BASE_URL}/${layerId}/query?${params}`
   );
-  const searchData = await searchResponse.json();
+  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }> };
 
   if (!searchData.features || searchData.features.length === 0) {
     return c.json(
@@ -300,7 +300,7 @@ api.get("/thumbnail/:layerId/:imageName", async (c) => {
   const searchResponse = await fetch(
     `${c.env.API_BASE_URL}/${layerId}/query?${params}`
   );
-  const searchData = await searchResponse.json();
+  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }> };
 
   if (!searchData.features || searchData.features.length === 0) {
     return c.json(
@@ -372,7 +372,7 @@ api.get("/image/:layerId/:imageName", async (c) => {
   const searchResponse = await fetch(
     `${c.env.API_BASE_URL}/${layerId}/query?${params}`
   );
-  const searchData = await searchResponse.json();
+  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }> };
 
   if (!searchData.features || searchData.features.length === 0) {
     return c.json(

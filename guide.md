@@ -1,6 +1,6 @@
 # 🏗️ Tasmania Aerial Photo Explorer - Complete Project Guide
 
-**Progressive Web App | Version 1.1.0 | Current Status: Production Ready**
+**Progressive Web App | Version 1.2.0 | Current Status: Production Ready**
 
 **Last Updated:** 2025-11-14
 
@@ -430,6 +430,82 @@ Base URL: `https://tas-aerial-browser.awhobbs.workers.dev`
 - Backend: https://tas-aerial-browser.awhobbs.workers.dev
 - Frontend: https://4f2efe80.tas-aerial-explorer.pages.dev
 - Version ID: bc11e761-5a55-42e6-a64f-721949f004c6
+
+---
+
+### Stage 14: Filter Panel Redesign ✅
+**Status: Complete (2025-11-14)**
+
+**Compact & Intuitive Filter Controls:**
+- Redesigned date range, scale, and types sections for better usability
+- Streamlined visual hierarchy with consistent section headers
+- Icon + bold uppercase labels for each filter category
+- Help icons positioned on the right for cleaner layout
+- More compact spacing throughout (padding and gaps reduced)
+
+**Date Range Improvements:**
+- Changed labels from "Start/End" to "From/To" for clarity
+- Reduced input height to 32px for more compact design
+- Smaller font sizes (0.75rem) for better density
+- Side-by-side layout for better space utilization
+
+**Scale Filter Redesign:**
+- Replaced Chip components with modern grid layout
+- CSS Grid with auto-fill: `repeat(auto-fill, minmax(52px, 1fr))`
+- Custom Box components with smooth animations
+- Hover effects: subtle lift (translateY) and dynamic shadows
+- Selected states: thicker borders (1.5px) and colored backgrounds
+- Better visual feedback with color transitions
+- Compact 28px height buttons
+
+**Types Filter Redesign:**
+- Replaced MUI ToggleButtonGroup with custom Box components
+- Modern pill-style design with individual toggles
+- Consistent hover/active states with scale section
+- Smooth transitions (0.15s ease-in-out)
+- 32px height for better touch targets
+- Thicker selected borders (1.5px) with success color
+
+**Animation & Visual Polish:**
+- Consistent hover animations across all filter controls
+- Subtle translateY(-1px) lift on hover
+- Dynamic box shadows based on theme mode
+- Active state feedback (translateY(0) on click)
+- Color transitions for background and border states
+- Theme-aware colors (dark/light mode support)
+
+**Code Quality:**
+- Fixed all ESLint warnings and errors
+- Removed unused imports (ToggleButton, ToggleButtonGroup, IconButton)
+- Fixed TypeScript type issues with filter presets
+- Improved React Hook dependencies in PhotoGallery
+- Added eslint-disable comments for necessary `any` types
+
+**Files Modified:**
+- `frontend/src/components/FilterPanel.tsx` - Complete filter section redesign
+- `frontend/src/components/PhotoGallery.tsx` - Fixed React Hook dependencies
+- `frontend/src/lib/leafletConfig.ts` - Added ESLint exception
+- `frontend/src/theme.ts` - Added ESLint exceptions for shadow arrays
+- `frontend/src/types/api.ts` - Added ESLint exception for index signature
+
+**User Experience Impact:**
+- More intuitive filter interface
+- Reduced visual clutter
+- Better touch targets for mobile users
+- Clearer visual feedback on interactions
+- More consistent design language
+- Improved accessibility with proper hover states
+
+**Version Display:**
+- Added version number (v1.2.0) to frontend
+- Subtle display in bottom-right corner
+- Low opacity (0.5) with hover effect (0.8)
+- Non-intrusive but accessible for users
+- Synced with package.json version
+
+**Deployment:**
+- Backend: https://tas-aerial-browser.awhobbs.workers.dev
+- Frontend: https://7df5e50e.tas-aerial-explorer.pages.dev
 
 ---
 

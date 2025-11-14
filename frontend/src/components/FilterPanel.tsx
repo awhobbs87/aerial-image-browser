@@ -6,10 +6,7 @@ import {
   Chip,
   Divider,
   Paper,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
-  IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -53,7 +50,7 @@ const FILTER_PRESETS = [
     filters: {
       startDate: null,
       endDate: new Date("1980-01-01"),
-      selectedScales: [],
+      selectedScales: [] as number[],
       layerTypes: { aerial: true, ortho: true, digital: false },
     },
   },
@@ -65,7 +62,7 @@ const FILTER_PRESETS = [
     filters: {
       startDate: new Date("2000-01-01"),
       endDate: null,
-      selectedScales: [],
+      selectedScales: [] as number[],
       layerTypes: { aerial: true, ortho: true, digital: true },
     },
   },
@@ -77,11 +74,11 @@ const FILTER_PRESETS = [
     filters: {
       startDate: null,
       endDate: null,
-      selectedScales: [], // Will be populated dynamically
+      selectedScales: [] as number[], // Will be populated dynamically
       layerTypes: { aerial: true, ortho: true, digital: true },
     },
   },
-] as const;
+];
 
 export default function FilterPanel({ filters, onFiltersChange, availableScales = [] }: FilterPanelProps) {
 
@@ -342,47 +339,68 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
             theme.palette.mode === "dark" ? "#2d3748" : "#ffffff",
           border: (theme) =>
             theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
+          transition: "all 0.2s ease-in-out",
         }}
       >
-        <Box sx={{ p: 1 }}>
-          <Stack spacing={1}>
-            {/* Date Range Filter */}
+        <Box sx={{ p: 1.25 }}>
+          <Stack spacing={1.5}>
+            {/* Date Range Filter - Compact Inline */}
             <Box>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 600,
-                  mb: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  fontSize: "0.7rem",
-                }}
-              >
-                <CalendarToday sx={{ fontSize: 14 }} color="primary" />
-                Date Range
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <CalendarToday sx={{ fontSize: 13, color: "primary.main" }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.02em",
+                      color: "text.primary",
+                    }}
+                  >
+                    DATE RANGE
+                  </Typography>
+                </Box>
+              </Box>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={0.75}>
+                <Stack direction="row" spacing={0.75} sx={{ width: "100%" }}>
                   <DatePicker
-                    label="Start"
+                    label="From"
                     value={filters.startDate}
                     onChange={(date) => onFiltersChange({ ...filters, startDate: date })}
                     slotProps={{
                       textField: {
                         size: "small",
                         fullWidth: true,
+                        sx: {
+                          "& .MuiInputBase-root": {
+                            fontSize: "0.75rem",
+                            height: 32,
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: "0.75rem",
+                          },
+                        },
                       },
                     }}
                   />
                   <DatePicker
-                    label="End"
+                    label="To"
                     value={filters.endDate}
                     onChange={(date) => onFiltersChange({ ...filters, endDate: date })}
                     slotProps={{
                       textField: {
                         size: "small",
                         fullWidth: true,
+                        sx: {
+                          "& .MuiInputBase-root": {
+                            fontSize: "0.75rem",
+                            height: 32,
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: "0.75rem",
+                          },
+                        },
                       },
                     }}
                   />
@@ -390,152 +408,191 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
               </LocalizationProvider>
             </Box>
 
-            <Divider />
+            <Divider sx={{ my: 0.5 }} />
 
-            {/* Scale Filter - Dynamic Buttons */}
+            {/* Scale Filter - Compact Grid */}
             {sortedScales.length > 0 && (
               <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      fontSize: "0.7rem",
-                    }}
-                  >
-                    <PhotoSizeSelectActual sx={{ fontSize: 13 }} color="secondary" />
-                    Scale
-                  </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <PhotoSizeSelectActual sx={{ fontSize: 13, color: "secondary.main" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.7rem",
+                        letterSpacing: "0.02em",
+                        color: "text.primary",
+                      }}
+                    >
+                      SCALE
+                    </Typography>
+                  </Box>
                   <Tooltip
-                    title="Click to filter by scale. Smaller = more detail, larger = wider coverage"
+                    title="Smaller scales = more detail"
                     arrow
                     placement="top"
                   >
-                    <IconButton size="small" sx={{ p: 0.25 }}>
-                      <HelpOutline sx={{ fontSize: 11 }} />
-                    </IconButton>
+                    <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
                   </Tooltip>
                 </Box>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                  {sortedScales.map((scale) => (
-                    <Chip
-                      key={scale}
-                      label={formatScale(scale)}
-                      onClick={() => handleScaleToggle(scale)}
-                      color={filters.selectedScales.includes(scale) ? "secondary" : "default"}
-                      variant={filters.selectedScales.includes(scale) ? "filled" : "outlined"}
-                      size="small"
-                      sx={{
-                        fontSize: "0.7rem",
-                        height: 24,
-                        cursor: "pointer",
-                        "&:hover": {
-                          bgcolor: (theme) =>
-                            filters.selectedScales.includes(scale)
-                              ? undefined
+                <Box sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))",
+                  gap: 0.5,
+                }}>
+                  {sortedScales.map((scale) => {
+                    const isSelected = filters.selectedScales.includes(scale);
+                    return (
+                      <Box
+                        key={scale}
+                        onClick={() => handleScaleToggle(scale)}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 28,
+                          borderRadius: 0.75,
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          transition: "all 0.15s ease-in-out",
+                          border: (theme) => isSelected
+                            ? `1.5px solid ${theme.palette.secondary.main}`
+                            : `1px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
+                          bgcolor: (theme) => isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "rgba(8, 145, 178, 0.2)"
+                              : "rgba(8, 145, 178, 0.1)"
+                            : "transparent",
+                          color: isSelected
+                            ? "secondary.main"
+                            : "text.secondary",
+                          "&:hover": {
+                            transform: "translateY(-1px)",
+                            boxShadow: (theme) => isSelected
+                              ? theme.palette.mode === "dark"
+                                ? "0 2px 8px rgba(8, 145, 178, 0.3)"
+                                : "0 2px 8px rgba(8, 145, 178, 0.2)"
                               : theme.palette.mode === "dark"
-                              ? "rgba(8, 145, 178, 0.1)"
-                              : "rgba(8, 145, 178, 0.05)",
-                        },
-                      }}
-                    />
-                  ))}
+                              ? "0 2px 6px rgba(0, 0, 0, 0.3)"
+                              : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                            bgcolor: (theme) => isSelected
+                              ? theme.palette.mode === "dark"
+                                ? "rgba(8, 145, 178, 0.25)"
+                                : "rgba(8, 145, 178, 0.15)"
+                              : theme.palette.mode === "dark"
+                              ? "rgba(74, 85, 104, 0.3)"
+                              : "rgba(226, 232, 240, 0.5)",
+                          },
+                          "&:active": {
+                            transform: "translateY(0)",
+                          },
+                        }}
+                      >
+                        {formatScale(scale)}
+                      </Box>
+                    );
+                  })}
                 </Box>
               </Box>
             )}
 
-            {sortedScales.length > 0 && <Divider />}
+            {sortedScales.length > 0 && <Divider sx={{ my: 0.5 }} />}
 
-            {/* Layer Type Filter */}
+            {/* Layer Type Filter - Modern Toggle Pills */}
             <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  <Image sx={{ fontSize: 13 }} color="success" />
-                  Types
-                </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Image sx={{ fontSize: 13, color: "success.main" }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.02em",
+                      color: "text.primary",
+                    }}
+                  >
+                    TYPES
+                  </Typography>
+                </Box>
                 <Tooltip
-                  title="Aerial: traditional photos | Ortho: corrected | Digital: modern"
+                  title="Aerial: traditional | Ortho: corrected | Digital: modern"
                   arrow
                   placement="top"
                 >
-                  <IconButton size="small" sx={{ p: 0.25 }}>
-                    <HelpOutline sx={{ fontSize: 11 }} />
-                  </IconButton>
+                  <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
                 </Tooltip>
               </Box>
-              <ToggleButtonGroup
-                value={Object.entries(filters.layerTypes)
-                  .filter(([, checked]) => checked)
-                  .map(([type]) => type)}
-                onChange={(_event, newTypes) => {
-                  onFiltersChange({
-                    ...filters,
-                    layerTypes: {
-                      aerial: newTypes.includes("aerial"),
-                      ortho: newTypes.includes("ortho"),
-                      digital: newTypes.includes("digital"),
-                    },
-                  });
-                }}
-                size="small"
-                sx={{
-                  display: "flex",
-                  gap: 0.5,
-                  width: "100%",
-                }}
-              >
-                <ToggleButton
-                  value="aerial"
-                  sx={{
-                    flex: 1,
-                    py: 0.375,
-                    px: 0.75,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  Aerial
-                </ToggleButton>
-                <ToggleButton
-                  value="ortho"
-                  sx={{
-                    flex: 1,
-                    py: 0.375,
-                    px: 0.75,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  Ortho
-                </ToggleButton>
-                <ToggleButton
-                  value="digital"
-                  sx={{
-                    flex: 1,
-                    py: 0.375,
-                    px: 0.75,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  Digital
-                </ToggleButton>
-              </ToggleButtonGroup>
+              <Box sx={{ display: "flex", gap: 0.5 }}>
+                {[
+                  { key: "aerial", label: "Aerial" },
+                  { key: "ortho", label: "Ortho" },
+                  { key: "digital", label: "Digital" },
+                ].map(({ key, label }) => {
+                  const isSelected = filters.layerTypes[key as keyof typeof filters.layerTypes];
+                  return (
+                    <Box
+                      key={key}
+                      onClick={() => {
+                        onFiltersChange({
+                          ...filters,
+                          layerTypes: {
+                            ...filters.layerTypes,
+                            [key]: !isSelected,
+                          },
+                        });
+                      }}
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: 32,
+                        borderRadius: 1,
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease-in-out",
+                        border: (theme) => isSelected
+                          ? `1.5px solid ${theme.palette.success.main}`
+                          : `1px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
+                        bgcolor: (theme) => isSelected
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(0, 77, 64, 0.2)"
+                            : "rgba(0, 77, 64, 0.1)"
+                          : "transparent",
+                        color: isSelected
+                          ? "success.main"
+                          : "text.secondary",
+                        "&:hover": {
+                          transform: "translateY(-1px)",
+                          boxShadow: (theme) => isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "0 2px 8px rgba(0, 77, 64, 0.3)"
+                              : "0 2px 8px rgba(0, 77, 64, 0.2)"
+                            : theme.palette.mode === "dark"
+                            ? "0 2px 6px rgba(0, 0, 0, 0.3)"
+                            : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                          bgcolor: (theme) => isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "rgba(0, 77, 64, 0.25)"
+                              : "rgba(0, 77, 64, 0.15)"
+                            : theme.palette.mode === "dark"
+                            ? "rgba(74, 85, 104, 0.3)"
+                            : "rgba(226, 232, 240, 0.5)",
+                        },
+                        "&:active": {
+                          transform: "translateY(0)",
+                        },
+                      }}
+                    >
+                      {label}
+                    </Box>
+                  );
+                })}
+              </Box>
             </Box>
           </Stack>
         </Box>

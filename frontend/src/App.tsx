@@ -24,6 +24,8 @@ import FilterPanel, { type Filters } from "./components/FilterPanel";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
+const APP_VERSION = "1.2.0";
+
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -600,6 +602,33 @@ function AppContent() {
               </Suspense>
             )}
           </Box>
+        </Box>
+
+        {/* Version Display - Subtle footer */}
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 8,
+            right: 8,
+            zIndex: 1,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              fontSize: "0.65rem",
+              color: "text.disabled",
+              opacity: 0.5,
+              fontWeight: 500,
+              userSelect: "none",
+              transition: "opacity 0.2s ease-in-out",
+              "&:hover": {
+                opacity: 0.8,
+              },
+            }}
+          >
+            v{APP_VERSION}
+          </Typography>
         </Box>
       </Box>
     </ThemeProvider>

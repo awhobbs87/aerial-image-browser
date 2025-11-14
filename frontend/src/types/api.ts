@@ -24,6 +24,7 @@ export interface PhotoAttributes {
   EASTING?: number;
   NORTHING?: number;
   HEIGHT?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
