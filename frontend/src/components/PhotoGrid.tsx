@@ -31,6 +31,7 @@ interface PhotoGridProps {
   onShowOnMap?: (photo: EnhancedPhoto) => void;
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   favorites?: Set<string>;
+  sidebarWidth?: number; // Percentage of screen width (25-60)
 }
 
 const PHOTOS_PER_PAGE = 12;
@@ -46,7 +47,19 @@ export default function PhotoGrid({
   onShowOnMap,
   onPhotoHover,
   favorites = new Set(),
+  sidebarWidth = 40,
 }: PhotoGridProps) {
+  // Calculate grid columns based on sidebar width
+  // Sidebar width ranges from 25% to 60%
+  // Wider sidebar = fewer columns (more space per card)
+  // Narrower sidebar = more columns (cards can be smaller)
+  const getGridColumns = () => {
+    if (sidebarWidth >= 50) return 2; // Wide sidebar: 2 columns
+    if (sidebarWidth >= 35) return 3; // Medium sidebar: 3 columns
+    return 4; // Narrow sidebar: 4 columns
+  };
+
+  const gridColumns = getGridColumns();
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [groupBy, setGroupBy] = useState<GroupBy>("year");
@@ -129,11 +142,8 @@ export default function PhotoGrid({
         sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: 'repeat(2, 1fr)',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
-            lg: 'repeat(3, 1fr)',
-            xl: 'repeat(4, 1fr)',
+            xs: 'repeat(2, 1fr)', // Mobile always 2 columns
+            md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
           },
           gap: 2,
         }}
@@ -188,11 +198,8 @@ export default function PhotoGrid({
           sx={{
             display: 'grid',
             gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(3, 1fr)',
-              xl: 'repeat(4, 1fr)',
+              xs: 'repeat(2, 1fr)', // Mobile always 2 columns
+              md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
             },
             gap: 2,
           }}
@@ -240,11 +247,8 @@ export default function PhotoGrid({
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: {
-                      xs: 'repeat(2, 1fr)',
-                      sm: 'repeat(2, 1fr)',
-                      md: 'repeat(3, 1fr)',
-                      lg: 'repeat(3, 1fr)',
-                      xl: 'repeat(4, 1fr)',
+                      xs: 'repeat(2, 1fr)', // Mobile always 2 columns
+                      md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
                     },
                     gap: 2,
                   }}

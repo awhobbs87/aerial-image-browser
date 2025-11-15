@@ -134,11 +134,22 @@ function AppContent() {
     };
   }, [data?.photos]);
 
-  // Filter photos by selected scales (client-side)
+  // Filter photos (client-side filtering for real-time updates)
   const filteredPhotos = useMemo(() => {
     if (!data?.photos) return [];
 
     let photos = data.photos;
+
+    // Filter by date range if specified
+    if (filters.startDate || filters.endDate) {
+      photos = photos.filter(photo => {
+        if (!photo.FLY_DATE) return false;
+        const photoDate = new Date(photo.FLY_DATE);
+        if (filters.startDate && photoDate < filters.startDate) return false;
+        if (filters.endDate && photoDate > filters.endDate) return false;
+        return true;
+      });
+    }
 
     // Filter by scale if specified
     if (filters.selectedScales.length > 0) {
@@ -148,7 +159,7 @@ function AppContent() {
     }
 
     return photos;
-  }, [data?.photos, filters.selectedScales]);
+  }, [data?.photos, filters.selectedScales, filters.startDate, filters.endDate]);
 
   // Get favorite photos for modal
   const favoritePhotos = useMemo(() => {
@@ -387,6 +398,7 @@ function AppContent() {
                       favorites={favorites}
                       onShowOnMap={handlePhotoSelect}
                       onPhotoHover={setHoveredPhoto}
+                      sidebarWidth={sidebarWidth}
                     />
                   </Box>
                 </>
