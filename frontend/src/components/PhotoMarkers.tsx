@@ -1,6 +1,8 @@
 import { memo, useMemo } from 'react';
 import { Polygon, Popup } from 'react-leaflet';
-import { Typography, Box, Chip, Stack, Alert } from '@mui/material';
+import { Typography, Box, Chip, Stack, Alert, Button } from '@mui/material';
+import { Visibility } from '@mui/icons-material';
+import apiClient from '../lib/apiClient';
 import type { EnhancedPhoto, LayerType } from '../types/api';
 
 interface PhotoMarkersProps {
@@ -150,12 +152,26 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
           >
             <Popup>
               <Box sx={{ minWidth: 200, maxWidth: 300 }}>
-                <Stack spacing={1}>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    {photo.IMAGE_NAME}
-                  </Typography>
+                <Stack spacing={1.5}>
+                  {/* Thumbnail */}
+                  <Box
+                    component="img"
+                    src={apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId)}
+                    alt={photo.IMAGE_NAME}
+                    sx={{
+                      width: '100%',
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      bgcolor: 'grey.200',
+                    }}
+                    loading="lazy"
+                  />
 
                   <Box>
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>
+                      {photo.IMAGE_NAME}
+                    </Typography>
                     <Chip
                       label={photo.layerType.toUpperCase()}
                       size="small"
@@ -163,29 +179,44 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
                         bgcolor: colorConfig.color,
                         color: 'white',
                         fontWeight: 600,
+                        fontSize: '0.7rem',
                       }}
                     />
                   </Box>
 
-                  <Typography variant="body2">
-                    <strong>Date:</strong> {photo.dateFormatted || 'Unknown'}
-                  </Typography>
-
-                  <Typography variant="body2">
-                    <strong>Scale:</strong> {photo.scaleFormatted || 'N/A'}
-                  </Typography>
-
-                  {photo.IMAGE_TYPE && (
-                    <Typography variant="body2">
-                      <strong>Type:</strong> {photo.IMAGE_TYPE}
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" fontSize="0.85rem">
+                      <strong>Date:</strong> {photo.dateFormatted || 'Unknown'}
                     </Typography>
-                  )}
 
-                  {photo.PROJ_NAME && (
-                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                      <strong>Project:</strong> {photo.PROJ_NAME}
+                    <Typography variant="body2" fontSize="0.85rem">
+                      <strong>Scale:</strong> {photo.scaleFormatted || 'N/A'}
                     </Typography>
-                  )}
+
+                    {photo.IMAGE_TYPE && (
+                      <Typography variant="body2" fontSize="0.85rem">
+                        <strong>Type:</strong> {photo.IMAGE_TYPE}
+                      </Typography>
+                    )}
+                  </Stack>
+
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Visibility />}
+                    onClick={() => {
+                      if (onPhotoClick) {
+                        onPhotoClick(photo);
+                      }
+                    }}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                    }}
+                  >
+                    View Details
+                  </Button>
                 </Stack>
               </Box>
             </Popup>

@@ -143,20 +143,13 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
     }).filter(cat => cat.count > 0);
   }, [availableScales]);
 
-  // Track which categories are selected
+  // Track which categories are selected (start with NONE selected = show all)
   const [selectedCategories, setSelectedCategories] = React.useState<Set<string>>(new Set());
-
-  // Initialize selected categories to include all when scales first load
-  React.useEffect(() => {
-    if (availableScales.length > 0 && selectedCategories.size === 0) {
-      setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
-    }
-  }, [availableScales.length, selectedCategories.size, scaleCategories]);
 
   // Update filters when categories change
   React.useEffect(() => {
-    // If all categories are selected, clear the scale filter (show all)
-    if (selectedCategories.size === scaleCategories.length) {
+    // If no categories are selected, clear the scale filter (show all)
+    if (selectedCategories.size === 0) {
       if (filters.selectedScales.length > 0) {
         onFiltersChange({
           ...filters,
@@ -166,9 +159,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
       return;
     }
 
-    // If no categories are selected, don't update (keep current filter state)
-    if (selectedCategories.size === 0) return;
-
+    // Get scales from selected categories
     const selectedScales = scaleCategories
       .filter(cat => selectedCategories.has(cat.id))
       .flatMap(cat => cat.scales);
@@ -208,17 +199,6 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
       }
       return newSet;
     });
-  };
-
-  const handleSelectAllCategories = () => {
-    const allSelected = selectedCategories.size === scaleCategories.length;
-    if (allSelected) {
-      // Deselect all
-      setSelectedCategories(new Set());
-    } else {
-      // Select all
-      setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
-    }
   };
 
   const handleClearFilters = () => {
@@ -653,10 +633,10 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
 
             {dateRange && <Divider sx={{ my: 0.5 }} />}
 
-            {/* Scale Filter - Simplified Categories */}
+            {/* Scale Filter - Compact row */}
             {scaleCategories.length > 0 && (
               <Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <PhotoSizeSelectActual sx={{ fontSize: 13, color: "secondary.main" }} />
                     <Typography
@@ -671,149 +651,82 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                       DETAIL LEVEL
                     </Typography>
                   </Box>
-                  <Tooltip
-                    title="Choose quality level based on your needs"
-                    arrow
-                    placement="top"
-                  >
-                    <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
-                  </Tooltip>
-                </Box>
-                <Stack spacing={0.75}>
-                  {/* All button */}
-                  <Box
-                    onClick={handleSelectAllCategories}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      px: 1,
-                      py: 0.75,
-                      borderRadius: 1,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease-in-out",
-                      border: (theme) => {
-                        const allSelected = selectedCategories.size === scaleCategories.length;
-                        return allSelected
-                          ? `2px solid ${theme.palette.secondary.main}`
-                          : `1.5px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`;
-                      },
-                      bgcolor: (theme) => {
-                        const allSelected = selectedCategories.size === scaleCategories.length;
-                        if (allSelected) {
-                          return theme.palette.mode === "dark"
-                            ? `${theme.palette.secondary.main}25`
-                            : `${theme.palette.secondary.main}15`;
-                        }
-                        return theme.palette.mode === "dark" ? "#3a4455" : "#f5f7fa";
-                      },
-                      "&:hover": {
-                        transform: "translateY(-1px)",
-                        boxShadow: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "0 2px 8px rgba(0, 0, 0, 0.4)"
-                            : "0 2px 8px rgba(0, 0, 0, 0.15)",
-                        borderColor: (theme) => theme.palette.secondary.main,
-                      },
-                      "&:active": {
-                        transform: "translateY(0)",
-                      },
-                    }}
-                  >
+                  {selectedCategories.size > 0 && (
                     <Typography
-                      variant="body2"
+                      variant="caption"
                       sx={{
-                        fontWeight: 700,
-                        fontSize: "0.75rem",
-                        color: selectedCategories.size === scaleCategories.length
-                          ? "secondary.main"
-                          : "text.primary",
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        color: "secondary.main",
                       }}
                     >
-                      {selectedCategories.size === scaleCategories.length ? "✓ All Selected" : "Select All"}
+                      {selectedCategories.size} selected
                     </Typography>
-                  </Box>
-                  {/* Category buttons */}
-                  <Box sx={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 0.75,
-                  }}>
-                    {scaleCategories.map((category) => {
-                      const isSelected = selectedCategories.has(category.id);
-                      return (
-                        <Tooltip key={category.id} title={category.description} arrow placement="top">
-                          <Box
-                            onClick={() => handleCategoryToggle(category.id)}
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 0.75,
-                              px: 1,
-                              py: 0.875,
-                              borderRadius: 1,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease-in-out",
-                              border: (theme) => isSelected
-                                ? `2px solid ${theme.palette[category.color].main}`
-                                : `1.5px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
-                              bgcolor: (theme) => isSelected
+                  )}
+                </Box>
+                {/* Category buttons in a single compact row */}
+                <Box sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: 0.5,
+                }}>
+                  {scaleCategories.map((category) => {
+                    const isSelected = selectedCategories.has(category.id);
+                    return (
+                      <Tooltip key={category.id} title={category.description} arrow placement="top">
+                        <Box
+                          onClick={() => handleCategoryToggle(category.id)}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 0.5,
+                            px: 0.75,
+                            py: 0.5,
+                            borderRadius: 0.75,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease-in-out",
+                            border: (theme) => isSelected
+                              ? `1.5px solid ${theme.palette[category.color].main}`
+                              : `1px solid ${theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"}`,
+                            bgcolor: (theme) => isSelected
+                              ? theme.palette.mode === "dark"
+                                ? `${theme.palette[category.color].main}30`
+                                : `${theme.palette[category.color].main}15`
+                              : "transparent",
+                            "&:hover": {
+                              transform: "translateY(-1px)",
+                              boxShadow: (theme) => isSelected
                                 ? theme.palette.mode === "dark"
-                                  ? `${theme.palette[category.color].main}30`
-                                  : `${theme.palette[category.color].main}15`
+                                  ? "0 2px 6px rgba(0, 0, 0, 0.3)"
+                                  : "0 2px 6px rgba(0, 0, 0, 0.1)"
                                 : theme.palette.mode === "dark"
-                                ? "#3a4455"
-                                : "#f5f7fa",
-                              "&:hover": {
-                                transform: "translateY(-1px)",
-                                boxShadow: (theme) => isSelected
-                                  ? theme.palette.mode === "dark"
-                                    ? `0 3px 10px ${theme.palette[category.color].main}50`
-                                    : `0 3px 10px ${theme.palette[category.color].main}35`
-                                  : theme.palette.mode === "dark"
-                                  ? "0 2px 8px rgba(0, 0, 0, 0.4)"
-                                  : "0 2px 8px rgba(0, 0, 0, 0.15)",
-                                borderColor: (theme) => isSelected
-                                  ? theme.palette[category.color].main
-                                  : theme.palette.mode === "dark" ? "#5a6578" : "#cbd5e0",
-                              },
-                              "&:active": {
-                                transform: "translateY(0)",
-                              },
+                                ? "0 2px 6px rgba(0, 0, 0, 0.3)"
+                                : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                            },
+                            "&:active": {
+                              transform: "translateY(0)",
+                            },
+                          }}
+                        >
+                          <Typography sx={{ fontSize: "0.95rem" }}>{category.icon}</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                              color: isSelected
+                                ? `${category.color}.main`
+                                : "text.primary",
                             }}
                           >
-                            <Typography sx={{ fontSize: "1.1rem" }}>{category.icon}</Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: "0.75rem",
-                                color: isSelected
-                                  ? `${category.color}.main`
-                                  : "text.primary",
-                              }}
-                            >
-                              {category.label}
-                            </Typography>
-                            {isSelected && (
-                              <Typography
-                                sx={{
-                                  fontSize: "0.85rem",
-                                  color: `${category.color}.main`,
-                                  fontWeight: 700,
-                                  ml: 0.25,
-                                }}
-                              >
-                                ✓
-                              </Typography>
-                            )}
-                          </Box>
-                        </Tooltip>
-                      );
-                    })}
-                  </Box>
-                </Stack>
+                            {category.label}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    );
+                  })}
+                </Box>
               </Box>
             )}
 
