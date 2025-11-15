@@ -109,7 +109,7 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
           Showing first {MAX_POLYGONS} of {validPhotos.length} photos on map
         </Alert>
       )}
-      {polygonData.map(({ photo, positions, isSelected, isHovered, colorConfig, styleToUse }) => (
+      {polygonData.map(({ photo, positions, isSelected, colorConfig, styleToUse }) => (
           <Polygon
             key={`${photo.layerId}-${photo.OBJECTID}`}
             positions={positions}
