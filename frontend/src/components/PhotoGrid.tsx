@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -66,23 +66,37 @@ export default function PhotoGrid({
     setGalleryOpen(true);
   };
 
-  // Sort and group photos
-  const processedPhotos = useMemo(() => {
-    // Sort photos
-    const sorted = [...photos].sort((a, b) => {
+  // Reset page to 1 when sortOrder changes
+  useEffect(() => {
+    setPage(1);
+  }, [sortOrder]);
+
+  // Sort ALL photos first (before pagination)
+  const sortedPhotos = useMemo(() => {
+    return [...photos].sort((a, b) => {
       const dateA = a.FLY_DATE || 0;
       const dateB = b.FLY_DATE || 0;
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
+  }, [photos, sortOrder]);
 
-    // Group photos if needed
+  // Apply pagination to sorted results
+  const totalPages = Math.ceil(sortedPhotos.length / PHOTOS_PER_PAGE);
+  const startIndex = (page - 1) * PHOTOS_PER_PAGE;
+  const endIndex = startIndex + PHOTOS_PER_PAGE;
+  const paginatedPhotos = sortedPhotos.slice(startIndex, endIndex);
+
+  // Group the paginated slice if groupBy is enabled
+  const processedPhotos = useMemo(() => {
+    // If no grouping, return paginated photos as ungrouped
     if (groupBy === "none") {
-      return { ungrouped: sorted };
+      return { ungrouped: paginatedPhotos };
     }
 
+    // Group the paginated photos
     const grouped: Record<string, EnhancedPhoto[]> = {};
 
-    sorted.forEach((photo) => {
+    paginatedPhotos.forEach((photo) => {
       if (!photo.FLY_DATE) {
         if (!grouped["Unknown"]) grouped["Unknown"] = [];
         grouped["Unknown"].push(photo);
@@ -106,16 +120,7 @@ export default function PhotoGrid({
     });
 
     return grouped;
-  }, [photos, sortOrder, groupBy]);
-
-  // Calculate pagination
-  const allPhotos =
-    groupBy === "none"
-      ? processedPhotos.ungrouped || []
-      : Object.values(processedPhotos).flat();
-  const totalPages = Math.ceil(allPhotos.length / PHOTOS_PER_PAGE);
-  const startIndex = (page - 1) * PHOTOS_PER_PAGE;
-  const endIndex = startIndex + PHOTOS_PER_PAGE;
+  }, [paginatedPhotos, groupBy]);
 
   // Loading state - show skeleton cards
   if (loading) {
@@ -126,8 +131,9 @@ export default function PhotoGrid({
           gridTemplateColumns: {
             xs: 'repeat(2, 1fr)',
             sm: 'repeat(2, 1fr)',
-            md: 'repeat(2, 1fr)',
-            lg: 'repeat(1, 1fr)',
+            md: 'repeat(3, 1fr)',
+            lg: 'repeat(3, 1fr)',
+            xl: 'repeat(4, 1fr)',
           },
           gap: 2,
         }}
@@ -177,7 +183,6 @@ export default function PhotoGrid({
   // Render grouped or ungrouped results
   const renderPhotos = () => {
     if (groupBy === "none") {
-      const currentPhotos = allPhotos.slice(startIndex, endIndex);
       return (
         <Box
           sx={{
@@ -185,13 +190,14 @@ export default function PhotoGrid({
             gridTemplateColumns: {
               xs: 'repeat(2, 1fr)',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(2, 1fr)',
-              lg: 'repeat(1, 1fr)',
+              md: 'repeat(3, 1fr)',
+              lg: 'repeat(3, 1fr)',
+              xl: 'repeat(4, 1fr)',
             },
             gap: 2,
           }}
         >
-          {currentPhotos.map((photo, index) => (
+          {processedPhotos.ungrouped?.map((photo, index) => (
             <PhotoCard
               key={`${photo.layerId}-${photo.OBJECTID}`}
               photo={photo}
@@ -236,14 +242,16 @@ export default function PhotoGrid({
                     gridTemplateColumns: {
                       xs: 'repeat(2, 1fr)',
                       sm: 'repeat(2, 1fr)',
-                      md: 'repeat(2, 1fr)',
-                      lg: 'repeat(1, 1fr)',
+                      md: 'repeat(3, 1fr)',
+                      lg: 'repeat(3, 1fr)',
+                      xl: 'repeat(4, 1fr)',
                     },
                     gap: 2,
                   }}
                 >
                   {groupPhotos.map((photo) => {
-                    const photoIndex = allPhotos.findIndex(
+                    // Find the index in the full sorted array for gallery
+                    const photoIndex = sortedPhotos.findIndex(
                       (p) =>
                         p.layerId === photo.layerId &&
                         p.OBJECTID === photo.OBJECTID,
@@ -274,7 +282,7 @@ export default function PhotoGrid({
   return (
     <Box>
       <PhotoGallery
-        photos={allPhotos}
+        photos={sortedPhotos}
         open={galleryOpen}
         onClose={() => setGalleryOpen(false)}
         initialIndex={galleryStartIndex}
@@ -335,7 +343,7 @@ export default function PhotoGrid({
                 }}
               />
             </Box>
-            {groupBy === "none" && totalPages > 1 && (
+            {totalPages > 1 && (
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -371,7 +379,12 @@ export default function PhotoGrid({
               <ToggleButtonGroup
                 value={sortOrder}
                 exclusive
-                onChange={(_e, value) => value && setSortOrder(value)}
+                onChange={(_e, value) => {
+                  if (value) {
+                    setSortOrder(value);
+                    setPage(1); // Reset to page 1 when sort changes
+                  }
+                }}
                 size="small"
                 sx={{ height: 28 }}
               >
@@ -443,8 +456,8 @@ export default function PhotoGrid({
       {/* Photo grid or grouped display */}
       {renderPhotos()}
 
-      {/* Pagination (only for ungrouped) */}
-      {groupBy === "none" && totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Pagination
             count={totalPages}

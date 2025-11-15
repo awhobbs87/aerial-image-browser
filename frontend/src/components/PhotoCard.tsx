@@ -9,6 +9,7 @@ import {
   Stack,
   Box,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import {
   Favorite,
@@ -16,7 +17,7 @@ import {
   CheckCircle,
   Map as MapIcon,
   Visibility,
-  OpenInNew,
+  Download,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -55,6 +56,7 @@ function PhotoCard({
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleViewImage = () => {
     // Open preview modal instead of directly opening TIFF
@@ -76,6 +78,52 @@ function PhotoCard({
   const handleShowOnMap = () => {
     if (onShowOnMap) {
       onShowOnMap(photo);
+    }
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent thumbnail click
+    if (!photo.DOWNLOAD_LINK || downloading) return;
+
+    setDownloading(true);
+    try {
+      // Use WebP URL for smaller file size (2-5 MB vs 15-20 MB)
+      const downloadUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
+      
+      // Fetch the file as a blob
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      
+      const blob = await response.blob();
+      
+      // Create object URL
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Create temporary anchor element
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`;
+      link.style.display = 'none';
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up object URL after a short delay
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 100);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: try opening in new tab if download fails
+      if (photo.DOWNLOAD_LINK) {
+        window.open(photo.DOWNLOAD_LINK, '_blank');
+      }
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -131,6 +179,54 @@ function PhotoCard({
         }}
       >
         <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+        
+        {/* Download icon overlay - top-right */}
+        {photo.DOWNLOAD_LINK && (
+          <Tooltip title="Download full resolution (2-5 MB)" arrow placement="left">
+            <IconButton
+              onClick={handleDownload}
+              disabled={downloading}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 2,
+                bgcolor: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'rgba(0, 0, 0, 0.7)' 
+                    : 'rgba(255, 255, 255, 0.9)',
+                color: 'warning.main',
+                width: 40,
+                height: 40,
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 2px 8px rgba(0, 0, 0, 0.5)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                '&:hover': {
+                  bgcolor: (theme) => 
+                    theme.palette.mode === 'dark' 
+                      ? 'rgba(0, 0, 0, 0.85)' 
+                      : 'rgba(255, 255, 255, 1)',
+                  transform: 'scale(1.1)',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 4px 12px rgba(0, 0, 0, 0.6)'
+                      : '0 4px 12px rgba(0, 0, 0, 0.3)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                },
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              {downloading ? (
+                <CircularProgress size={20} color="warning" />
+              ) : (
+                <Download sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       <CardContent sx={{ flexGrow: 1, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
@@ -216,7 +312,7 @@ function PhotoCard({
 
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Tooltip title="Preview image" arrow placement="top">
+          <Tooltip title="Preview image in modal" arrow placement="top">
             <IconButton
               size="small"
               color="primary"
@@ -231,40 +327,6 @@ function PhotoCard({
             >
               <Visibility sx={{ fontSize: iconSize.md }} />
             </IconButton>
-          </Tooltip>
-
-          <Tooltip title="View full resolution image (long-press on iOS to download)" arrow placement="top">
-            <Box
-              component="a"
-              href={photo.DOWNLOAD_LINK || undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                color: 'warning.main',
-                textDecoration: 'none',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                ...(photo.DOWNLOAD_LINK ? {
-                  '&:hover': {
-                    transform: 'scale(1.1)',
-                    bgcolor: 'action.hover',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                  },
-                } : {
-                  opacity: 0.38,
-                  pointerEvents: 'none',
-                }),
-              }}
-            >
-              <OpenInNew sx={{ fontSize: iconSize.md }} />
-            </Box>
           </Tooltip>
 
           {onShowOnMap && photo.geometry && (

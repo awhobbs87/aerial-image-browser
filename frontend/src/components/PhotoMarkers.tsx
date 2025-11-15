@@ -1,5 +1,6 @@
+import { memo, useMemo } from 'react';
 import { Polygon, Popup } from 'react-leaflet';
-import { Typography, Box, Chip, Stack } from '@mui/material';
+import { Typography, Box, Chip, Stack, Alert } from '@mui/material';
 import type { EnhancedPhoto, LayerType } from '../types/api';
 
 interface PhotoMarkersProps {
@@ -53,28 +54,62 @@ const HOVER_STYLE = {
   weight: 3,
 };
 
-export default function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: PhotoMarkersProps) {
+const MAX_POLYGONS = 200;
+
+function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: PhotoMarkersProps) {
+  // Filter photos with valid geometry and limit to MAX_POLYGONS
+  const validPhotos = useMemo(() => {
+    return photos.filter((photo) => photo.geometry?.rings && Array.isArray(photo.geometry.rings));
+  }, [photos]);
+
+  const limitedPhotos = useMemo(() => {
+    return validPhotos.slice(0, MAX_POLYGONS);
+  }, [validPhotos]);
+
+  const isLimited = validPhotos.length > MAX_POLYGONS;
+
+  // Memoize polygon data calculations
+  const polygonData = useMemo(() => {
+    return limitedPhotos.map((photo) => {
+      const isSelected = selectedPhoto?.OBJECTID === photo.OBJECTID && selectedPhoto?.layerId === photo.layerId;
+      const isHovered = hoveredPhoto?.OBJECTID === photo.OBJECTID && hoveredPhoto?.layerId === photo.layerId;
+      const colorConfig = LAYER_COLORS[photo.layerType];
+      const styleToUse = isHovered ? HOVER_STYLE : isSelected ? SELECTED_STYLE : null;
+      
+      // Convert ArcGIS rings to Leaflet polygon positions
+      // ArcGIS format: [[[lon, lat], [lon, lat], ...]]
+      // Leaflet format: [[lat, lon], [lat, lon], ...]
+      const positions = photo.geometry.rings[0].map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
+
+      return {
+        photo,
+        positions,
+        isSelected,
+        isHovered,
+        colorConfig,
+        styleToUse,
+      };
+    });
+  }, [limitedPhotos, selectedPhoto, hoveredPhoto]);
+
   return (
     <>
-      {photos.map((photo) => {
-        // Check if photo has geometry data
-        if (!photo.geometry || !photo.geometry.rings || !Array.isArray(photo.geometry.rings)) {
-          return null;
-        }
-
-        const isSelected = selectedPhoto?.OBJECTID === photo.OBJECTID && selectedPhoto?.layerId === photo.layerId;
-        const isHovered = hoveredPhoto?.OBJECTID === photo.OBJECTID && hoveredPhoto?.layerId === photo.layerId;
-        const colorConfig = LAYER_COLORS[photo.layerType];
-
-        // Determine which style to use (priority: hovered > selected > default)
-        const styleToUse = isHovered ? HOVER_STYLE : isSelected ? SELECTED_STYLE : null;
-
-        // Convert ArcGIS rings to Leaflet polygon positions
-        // ArcGIS format: [[[lon, lat], [lon, lat], ...]]
-        // Leaflet format: [[lat, lon], [lat, lon], ...]
-        const positions = photo.geometry.rings[0].map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
-
-        return (
+      {isLimited && (
+        <Alert 
+          severity="info" 
+          sx={{ 
+            position: 'absolute', 
+            top: 10, 
+            left: 10, 
+            zIndex: 1000,
+            maxWidth: 400,
+            boxShadow: 2,
+          }}
+        >
+          Showing first {MAX_POLYGONS} of {validPhotos.length} photos on map
+        </Alert>
+      )}
+      {polygonData.map(({ photo, positions, isSelected, isHovered, colorConfig, styleToUse }) => (
           <Polygon
             key={`${photo.layerId}-${photo.OBJECTID}`}
             positions={positions}
@@ -155,8 +190,19 @@ export default function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPh
               </Box>
             </Popup>
           </Polygon>
-        );
-      })}
+      ))}
     </>
   );
 }
+
+// Memoize component to prevent unnecessary re-renders
+export default memo(PhotoMarkers, (prevProps, nextProps) => {
+  // Only re-render if these props actually change
+  return (
+    prevProps.photos === nextProps.photos &&
+    prevProps.selectedPhoto?.OBJECTID === nextProps.selectedPhoto?.OBJECTID &&
+    prevProps.selectedPhoto?.layerId === nextProps.selectedPhoto?.layerId &&
+    prevProps.hoveredPhoto?.OBJECTID === nextProps.hoveredPhoto?.OBJECTID &&
+    prevProps.hoveredPhoto?.layerId === nextProps.hoveredPhoto?.layerId
+  );
+});

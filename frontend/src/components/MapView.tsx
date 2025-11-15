@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, useMapEvents, useMap, Marker, Popup } from 'react-leaflet';
 import { Box } from '@mui/material';
 import { LatLngBounds } from 'leaflet';
@@ -42,25 +42,35 @@ function MapController({
 }) {
   const map = useMap();
 
+  // Memoize bounds calculation - only recalculate when photos array reference changes
+  const bounds = useMemo(() => {
+    if (!autoZoom || photos.length === 0) {
+      return null;
+    }
+
+    const validPhotos = photos.filter((p) => p.geometry?.rings?.[0]);
+    if (validPhotos.length === 0) {
+      return null;
+    }
+
+    const calculatedBounds = new LatLngBounds(
+      validPhotos.flatMap((photo) =>
+        photo.geometry.rings[0].map(([lon, lat]: [number, number]) => [lat, lon] as [number, number])
+      )
+    );
+
+    return calculatedBounds.isValid() ? calculatedBounds : null;
+  }, [photos, autoZoom]);
+
   useEffect(() => {
     if (searchCenter) {
       // Center on search location with appropriate zoom
       map.setView(searchCenter, 13, { animate: true });
-    } else if (autoZoom && photos.length > 0) {
+    } else if (bounds) {
       // Auto-fit bounds to show all photos
-      const bounds = new LatLngBounds(
-        photos
-          .filter((p) => p.geometry?.rings?.[0])
-          .flatMap((photo) =>
-            photo.geometry.rings[0].map(([lon, lat]: [number, number]) => [lat, lon] as [number, number])
-          )
-      );
-
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-      }
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
     }
-  }, [photos, searchCenter, autoZoom, map]);
+  }, [bounds, searchCenter, map]);
 
   return null;
 }
