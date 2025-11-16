@@ -12,9 +12,15 @@ app.use(
       const allowed = [
         "http://localhost:5173",
         "https://tas-aerial-browser.awhobbs.workers.dev",
+        "https://aerial-explorer.awhq.uk",  // Custom domain
+        "https://www.aerial-explorer.awhq.uk",  // www subdomain
       ];
       // Allow all Cloudflare Pages deployments (production and previews)
       if (origin?.endsWith(".tas-aerial-explorer.pages.dev")) {
+        return origin;
+      }
+      // Allow awhq.uk custom domains
+      if (origin?.endsWith(".awhq.uk")) {
         return origin;
       }
       // Allow specific origins
@@ -25,6 +31,10 @@ app.use(
       return origin;
     },
     credentials: true,
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    exposeHeaders: ['Content-Length', 'X-Request-Id'],
+    maxAge: 600,
   })
 );
 

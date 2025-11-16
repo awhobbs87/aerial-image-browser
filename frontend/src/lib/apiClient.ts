@@ -182,10 +182,18 @@ class ApiClient {
 }
 
 // Create a singleton instance
-// Use environment variable for base URL, fallback to deployed worker
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://tas-aerial-browser.awhobbs.workers.dev";
+// Use environment variable for base URL, or detect from current domain
+const getApiBaseUrl = () => {
+  // If environment variable is set, use it
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  // Always use the worker URL (it has CORS configured to allow requests)
+  return "https://tas-aerial-browser.awhobbs.workers.dev";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = new ApiClient(API_BASE_URL);
 export default apiClient;
