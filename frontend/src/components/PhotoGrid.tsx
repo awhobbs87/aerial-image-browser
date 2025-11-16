@@ -79,10 +79,10 @@ export default function PhotoGrid({
     setGalleryOpen(true);
   };
 
-  // Reset page to 1 when sortOrder changes
+  // Reset page to 1 when sortOrder changes or when photos array changes (new search)
   useEffect(() => {
     setPage(1);
-  }, [sortOrder]);
+  }, [sortOrder, photos]);
 
   // Sort ALL photos first (before pagination)
   const sortedPhotos = useMemo(() => {
