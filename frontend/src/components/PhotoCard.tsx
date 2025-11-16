@@ -57,6 +57,7 @@ function PhotoCard({
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleViewImage = () => {
     // Open preview modal instead of directly opening TIFF
@@ -139,9 +140,23 @@ function PhotoCard({
         overflow: "hidden",
         position: "relative",
         borderLeft: `4px solid ${layerTypeColors[photo.layerType].border}`,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: (theme) =>
+            theme.palette.mode === 'dark'
+              ? '0 8px 24px rgba(0, 0, 0, 0.5)'
+              : '0 8px 24px rgba(0, 0, 0, 0.15)',
+        },
       }}
-      onMouseEnter={() => onPhotoHover?.(photo)}
-      onMouseLeave={() => onPhotoHover?.(null)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        onPhotoHover?.(photo);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        onPhotoHover?.(null);
+      }}
     >
       {/* Thumbnail with inner shadow */}
       <Box
@@ -310,7 +325,17 @@ function PhotoCard({
         </Stack>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: "space-between", px: 1.5, pb: 1, pt: 0 }}>
+      <CardActions
+        sx={{
+          justifyContent: "space-between",
+          px: 1.5,
+          pb: 1,
+          pt: 0,
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
+        }}
+      >
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Preview image in modal" arrow placement="top">
             <IconButton

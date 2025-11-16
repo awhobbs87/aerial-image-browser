@@ -32,7 +32,8 @@
       "Bash(CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy dist --project-name=tas-aerial-explorer --commit-dirty=true)",
       "Bash(CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy ./frontend/dist --project-name=tas-aerial-explorer --commit-dirty=true)",
       "Bash(git restore:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(bash -c:*)"
     ],
     "deny": [],
     "ask": []

@@ -228,6 +228,12 @@ function AppContent() {
     });
   }, []);
 
+  const handleClearAllFavorites = useCallback(() => {
+    if (window.confirm(`Are you sure you want to remove all ${favorites.size} favorites?`)) {
+      setFavorites(new Set());
+    }
+  }, [favorites.size]);
+
   const handleViewModeChange = useCallback(
     (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
       if (newMode !== null) {
@@ -705,6 +711,7 @@ function AppContent() {
         favoritePhotos={favoritePhotos}
         favorites={favorites}
         onFavorite={handleFavorite}
+        onClearAll={handleClearAllFavorites}
         onShowOnMap={(photo) => {
           handlePhotoSelect(photo);
           setFavoritesModalOpen(false);
