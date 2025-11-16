@@ -4,6 +4,7 @@ import { Box } from '@mui/material';
 import { LatLngBounds } from 'leaflet';
 import '../lib/leafletConfig'; // Import to fix marker icons
 import PhotoMarkers from './PhotoMarkers';
+import MapZoomControls from './MapZoomControls';
 import type { EnhancedPhoto } from '../types/api';
 
 interface MapViewProps {
@@ -135,6 +136,9 @@ export default function MapView({
             onPhotoClick={onPhotoClick}
           />
         )}
+
+        {/* Mobile zoom controls */}
+        <MapZoomControls searchCenter={searchCenter} />
       </MapContainer>
     </Box>
   );
