@@ -229,8 +229,8 @@ function PhotoCard({
         )}
       </Box>
 
-      <CardContent sx={{ flexGrow: 1, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-        <Stack spacing={1}>
+      <CardContent sx={{ flexGrow: 1, py: 1.25, px: 1.5, '&:last-child': { pb: 1.25 } }}>
+        <Stack spacing={0.75}>
           {/* Chips row */}
           <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
             <Chip
@@ -310,7 +310,7 @@ function PhotoCard({
         </Stack>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 1.5, pt: 0 }}>
+      <CardActions sx={{ justifyContent: "space-between", px: 1.5, pb: 1, pt: 0 }}>
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Preview image in modal" arrow placement="top">
             <IconButton

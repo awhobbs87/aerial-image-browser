@@ -22,6 +22,8 @@ import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
 import FilterPanel, { type Filters } from "./components/FilterPanel";
 import FavoritesModal from "./components/FavoritesModal";
+import BackToTop from "./components/BackToTop";
+import LoadingBar from "./components/LoadingBar";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -286,6 +288,10 @@ function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+
+      {/* Loading Progress Bar */}
+      <LoadingBar loading={isLoading} />
+
       <Box
         sx={{
           display: "flex",
@@ -699,6 +705,9 @@ function AppContent() {
           setFavoritesModalOpen(false);
         }}
       />
+
+      {/* Back to Top Button */}
+      <BackToTop />
     </ThemeProvider>
   );
 }
