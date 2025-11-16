@@ -97,12 +97,12 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
   return (
     <>
       {isLimited && (
-        <Alert 
-          severity="info" 
-          sx={{ 
-            position: 'absolute', 
-            top: 10, 
-            left: 10, 
+        <Alert
+          severity="info"
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
             zIndex: 1000,
             maxWidth: 400,
             boxShadow: 2,
