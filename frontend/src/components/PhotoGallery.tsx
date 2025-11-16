@@ -302,7 +302,7 @@ export default function PhotoGallery({
               )}
             </Stack>
 
-            {/* File size warning */}
+            {/* File size warning with download link */}
             <Box
               sx={{
                 mt: 2,
@@ -316,12 +316,39 @@ export default function PhotoGallery({
                     : "1px solid rgba(251, 191, 36, 0.3)",
               }}
             >
-              <Typography variant="body2" color="warning.dark" fontWeight={600}>
+              <Typography variant="body2" color="warning.dark" fontWeight={600} sx={{ mb: 1 }}>
                 Full Resolution TIFF
               </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                Opens the original high-resolution TIFF file (~10-30 MB). On iOS: long-press the link to download.
-              </Typography>
+              {currentPhoto.DOWNLOAD_LINK ? (
+                <>
+                  <Box
+                    component="a"
+                    href={currentPhoto.DOWNLOAD_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      display: 'inline-block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'primary.main',
+                      textDecoration: 'none',
+                      mb: 0.5,
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Download Full Resolution TIFF →
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Original high-resolution TIFF file (~10-30 MB). On iOS: long-press the link to download.
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Download not available for this photo.
+                </Typography>
+              )}
             </Box>
           </Stack>
         </Box>
@@ -330,31 +357,10 @@ export default function PhotoGallery({
       <Divider />
 
       {/* Actions */}
-      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+      <Box sx={{ p: 2, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
         <IconButton onClick={onClose} size="small" color="inherit">
           <Close />
         </IconButton>
-        {currentPhoto.DOWNLOAD_LINK && (
-          <Box
-            component="a"
-            href={currentPhoto.DOWNLOAD_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: 'primary.main',
-              textDecoration: 'none',
-              px: 2,
-              py: 1,
-              '&:hover': {
-                textDecoration: 'underline',
-              },
-            }}
-          >
-            Download Full Resolution TIFF
-          </Box>
-        )}
       </Box>
     </Dialog>
   );
