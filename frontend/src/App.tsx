@@ -85,6 +85,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
   const [hoveredPhoto, setHoveredPhoto] = useState<EnhancedPhoto | null>(null);
+  const [visibleGridPhotos, setVisibleGridPhotos] = useState<EnhancedPhoto[]>([]);
   const [searchCenter, setSearchCenter] = useState<[number, number] | null>(null);
   const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(40); // percentage
@@ -170,6 +171,27 @@ function AppContent() {
       favorites.has(`${photo.layerId}-${photo.OBJECTID}`)
     );
   }, [data?.photos, favorites]);
+
+  // Prioritize visible grid photos for map display
+  // This ensures hovering on paginated/sorted photos highlights them on the map
+  const mapPhotos = useMemo(() => {
+    if (visibleGridPhotos.length === 0) {
+      // No visible photos yet, show all filtered photos
+      return filteredPhotos;
+    }
+
+    // Create a set of visible photo IDs for quick lookup
+    const visibleIds = new Set(
+      visibleGridPhotos.map(p => `${p.layerId}-${p.OBJECTID}`)
+    );
+
+    // Put visible photos first, then fill with remaining filtered photos
+    const remainingPhotos = filteredPhotos.filter(
+      p => !visibleIds.has(`${p.layerId}-${p.OBJECTID}`)
+    );
+
+    return [...visibleGridPhotos, ...remainingPhotos];
+  }, [visibleGridPhotos, filteredPhotos]);
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
@@ -415,6 +437,7 @@ function AppContent() {
                       favorites={favorites}
                       onShowOnMap={handlePhotoSelect}
                       onPhotoHover={setHoveredPhoto}
+                      onVisiblePhotosChange={setVisibleGridPhotos}
                       sidebarWidth={sidebarWidth}
                     />
                   </Box>
@@ -663,7 +686,7 @@ function AppContent() {
                 }
               >
                 <MapView
-                  photos={filteredPhotos}
+                  photos={mapPhotos}
                   selectedPhoto={selectedPhoto}
                   hoveredPhoto={hoveredPhoto}
                   onPhotoClick={setSelectedPhoto}

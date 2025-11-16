@@ -30,6 +30,7 @@ interface PhotoGridProps {
   onFavorite?: (photo: EnhancedPhoto) => void;
   onShowOnMap?: (photo: EnhancedPhoto) => void;
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
+  onVisiblePhotosChange?: (photos: EnhancedPhoto[]) => void;
   favorites?: Set<string>;
   sidebarWidth?: number; // Percentage of screen width (25-60)
 }
@@ -46,6 +47,7 @@ export default function PhotoGrid({
   onFavorite,
   onShowOnMap,
   onPhotoHover,
+  onVisiblePhotosChange,
   favorites = new Set(),
   sidebarWidth = 40,
 }: PhotoGridProps) {
@@ -98,6 +100,13 @@ export default function PhotoGrid({
   const startIndex = (page - 1) * PHOTOS_PER_PAGE;
   const endIndex = startIndex + PHOTOS_PER_PAGE;
   const paginatedPhotos = sortedPhotos.slice(startIndex, endIndex);
+
+  // Notify parent of visible photos for map synchronization
+  useEffect(() => {
+    if (onVisiblePhotosChange && paginatedPhotos.length > 0) {
+      onVisiblePhotosChange(paginatedPhotos);
+    }
+  }, [paginatedPhotos, onVisiblePhotosChange]);
 
   // Group the paginated slice if groupBy is enabled
   const processedPhotos = useMemo(() => {
