@@ -197,30 +197,47 @@ function PhotoCard({
         
         {/* Download icon overlay - top-right */}
         {photo.DOWNLOAD_LINK && (
-          <Tooltip title="Download full resolution (2-5 MB)" arrow placement="left">
-            <IconButton
-              onClick={handleDownload}
-              disabled={downloading}
+          <Tooltip title="Right-click to save or click to download (2-5 MB)" arrow placement="left">
+            <Box
+              component="a"
+              href={apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId)}
+              download={`${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`}
+              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                // Prevent default and use custom download on left-click
+                // This allows fallback download behavior
+                e.stopPropagation();
+                e.preventDefault();
+                handleDownload(e as unknown as React.MouseEvent);
+              }}
+              onContextMenu={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                // Allow right-click context menu (browser's "Save link as")
+                e.stopPropagation();
+              }}
               sx={{
                 position: 'absolute',
                 top: 8,
                 right: 8,
                 zIndex: 2,
-                bgcolor: (theme) => 
-                  theme.palette.mode === 'dark' 
-                    ? 'rgba(0, 0, 0, 0.7)' 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(0, 0, 0, 0.7)'
                     : 'rgba(255, 255, 255, 0.9)',
                 color: 'warning.main',
                 width: 40,
                 height: 40,
+                borderRadius: '50%',
                 boxShadow: (theme) =>
                   theme.palette.mode === 'dark'
                     ? '0 2px 8px rgba(0, 0, 0, 0.5)'
                     : '0 2px 8px rgba(0, 0, 0, 0.2)',
                 '&:hover': {
-                  bgcolor: (theme) => 
-                    theme.palette.mode === 'dark' 
-                      ? 'rgba(0, 0, 0, 0.85)' 
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(0, 0, 0, 0.85)'
                       : 'rgba(255, 255, 255, 1)',
                   transform: 'scale(1.1)',
                   boxShadow: (theme) =>
@@ -232,6 +249,8 @@ function PhotoCard({
                   transform: 'scale(0.95)',
                 },
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                pointerEvents: downloading ? 'none' : 'auto',
+                opacity: downloading ? 0.6 : 1,
               }}
             >
               {downloading ? (
@@ -239,7 +258,7 @@ function PhotoCard({
               ) : (
                 <Download sx={{ fontSize: 22 }} />
               )}
-            </IconButton>
+            </Box>
           </Tooltip>
         )}
       </Box>

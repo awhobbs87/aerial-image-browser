@@ -9,18 +9,18 @@ import {
   Stack,
   useTheme,
   useMediaQuery,
+  Divider,
+  CircularProgress,
 } from "@mui/material";
 import {
   Close,
   ChevronLeft,
   ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  FullscreenExit,
-  Fullscreen,
   CalendarToday,
   PhotoSizeSelectActual,
-  Download,
+  Image as ImageIcon,
+  Place,
+  OpenInNew,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -45,8 +45,6 @@ export default function PhotoGallery({
   initialIndex = 0,
 }: PhotoGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -56,9 +54,8 @@ export default function PhotoGallery({
     ? apiClient.getThumbnailUrl(currentPhoto.IMAGE_NAME, currentPhoto.layerId)
     : "";
 
-  // Reset zoom when changing photos
+  // Reset loading state when changing photos
   useEffect(() => {
-    setZoomLevel(1);
     setImageLoaded(false);
   }, [currentIndex]);
 
@@ -79,26 +76,6 @@ export default function PhotoGallery({
     }
   }, [currentIndex]);
 
-  const handleDownload = useCallback(() => {
-    if (currentPhoto?.DOWNLOAD_LINK) {
-      const link = document.createElement('a');
-      link.href = currentPhoto.DOWNLOAD_LINK;
-      link.download = currentPhoto.IMAGE_NAME || 'aerial-photo.tif';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }, [currentPhoto]);
-
-  const handleZoomIn = useCallback(() => {
-    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
-  }, []);
-
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,40 +91,12 @@ export default function PhotoGallery({
         case "Escape":
           onClose();
           break;
-        case "+":
-        case "=":
-          handleZoomIn();
-          break;
-        case "-":
-          handleZoomOut();
-          break;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, handleNext, handlePrevious, handleZoomIn, handleZoomOut, onClose]);
-
-  const toggleFullscreen = useCallback(() => {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen?.();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen?.();
-      setIsFullscreen(false);
-    }
-  }, [isFullscreen]);
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
+  }, [open, handleNext, handlePrevious, onClose]);
 
   if (!currentPhoto) return null;
 
@@ -155,203 +104,250 @@ export default function PhotoGallery({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth={false}
-      fullScreen
+      maxWidth="lg"
+      fullWidth
       sx={{
         "& .MuiDialog-paper": {
-          bgcolor: "rgba(0, 0, 0, 0.95)",
-          margin: 0,
-          maxHeight: "none",
+          borderRadius: 3,
+          maxHeight: "95vh",
         },
       }}
     >
-      {/* Top toolbar */}
+      {/* Header */}
       <Box
         sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1300,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           p: 2,
-          background: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)",
+          borderBottom: 1,
+          borderColor: "divider",
         }}
       >
-        {/* Photo info */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-          <Chip
-            label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
-            color={
-              currentPhoto.layerType === "aerial"
-                ? "info"
-                : currentPhoto.layerType === "ortho"
-                ? "success"
-                : "warning"
-            }
-            size="small"
-          />
-          <Typography variant="body2" color="white" fontWeight={600}>
-            {currentPhoto.dateFormatted || "Unknown Date"}
-          </Typography>
-          <Typography variant="caption" color="rgba(255, 255, 255, 0.7)">
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <ImageIcon color="primary" />
+          <Typography variant="h6">Photo Gallery</Typography>
+          <Typography variant="caption" color="text.secondary">
             {currentIndex + 1} / {photos.length}
           </Typography>
         </Box>
-
-        {/* Controls */}
-        <Stack direction="row" spacing={1}>
-          {!isMobile && (
-            <>
-              <IconButton
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 0.5}
-                sx={{ color: "white" }}
-                size="small"
-              >
-                <ZoomOut />
-              </IconButton>
-              <IconButton
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 3}
-                sx={{ color: "white" }}
-                size="small"
-              >
-                <ZoomIn />
-              </IconButton>
-              <IconButton onClick={toggleFullscreen} sx={{ color: "white" }} size="small">
-                {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-              </IconButton>
-            </>
-          )}
-          <IconButton
-            onClick={handleDownload}
-            sx={{ color: "white" }}
-            size="small"
-            disabled={!currentPhoto?.DOWNLOAD_LINK}
-          >
-            <Download />
-          </IconButton>
-          <IconButton onClick={onClose} sx={{ color: "white" }} size="small">
-            <Close />
-          </IconButton>
-        </Stack>
+        <IconButton onClick={onClose} size="small">
+          <Close />
+        </IconButton>
       </Box>
 
-      {/* Main image area */}
-      <DialogContent
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: 0,
-          overflow: "hidden",
-          position: "relative",
-          height: "100vh",
-        }}
-      >
-        {/* Navigation buttons */}
-        <IconButton
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-          sx={{
-            position: "absolute",
-            left: 16,
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 1,
-            bgcolor: "rgba(0, 0, 0, 0.6)",
-            color: "white",
-            "&:hover": {
-              bgcolor: "rgba(0, 0, 0, 0.8)",
-            },
-            "&.Mui-disabled": {
-              display: "none",
-            },
-          }}
-          size="large"
-        >
-          <ChevronLeft sx={{ fontSize: 40 }} />
-        </IconButton>
-
+      <DialogContent sx={{ p: 0 }}>
+        {/* Image Preview */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            position: "relative",
             width: "100%",
-            height: "100%",
-            overflow: "auto",
-            cursor: zoomLevel > 1 ? "move" : "default",
+            minHeight: 400,
+            bgcolor: "background.default",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
+          {/* Navigation buttons */}
+          <IconButton
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+            sx={{
+              position: "absolute",
+              left: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 2,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+              "&:hover": {
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)",
+              },
+              "&.Mui-disabled": {
+                display: "none",
+              },
+            }}
+            size="large"
+          >
+            <ChevronLeft sx={{ fontSize: 32 }} />
+          </IconButton>
+
+          {!imageLoaded && (
+            <CircularProgress
+              size={60}
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          )}
           <img
             src={thumbnailUrl}
             alt={currentPhoto.IMAGE_NAME}
             onLoad={() => setImageLoaded(true)}
             style={{
-              maxWidth: zoomLevel === 1 ? "90%" : "none",
-              maxHeight: zoomLevel === 1 ? "90vh" : "none",
+              maxWidth: "100%",
+              maxHeight: isMobile ? "50vh" : "60vh",
               objectFit: "contain",
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: "center center",
-              transition: "transform 0.2s ease-out",
               display: imageLoaded ? "block" : "none",
             }}
           />
+
+          <IconButton
+            onClick={handleNext}
+            disabled={currentIndex === photos.length - 1}
+            sx={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 2,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+              "&:hover": {
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)",
+              },
+              "&.Mui-disabled": {
+                display: "none",
+              },
+            }}
+            size="large"
+          >
+            <ChevronRight sx={{ fontSize: 32 }} />
+          </IconButton>
         </Box>
 
-        <IconButton
-          onClick={handleNext}
-          disabled={currentIndex === photos.length - 1}
-          sx={{
-            position: "absolute",
-            right: 16,
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 1,
-            bgcolor: "rgba(0, 0, 0, 0.6)",
-            color: "white",
-            "&:hover": {
-              bgcolor: "rgba(0, 0, 0, 0.8)",
-            },
-            "&.Mui-disabled": {
-              display: "none",
-            },
-          }}
-          size="large"
-        >
-          <ChevronRight sx={{ fontSize: 40 }} />
-        </IconButton>
+        {/* Photo metadata */}
+        <Box sx={{ p: 3 }}>
+          <Stack spacing={2}>
+            {/* Header with chips */}
+            <Box>
+              <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                <Chip
+                  label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
+                  color={
+                    currentPhoto.layerType === "aerial"
+                      ? "info"
+                      : currentPhoto.layerType === "ortho"
+                      ? "success"
+                      : "warning"
+                  }
+                  size="small"
+                />
+                {currentPhoto.cached && (
+                  <Chip label="Cached" color="success" size="small" variant="outlined" />
+                )}
+              </Box>
+              <Typography variant="h5" gutterBottom fontWeight={600}>
+                {currentPhoto.dateFormatted || "Unknown Date"}
+              </Typography>
+            </Box>
+
+            <Divider />
+
+            {/* Details grid */}
+            <Stack spacing={1.5}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CalendarToday sx={{ fontSize: 20, color: "text.secondary" }} />
+                <Typography variant="body2" color="text.secondary">
+                  Date:
+                </Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  {currentPhoto.dateFormatted || "Unknown"}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PhotoSizeSelectActual sx={{ fontSize: 20, color: "text.secondary" }} />
+                <Typography variant="body2" color="text.secondary">
+                  Scale:
+                </Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  {currentPhoto.scaleFormatted || "N/A"}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <ImageIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                <Typography variant="body2" color="text.secondary">
+                  File:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={500}
+                  sx={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {currentPhoto.IMAGE_NAME}
+                </Typography>
+              </Box>
+
+              {currentPhoto.geometry && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Place sx={{ fontSize: 20, color: "text.secondary" }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Location:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    Available on map
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+
+            {/* File size warning */}
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(251, 191, 36, 0.1)" : "rgba(251, 191, 36, 0.1)",
+                borderRadius: 2,
+                border: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "1px solid rgba(251, 191, 36, 0.3)"
+                    : "1px solid rgba(251, 191, 36, 0.3)",
+              }}
+            >
+              <Typography variant="body2" color="warning.dark" fontWeight={600}>
+                Full Resolution TIFF
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                Opens the original high-resolution TIFF file (~10-30 MB). On iOS: long-press the link to download.
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
       </DialogContent>
 
-      {/* Bottom info bar */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1300,
-          p: 2,
-          background: "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)",
-        }}
-      >
-        <Stack direction="row" spacing={3} sx={{ color: "white", justifyContent: "center" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CalendarToday sx={{ fontSize: 16, opacity: 0.7 }} />
-            <Typography variant="caption">{currentPhoto.dateFormatted || "Unknown"}</Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <PhotoSizeSelectActual sx={{ fontSize: 16, opacity: 0.7 }} />
-            <Typography variant="caption">{currentPhoto.scaleFormatted || "N/A"}</Typography>
-          </Box>
-          <Typography variant="caption" sx={{ opacity: 0.7, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {currentPhoto.IMAGE_NAME}
-          </Typography>
+      <Divider />
+
+      {/* Actions */}
+      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", gap: 1 }}>
+        <Stack direction="row" spacing={1}>
+          <IconButton onClick={onClose} size="small" color="inherit">
+            <Close />
+          </IconButton>
         </Stack>
+        <IconButton
+          component="a"
+          href={currentPhoto.DOWNLOAD_LINK || undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          disabled={!currentPhoto?.DOWNLOAD_LINK}
+          color="primary"
+          sx={{ textDecoration: "none" }}
+        >
+          <OpenInNew />
+        </IconButton>
       </Box>
     </Dialog>
   );
