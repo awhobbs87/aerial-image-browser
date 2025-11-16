@@ -363,12 +363,17 @@ function AppContent() {
                 <SearchBar onSearch={handleSearch} loading={isLoading} />
               </Box>
 
-              <FilterPanel
-                filters={filters}
-                onFiltersChange={setFilters}
-                availableScales={availableScales}
-                dateRange={dateRange}
-              />
+              {/* Filter Panel - Only show after search is performed */}
+              {searchParams && (
+                <Box sx={{ mb: 2 }}>
+                  <FilterPanel
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    availableScales={availableScales}
+                    dateRange={dateRange}
+                  />
+                </Box>
+              )}
 
               {searchParams && (
                 <>
