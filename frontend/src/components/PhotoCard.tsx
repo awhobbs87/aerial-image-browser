@@ -9,7 +9,6 @@ import {
   Stack,
   Box,
   Tooltip,
-  CircularProgress,
 } from "@mui/material";
 import {
   Favorite,
@@ -17,7 +16,6 @@ import {
   CheckCircle,
   Map as MapIcon,
   Visibility,
-  Download,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -56,7 +54,6 @@ function PhotoCard({
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleViewImage = () => {
@@ -79,52 +76,6 @@ function PhotoCard({
   const handleShowOnMap = () => {
     if (onShowOnMap) {
       onShowOnMap(photo);
-    }
-  };
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent thumbnail click
-    if (!photo.DOWNLOAD_LINK || downloading) return;
-
-    setDownloading(true);
-    try {
-      // Use WebP URL for smaller file size (2-5 MB vs 15-20 MB)
-      const downloadUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
-      
-      // Fetch the file as a blob
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        throw new Error('Failed to download file');
-      }
-      
-      const blob = await response.blob();
-      
-      // Create object URL
-      const objectUrl = URL.createObjectURL(blob);
-      
-      // Create temporary anchor element
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = `${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`;
-      link.style.display = 'none';
-      
-      // Append to body, click, and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up object URL after a short delay
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-      }, 100);
-    } catch (error) {
-      console.error('Download failed:', error);
-      // Fallback: try opening in new tab if download fails
-      if (photo.DOWNLOAD_LINK) {
-        window.open(photo.DOWNLOAD_LINK, '_blank');
-      }
-    } finally {
-      setDownloading(false);
     }
   };
 
@@ -194,73 +145,6 @@ function PhotoCard({
         }}
       >
         <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
-        
-        {/* Download icon overlay - top-right */}
-        {photo.DOWNLOAD_LINK && (
-          <Tooltip title="Right-click to save or click to download (2-5 MB)" arrow placement="left">
-            <Box
-              component="a"
-              href={apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId)}
-              download={`${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`}
-              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                // Prevent default and use custom download on left-click
-                // This allows fallback download behavior
-                e.stopPropagation();
-                e.preventDefault();
-                handleDownload(e as unknown as React.MouseEvent);
-              }}
-              onContextMenu={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                // Allow right-click context menu (browser's "Save link as")
-                e.stopPropagation();
-              }}
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                zIndex: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textDecoration: 'none',
-                bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.7)'
-                    : 'rgba(255, 255, 255, 0.9)',
-                color: 'warning.main',
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                boxShadow: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? '0 2px 8px rgba(0, 0, 0, 0.5)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                '&:hover': {
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(0, 0, 0, 0.85)'
-                      : 'rgba(255, 255, 255, 1)',
-                  transform: 'scale(1.1)',
-                  boxShadow: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? '0 4px 12px rgba(0, 0, 0, 0.6)'
-                      : '0 4px 12px rgba(0, 0, 0, 0.3)',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                },
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                pointerEvents: downloading ? 'none' : 'auto',
-                opacity: downloading ? 0.6 : 1,
-              }}
-            >
-              {downloading ? (
-                <CircularProgress size={20} color="warning" />
-              ) : (
-                <Download sx={{ fontSize: 22 }} />
-              )}
-            </Box>
-          </Tooltip>
-        )}
       </Box>
 
       <CardContent sx={{ flexGrow: 1, py: 1.25, px: 1.5, '&:last-child': { pb: 1.25 } }}>
@@ -355,7 +239,7 @@ function PhotoCard({
           transition: 'opacity 0.2s ease, transform 0.2s ease',
         }}
       >
-        <Box sx={{ display: "flex", gap: 0.5 }}>
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           <Tooltip title="Preview image in modal" arrow placement="top">
             <IconButton
               size="small"
@@ -389,6 +273,29 @@ function PhotoCard({
                 <MapIcon sx={{ fontSize: iconSize.md }} />
               </IconButton>
             </Tooltip>
+          )}
+
+          {/* Download TIFF link */}
+          {photo.DOWNLOAD_LINK && (
+            <Box
+              component="a"
+              href={photo.DOWNLOAD_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                ml: 1,
+                fontSize: fontSize.xs,
+                fontWeight: 600,
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              Download TIFF
+            </Box>
           )}
         </Box>
 

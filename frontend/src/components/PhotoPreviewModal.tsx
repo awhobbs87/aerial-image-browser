@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import {
   Close,
-  OpenInNew,
   Place,
   CalendarToday,
   PhotoSizeSelectActual,
@@ -237,30 +236,31 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, gap: 1 }}>
+      <DialogActions sx={{ p: 2, gap: 1, justifyContent: 'space-between' }}>
         <Button onClick={handleClose} color="inherit" size="large">
           Close
         </Button>
-        <Button
-          component="a"
-          href={photo.DOWNLOAD_LINK || undefined}
-          target="_blank"
-          rel="noopener noreferrer"
-          variant="contained"
-          startIcon={<OpenInNew />}
-          disabled={!photo.DOWNLOAD_LINK}
-          size="large"
-          sx={{
-            textDecoration: 'none',
-            ...(photo.DOWNLOAD_LINK && {
-              '&:active': {
-                transform: 'scale(0.98)',
+        {photo.DOWNLOAD_LINK && (
+          <Box
+            component="a"
+            href={photo.DOWNLOAD_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: 'primary.main',
+              textDecoration: 'none',
+              px: 2,
+              py: 1,
+              '&:hover': {
+                textDecoration: 'underline',
               },
-            }),
-          }}
-        >
-          View Full Resolution
-        </Button>
+            }}
+          >
+            Download Full Resolution TIFF
+          </Box>
+        )}
       </DialogActions>
     </Dialog>
   );

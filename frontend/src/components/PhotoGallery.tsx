@@ -20,7 +20,6 @@ import {
   PhotoSizeSelectActual,
   Image as ImageIcon,
   Place,
-  OpenInNew,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -331,23 +330,31 @@ export default function PhotoGallery({
       <Divider />
 
       {/* Actions */}
-      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", gap: 1 }}>
-        <Stack direction="row" spacing={1}>
-          <IconButton onClick={onClose} size="small" color="inherit">
-            <Close />
-          </IconButton>
-        </Stack>
-        <IconButton
-          component="a"
-          href={currentPhoto.DOWNLOAD_LINK || undefined}
-          target="_blank"
-          rel="noopener noreferrer"
-          disabled={!currentPhoto?.DOWNLOAD_LINK}
-          color="primary"
-          sx={{ textDecoration: "none" }}
-        >
-          <OpenInNew />
+      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+        <IconButton onClick={onClose} size="small" color="inherit">
+          <Close />
         </IconButton>
+        {currentPhoto.DOWNLOAD_LINK && (
+          <Box
+            component="a"
+            href={currentPhoto.DOWNLOAD_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: 'primary.main',
+              textDecoration: 'none',
+              px: 2,
+              py: 1,
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            Download Full Resolution TIFF
+          </Box>
+        )}
       </Box>
     </Dialog>
   );
