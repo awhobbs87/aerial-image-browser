@@ -464,31 +464,32 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
         </AccordionSummary>
         <AccordionDetails sx={{ p: 1 }}>
           <Stack spacing={1}>
-            {/* Layer Type Filter - Modern Toggle Pills - Moved to top */}
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <Image sx={{ fontSize: 13, color: "success.main" }} />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "0.7rem",
-                      letterSpacing: "0.02em",
-                      color: "text.primary",
-                    }}
+            {/* Layer Type Filter - Only show after search is performed */}
+            {dateRange && (
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Image sx={{ fontSize: 13, color: "success.main" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.7rem",
+                        letterSpacing: "0.02em",
+                        color: "text.primary",
+                      }}
+                    >
+                      TYPES
+                    </Typography>
+                  </Box>
+                  <Tooltip
+                    title="Aerial: traditional | Ortho: corrected | Digital: modern"
+                    arrow
+                    placement="top"
                   >
-                    TYPES
-                  </Typography>
+                    <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
+                  </Tooltip>
                 </Box>
-                <Tooltip
-                  title="Aerial: traditional | Ortho: corrected | Digital: modern"
-                  arrow
-                  placement="top"
-                >
-                  <HelpOutline sx={{ fontSize: 12, color: "text.secondary", cursor: "help" }} />
-                </Tooltip>
-              </Box>
               <Box sx={{ display: "flex", gap: 0.5 }}>
                 {[
                   { key: "aerial", label: "Aerial" },
@@ -550,12 +551,13 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                   );
                 })}
               </Box>
-            </Box>
-
-            <Divider sx={{ my: 0.5 }} />
+              </Box>
+            )}
 
             {/* Date Range Filter - Slider */}
             {dateRange && (
+              <>
+                <Divider sx={{ my: 0.5 }} />
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -629,9 +631,8 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                   />
                 </Box>
               </Box>
+              </>
             )}
-
-            {dateRange && <Divider sx={{ my: 0.5 }} />}
 
             {/* Scale Filter - Compact row */}
             {scaleCategories.length > 0 && (
