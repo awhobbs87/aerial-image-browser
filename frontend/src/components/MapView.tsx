@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, useMapEvents, useMap, Marker, Popup } from 'react-leaflet';
 import { Box } from '@mui/material';
 import { LatLngBounds } from 'leaflet';
@@ -42,6 +42,8 @@ function MapController({
   autoZoom?: boolean;
 }) {
   const map = useMap();
+  const [hasInitialZoom, setHasInitialZoom] = useState(false);
+  const [lastSearchCenter, setLastSearchCenter] = useState<[number, number] | null>(null);
 
   // Memoize bounds calculation - only recalculate when photos array reference changes
   const bounds = useMemo(() => {
@@ -64,14 +66,31 @@ function MapController({
   }, [photos, autoZoom]);
 
   useEffect(() => {
-    if (searchCenter) {
-      // Center on search location with appropriate zoom
+    // Check if search center has changed (new search)
+    const searchCenterChanged =
+      searchCenter !== lastSearchCenter &&
+      (searchCenter?.[0] !== lastSearchCenter?.[0] || searchCenter?.[1] !== lastSearchCenter?.[1]);
+
+    if (searchCenter && searchCenterChanged) {
+      // New search - center on search location with appropriate zoom
       map.setView(searchCenter, 13, { animate: true });
-    } else if (bounds) {
-      // Auto-fit bounds to show all photos
+      setLastSearchCenter(searchCenter);
+      setHasInitialZoom(true);
+    } else if (bounds && !hasInitialZoom && !searchCenter) {
+      // Initial load without search center - auto-fit bounds to show all photos
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      setHasInitialZoom(true);
     }
-  }, [bounds, searchCenter, map]);
+    // Don't reset zoom on photos array changes after initial zoom
+  }, [bounds, searchCenter, map, hasInitialZoom, lastSearchCenter]);
+
+  // Reset hasInitialZoom when starting a completely new search
+  useEffect(() => {
+    if (!searchCenter && photos.length === 0) {
+      setHasInitialZoom(false);
+      setLastSearchCenter(null);
+    }
+  }, [searchCenter, photos.length]);
 
   return null;
 }
