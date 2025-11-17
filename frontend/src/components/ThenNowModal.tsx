@@ -62,7 +62,6 @@ export default function ThenNowModal({ open, photo, onClose }: ThenNowModalProps
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
-        setMapReady(false);
       }
     };
   }, [open]);
