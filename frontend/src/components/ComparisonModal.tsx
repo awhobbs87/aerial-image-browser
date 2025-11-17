@@ -184,7 +184,10 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                       sx={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "contain",
+                        objectFit: "cover",
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
                       }}
                     />
                   )}
@@ -199,6 +202,7 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                           bottom: 0,
                           width: `${sliderValue}%`,
                           overflow: "hidden",
+                          backgroundColor: "black",
                         }}
                       >
                         <Box
@@ -208,11 +212,38 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                           sx={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "contain",
+                            objectFit: "cover",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
                           }}
                         />
                       </Box>
                       <Box
+                        onPointerDown={(e) => {
+                          const element = e.currentTarget;
+                          element.setPointerCapture(e.pointerId);
+                          const bounds = element.getBoundingClientRect();
+
+                          const updateSlider = (clientX: number) => {
+                            const relativeX = ((clientX - bounds.left) / bounds.width) * 100;
+                            setSliderValue(Math.min(100, Math.max(0, relativeX)));
+                          };
+
+                          updateSlider(e.clientX);
+
+                          const moveListener = (event: PointerEvent) => updateSlider(event.clientX);
+                          const upListener = (event: PointerEvent) => {
+                            element.releasePointerCapture(event.pointerId);
+                            window.removeEventListener("pointermove", moveListener);
+                            window.removeEventListener("pointerup", upListener);
+                            window.removeEventListener("pointercancel", upListener);
+                          };
+
+                          window.addEventListener("pointermove", moveListener);
+                          window.addEventListener("pointerup", upListener);
+                          window.addEventListener("pointercancel", upListener);
+                        }}
                         sx={{
                           position: "absolute",
                           top: 0,
@@ -221,7 +252,22 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                           width: 4,
                           bgcolor: "primary.main",
                           boxShadow: "0 0 12px rgba(16, 185, 129, 0.7)",
-                        }}
+                          cursor: "ew-resize",
+                          touchAction: "none",
+                          '&::before': {
+                            content: '""',
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: 28,
+                            height: 28,
+                          borderRadius: "50%",
+                          border: "2px solid currentColor",
+                          backgroundColor: (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.6)",
+                        },
+                      }}
                       />
                     </>
                   )}
