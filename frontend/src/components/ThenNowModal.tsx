@@ -68,7 +68,6 @@ export default function ThenNowModal({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [satelliteImageLoaded, setSatelliteImageLoaded] = useState(false);
-  const [satelliteImageError, setSatelliteImageError] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -90,7 +89,6 @@ export default function ThenNowModal({
       setImageLoaded(false);
       setImageError(false);
       setSatelliteImageLoaded(false);
-      setSatelliteImageError(false);
       setMapReady(false);
       setMapError(false);
       setSliderValue(50);
@@ -137,7 +135,6 @@ export default function ThenNowModal({
       console.log("Satellite image captured successfully");
     } catch (error) {
       console.error("Failed to capture satellite image:", error);
-      setSatelliteImageError(true);
     }
   }, []);
 
