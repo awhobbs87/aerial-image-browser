@@ -17,6 +17,7 @@ interface ComparisonTrayProps {
   onOpenThenNow: () => void;
   onRemove: (photoKey: string) => void;
   onClear: () => void;
+  hidden?: boolean;
 }
 
 const getPhotoKey = (photo: EnhancedPhoto) => `${photo.layerId}-${photo.OBJECTID}`;
@@ -27,8 +28,9 @@ export default function ComparisonTray({
   onOpenThenNow,
   onRemove,
   onClear,
+  hidden = false,
 }: ComparisonTrayProps) {
-  if (photos.length === 0) {
+  if (photos.length === 0 || hidden) {
     return null;
   }
 

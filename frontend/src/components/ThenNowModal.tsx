@@ -12,12 +12,16 @@ import {
   CircularProgress,
   Paper,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { Map as MapIcon, Close } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "../lib/apiClient";
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const DEFAULT_STYLE = "https://demotiles.maplibre.org/style.json";
 
 interface ThenNowModalProps {
   open: boolean;
@@ -25,18 +29,12 @@ interface ThenNowModalProps {
   onClose: () => void;
 }
 
-declare global {
-  interface Window {
-    initGoogleMaps?: () => void;
-    google?: typeof google;
-  }
-}
-
 export default function ThenNowModal({ open, photo, onClose }: ThenNowModalProps) {
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [scriptError, setScriptError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<google.maps.Map>();
+  const mapRef = useRef<maplibregl.Map | null>(null);
 
   const previewUrl = useMemo(() => {
     if (!photo) return null;
@@ -48,108 +46,90 @@ export default function ThenNowModal({ open, photo, onClose }: ThenNowModalProps
   }, [photo]);
 
   useEffect(() => {
-    if (!open) return;
-    if (!GOOGLE_MAPS_API_KEY) {
-      setScriptError(
-        "Missing Google Maps API key. Set VITE_GOOGLE_MAPS_API_KEY in your environment to enable this view."
-      );
-      return;
-    }
+    if (!open || !mapContainerRef.current) return;
 
-    if (window.google) {
-      setScriptLoaded(true);
-      return;
-    }
-
-    const existingScript = document.querySelector<HTMLScriptElement>(`script[data-google-maps="true"]`);
-    if (existingScript) {
-      const onExistingLoad = () => setScriptLoaded(true);
-      const onExistingError = () => setScriptError("Failed to load Google Maps API script.");
-
-      existingScript.addEventListener("load", onExistingLoad);
-      existingScript.addEventListener("error", onExistingError);
-
-      return () => {
-        existingScript.removeEventListener("load", onExistingLoad);
-        existingScript.removeEventListener("error", onExistingError);
-      };
-    }
-
-    const script = document.createElement("script");
-    script.dataset.googleMaps = "true";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setScriptLoaded(true);
-    script.onerror = () => setScriptError("Failed to load Google Maps API script.");
-    document.head.appendChild(script);
+    mapRef.current = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: DEFAULT_STYLE,
+      center: [147.325, -42.879],
+      zoom: 8,
+      attributionControl: true,
+    });
+    mapRef.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    mapRef.current.on("load", () => setMapReady(true));
 
     return () => {
-      script.onload = null;
-      script.onerror = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        setMapReady(false);
+      }
     };
   }, [open]);
 
   useEffect(() => {
-    if (!open || !scriptLoaded || !photo || !photo.geometry?.rings?.[0]) {
+    if (!open || !mapReady || !mapRef.current || !photo?.geometry?.rings?.[0]) {
       return;
     }
 
-    const path = photo.geometry.rings[0].map(([lon, lat]: [number, number]) => ({ lat, lng: lon }));
-    const bounds = new google.maps.LatLngBounds();
-    path.forEach((coord) => bounds.extend(coord));
+    const ring = photo.geometry.rings[0];
+    const coordinates = ring.map(([lon, lat]: [number, number]) => [lon, lat]);
+    const geojson = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [coordinates],
+      },
+      properties: {},
+    };
 
-    if (!mapRef.current && mapContainerRef.current) {
-      mapRef.current = new google.maps.Map(mapContainerRef.current, {
-        mapTypeId: google.maps.MapTypeId.SATELLITE,
-        disableDefaultUI: true,
-        gestureHandling: "greedy",
+    const sourceId = "photo-footprint";
+    if (mapRef.current.getSource(sourceId)) {
+      (mapRef.current.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson);
+    } else {
+      mapRef.current.addSource(sourceId, {
+        type: "geojson",
+        data: geojson,
+      });
+      mapRef.current.addLayer({
+        id: "photo-footprint-fill",
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#10b981",
+          "fill-opacity": 0.25,
+        },
+      });
+      mapRef.current.addLayer({
+        id: "photo-footprint-line",
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#10b981",
+          "line-width": 2,
+        },
       });
     }
 
-    if (mapRef.current) {
-      mapRef.current.fitBounds(bounds, 24);
-
-      // Remove previous polygons
-      const overlay = new google.maps.Polygon({
-        paths: path,
-        strokeColor: "#10b981",
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: "#10b981",
-        fillOpacity: 0.2,
-      });
-      overlay.setMap(mapRef.current);
-    }
-  }, [open, scriptLoaded, photo]);
+    const bounds = coordinates.reduce((acc, coord) => acc.extend(coord as [number, number]), new maplibregl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number]));
+    mapRef.current.fitBounds(bounds, { padding: 24, maxZoom: 17 });
+  }, [open, mapReady, photo]);
 
   const renderContent = () => {
     if (!photo) {
       return <Alert severity="info">Select a photo to enable Then vs Now comparison.</Alert>;
     }
 
-    if (!GOOGLE_MAPS_API_KEY) {
-      return (
-        <Alert severity="warning">
-          Provide a Google Maps API key via VITE_GOOGLE_MAPS_API_KEY to view the modern satellite overlay.
-        </Alert>
-      );
+    if (!photo.geometry?.rings?.[0]) {
+      return <Alert severity="warning">This photo is missing geometry, so we cannot map it.</Alert>;
     }
 
-    if (scriptError) {
-      return <Alert severity="error">{scriptError}</Alert>;
-    }
-
-    if (!scriptLoaded) {
+    if (!mapReady) {
       return (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
           <CircularProgress />
         </Box>
       );
-    }
-
-    if (!photo.geometry?.rings?.[0]) {
-      return <Alert severity="warning">This photo is missing geometry, so we cannot map it.</Alert>;
     }
 
     return (
@@ -208,7 +188,7 @@ export default function ThenNowModal({ open, photo, onClose }: ThenNowModalProps
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xl" fullScreen={isMobile}>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" fontWeight={700}>
           Then vs Now

@@ -16,6 +16,8 @@ import {
   Alert,
   Tooltip,
   Paper,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Close, DeleteOutline, CompareArrows } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
@@ -47,6 +49,8 @@ function getPreviewUrl(photo: EnhancedPhoto) {
 export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, onClear }: ComparisonModalProps) {
   const [tab, setTab] = useState<ComparisonTab>("slider");
   const [sliderValue, setSliderValue] = useState(50);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     if (photos.length < 2 && (tab === "slider" || tab === "side-by-side")) {
@@ -66,7 +70,7 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xl" fullScreen={isMobile}>
       <DialogTitle
         sx={{
           display: "flex",
@@ -127,10 +131,10 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                   sx={{
                     position: "relative",
                     width: "100%",
-                    height: { xs: 260, md: 420 },
+                    height: { xs: 320, md: 520 },
                     borderRadius: 3,
                     overflow: "hidden",
-                    boxShadow: 3,
+                    boxShadow: 4,
                     bgcolor: "black",
                   }}
                 >
@@ -147,6 +151,7 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                         objectFit: "contain",
                         zIndex: 1,
                         pointerEvents: "none",
+                        backgroundColor: "black",
                       }}
                     />
                   )}
@@ -225,7 +230,7 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                 <Slider
                   value={sliderValue}
                   onChange={(_e, value) => setSliderValue(value as number)}
-                  sx={{ mt: 3 }}
+                  sx={{ mt: 3, mx: { xs: 2, md: 10 } }}
                   min={0}
                   max={100}
                   valueLabelDisplay="auto"

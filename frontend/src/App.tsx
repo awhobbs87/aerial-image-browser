@@ -212,6 +212,7 @@ function AppContent() {
     [comparisonSelection]
   );
   const primaryComparisonPhoto = comparisonSelection[0] ?? null;
+  const trayHidden = comparisonModalOpen || thenNowModalOpen;
 
   const handleToggleDarkMode = useCallback(() => {
     setThemeMode((prev) => {
@@ -899,6 +900,7 @@ function AppContent() {
         onOpenThenNow={handleOpenThenNowModal}
         onRemove={handleRemoveComparisonPhoto}
         onClear={handleClearComparisonSelection}
+        hidden={trayHidden}
       />
 
       <ComparisonModal
