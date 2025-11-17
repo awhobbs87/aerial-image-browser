@@ -342,12 +342,22 @@ function PhotoCard({
           px: 1.5,
           pb: 1,
           pt: 0,
+          flexWrap: "wrap",
+          rowGap: 0.5,
           opacity: isHovered ? 1 : 0,
           transform: isHovered ? 'translateY(0)' : 'translateY(8px)',
           transition: 'opacity 0.2s ease, transform 0.2s ease',
         }}
       >
-        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 0.5,
+            alignItems: "center",
+            flexWrap: "wrap",
+            rowGap: 0.5,
+          }}
+        >
           <Tooltip title="Preview image in modal" arrow placement="top">
             <IconButton
               size="small"
@@ -385,25 +395,25 @@ function PhotoCard({
 
           {/* Download TIFF link */}
           {photo.DOWNLOAD_LINK && (
-            <Box
-              component="a"
-              href={photo.DOWNLOAD_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              sx={{
-                ml: 1,
-                fontSize: fontSize.xs,
-                fontWeight: 600,
-                color: 'primary.main',
-                textDecoration: 'none',
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              }}
-            >
-              Download TIFF
-            </Box>
+            <Tooltip title="Open original TIFF in new tab" arrow placement="top">
+              <IconButton
+                component="a"
+                href={photo.DOWNLOAD_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="small"
+                color="primary"
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                <Download sx={{ fontSize: iconSize.md }} />
+              </IconButton>
+            </Tooltip>
           )}
 
           {onCompareToggle && (

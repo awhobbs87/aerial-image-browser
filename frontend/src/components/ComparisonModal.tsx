@@ -15,6 +15,7 @@ import {
   Slider,
   Alert,
   Tooltip,
+  Paper,
 } from "@mui/material";
 import { Close, Map as MapIcon, DeleteOutline, CompareArrows } from "@mui/icons-material";
 import { MapContainer, TileLayer, Polygon } from "react-leaflet";
