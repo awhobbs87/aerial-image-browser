@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,14 +17,12 @@ import {
   Tooltip,
   Paper,
 } from "@mui/material";
-import { Close, Map as MapIcon, DeleteOutline, CompareArrows } from "@mui/icons-material";
-import { MapContainer, TileLayer, Polygon } from "react-leaflet";
-import { LatLngBounds } from "leaflet";
+import { Close, DeleteOutline, CompareArrows } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import "../lib/leafletConfig";
 
-type ComparisonTab = "slider" | "side-by-side" | "then-now";
+type ComparisonTab = "slider" | "side-by-side";
 
 interface ComparisonModalProps {
   open: boolean;
@@ -33,10 +31,6 @@ interface ComparisonModalProps {
   onRemovePhoto: (photoKey: string) => void;
   onClear: () => void;
 }
-
-const TILE_LAYER_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-const TILE_ATTRIBUTION =
-  'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
 
 function getPhotoKey(photo: EnhancedPhoto) {
   return `${photo.layerId}-${photo.OBJECTID}`;
@@ -48,41 +42,6 @@ function getPreviewUrl(photo: EnhancedPhoto) {
     format: "webp",
     quality: 85,
   });
-}
-
-function ComparisonMap({ photo }: { photo: EnhancedPhoto }) {
-  const polygon = useMemo(() => {
-    if (!photo.geometry?.rings?.[0]) return null;
-    return photo.geometry.rings[0].map(([lon, lat]: [number, number]) => [lat, lon]) as [number, number][];
-  }, [photo.geometry]);
-
-  const bounds = useMemo(() => {
-    if (!polygon) return null;
-    return new LatLngBounds(polygon);
-  }, [polygon]);
-
-  const center = polygon?.[0] || [-42.0, 147.0];
-
-  return (
-    <MapContainer
-      center={center as [number, number]}
-      bounds={bounds ?? undefined}
-      scrollWheelZoom={false}
-      style={{ width: "100%", height: 360, borderRadius: 16, overflow: "hidden" }}
-    >
-      <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_LAYER_URL} />
-      {polygon && (
-        <Polygon
-          positions={polygon}
-          pathOptions={{
-            color: "#10b981",
-            fillColor: "rgba(16, 185, 129, 0.2)",
-            weight: 2,
-          }}
-        />
-      )}
-    </MapContainer>
-  );
 }
 
 export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, onClear }: ComparisonModalProps) {
@@ -155,7 +114,6 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
           >
             <Tab label="Slider" value="slider" disabled={!hasTwoPhotos} />
             <Tab label="Side-by-Side" value="side-by-side" disabled={!hasTwoPhotos} />
-            <Tab label="Then vs Now" value="then-now" />
           </Tabs>
         </Stack>
 
@@ -182,12 +140,13 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                       src={primaryUrl}
                       alt={primaryPhoto?.IMAGE_NAME}
                       sx={{
+                        position: "absolute",
+                        inset: 0,
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
+                        objectFit: "contain",
+                        zIndex: 1,
+                        pointerEvents: "none",
                       }}
                     />
                   )}
@@ -195,30 +154,20 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                   {secondaryUrl && (
                     <>
                       <Box
+                        component="img"
+                        src={secondaryUrl}
+                        alt={secondaryPhoto?.IMAGE_NAME}
                         sx={{
                           position: "absolute",
-                          top: 0,
-                          left: 0,
-                          bottom: 0,
-                          width: `${sliderValue}%`,
-                          overflow: "hidden",
-                          backgroundColor: "black",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          zIndex: 2,
+                          pointerEvents: "none",
+                          clipPath: `polygon(0 0, ${sliderValue}% 0, ${sliderValue}% 100%, 0% 100%)`,
                         }}
-                      >
-                        <Box
-                          component="img"
-                          src={secondaryUrl}
-                          alt={secondaryPhoto?.IMAGE_NAME}
-                          sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                          }}
-                        />
-                      </Box>
+                      />
                       <Box
                         onPointerDown={(e) => {
                           const element = e.currentTarget;
@@ -254,6 +203,7 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                           boxShadow: "0 0 12px rgba(16, 185, 129, 0.7)",
                           cursor: "ew-resize",
                           touchAction: "none",
+                          zIndex: 3,
                           '&::before': {
                             content: '""',
                             position: "absolute",
@@ -262,12 +212,12 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
                             transform: "translate(-50%, -50%)",
                             width: 28,
                             height: 28,
-                          borderRadius: "50%",
-                          border: "2px solid currentColor",
-                          backgroundColor: (theme) =>
-                            theme.palette.mode === "dark" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.6)",
-                        },
-                      }}
+                            borderRadius: "50%",
+                            border: "2px solid currentColor",
+                            backgroundColor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.6)",
+                          },
+                        }}
                       />
                     </>
                   )}
@@ -327,45 +277,6 @@ export default function ComparisonModal({ open, photos, onClose, onRemovePhoto, 
           </>
         )}
 
-        {tab === "then-now" && (
-          <>
-            {!primaryPhoto ? (
-              <Alert severity="info">Select at least one historical photo to enable this mode.</Alert>
-            ) : !primaryPhoto.geometry ? (
-              <Alert severity="warning">
-                This photo is missing geometry, so we cannot locate it on the modern map.
-              </Alert>
-            ) : (
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <Paper sx={{ flex: 1, p: 2, borderRadius: 3 }}>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                    Then — {primaryPhoto.dateFormatted || "Unknown Date"}
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={primaryUrl || undefined}
-                    alt={primaryPhoto.IMAGE_NAME}
-                    sx={{
-                      width: "100%",
-                      borderRadius: 2,
-                      objectFit: "contain",
-                      maxHeight: 360,
-                    }}
-                  />
-                </Paper>
-                <Paper sx={{ flex: 1, p: 2, borderRadius: 3 }}>
-                  <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                    <MapIcon color="primary" />
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      Now — Current Satellite
-                    </Typography>
-                  </Stack>
-                  <ComparisonMap photo={primaryPhoto} />
-                </Paper>
-              </Stack>
-            )}
-          </>
-        )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>

@@ -30,6 +30,7 @@ import BackToTop from "./components/BackToTop";
 import LoadingBar from "./components/LoadingBar";
 import ComparisonModal from "./components/ComparisonModal";
 import ComparisonTray from "./components/ComparisonTray";
+import ThenNowModal from "./components/ThenNowModal";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -101,6 +102,7 @@ function AppContent() {
   const [isResizing, setIsResizing] = useState(false);
   const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
+  const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     startDate: null,
     endDate: null,
@@ -209,6 +211,7 @@ function AppContent() {
     () => new Set(comparisonSelection.map((photo) => getPhotoKey(photo))),
     [comparisonSelection]
   );
+  const primaryComparisonPhoto = comparisonSelection[0] ?? null;
 
   const handleToggleDarkMode = useCallback(() => {
     setThemeMode((prev) => {
@@ -370,6 +373,12 @@ function AppContent() {
     }
   }, [comparisonSelection.length]);
 
+  const handleOpenThenNowModal = useCallback(() => {
+    if (comparisonSelection.length >= 1) {
+      setThenNowModalOpen(true);
+    }
+  }, [comparisonSelection.length]);
+
   const handleClearComparisonSelection = useCallback(() => {
     setComparisonSelection([]);
   }, []);
@@ -511,15 +520,24 @@ function AppContent() {
                             Timeline
                           </ToggleButton>
                         </ToggleButtonGroup>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          startIcon={<CompareArrowsIcon />}
-                          disabled={comparisonSelection.length === 0}
-                          onClick={handleOpenComparisonModal}
-                        >
-                          Compare ({comparisonSelection.length}/2)
-                        </Button>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<CompareArrowsIcon />}
+                            disabled={comparisonSelection.length === 0}
+                            onClick={handleOpenComparisonModal}
+                          >
+                            Compare ({comparisonSelection.length}/2)
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            disabled={comparisonSelection.length === 0}
+                            onClick={handleOpenThenNowModal}
+                          >
+                            Then vs Now
+                          </Button>
+                        </Stack>
                       </Stack>
                     )}
 
@@ -878,6 +896,7 @@ function AppContent() {
       <ComparisonTray
         photos={comparisonSelection}
         onOpen={handleOpenComparisonModal}
+        onOpenThenNow={handleOpenThenNowModal}
         onRemove={handleRemoveComparisonPhoto}
         onClear={handleClearComparisonSelection}
       />
@@ -888,6 +907,12 @@ function AppContent() {
         onClose={() => setComparisonModalOpen(false)}
         onRemovePhoto={handleRemoveComparisonPhoto}
         onClear={handleClearComparisonSelection}
+      />
+
+      <ThenNowModal
+        open={thenNowModalOpen}
+        photo={primaryComparisonPhoto}
+        onClose={() => setThenNowModalOpen(false)}
       />
     </ThemeProvider>
   );

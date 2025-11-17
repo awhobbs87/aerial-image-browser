@@ -14,6 +14,7 @@ import type { EnhancedPhoto } from "../types/api";
 interface ComparisonTrayProps {
   photos: EnhancedPhoto[];
   onOpen: () => void;
+  onOpenThenNow: () => void;
   onRemove: (photoKey: string) => void;
   onClear: () => void;
 }
@@ -23,6 +24,7 @@ const getPhotoKey = (photo: EnhancedPhoto) => `${photo.layerId}-${photo.OBJECTID
 export default function ComparisonTray({
   photos,
   onOpen,
+  onOpenThenNow,
   onRemove,
   onClear,
 }: ComparisonTrayProps) {
@@ -76,17 +78,22 @@ export default function ComparisonTray({
 
         <Divider />
 
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1}>
           <Typography variant="caption" color="text.secondary">
-            {photos.length === 1 ? "Compare with Then vs Now" : "Compare the selected pair"}
+            {photos.length === 1 ? "Compare with Then vs Now" : "Choose a view"}
           </Typography>
           <Button
             variant="contained"
             size="small"
             startIcon={<CompareArrowsIcon />}
             onClick={onOpen}
+            disabled={photos.length === 0}
+            sx={{ mr: 1 }}
           >
             Compare
+          </Button>
+          <Button variant="outlined" size="small" onClick={onOpenThenNow} disabled={photos.length === 0}>
+            Then vs Now
           </Button>
         </Stack>
       </Stack>
