@@ -11,6 +11,7 @@ import {
   Alert,
   CircularProgress,
   Paper,
+  IconButton,
 } from "@mui/material";
 import { Map as MapIcon, Close } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
