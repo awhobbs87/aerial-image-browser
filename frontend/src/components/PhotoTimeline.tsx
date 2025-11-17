@@ -17,9 +17,9 @@ import {
   FavoriteBorder,
   Map as MapIcon,
   Visibility,
-  CompareArrows,
   Navigation,
 } from "@mui/icons-material";
+import { Checkbox } from "@mui/material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
@@ -33,8 +33,8 @@ interface PhotoTimelineProps {
   onShowOnMap?: (photo: EnhancedPhoto) => void;
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   favorites?: Set<string>;
-  comparisonSelection?: Set<string>;
-  onToggleCompare?: (photo: EnhancedPhoto) => void;
+  selection?: Set<string>;
+  onToggleSelect?: (photo: EnhancedPhoto) => void;
 }
 
 interface TimelineItemProps {
@@ -43,8 +43,8 @@ interface TimelineItemProps {
   onShowOnMap?: (photo: EnhancedPhoto) => void;
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   isFavorite: boolean;
-  onToggleCompare?: (photo: EnhancedPhoto) => void;
-  isSelectedForCompare: boolean;
+  onToggleSelect?: (photo: EnhancedPhoto) => void;
+  isSelected: boolean;
 }
 
 function TimelineItem({
@@ -53,8 +53,8 @@ function TimelineItem({
   onShowOnMap,
   onPhotoHover,
   isFavorite,
-  onToggleCompare,
-  isSelectedForCompare,
+  onToggleSelect,
+  isSelected,
 }: TimelineItemProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const thumbnailUrl = apiClient.getOptimizedImageUrl(photo.IMAGE_NAME, photo.layerId, {
@@ -148,7 +148,29 @@ function TimelineItem({
 
             <Divider sx={{ my: 1.5 }} />
 
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+              <Tooltip
+                title={
+                  isSelected
+                    ? "Selected for comparison / then vs now"
+                    : "Select for comparison (up to two) or Then vs Now (single photo)"
+                }
+                arrow
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onChange={() => onToggleSelect?.(photo)}
+                  size="small"
+                  color="secondary"
+                  sx={{
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(0,0,0,0.4)"
+                        : "rgba(255,255,255,0.6)",
+                    borderRadius: 1,
+                  }}
+                />
+              </Tooltip>
               <Tooltip title="Preview image in modal" arrow>
                 <IconButton color="primary" size="small" onClick={() => setPreviewOpen(true)}>
                   <Visibility />
@@ -159,21 +181,6 @@ function TimelineItem({
                 <Tooltip title="Show on map" arrow>
                   <IconButton color="primary" size="small" onClick={() => onShowOnMap(photo)}>
                     <MapIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-
-              {onToggleCompare && (
-                <Tooltip
-                  title={isSelectedForCompare ? "Remove from comparison" : "Add to comparison"}
-                  arrow
-                >
-                  <IconButton
-                    color={isSelectedForCompare ? "secondary" : "default"}
-                    size="small"
-                    onClick={() => onToggleCompare(photo)}
-                  >
-                    <CompareArrows />
                   </IconButton>
                 </Tooltip>
               )}
@@ -204,8 +211,8 @@ export default function PhotoTimeline({
   onShowOnMap,
   onPhotoHover,
   favorites = new Set(),
-  comparisonSelection = new Set(),
-  onToggleCompare,
+  selection = new Set(),
+  onToggleSelect,
 }: PhotoTimelineProps) {
   const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [focusedYear, setFocusedYear] = useState<string | null>(null);
@@ -370,8 +377,8 @@ export default function PhotoTimeline({
                   onShowOnMap={onShowOnMap}
                   onPhotoHover={onPhotoHover}
                   isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
-                  onToggleCompare={onToggleCompare}
-                  isSelectedForCompare={comparisonSelection.has(`${photo.layerId}-${photo.OBJECTID}`)}
+                  onToggleSelect={onToggleSelect}
+                  isSelected={selection.has(`${photo.layerId}-${photo.OBJECTID}`)}
                 />
               ))}
             </Stack>

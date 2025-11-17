@@ -10,6 +10,7 @@ import {
   Box,
   Tooltip,
   CircularProgress,
+  Checkbox,
 } from "@mui/material";
 import {
   Favorite,
@@ -18,7 +19,6 @@ import {
   Map as MapIcon,
   Visibility,
   Download,
-  CompareArrows,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -33,8 +33,8 @@ interface PhotoCardProps {
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   onThumbnailClick?: (photo: EnhancedPhoto) => void;
   isFavorite?: boolean;
-  onCompareToggle?: (photo: EnhancedPhoto) => void;
-  isSelectedForCompare?: boolean;
+  onSelectToggle?: (photo: EnhancedPhoto) => void;
+  isSelected?: boolean;
 }
 
 const LAYER_TYPE_COLORS: Record<LayerType, "primary" | "success" | "error"> = {
@@ -56,8 +56,8 @@ function PhotoCard({
   onPhotoHover,
   onThumbnailClick,
   isFavorite = false,
-  onCompareToggle,
-  isSelectedForCompare = false,
+  onSelectToggle,
+  isSelected = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -133,10 +133,8 @@ function PhotoCard({
     }
   };
 
-  const handleCompareToggle = () => {
-    if (onCompareToggle) {
-      onCompareToggle(photo);
-    }
+  const handleSelectToggle = () => {
+    onSelectToggle?.(photo);
   };
 
   return (
@@ -205,6 +203,34 @@ function PhotoCard({
         }}
       >
         <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+
+        <Tooltip
+          title={
+            isSelected
+              ? "Selected for comparison / then vs now"
+              : "Select for comparison (up to two) or Then vs Now (single photo)"
+          }
+          arrow
+          placement="right"
+        >
+          <Checkbox
+            checked={isSelected}
+            onChange={handleSelectToggle}
+            color="secondary"
+            sx={{
+              position: "absolute",
+              top: 6,
+              left: 6,
+              zIndex: 2,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "rgba(0,0,0,0.6)"
+                  : "rgba(255,255,255,0.85)",
+              borderRadius: 1,
+            }}
+            inputProps={{ "aria-label": "Select photo for comparison" }}
+          />
+        </Tooltip>
 
         {/* Download icon overlay - top-right */}
         {photo.DOWNLOAD_LINK && (
@@ -416,27 +442,6 @@ function PhotoCard({
             </Tooltip>
           )}
 
-          {onCompareToggle && (
-            <Tooltip
-              title={isSelectedForCompare ? "Remove from comparison" : "Add to comparison"}
-              arrow
-              placement="top"
-            >
-              <IconButton
-                size="small"
-                color={isSelectedForCompare ? "secondary" : "default"}
-                onClick={handleCompareToggle}
-                sx={{
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    transform: 'scale(1.1)',
-                  },
-                }}
-              >
-                <CompareArrows sx={{ fontSize: iconSize.md }} />
-              </IconButton>
-            </Tooltip>
-          )}
         </Box>
 
         <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">

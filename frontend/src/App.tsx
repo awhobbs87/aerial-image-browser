@@ -521,23 +521,33 @@ function AppContent() {
                             Timeline
                           </ToggleButton>
                         </ToggleButtonGroup>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="contained"
-                            color="secondary"
-                            startIcon={<CompareArrowsIcon />}
-                            disabled={comparisonSelection.length === 0}
-                            onClick={handleOpenComparisonModal}
+                        <Stack spacing={1} flex={1} width="100%">
+                          <Tooltip
+                            title="Select up to two photos for Compare, or exactly one photo for Then vs Now"
+                            placement="top"
                           >
-                            Compare ({comparisonSelection.length}/2)
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            disabled={comparisonSelection.length === 0}
-                            onClick={handleOpenThenNowModal}
-                          >
-                            Then vs Now
-                          </Button>
+                            <Typography variant="caption" color="text.secondary">
+                              Choose one photo for Then vs Now, or up to two photos for Compare
+                            </Typography>
+                          </Tooltip>
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Button
+                              variant="contained"
+                              color="secondary"
+                              startIcon={<CompareArrowsIcon />}
+                              disabled={comparisonSelection.length === 0}
+                              onClick={handleOpenComparisonModal}
+                            >
+                              Compare ({comparisonSelection.length}/2)
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              disabled={comparisonSelection.length !== 1}
+                              onClick={handleOpenThenNowModal}
+                            >
+                              Then vs Now
+                            </Button>
+                          </Stack>
                         </Stack>
                       </Stack>
                     )}
@@ -574,8 +584,8 @@ function AppContent() {
                         onPhotoHover={setHoveredPhoto}
                         onVisiblePhotosChange={setVisibleGridPhotos}
                         sidebarWidth={sidebarWidth}
-                        comparisonSelection={comparisonSelectionKeys}
-                        onToggleCompare={handleToggleComparisonSelection}
+                        selection={comparisonSelectionKeys}
+                        onToggleSelect={handleToggleComparisonSelection}
                       />
                     ) : (
                       <PhotoTimeline
@@ -586,8 +596,8 @@ function AppContent() {
                         favorites={favorites}
                         onShowOnMap={handlePhotoSelect}
                         onPhotoHover={setHoveredPhoto}
-                        comparisonSelection={comparisonSelectionKeys}
-                        onToggleCompare={handleToggleComparisonSelection}
+                        selection={comparisonSelectionKeys}
+                        onToggleSelect={handleToggleComparisonSelection}
                       />
                     )}
                   </Box>

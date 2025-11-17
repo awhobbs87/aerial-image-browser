@@ -94,7 +94,12 @@ export default function ComparisonTray({
           >
             Compare
           </Button>
-          <Button variant="outlined" size="small" onClick={onOpenThenNow} disabled={photos.length === 0}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onOpenThenNow}
+            disabled={photos.length !== 1}
+          >
             Then vs Now
           </Button>
         </Stack>
