@@ -66,5 +66,22 @@
         });
       })();
     </script>
+
+    <script>
+      // Cloudflare Pages injects analytics with an integrity hash that fails behind Access.
+      // Remove the beacon script early so browsers don't log noisy SRI/CORS errors.
+      (function removeCfBeacon() {
+        const removeScripts = () => {
+          document.querySelectorAll('script[data-cf-beacon]').forEach((script) => {
+            script.remove();
+          });
+        };
+        // Remove any existing script
+        removeScripts();
+        // Observe future injections
+        const observer = new MutationObserver(() => removeScripts());
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
   </body>
 </html>
