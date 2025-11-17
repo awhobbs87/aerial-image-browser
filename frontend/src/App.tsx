@@ -13,17 +13,23 @@ import {
   IconButton,
   Tooltip,
   Chip,
+  Button,
+  Stack,
 } from "@mui/material";
-import { GridView, Map as MapIcon, ExpandLess, Search as SearchIcon } from "@mui/icons-material";
+import { GridView, Map as MapIcon, ExpandLess, Search as SearchIcon, Timeline } from "@mui/icons-material";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
 import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
+import PhotoTimeline from "./components/PhotoTimeline";
 import FilterPanel, { type Filters } from "./components/FilterPanel";
 import FavoritesModal from "./components/FavoritesModal";
 import BackToTop from "./components/BackToTop";
 import LoadingBar from "./components/LoadingBar";
+import ComparisonModal from "./components/ComparisonModal";
+import ComparisonTray from "./components/ComparisonTray";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
@@ -47,7 +53,9 @@ const queryClient = new QueryClient({
 });
 
 type ViewMode = "grid" | "map";
+type ResultsViewMode = "grid" | "timeline";
 type ThemeMode = "light" | "dark" | "system";
+const getPhotoKey = (photo: EnhancedPhoto) => `${photo.layerId}-${photo.OBJECTID}`;
 
 // Helper function to get the initial theme preference
 const getInitialTheme = (): ThemeMode => {
@@ -83,6 +91,7 @@ function AppContent() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [resultsViewMode, setResultsViewMode] = useState<ResultsViewMode>("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
   const [hoveredPhoto, setHoveredPhoto] = useState<EnhancedPhoto | null>(null);
   const [visibleGridPhotos, setVisibleGridPhotos] = useState<EnhancedPhoto[]>([]);
@@ -90,6 +99,8 @@ function AppContent() {
   const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(40); // percentage
   const [isResizing, setIsResizing] = useState(false);
+  const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
+  const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     startDate: null,
     endDate: null,
@@ -194,6 +205,10 @@ function AppContent() {
   }, [visibleGridPhotos, filteredPhotos]);
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
+  const comparisonSelectionKeys = useMemo(
+    () => new Set(comparisonSelection.map((photo) => getPhotoKey(photo))),
+    [comparisonSelection]
+  );
 
   const handleToggleDarkMode = useCallback(() => {
     setThemeMode((prev) => {
@@ -265,6 +280,15 @@ function AppContent() {
     []
   );
 
+  const handleResultsViewModeChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newMode: ResultsViewMode | null) => {
+      if (newMode) {
+        setResultsViewMode(newMode);
+      }
+    },
+    []
+  );
+
   const handlePhotoSelect = useCallback((photo: EnhancedPhoto) => {
     setSelectedPhoto(photo);
     // Auto-switch to map view when "Show on map" is clicked
@@ -312,6 +336,43 @@ function AppContent() {
       };
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  useEffect(() => {
+    if (!data?.photos) {
+      setComparisonSelection([]);
+      return;
+    }
+    const available = new Set(data.photos.map((photo) => getPhotoKey(photo)));
+    setComparisonSelection((prev) => prev.filter((photo) => available.has(getPhotoKey(photo))));
+  }, [data?.photos]);
+
+  const handleToggleComparisonSelection = useCallback((photo: EnhancedPhoto) => {
+    const key = getPhotoKey(photo);
+    setComparisonSelection((prev) => {
+      const exists = prev.find((p) => getPhotoKey(p) === key);
+      if (exists) {
+        return prev.filter((p) => getPhotoKey(p) !== key);
+      }
+      if (prev.length >= 2) {
+        return [prev[1], photo];
+      }
+      return [...prev, photo];
+    });
+  }, []);
+
+  const handleRemoveComparisonPhoto = useCallback((photoKey: string) => {
+    setComparisonSelection((prev) => prev.filter((photo) => getPhotoKey(photo) !== photoKey));
+  }, []);
+
+  const handleOpenComparisonModal = useCallback(() => {
+    if (comparisonSelection.length >= 1) {
+      setComparisonModalOpen(true);
+    }
+  }, [comparisonSelection.length]);
+
+  const handleClearComparisonSelection = useCallback(() => {
+    setComparisonSelection([]);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
@@ -391,20 +452,17 @@ function AppContent() {
                 <SearchBar onSearch={handleSearch} loading={isLoading} />
               </Box>
 
-              {/* Filter Panel - Only show after search is performed */}
-              {searchParams && (
-                <Box sx={{ mb: 2 }}>
-                  <FilterPanel
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    availableScales={availableScales}
-                    dateRange={dateRange}
-                  />
-                </Box>
-              )}
-
               {searchParams && (
                 <>
+                  <Box sx={{ mb: 2 }}>
+                    <FilterPanel
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      availableScales={availableScales}
+                      dateRange={dateRange}
+                    />
+                  </Box>
+
                   {/* Mobile-only View Toggle */}
                   <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 3 }}>
                     <Paper elevation={1}>
@@ -429,17 +487,90 @@ function AppContent() {
 
                   {/* Results Grid (always visible on desktop, conditional on mobile) */}
                   <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
-                    <PhotoGrid
-                      photos={filteredPhotos}
-                      loading={isLoading}
-                      error={error as Error}
-                      onFavorite={handleFavorite}
-                      favorites={favorites}
-                      onShowOnMap={handlePhotoSelect}
-                      onPhotoHover={setHoveredPhoto}
-                      onVisiblePhotosChange={setVisibleGridPhotos}
-                      sidebarWidth={sidebarWidth}
-                    />
+                    {filteredPhotos.length > 0 && (
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        justifyContent="space-between"
+                        sx={{ mb: 2 }}
+                      >
+                        <ToggleButtonGroup
+                          value={resultsViewMode}
+                          exclusive
+                          onChange={handleResultsViewModeChange}
+                          size="small"
+                          aria-label="results view mode"
+                        >
+                          <ToggleButton value="grid" aria-label="grid results view">
+                            <GridView sx={{ mr: 1 }} fontSize="small" />
+                            Grid
+                          </ToggleButton>
+                          <ToggleButton value="timeline" aria-label="timeline results view">
+                            <Timeline sx={{ mr: 1 }} fontSize="small" />
+                            Timeline
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          startIcon={<CompareArrowsIcon />}
+                          disabled={comparisonSelection.length === 0}
+                          onClick={handleOpenComparisonModal}
+                        >
+                          Compare ({comparisonSelection.length}/2)
+                        </Button>
+                      </Stack>
+                    )}
+
+                    {comparisonSelection.length > 0 && (
+                      <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+                        {comparisonSelection.map((photo) => (
+                          <Chip
+                            key={`compare-chip-${getPhotoKey(photo)}`}
+                            label={`${photo.dateFormatted || "Unknown"} • ${photo.IMAGE_NAME}`}
+                            onDelete={() => handleRemoveComparisonPhoto(getPhotoKey(photo))}
+                            size="small"
+                            sx={{ maxWidth: 260 }}
+                          />
+                        ))}
+                        <Chip
+                          label="Clear"
+                          onClick={handleClearComparisonSelection}
+                          onDelete={comparisonSelection.length ? handleClearComparisonSelection : undefined}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </Stack>
+                    )}
+
+                    {resultsViewMode === "grid" ? (
+                      <PhotoGrid
+                        photos={filteredPhotos}
+                        loading={isLoading}
+                        error={error as Error}
+                        onFavorite={handleFavorite}
+                        favorites={favorites}
+                        onShowOnMap={handlePhotoSelect}
+                        onPhotoHover={setHoveredPhoto}
+                        onVisiblePhotosChange={setVisibleGridPhotos}
+                        sidebarWidth={sidebarWidth}
+                        comparisonSelection={comparisonSelectionKeys}
+                        onToggleCompare={handleToggleComparisonSelection}
+                      />
+                    ) : (
+                      <PhotoTimeline
+                        photos={filteredPhotos}
+                        loading={isLoading}
+                        error={error as Error}
+                        onFavorite={handleFavorite}
+                        favorites={favorites}
+                        onShowOnMap={handlePhotoSelect}
+                        onPhotoHover={setHoveredPhoto}
+                        comparisonSelection={comparisonSelectionKeys}
+                        onToggleCompare={handleToggleComparisonSelection}
+                      />
+                    )}
                   </Box>
                 </>
               )}
@@ -743,6 +874,21 @@ function AppContent() {
 
       {/* Back to Top Button */}
       <BackToTop />
+
+      <ComparisonTray
+        photos={comparisonSelection}
+        onOpen={handleOpenComparisonModal}
+        onRemove={handleRemoveComparisonPhoto}
+        onClear={handleClearComparisonSelection}
+      />
+
+      <ComparisonModal
+        open={comparisonModalOpen}
+        photos={comparisonSelection}
+        onClose={() => setComparisonModalOpen(false)}
+        onRemovePhoto={handleRemoveComparisonPhoto}
+        onClear={handleClearComparisonSelection}
+      />
     </ThemeProvider>
   );
 }

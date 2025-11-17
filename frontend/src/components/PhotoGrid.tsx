@@ -33,6 +33,8 @@ interface PhotoGridProps {
   onVisiblePhotosChange?: (photos: EnhancedPhoto[]) => void;
   favorites?: Set<string>;
   sidebarWidth?: number; // Percentage of screen width (25-60)
+  comparisonSelection?: Set<string>;
+  onToggleCompare?: (photo: EnhancedPhoto) => void;
 }
 
 const PHOTOS_PER_PAGE = 12;
@@ -50,6 +52,8 @@ export default function PhotoGrid({
   onVisiblePhotosChange,
   favorites = new Set(),
   sidebarWidth = 40,
+  comparisonSelection = new Set(),
+  onToggleCompare,
 }: PhotoGridProps) {
   // Calculate grid columns based on sidebar width
   // Sidebar width ranges from 25% to 60%
@@ -222,6 +226,8 @@ export default function PhotoGrid({
               onPhotoHover={onPhotoHover}
               onThumbnailClick={() => handleOpenGallery(startIndex + index)}
               isFavorite={favorites.has(`${photo.layerId}-${photo.OBJECTID}`)}
+              onCompareToggle={onToggleCompare}
+              isSelectedForCompare={comparisonSelection.has(`${photo.layerId}-${photo.OBJECTID}`)}
             />
           ))}
         </Box>
@@ -269,20 +275,22 @@ export default function PhotoGrid({
                         p.layerId === photo.layerId &&
                         p.OBJECTID === photo.OBJECTID,
                     );
-                    return (
-                      <PhotoCard
-                        key={`${photo.layerId}-${photo.OBJECTID}`}
-                        photo={photo}
-                        onFavorite={onFavorite}
-                        onShowOnMap={onShowOnMap}
-                        onPhotoHover={onPhotoHover}
-                        onThumbnailClick={() => handleOpenGallery(photoIndex)}
-                        isFavorite={favorites.has(
-                          `${photo.layerId}-${photo.OBJECTID}`,
-                        )}
-                      />
-                    );
-                  })}
+                  return (
+                    <PhotoCard
+                      key={`${photo.layerId}-${photo.OBJECTID}`}
+                      photo={photo}
+                      onFavorite={onFavorite}
+                      onShowOnMap={onShowOnMap}
+                      onPhotoHover={onPhotoHover}
+                      onThumbnailClick={() => handleOpenGallery(photoIndex)}
+                      isFavorite={favorites.has(
+                        `${photo.layerId}-${photo.OBJECTID}`,
+                      )}
+                      onCompareToggle={onToggleCompare}
+                      isSelectedForCompare={comparisonSelection.has(`${photo.layerId}-${photo.OBJECTID}`)}
+                    />
+                  );
+                })}
                 </Box>
               </AccordionDetails>
             </Accordion>

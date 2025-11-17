@@ -9,6 +9,7 @@ import {
   Stack,
   Box,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import {
   Favorite,
@@ -16,6 +17,8 @@ import {
   CheckCircle,
   Map as MapIcon,
   Visibility,
+  Download,
+  CompareArrows,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -30,6 +33,8 @@ interface PhotoCardProps {
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   onThumbnailClick?: (photo: EnhancedPhoto) => void;
   isFavorite?: boolean;
+  onCompareToggle?: (photo: EnhancedPhoto) => void;
+  isSelectedForCompare?: boolean;
 }
 
 const LAYER_TYPE_COLORS: Record<LayerType, "primary" | "success" | "error"> = {
@@ -51,10 +56,13 @@ function PhotoCard({
   onPhotoHover,
   onThumbnailClick,
   isFavorite = false,
+  onCompareToggle,
+  isSelectedForCompare = false,
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleViewImage = () => {
     // Open preview modal instead of directly opening TIFF
@@ -76,6 +84,58 @@ function PhotoCard({
   const handleShowOnMap = () => {
     if (onShowOnMap) {
       onShowOnMap(photo);
+    }
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent thumbnail click
+    if (!photo.DOWNLOAD_LINK || downloading) return;
+
+    setDownloading(true);
+    try {
+      // Use WebP URL for smaller file size (2-5 MB vs 15-20 MB)
+      const downloadUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
+      
+      // Fetch the file as a blob
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      
+      const blob = await response.blob();
+      
+      // Create object URL
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Create temporary anchor element
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`;
+      link.style.display = 'none';
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up object URL after a short delay
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 100);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: try opening in new tab if download fails
+      if (photo.DOWNLOAD_LINK) {
+        window.open(photo.DOWNLOAD_LINK, '_blank');
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleCompareToggle = () => {
+    if (onCompareToggle) {
+      onCompareToggle(photo);
     }
   };
 
@@ -145,6 +205,54 @@ function PhotoCard({
         }}
       >
         <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+
+        {/* Download icon overlay - top-right */}
+        {photo.DOWNLOAD_LINK && (
+          <Tooltip title="Download full resolution (2-5 MB)" arrow placement="left">
+            <IconButton
+              onClick={handleDownload}
+              disabled={downloading}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(0, 0, 0, 0.7)'
+                    : 'rgba(255, 255, 255, 0.9)',
+                color: 'warning.main',
+                width: 40,
+                height: 40,
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 2px 8px rgba(0, 0, 0, 0.5)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                '&:hover': {
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(0, 0, 0, 0.85)'
+                      : 'rgba(255, 255, 255, 1)',
+                  transform: 'scale(1.1)',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 4px 12px rgba(0, 0, 0, 0.6)'
+                      : '0 4px 12px rgba(0, 0, 0, 0.3)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                },
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              {downloading ? (
+                <CircularProgress size={20} color="warning" />
+              ) : (
+                <Download sx={{ fontSize: 22 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       <CardContent sx={{ flexGrow: 1, py: 1.25, px: 1.5, '&:last-child': { pb: 1.25 } }}>
@@ -296,6 +404,28 @@ function PhotoCard({
             >
               Download TIFF
             </Box>
+          )}
+
+          {onCompareToggle && (
+            <Tooltip
+              title={isSelectedForCompare ? "Remove from comparison" : "Add to comparison"}
+              arrow
+              placement="top"
+            >
+              <IconButton
+                size="small"
+                color={isSelectedForCompare ? "secondary" : "default"}
+                onClick={handleCompareToggle}
+                sx={{
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                <CompareArrows sx={{ fontSize: iconSize.md }} />
+              </IconButton>
+            </Tooltip>
           )}
         </Box>
 
