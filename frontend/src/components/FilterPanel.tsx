@@ -315,14 +315,14 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
   };
 
   return (
-    <Box sx={{ mb: 1.5 }}>
+    <Box sx={{ mb: 1 }}>
       {/* Filter Presets */}
-      <Box sx={{ mb: 1.5 }}>
+      <Box sx={{ mb: 1 }}>
         <Typography
           variant="caption"
           sx={{
             fontWeight: 600,
-            mb: 0.75,
+            mb: 0.5,
             display: "block",
             fontSize: "0.7rem",
             color: "text.secondary",
@@ -330,7 +330,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
         >
           QUICK FILTERS
         </Typography>
-        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
           {FILTER_PRESETS.map((preset) => {
             const Icon = preset.icon;
             return (
@@ -342,8 +342,8 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
                   size="small"
                   variant="outlined"
                   sx={{
-                    height: 28,
-                    fontSize: "0.75rem",
+                    height: 26,
+                    fontSize: "0.7rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     transition: "all 0.2s ease-in-out",
@@ -363,7 +363,7 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
 
       {/* Active Filters Chips - More compact */}
       {hasActiveFilters && (
-        <Box sx={{ mb: 0.75 }}>
+        <Box sx={{ mb: 0.5 }}>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
             {hasDateFilter && (
               <Chip

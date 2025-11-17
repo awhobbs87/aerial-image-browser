@@ -34,7 +34,7 @@ import ThenNowModal from "./components/ThenNowModal";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.6.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -384,6 +384,15 @@ function AppContent() {
     setComparisonSelection([]);
   }, []);
 
+  const handleSwapComparisonPhotos = useCallback(() => {
+    setComparisonSelection((prev) => {
+      if (prev.length >= 2) {
+        return [prev[1], prev[0]];
+      }
+      return prev;
+    });
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -521,34 +530,69 @@ function AppContent() {
                             Timeline
                           </ToggleButton>
                         </ToggleButtonGroup>
-                        <Stack spacing={1} flex={1} width="100%">
-                          <Tooltip
-                            title="Select up to two photos for Compare, or exactly one photo for Then vs Now"
-                            placement="top"
-                          >
-                            <Typography variant="caption" color="text.secondary">
-                              Choose one photo for Then vs Now, or up to two photos for Compare
+                        <Box
+                          sx={{
+                            flex: 1,
+                            width: "100%",
+                            p: 2,
+                            borderRadius: 2,
+                            border: (theme) => `2px solid ${theme.palette.primary.main}`,
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(16, 185, 129, 0.08)"
+                                : "rgba(16, 185, 129, 0.04)",
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={700}
+                              color="primary.main"
+                              sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                            >
+                              <CompareArrowsIcon fontSize="small" />
+                              Comparison Tools
                             </Typography>
-                          </Tooltip>
-                          <Stack direction="row" spacing={1} flexWrap="wrap">
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              startIcon={<CompareArrowsIcon />}
-                              disabled={comparisonSelection.length === 0}
-                              onClick={handleOpenComparisonModal}
-                            >
-                              Compare ({comparisonSelection.length}/2)
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              disabled={comparisonSelection.length !== 1}
-                              onClick={handleOpenThenNowModal}
-                            >
-                              Then vs Now
-                            </Button>
+                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+                              Select photos from the grid below to compare or view changes over time
+                            </Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="large"
+                                startIcon={<CompareArrowsIcon />}
+                                disabled={comparisonSelection.length === 0}
+                                onClick={handleOpenComparisonModal}
+                                sx={{
+                                  fontWeight: 700,
+                                  boxShadow: 3,
+                                  "&:hover": {
+                                    boxShadow: 6,
+                                  },
+                                }}
+                              >
+                                Compare Photos ({comparisonSelection.length}/2)
+                              </Button>
+                              <Button
+                                variant="contained"
+                                color="secondary"
+                                size="large"
+                                disabled={comparisonSelection.length !== 1}
+                                onClick={handleOpenThenNowModal}
+                                sx={{
+                                  fontWeight: 700,
+                                  boxShadow: 3,
+                                  "&:hover": {
+                                    boxShadow: 6,
+                                  },
+                                }}
+                              >
+                                Then vs Now
+                              </Button>
+                            </Stack>
                           </Stack>
-                        </Stack>
+                        </Box>
                       </Stack>
                     )}
 
@@ -919,6 +963,7 @@ function AppContent() {
         onClose={() => setComparisonModalOpen(false)}
         onRemovePhoto={handleRemoveComparisonPhoto}
         onClear={handleClearComparisonSelection}
+        onSwap={handleSwapComparisonPhotos}
       />
 
       <ThenNowModal
