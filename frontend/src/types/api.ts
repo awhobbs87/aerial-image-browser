@@ -77,10 +77,3 @@ export interface LocationSearchParams extends FilterParams {
   layers?: number[];
 }
 
-export interface BoundsSearchParams extends FilterParams {
-  west: number;
-  south: number;
-  east: number;
-  north: number;
-  layers?: number[];
-}

@@ -80,29 +80,30 @@ export default function ComparisonTray({
 
         <Divider />
 
-        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1}>
-          <Typography variant="caption" color="text.secondary">
-            {photos.length === 1 ? "Compare with Then vs Now" : "Choose a view"}
-          </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onOpenThenNow}
+            disabled={photos.length !== 1}
+            sx={{ flex: 1, py: 0.5, minHeight: 32 }}
+          >
+            Then vs Now
+          </Button>
           <Button
             variant="contained"
             size="small"
             startIcon={<CompareArrowsIcon />}
             onClick={onOpen}
             disabled={photos.length === 0}
-            sx={{ mr: 1 }}
+            sx={{ flex: 1, py: 0.5, minHeight: 32 }}
           >
             Compare
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={onOpenThenNow}
-            disabled={photos.length !== 1}
-          >
-            Then vs Now
-          </Button>
         </Stack>
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", mt: -0.5 }}>
+          {photos.length === 1 ? "Compare with Then vs Now or select multiple" : "Choose a comparison view"}
+        </Typography>
       </Stack>
     </Paper>
   );

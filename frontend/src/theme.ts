@@ -42,11 +42,11 @@ const commonTheme = {
       lineHeight: 1.4,
     },
     body1: {
-      fontSize: "1.1rem",
+      fontSize: "1rem",
       lineHeight: 1.6,
     },
     body2: {
-      fontSize: "1rem",
+      fontSize: "0.9375rem",
       lineHeight: 1.5,
     },
     caption: {
@@ -82,9 +82,9 @@ const commonTheme = {
     MuiCard: {
       styleOverrides: {
         root: {
-          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
-            transform: "translateY(-6px)",
+            transform: "translateY(-4px)",
           },
         },
       },
@@ -94,9 +94,9 @@ const commonTheme = {
         root: {
           textTransform: "none",
           fontWeight: 600,
-          borderRadius: 10,
+          borderRadius: 8,
           padding: "8px 20px",
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
             transform: "translateY(-1px)",
           },
@@ -222,12 +222,12 @@ export const lightTheme = createTheme({
       dark: "#2563eb",
     },
     background: {
-      default: "#f5f5f5", // Warm gray
+      default: "#fafafa", // Lighter, cleaner gray
       paper: "#ffffff",
     },
     text: {
-      primary: "#212121",
-      secondary: "#757575",
+      primary: "#1a1a1a", // Slightly darker for better contrast
+      secondary: "#6b7280", // Better contrast
     },
     divider: "rgba(0, 0, 0, 0.12)",
   },
@@ -300,12 +300,12 @@ export const darkTheme = createTheme({
       dark: "#3b82f6",
     },
     background: {
-      default: "#121212", // Dark gray
-      paper: "#1e1e1e",
+      default: "#0f0f0f", // Darker for better contrast
+      paper: "#1a1a1a",
     },
     text: {
-      primary: "#e0e0e0",
-      secondary: "#bdbdbd",
+      primary: "#f5f5f5", // Lighter for better contrast
+      secondary: "#a3a3a3", // Better contrast
     },
     divider: "rgba(255, 255, 255, 0.12)",
   },

@@ -25,7 +25,7 @@ import {
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
-import PhotoPreviewModal from "./PhotoPreviewModal";
+import PhotoViewer from "./PhotoViewer";
 import { layerTypeColors, borderRadius, fontSize, iconSize } from "../theme/tokens";
 
 interface PhotoCardProps {
@@ -134,7 +134,7 @@ function PhotoCard({
 
   return (
     <>
-      <PhotoPreviewModal photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <PhotoViewer photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
       <Card
         sx={{
           height: "100%",
@@ -322,6 +322,10 @@ function PhotoCard({
             px: 1.5,
             py: 1,
             gap: 0.5,
+            "& .MuiIconButton-root": {
+              minWidth: { xs: 44, sm: 40 }, // Better touch targets on mobile
+              minHeight: { xs: 44, sm: 40 },
+            },
           }}
         >
           {/* Left side - View actions */}

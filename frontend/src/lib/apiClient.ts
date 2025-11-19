@@ -4,7 +4,6 @@ import type {
   SearchLocationResponse,
   LayersResponse,
   LocationSearchParams,
-  BoundsSearchParams,
 } from "../types/api";
 
 class ApiClient {
@@ -64,40 +63,6 @@ class ApiClient {
 
     const response = await this.client.get<ApiResponse<SearchLocationResponse>>(
       "/api/search/location",
-      { params: queryParams }
-    );
-
-    if (!response.data.success || !response.data.data) {
-      throw new Error(response.data.error || "Search failed");
-    }
-
-    return response.data.data;
-  }
-
-  /**
-   * Search for photos by bounding box
-   */
-  async searchByBounds(
-    params: BoundsSearchParams
-  ): Promise<SearchLocationResponse> {
-    const { west, south, east, north, layers = [0, 1, 2], ...filters } = params;
-    const queryParams: Record<string, string> = {
-      west: west.toString(),
-      south: south.toString(),
-      east: east.toString(),
-      north: north.toString(),
-      layers: layers.join(","),
-    };
-
-    // Add filter parameters if provided
-    if (filters.startDate) queryParams.startDate = filters.startDate;
-    if (filters.endDate) queryParams.endDate = filters.endDate;
-    if (filters.minScale) queryParams.minScale = filters.minScale.toString();
-    if (filters.maxScale) queryParams.maxScale = filters.maxScale.toString();
-    if (filters.imageTypes?.length) queryParams.imageTypes = filters.imageTypes.join(",");
-
-    const response = await this.client.get<ApiResponse<SearchLocationResponse>>(
-      "/api/search/bounds",
       { params: queryParams }
     );
 

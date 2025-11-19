@@ -29,10 +29,10 @@ export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0
   };
 
   return (
-    <MuiAppBar position="static" elevation={2}>
-      <Toolbar>
-        <Map sx={{ mr: 2, fontSize: 32 }} />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
+    <MuiAppBar position="static" elevation={1} sx={{ bgcolor: "background.paper", color: "text.primary", borderBottom: 1, borderColor: "divider" }}>
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+        <Map sx={{ mr: 2, fontSize: 28, color: "primary.main" }} />
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, color: "text.primary" }}>
           Tasmania Aerial Photos
         </Typography>
         {onViewFavorites && (

@@ -56,17 +56,44 @@ const HOVER_STYLE = {
   weight: 3,
 };
 
-const MAX_POLYGONS = 200;
+const MAX_POLYGONS = 100;
 
 function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: PhotoMarkersProps) {
-  // Filter photos with valid geometry and limit to MAX_POLYGONS
+  // Filter photos with valid geometry and prioritize important ones
   const validPhotos = useMemo(() => {
     return photos.filter((photo) => photo.geometry?.rings && Array.isArray(photo.geometry.rings));
   }, [photos]);
 
-  const limitedPhotos = useMemo(() => {
-    return validPhotos.slice(0, MAX_POLYGONS);
-  }, [validPhotos]);
+  // Prioritize photos: selected > hovered > others
+  const prioritizedPhotos = useMemo(() => {
+    const selected = selectedPhoto
+      ? validPhotos.find(
+          (p) => p.OBJECTID === selectedPhoto.OBJECTID && p.layerId === selectedPhoto.layerId
+        )
+      : null;
+    const hovered = hoveredPhoto
+      ? validPhotos.find(
+          (p) => p.OBJECTID === hoveredPhoto.OBJECTID && p.layerId === hoveredPhoto.layerId
+        )
+      : null;
+
+    const others = validPhotos.filter(
+      (p) =>
+        !(
+          (selected && p.OBJECTID === selected.OBJECTID && p.layerId === selected.layerId) ||
+          (hovered && p.OBJECTID === hovered.OBJECTID && p.layerId === hovered.layerId)
+        )
+    );
+
+    const prioritized: typeof validPhotos = [];
+    if (selected) prioritized.push(selected);
+    if (hovered && hovered !== selected) prioritized.push(hovered);
+    prioritized.push(...others);
+
+    return prioritized.slice(0, MAX_POLYGONS);
+  }, [validPhotos, selectedPhoto, hoveredPhoto]);
+
+  const limitedPhotos = prioritizedPhotos;
 
   const isLimited = validPhotos.length > MAX_POLYGONS;
 
@@ -96,7 +123,7 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
 
   return (
     <>
-      {isLimited && (
+      {validPhotos.length > MAX_POLYGONS && (
         <Alert
           severity="info"
           sx={{
@@ -108,7 +135,7 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
             boxShadow: 2,
           }}
         >
-          Showing first {MAX_POLYGONS} of {validPhotos.length} photos on map
+          Showing {MAX_POLYGONS} of {validPhotos.length} photos (prioritizing selected/hovered)
         </Alert>
       )}
       {polygonData.map(({ photo, positions, isSelected, colorConfig, styleToUse }) => (

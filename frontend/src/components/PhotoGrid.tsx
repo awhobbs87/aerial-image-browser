@@ -16,11 +16,10 @@ import {
   Image as ImageIcon,
   ExpandMore,
   ViewModule,
-  Collections,
 } from "@mui/icons-material";
 import PhotoCard from "./PhotoCard";
 import PhotoCardSkeleton from "./PhotoCardSkeleton";
-import PhotoGallery from "./PhotoGallery";
+import PhotoViewer from "./PhotoViewer";
 import type { EnhancedPhoto } from "../types/api";
 
 interface PhotoGridProps {
@@ -32,7 +31,6 @@ interface PhotoGridProps {
   onPhotoHover?: (photo: EnhancedPhoto | null) => void;
   onVisiblePhotosChange?: (photos: EnhancedPhoto[]) => void;
   favorites?: Set<string>;
-  sidebarWidth?: number; // Percentage of screen width (25-60)
   selection?: Set<string>;
   onToggleSelect?: (photo: EnhancedPhoto) => void;
 }
@@ -51,21 +49,12 @@ export default function PhotoGrid({
   onPhotoHover,
   onVisiblePhotosChange,
   favorites = new Set(),
-  sidebarWidth = 40,
   selection = new Set(),
   onToggleSelect,
 }: PhotoGridProps) {
-  // Calculate grid columns based on sidebar width
-  // Sidebar width ranges from 25% to 60%
-  // Wider sidebar = fewer columns (more space per card)
-  // Narrower sidebar = more columns (cards can be smaller)
-  const getGridColumns = () => {
-    if (sidebarWidth >= 50) return 2; // Wide sidebar: 2 columns
-    if (sidebarWidth >= 35) return 3; // Medium sidebar: 3 columns
-    return 4; // Narrow sidebar: 4 columns
-  };
-
-  const gridColumns = getGridColumns();
+  // Fixed grid columns - responsive based on screen size
+  // Desktop with sidebar: 3 columns, without: 4 columns
+  // Mobile: 2 columns
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [groupBy, setGroupBy] = useState<GroupBy>("year");
@@ -155,8 +144,8 @@ export default function PhotoGrid({
         sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-            md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
+            xs: 'repeat(2, 1fr)', // Mobile: 2 columns
+            md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
           },
           gap: 2,
         }}
@@ -212,7 +201,7 @@ export default function PhotoGrid({
             display: 'grid',
             gridTemplateColumns: {
               xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-              md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
+              md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
             },
             gap: 2,
           }}
@@ -263,7 +252,7 @@ export default function PhotoGrid({
                     display: 'grid',
                     gridTemplateColumns: {
                       xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-                      md: `repeat(${gridColumns}, 1fr)`, // Desktop: dynamic based on sidebar width
+                      md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
                     },
                     gap: 2,
                   }}
@@ -302,7 +291,8 @@ export default function PhotoGrid({
 
   return (
     <Box>
-      <PhotoGallery
+      <PhotoViewer
+        photo={sortedPhotos[galleryStartIndex] || null}
         photos={sortedPhotos}
         open={galleryOpen}
         onClose={() => setGalleryOpen(false)}
@@ -321,59 +311,16 @@ export default function PhotoGrid({
               : "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
         }}
       >
-        <Stack spacing={1.25}>
-          {/* Header with count and pagination */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-              <Chip
-                label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
-                color="primary"
-                size="small"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.8rem",
-                  height: 28,
-                }}
-              />
-              <Chip
-                icon={<Collections sx={{ fontSize: 16 }} />}
-                label="Gallery View"
-                onClick={() => handleOpenGallery(0)}
-                size="small"
-                variant="outlined"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.75rem",
-                  height: 28,
-                  cursor: "pointer",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    bgcolor: (theme) =>
-                      theme.palette.mode === "dark"
-                        ? "rgba(0, 77, 64, 0.1)"
-                        : "rgba(0, 77, 64, 0.05)",
-                  },
-                }}
-              />
-            </Box>
-            {totalPages > 1 && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: "0.75rem" }}
-              >
-                Page {page} of {totalPages}
-              </Typography>
-            )}
-          </Box>
+        <Stack spacing={1}>
+          {totalPages > 1 && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.75rem", fontWeight: 600 }}
+            >
+              Page {page} of {totalPages}
+            </Typography>
+          )}
 
           {/* Compact Sort and Group Controls */}
           <Box

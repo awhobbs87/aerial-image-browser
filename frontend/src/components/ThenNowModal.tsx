@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -19,36 +19,95 @@ import {
   Tabs,
   Tab,
   Slider,
+  Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  ButtonGroup,
+  Divider,
 } from "@mui/material";
-import { Map as MapIcon, Close, Info, KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
+import { 
+  Map as MapIcon, 
+  Close, 
+  Info, 
+  KeyboardArrowLeft, 
+  KeyboardArrowRight, 
+  InfoOutlined,
+  Tune,
+  RestartAlt,
+  ZoomIn,
+  ZoomOut,
+  RotateLeft,
+  RotateRight,
+  Opacity as OpacityIcon,
+  Crop,
+  ExpandMore,
+  ArrowUpward,
+  ArrowDownward,
+  ArrowBack,
+  ArrowForward,
+} from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "../lib/apiClient";
 
-// Satellite imagery style using Esri World Imagery
-const SATELLITE_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    'esri-satellite': {
-      type: 'raster',
-      tiles: [
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-      ],
-      tileSize: 256,
-      attribution: 'Esri, Maxar, Earthstar Geographics, CNES/Airbus DS, USDA FSA, USGS, Aerogrid, IGN, IGP, and the GIS User Community'
-    }
+// Satellite imagery services - trying multiple sources for reliability
+const IMAGERY_SERVICES = [
+  {
+    name: "Esri World Imagery",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export",
+    requiresAuth: false,
   },
-  layers: [
-    {
-      id: 'esri-satellite-layer',
-      type: 'raster',
-      source: 'esri-satellite',
-      minzoom: 0,
-      maxzoom: 22
+];
+
+async function maskNowImageBlob(
+  blob: Blob,
+  coordinates: [number, number][],
+  width: number,
+  height: number,
+  minX: number,
+  minY: number,
+  lonDelta: number,
+  latDelta: number
+): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Unable to create canvas context");
+  }
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.beginPath();
+  coordinates.forEach(([lon, lat], index) => {
+    const x = ((lon - minX) / lonDelta) * width;
+    const y = height - ((lat - minY) / latDelta) * height;
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
     }
-  ]
-};
+  });
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  ctx.restore();
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((maskedBlob) => {
+      if (maskedBlob) {
+        resolve(maskedBlob);
+      } else {
+        reject(new Error("Failed to generate masked LIST imagery blob"));
+      }
+    }, "image/png");
+  });
+}
 
 interface ThenNowModalProps {
   open: boolean;
@@ -63,16 +122,32 @@ export default function ThenNowModal({
 }: ThenNowModalProps) {
   const [tab, setTab] = useState<"side-by-side" | "slider">("side-by-side");
   const [sliderValue, setSliderValue] = useState(50);
-  const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [satelliteImageLoaded, setSatelliteImageLoaded] = useState(false);
+  const [nowImageUrl, setNowImageUrl] = useState<string | null>(null);
+  const [nowImageLoaded, setNowImageLoaded] = useState(false);
+  const [nowImageError, setNowImageError] = useState(false);
+  const nowImageUrlRef = useRef<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const satelliteCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Interactive adjustment controls
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+  const [cropTop, setCropTop] = useState(0);
+  const [cropBottom, setCropBottom] = useState(0);
+  const [cropLeft, setCropLeft] = useState(0);
+  const [cropRight, setCropRight] = useState(0);
+  
+  // Side-by-side rotation controls
+  const [thenRotation, setThenRotation] = useState(0);
+  const [nowRotation, setNowRotation] = useState(0);
+  
+  // Loading progress tracking
+  const [loadingProgress, setLoadingProgress] = useState<string>("Initializing...");
 
   const previewUrl = useMemo(() => {
     if (!photo) return null;
@@ -83,17 +158,193 @@ export default function ThenNowModal({
     });
   }, [photo]);
 
+useEffect(() => {
+  return () => {
+    if (nowImageUrlRef.current) {
+      URL.revokeObjectURL(nowImageUrlRef.current);
+      nowImageUrlRef.current = null;
+    }
+  };
+}, []);
+
+  useEffect(() => {
+    if (!open || !photo?.geometry?.rings?.[0]) {
+      if (nowImageUrlRef.current) {
+        URL.revokeObjectURL(nowImageUrlRef.current);
+        nowImageUrlRef.current = null;
+      }
+      setNowImageUrl(null);
+      setNowImageLoaded(false);
+      setNowImageError(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchNowImage = async () => {
+      try {
+        setNowImageLoaded(false);
+        setNowImageError(false);
+        setLoadingProgress("Calculating photo boundaries...");
+
+        const coordinates = photo.geometry.rings[0] as [number, number][];
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+
+        coordinates.forEach(([lon, lat]: [number, number]) => {
+          if (lon < minX) minX = lon;
+          if (lon > maxX) maxX = lon;
+          if (lat < minY) minY = lat;
+          if (lat > maxY) maxY = lat;
+        });
+
+        const lonDelta = Math.max(0.0001, maxX - minX);
+        const latDelta = Math.max(0.0001, maxY - minY);
+        const maxSize = 2048;
+        const minSize = 512;
+        const width = maxSize;
+        let height = Math.round((latDelta / lonDelta) * width);
+        if (!Number.isFinite(height) || height <= 0) {
+          height = maxSize;
+        }
+        height = Math.max(minSize, Math.min(maxSize, height));
+        
+        setLoadingProgress(`Preparing request for ${width}x${height}px imagery...`);
+
+        const params = new URLSearchParams({
+          f: "image",
+          format: "png32",
+          bbox: `${minX},${minY},${maxX},${maxY}`,
+          bboxSR: "4326",
+          imageSR: "4326",
+          size: `${width},${height}`,
+          dpi: "96",
+          transparent: "false",
+        });
+
+        let lastError: unknown = null;
+        for (let i = 0; i < IMAGERY_SERVICES.length; i++) {
+          const service = IMAGERY_SERVICES[i];
+          if (controller.signal.aborted) {
+            return;
+          }
+          const exportUrl = service.url;
+          setLoadingProgress(`Connecting to ${service.name}... (${i + 1}/${IMAGERY_SERVICES.length})`);
+          console.log(`[ThenNowModal] Attempting to fetch from: ${exportUrl}`);
+          console.log(`[ThenNowModal] Params:`, params.toString());
+          
+          try {
+            const response = await fetch(`${exportUrl}?${params.toString()}`, {
+              signal: controller.signal,
+            });
+
+            console.log(`[ThenNowModal] Response status for ${service.name}:`, response.status);
+
+            if (!response.ok) {
+              const errorText = await response.text().catch(() => 'No error details');
+              console.error(`[ThenNowModal] Error response from ${service.name}:`, errorText);
+              throw new Error(`Imagery request failed (${service.name}) with status ${response.status}`);
+            }
+
+            setLoadingProgress(`Downloading satellite imagery from ${service.name}...`);
+            const baseBlob = await response.blob();
+            console.log(`[ThenNowModal] Received blob size:`, baseBlob.size, 'type:', baseBlob.type);
+            
+            // Check if we actually got an image
+            if (baseBlob.size === 0 || !baseBlob.type.startsWith('image/')) {
+              throw new Error(`Invalid response from ${service.name}: not an image`);
+            }
+
+            setLoadingProgress("Processing and masking imagery to match photo footprint...");
+            const maskedBlob = await maskNowImageBlob(
+              baseBlob,
+              coordinates,
+              width,
+              height,
+              minX,
+              minY,
+              lonDelta,
+              latDelta
+            );
+
+            console.log(`[ThenNowModal] Masked blob created, size:`, maskedBlob.size);
+            setLoadingProgress("Finalizing imagery...");
+
+            if (nowImageUrlRef.current) {
+              URL.revokeObjectURL(nowImageUrlRef.current);
+            }
+            const objectUrl = URL.createObjectURL(maskedBlob);
+            nowImageUrlRef.current = objectUrl;
+            setNowImageUrl(objectUrl);
+            setNowImageError(false);
+            console.log(`[ThenNowModal] Successfully loaded image from ${service.name}`);
+            return;
+          } catch (err) {
+            console.error(`[ThenNowModal] Failed to fetch from ${service.name}:`, err);
+            lastError = err;
+            continue;
+          }
+        }
+
+        throw lastError ?? new Error("Satellite imagery request failed");
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        console.error("[ThenNowModal] Failed to fetch LIST aerial imagery:", error);
+        if (nowImageUrlRef.current) {
+          URL.revokeObjectURL(nowImageUrlRef.current);
+          nowImageUrlRef.current = null;
+        }
+        setNowImageUrl(null);
+        setNowImageLoaded(false);
+        setNowImageError(true);
+      }
+    };
+
+    fetchNowImage();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, photo]);
+
   // Reset states when photo changes or modal opens
   useEffect(() => {
     if (open) {
       setImageLoaded(false);
       setImageError(false);
-      setSatelliteImageLoaded(false);
-      setMapReady(false);
-      setMapError(false);
+      setNowImageLoaded(false);
+      setNowImageError(false);
       setSliderValue(50);
+      setOffsetX(0);
+      setOffsetY(0);
+      setScale(1);
+      setRotation(0);
+      setOpacity(1);
+      setCropTop(0);
+      setCropBottom(0);
+      setCropLeft(0);
+      setCropRight(0);
+      setThenRotation(0);
+      setNowRotation(0);
+      setLoadingProgress("Initializing...");
     }
   }, [photo, open]);
+
+  const resetAdjustments = () => {
+    setOffsetX(0);
+    setOffsetY(0);
+    setScale(1);
+    setRotation(0);
+    setOpacity(1);
+    setCropTop(0);
+    setCropBottom(0);
+    setCropLeft(0);
+    setCropRight(0);
+  };
 
   // Keyboard shortcuts for slider
   useEffect(() => {
@@ -113,183 +364,6 @@ export default function ThenNowModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, tab, photo]);
 
-  // Capture satellite view as image for slider comparison
-  const captureSatelliteImage = useCallback(() => {
-    if (!mapRef.current || !satelliteCanvasRef.current) {
-      console.log("Cannot capture: map or canvas not ready");
-      return;
-    }
-
-    try {
-      const canvas = mapRef.current.getCanvas();
-      const ctx = satelliteCanvasRef.current.getContext("2d");
-      if (!ctx) {
-        console.error("Cannot get canvas 2d context");
-        return;
-      }
-
-      satelliteCanvasRef.current.width = canvas.width;
-      satelliteCanvasRef.current.height = canvas.height;
-      ctx.drawImage(canvas, 0, 0);
-      setSatelliteImageLoaded(true);
-      console.log("Satellite image captured successfully");
-    } catch (error) {
-      console.error("Failed to capture satellite image:", error);
-    }
-  }, []);
-
-  // Initialize map - only once when modal opens
-  useEffect(() => {
-    if (!open || !photo) return;
-
-    // Give the DOM time to render the container
-    const timeoutId = setTimeout(() => {
-      if (!mapContainerRef.current || mapRef.current) return;
-
-      console.log("Initializing map...");
-
-      try {
-        const map = new maplibregl.Map({
-          container: mapContainerRef.current,
-          style: SATELLITE_STYLE,
-          center: [147.325, -42.879],
-          zoom: 8,
-          attributionControl: false,
-        });
-
-        map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false }),
-          "top-right"
-        );
-
-        map.on("load", () => {
-          console.log("Map loaded successfully");
-          setMapReady(true);
-          setMapError(false);
-          // Capture satellite image after a short delay to ensure rendering
-          setTimeout(() => {
-            captureSatelliteImage();
-          }, 1500);
-        });
-
-        map.on("idle", () => {
-          // Update captured image when map stops moving
-          if (tab === "slider") {
-            captureSatelliteImage();
-          }
-        });
-
-        map.on("error", (e) => {
-          console.error("Map error:", e);
-          setMapError(true);
-          setMapReady(false);
-        });
-
-        mapRef.current = map;
-      } catch (error) {
-        console.error("Failed to initialize map:", error);
-        setMapError(true);
-        setMapReady(false);
-      }
-    }, 200);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (mapRef.current) {
-        console.log("Cleaning up map");
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-      setMapReady(false);
-      setMapError(false);
-      setSatelliteImageLoaded(false);
-    };
-  }, [open, photo]); // Don't include tab or captureSatelliteImage to avoid recreating map
-
-  // Re-capture when switching to slider tab
-  useEffect(() => {
-    if (open && tab === "slider" && mapReady) {
-      console.log("Tab switched to slider, re-capturing image...");
-      setSatelliteImageLoaded(false); // Reset to show loading state
-      setTimeout(() => {
-        captureSatelliteImage();
-      }, 300);
-    }
-  }, [tab, mapReady, open, captureSatelliteImage]);
-
-  // Add photo footprint overlay
-  useEffect(() => {
-    if (!open || !mapReady || !mapRef.current || !photo?.geometry?.rings?.[0]) {
-      return;
-    }
-
-    const map = mapRef.current;
-    const coordinates = photo.geometry.rings[0];
-
-    try {
-      // Remove existing source/layer if they exist
-      if (map.getLayer("photo-footprint")) {
-        map.removeLayer("photo-footprint");
-      }
-      if (map.getSource("photo-footprint")) {
-        map.removeSource("photo-footprint");
-      }
-
-      // Add photo footprint
-      map.addSource("photo-footprint", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: [coordinates.map((coord) => [coord[0], coord[1]])],
-          },
-          properties: {},
-        },
-      });
-
-      map.addLayer({
-        id: "photo-footprint",
-        type: "fill",
-        source: "photo-footprint",
-        paint: {
-          "fill-color": "#10b981",
-          "fill-opacity": 0.3,
-        },
-      });
-
-      map.addLayer({
-        id: "photo-footprint-outline",
-        type: "line",
-        source: "photo-footprint",
-        paint: {
-          "line-color": "#10b981",
-          "line-width": 3,
-        },
-      });
-
-      // Fit map to photo bounds
-      const bounds = coordinates.reduce(
-        (acc: maplibregl.LngLatBounds, coord: [number, number]) =>
-          acc.extend(coord as [number, number]),
-        new maplibregl.LngLatBounds(
-          coordinates[0] as [number, number],
-          coordinates[0] as [number, number]
-        )
-      );
-      map.fitBounds(bounds, { padding: 24, maxZoom: 17 });
-
-      // Trigger a capture after map moves to new bounds
-      setTimeout(() => {
-        if (tab === "slider") {
-          captureSatelliteImage();
-        }
-      }, 1000);
-    } catch (error) {
-      console.error("Failed to add photo footprint:", error);
-    }
-  }, [open, mapReady, photo, tab, captureSatelliteImage]);
-
   const renderSliderView = () => {
     if (!photo || !previewUrl) return null;
 
@@ -307,7 +381,7 @@ export default function ThenNowModal({
           }}
         >
           {/* Loading overlay */}
-          {(!imageLoaded || !satelliteImageLoaded) && (
+          {(!imageLoaded || (!nowImageLoaded && !nowImageError)) && (
             <Fade in timeout={300}>
               <Box
                 sx={{
@@ -323,54 +397,104 @@ export default function ThenNowModal({
                 }}
               >
                 <CircularProgress size={48} />
-                <Typography variant="body2" color="white">
-                  {!imageLoaded ? "Loading historical photo..." : "Capturing satellite view..."}
+                <Typography variant="body2" color="white" fontWeight={600}>
+                  {!imageLoaded ? "Loading historical photo..." : "Loading current satellite imagery"}
                 </Typography>
+                {!imageLoaded && nowImageLoaded === false && (
+                  <Typography variant="caption" color="white" sx={{ opacity: 0.8, textAlign: "center", maxWidth: 300 }}>
+                    {loadingProgress}
+                  </Typography>
+                )}
               </Box>
             </Fade>
           )}
 
-          {/* Satellite view (background - full image) */}
+          {/* Satellite imagery (background) */}
           <Box
-            component="canvas"
-            ref={satelliteCanvasRef}
             sx={{
               position: "absolute",
               inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
               zIndex: 1,
               pointerEvents: "none",
-              opacity: satelliteImageLoaded ? 1 : 0,
-              transition: "opacity 0.3s ease-in-out",
+              backgroundColor: "rgba(15,23,42,0.95)",
             }}
-          />
+          >
+            {nowImageUrl && !nowImageError ? (
+              <Box
+                component="img"
+                src={nowImageUrl}
+                alt="Current satellite imagery"
+                onLoad={() => setNowImageLoaded(true)}
+                onError={() => {
+                  setNowImageError(true);
+                  setNowImageLoaded(false);
+                }}
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: nowImageLoaded ? 1 : 0,
+                  transition: "opacity 0.3s ease-in-out",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  px: 4,
+                }}
+              >
+                <Typography variant="body2">
+                  {nowImageError
+                    ? "Unable to load satellite imagery for this area."
+                    : "Preparing current satellite imagery..."}
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
-          {/* Historical photo (foreground with clip-path) */}
+          {/* Historical photo (foreground with slider) - with cropping wrapper */}
           <Box
-            component="img"
-            src={previewUrl}
-            alt={photo.IMAGE_NAME}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
             sx={{
               position: "absolute",
               inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
               zIndex: 2,
               pointerEvents: "none",
-              backgroundColor: "transparent",
-              clipPath: `polygon(${sliderValue}% 0, 100% 0, 100% 100%, ${sliderValue}% 100%)`,
-              opacity: imageLoaded ? 1 : 0,
-              transition: "opacity 0.3s ease-in-out",
+              clipPath: `inset(${cropTop}% ${cropRight}% ${cropBottom}% ${cropLeft}%)`,
             }}
-          />
+          >
+            <Box
+              component="img"
+              src={previewUrl}
+              alt={photo.IMAGE_NAME}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                pointerEvents: "none",
+                clipPath: `polygon(0 0, ${sliderValue}% 0, ${sliderValue}% 100%, 0 100%)`,
+                opacity: imageLoaded ? opacity : 0,
+                transition: "opacity 0.3s ease-in-out",
+                transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale}) rotate(${rotation}deg)`,
+                transformOrigin: "center center",
+              }}
+            />
+          </Box>
 
           {/* Photo labels */}
-          {imageLoaded && satelliteImageLoaded && (
+          {imageLoaded && nowImageLoaded && !nowImageError && (
             <Fade in timeout={500}>
               <Box>
                 <Chip
@@ -406,26 +530,42 @@ export default function ThenNowModal({
           {/* Slider handle */}
           <Box
             onPointerDown={(e) => {
-              const element = e.currentTarget.parentElement;
-              if (!element) return;
-              e.currentTarget.setPointerCapture(e.pointerId);
-              const bounds = element.getBoundingClientRect();
+              const handle = e.currentTarget as HTMLElement | null;
+              const container = handle?.parentElement;
+              if (!handle || !container) return;
+
+              const bounds = container.getBoundingClientRect();
 
               const updateSlider = (clientX: number) => {
-                const relativeX =
-                  ((clientX - bounds.left) / bounds.width) * 100;
+                const relativeX = ((clientX - bounds.left) / bounds.width) * 100;
                 setSliderValue(Math.min(100, Math.max(0, relativeX)));
               };
 
+              try {
+                handle.setPointerCapture(e.pointerId);
+              } catch {
+                // Ignore if pointer capture can't be set (e.g., element detached)
+              }
+
               updateSlider(e.clientX);
 
-              const moveListener = (event: PointerEvent) =>
-                updateSlider(event.clientX);
-              const upListener = (event: PointerEvent) => {
-                e.currentTarget.releasePointerCapture(event.pointerId);
+              const moveListener = (event: PointerEvent) => updateSlider(event.clientX);
+
+              const cleanup = () => {
                 window.removeEventListener("pointermove", moveListener);
                 window.removeEventListener("pointerup", upListener);
                 window.removeEventListener("pointercancel", upListener);
+              };
+
+              const upListener = (event: PointerEvent) => {
+                try {
+                  if (handle.hasPointerCapture && handle.hasPointerCapture(event.pointerId)) {
+                    handle.releasePointerCapture(event.pointerId);
+                  }
+                } catch {
+                  // Ignore if releasing fails
+                }
+                cleanup();
               };
 
               window.addEventListener("pointermove", moveListener);
@@ -525,8 +665,128 @@ export default function ThenNowModal({
           color="text.secondary"
           sx={{ fontStyle: "italic", display: "block", textAlign: "center", mt: 2 }}
         >
-          Use arrow keys (←/→) to adjust slider
+          Use arrow keys (←/→) to adjust slider. Current imagery sourced from Esri World Imagery.
         </Typography>
+
+        {/* Adjustment Controls */}
+        <Accordion sx={{ mt: 3, borderRadius: 2 }} elevation={2}>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Tune />
+              <Typography variant="subtitle2" fontWeight={600}>
+                Fine-Tune Alignment
+              </Typography>
+              <Chip label="Advanced" size="small" color="primary" variant="outlined" />
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Stack spacing={3}>
+              <Alert severity="info" icon={<Info />}>
+                Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
+              </Alert>
+
+              {/* Position Controls */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="body2" fontWeight={600}>Position</Typography>
+                  <ButtonGroup size="small" variant="outlined">
+                    <Button onClick={() => setOffsetY(offsetY - 5)} title="Move Up"><ArrowUpward fontSize="small" /></Button>
+                    <Button onClick={() => setOffsetY(offsetY + 5)} title="Move Down"><ArrowDownward fontSize="small" /></Button>
+                    <Button onClick={() => setOffsetX(offsetX - 5)} title="Move Left"><ArrowBack fontSize="small" /></Button>
+                    <Button onClick={() => setOffsetX(offsetX + 5)} title="Move Right"><ArrowForward fontSize="small" /></Button>
+                  </ButtonGroup>
+                </Stack>
+                <Stack direction="row" spacing={2}>
+                  <Box flex={1}>
+                    <Typography variant="caption" color="text.secondary">X: {offsetX}px</Typography>
+                    <Slider value={offsetX} onChange={(_e, v) => setOffsetX(v as number)} min={-200} max={200} step={1} size="small" />
+                  </Box>
+                  <Box flex={1}>
+                    <Typography variant="caption" color="text.secondary">Y: {offsetY}px</Typography>
+                    <Slider value={offsetY} onChange={(_e, v) => setOffsetY(v as number)} min={-200} max={200} step={1} size="small" />
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Divider />
+
+              {/* Scale Control */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="body2" fontWeight={600}>Scale: {scale.toFixed(2)}x</Typography>
+                  <ButtonGroup size="small" variant="outlined">
+                    <Button onClick={() => setScale(Math.max(0.5, scale - 0.05))} title="Zoom Out"><ZoomOut fontSize="small" /></Button>
+                    <Button onClick={() => setScale(Math.min(2, scale + 0.05))} title="Zoom In"><ZoomIn fontSize="small" /></Button>
+                  </ButtonGroup>
+                </Stack>
+                <Slider value={scale} onChange={(_e, v) => setScale(v as number)} min={0.5} max={2} step={0.01} size="small" />
+              </Box>
+
+              <Divider />
+
+              {/* Rotation Control */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="body2" fontWeight={600}>Rotation: {rotation}°</Typography>
+                  <ButtonGroup size="small" variant="outlined">
+                    <Button onClick={() => setRotation(rotation - 1)} title="Rotate Left"><RotateLeft fontSize="small" /></Button>
+                    <Button onClick={() => setRotation(rotation + 1)} title="Rotate Right"><RotateRight fontSize="small" /></Button>
+                  </ButtonGroup>
+                </Stack>
+                <Slider value={rotation} onChange={(_e, v) => setRotation(v as number)} min={-45} max={45} step={0.1} size="small" />
+              </Box>
+
+              <Divider />
+
+              {/* Opacity Control */}
+              <Box>
+                <Typography variant="body2" fontWeight={600} mb={1}>
+                  <OpacityIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
+                  Opacity: {Math.round(opacity * 100)}%
+                </Typography>
+                <Slider value={opacity} onChange={(_e, v) => setOpacity(v as number)} min={0} max={1} step={0.01} size="small" />
+              </Box>
+
+              <Divider />
+
+              {/* Crop Controls */}
+              <Box>
+                <Typography variant="body2" fontWeight={600} mb={1}>
+                  <Crop sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
+                  Crop Edges (Remove Film Artifacts)
+                </Typography>
+                <Stack spacing={1.5}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Top: {cropTop}%</Typography>
+                    <Slider value={cropTop} onChange={(_e, v) => setCropTop(v as number)} min={0} max={20} step={0.1} size="small" />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Bottom: {cropBottom}%</Typography>
+                    <Slider value={cropBottom} onChange={(_e, v) => setCropBottom(v as number)} min={0} max={20} step={0.1} size="small" />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Left: {cropLeft}%</Typography>
+                    <Slider value={cropLeft} onChange={(_e, v) => setCropLeft(v as number)} min={0} max={20} step={0.1} size="small" />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Right: {cropRight}%</Typography>
+                    <Slider value={cropRight} onChange={(_e, v) => setCropRight(v as number)} min={0} max={20} step={0.1} size="small" />
+                  </Box>
+                </Stack>
+              </Box>
+
+              {/* Reset Button */}
+              <Button
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                onClick={resetAdjustments}
+                fullWidth
+              >
+                Reset All Adjustments
+              </Button>
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
       </>
     );
   };
@@ -607,20 +867,37 @@ export default function ThenNowModal({
                   objectFit: "contain",
                   maxHeight: 400,
                   opacity: imageLoaded ? 1 : 0,
-                  transition: "opacity 0.3s ease-in-out",
+                  transition: "opacity 0.3s ease-in-out, transform 0.2s ease-in-out",
                   bgcolor: "black",
+                  transform: `rotate(${thenRotation}deg)`,
                 }}
               />
             </Box>
-            {photo.SCALE && (
-              <Typography variant="caption" color="text.secondary">
-                Scale: 1:{photo.SCALE.toLocaleString()}
-              </Typography>
-            )}
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              {photo.SCALE && (
+                <Typography variant="caption" color="text.secondary">
+                  Scale: 1:{photo.SCALE.toLocaleString()}
+                </Typography>
+              )}
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="text.secondary">Rotate:</Typography>
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton size="small" onClick={() => setThenRotation(thenRotation - 1)} title="Rotate Left">
+                    <RotateLeft fontSize="small" />
+                  </IconButton>
+                  <Button size="small" onClick={() => setThenRotation(0)} sx={{ minWidth: 40 }}>
+                    {thenRotation}°
+                  </Button>
+                  <IconButton size="small" onClick={() => setThenRotation(thenRotation + 1)} title="Rotate Right">
+                    <RotateRight fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+            </Stack>
           </Stack>
         </Paper>
 
-        {/* Current Map View */}
+        {/* Current View */}
         <Paper sx={{ flex: 1, p: 2, borderRadius: 3 }} elevation={3}>
           <Stack spacing={1.5}>
             <Stack direction="row" spacing={1} alignItems="center">
@@ -632,13 +909,12 @@ export default function ThenNowModal({
               />
               <MapIcon color="action" fontSize="small" />
               <Typography variant="subtitle1" fontWeight={700}>
-                Current Satellite View
+                Current Satellite Imagery
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              Live map showing the same area today
+              High-resolution satellite imagery covering the same footprint.
             </Typography>
-            {/* Map container - always rendered here for side-by-side view */}
             <Box
               sx={{
                 width: "100%",
@@ -646,58 +922,63 @@ export default function ThenNowModal({
                 borderRadius: 2,
                 overflow: "hidden",
                 position: "relative",
-                bgcolor: "grey.100",
+                bgcolor: "grey.900",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              {/* Actual map container DIV */}
-              <Box
-                ref={mapContainerRef}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  position: "absolute",
-                  inset: 0,
-                }}
-              />
-              {!mapReady && !mapError && (
-                <Fade in timeout={300}>
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      bgcolor: "rgba(0,0,0,0.05)",
-                      zIndex: 1,
-                      gap: 1,
-                    }}
-                  >
-                    <CircularProgress />
-                    <Typography variant="body2" color="text.secondary">
-                      Loading map...
+              {nowImageUrl && !nowImageError ? (
+                <Box
+                  component="img"
+                  src={nowImageUrl}
+                  alt="Current satellite imagery"
+                  onLoad={() => setNowImageLoaded(true)}
+                  onError={() => setNowImageError(true)}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    bgcolor: "black",
+                    transition: "transform 0.2s ease-in-out",
+                    transform: `rotate(${nowRotation}deg)`,
+                  }}
+                />
+              ) : (
+                <Stack spacing={1} alignItems="center" color="white" sx={{ textAlign: "center", px: 3 }}>
+                  <CircularProgress color="inherit" />
+                  <Typography variant="body2" fontWeight={600}>
+                    {nowImageError
+                      ? "Unable to load satellite imagery for this area."
+                      : "Loading current satellite imagery"}
+                  </Typography>
+                  {!nowImageError && (
+                    <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                      {loadingProgress}
                     </Typography>
-                  </Box>
-                </Fade>
-              )}
-              {mapError && (
-                <Alert severity="error" sx={{ m: 2 }}>
-                  Failed to load map. Please try again.
-                </Alert>
+                  )}
+                </Stack>
               )}
             </Box>
-            {!mapError && (
-              <Stack spacing={1}>
-                <Alert severity="info" icon={<Info />}>
-                  The green highlighted area shows the footprint of the historical
-                  photo
-                </Alert>
-                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                  Satellite imagery (2020-2024) from Esri World Imagery
-                </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                Data source: Esri World Imagery service.
+              </Typography>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="text.secondary">Rotate:</Typography>
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton size="small" onClick={() => setNowRotation(nowRotation - 1)} title="Rotate Left">
+                    <RotateLeft fontSize="small" />
+                  </IconButton>
+                  <Button size="small" onClick={() => setNowRotation(0)} sx={{ minWidth: 40 }}>
+                    {nowRotation}°
+                  </Button>
+                  <IconButton size="small" onClick={() => setNowRotation(nowRotation + 1)} title="Rotate Right">
+                    <RotateRight fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
               </Stack>
-            )}
+            </Stack>
           </Stack>
         </Paper>
       </Stack>
@@ -717,9 +998,36 @@ export default function ThenNowModal({
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1 }}>
         <Stack spacing={0.5}>
-          <Typography variant="h5" fontWeight={700}>
-            Then vs Now
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="h5" fontWeight={700}>
+              Then vs Now
+            </Typography>
+            <Tooltip
+              title={
+                <Box sx={{ p: 0.5 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Note on alignment:</strong>
+                  </Typography>
+                  <Typography variant="caption" component="div">
+                    The historical photo and current satellite imagery may not align perfectly because:
+                  </Typography>
+                  <Typography variant="caption" component="ul" sx={{ mt: 0.5, pl: 2 }}>
+                    <li>Historical photos used different projection systems</li>
+                    <li>Camera angles and perspectives vary</li>
+                    <li>Terrain changes over time affect georeferencing</li>
+                    <li>Modern satellite imagery uses different capture methods</li>
+                  </Typography>
+                  <Typography variant="caption" sx={{ mt: 1, display: "block", fontStyle: "italic" }}>
+                    Use this feature to compare general area changes rather than precise measurements.
+                  </Typography>
+                </Box>
+              }
+              arrow
+              placement="bottom-start"
+            >
+              <InfoOutlined sx={{ fontSize: 20, color: "text.secondary", cursor: "help" }} />
+            </Tooltip>
+          </Stack>
           <Typography variant="body2" color="text.secondary">
             Compare historical aerial photography with current satellite imagery
           </Typography>
@@ -749,14 +1057,18 @@ export default function ThenNowModal({
         <Button onClick={onClose} color="inherit">
           Close
         </Button>
-        {photo && (
+        {photo && photo.DOWNLOAD_LINK ? (
           <Button
             variant="contained"
-            href={photo.DOWNLOAD_LINK || undefined}
+            component="a"
+            href={photo.DOWNLOAD_LINK}
             target="_blank"
             rel="noopener noreferrer"
-            disabled={!photo.DOWNLOAD_LINK}
           >
+            Download Original TIFF
+          </Button>
+        ) : (
+          <Button variant="contained" disabled>
             Download Original TIFF
           </Button>
         )}

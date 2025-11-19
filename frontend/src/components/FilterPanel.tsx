@@ -10,7 +10,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import {
@@ -42,10 +41,11 @@ interface FilterPanelProps {
   onFiltersChange: (filters: Filters) => void;
   availableScales?: number[]; // Scales available in current result set
   dateRange?: { min: number; max: number } | null; // Min/max years from search results
+  showQuickFilters?: boolean;
 }
 
 // Filter presets
-const FILTER_PRESETS = [
+export const FILTER_PRESETS = [
   {
     id: "historical",
     label: "Historical",
@@ -122,9 +122,14 @@ const SCALE_CATEGORIES = [
   },
 ];
 
-export default function FilterPanel({ filters, onFiltersChange, availableScales = [], dateRange = null }: FilterPanelProps) {
+export default function FilterPanel({
+  filters,
+  onFiltersChange,
+  availableScales = [],
+  dateRange = null,
+  showQuickFilters = true,
+}: FilterPanelProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Group available scales into categories
   const scaleCategories = React.useMemo(() => {
@@ -315,55 +320,59 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
   };
 
   return (
-    <Box sx={{ mb: 1 }}>
+    <Box sx={{ mb: 1.5 }}>
       {/* Filter Presets */}
-      <Box sx={{ mb: 1 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 600,
-            mb: 0.5,
-            display: "block",
-            fontSize: "0.7rem",
-            color: "text.secondary",
-          }}
-        >
-          QUICK FILTERS
-        </Typography>
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-          {FILTER_PRESETS.map((preset) => {
-            const Icon = preset.icon;
-            return (
-              <Tooltip key={preset.id} title={preset.description} arrow placement="top">
-                <Chip
-                  icon={<Icon sx={{ fontSize: 14 }} />}
-                  label={preset.label}
-                  onClick={() => applyPreset(preset.id)}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    height: 26,
-                    fontSize: "0.7rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
-                      transform: "translateY(-1px)",
-                    },
-                  }}
-                />
-              </Tooltip>
-            );
-          })}
-        </Stack>
-      </Box>
+      {showQuickFilters && (
+        <Box sx={{ mb: 1.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              mb: 0.75,
+              display: "block",
+              fontSize: "0.7rem",
+              color: "text.secondary",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            Quick Filters
+          </Typography>
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+            {FILTER_PRESETS.map((preset) => {
+              const Icon = preset.icon;
+              return (
+                <Tooltip key={preset.id} title={preset.description} arrow placement="top">
+                  <Chip
+                    icon={<Icon sx={{ fontSize: 14 }} />}
+                    label={preset.label}
+                    onClick={() => applyPreset(preset.id)}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      height: 26,
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease-in-out",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                        transform: "translateY(-1px)",
+                      },
+                    }}
+                  />
+                </Tooltip>
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
 
-      {/* Active Filters Chips - More compact */}
+      {/* Active Filters Chips - Compact display */}
       {hasActiveFilters && (
-        <Box sx={{ mb: 0.5 }}>
+        <Box sx={{ mb: 1 }}>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
             {hasDateFilter && (
               <Chip
@@ -431,39 +440,55 @@ export default function FilterPanel({ filters, onFiltersChange, availableScales 
         </Box>
       )}
 
-      {/* Compact Filter Panel - Collapsible on mobile */}
+      {/* Compact Filter Panel - Collapsible by default */}
       <Accordion
-        defaultExpanded={!isMobile}
-        elevation={2}
+        defaultExpanded={false}
+        elevation={1}
         sx={{
           overflow: "hidden",
           background: (theme) =>
-            theme.palette.mode === "dark" ? "#2d3748" : "#ffffff",
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
           border: (theme) =>
-            theme.palette.mode === "dark" ? "1px solid #4a5568" : "1px solid #e2e8f0",
+            theme.palette.mode === "dark" ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(0, 0, 0, 0.08)",
           '&:before': {
             display: 'none',
           },
+          borderRadius: 2,
         }}
       >
         <AccordionSummary
           expandIcon={<ExpandMore />}
           sx={{
-            minHeight: 48,
+            minHeight: 40,
+            px: 1.5,
             '& .MuiAccordionSummary-content': {
-              margin: '12px 0',
+              margin: '8px 0',
             },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FilterList sx={{ fontSize: 20, color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              Filters
+            <FilterList sx={{ fontSize: 18, color: 'primary.main' }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Advanced Filters
             </Typography>
+            {hasActiveFilters && (
+              <Chip
+                label={[
+                  hasDateFilter && "Date",
+                  hasScaleFilter && "Scale",
+                  hasLayerFilter && "Types",
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+                size="small"
+                color="primary"
+                sx={{ height: 20, fontSize: "0.65rem", ml: 0.5 }}
+              />
+            )}
           </Box>
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 1 }}>
-          <Stack spacing={1}>
+        <AccordionDetails sx={{ p: 1.5, pt: 0 }}>
+          <Stack spacing={1.5}>
             {/* Layer Type Filter - Only show after search is performed */}
             {dateRange && (
               <Box>

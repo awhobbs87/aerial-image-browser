@@ -23,7 +23,7 @@ import { Checkbox } from "@mui/material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
-import PhotoPreviewModal from "./PhotoPreviewModal";
+import PhotoViewer from "./PhotoViewer";
 
 interface PhotoTimelineProps {
   photos: EnhancedPhoto[];
@@ -64,7 +64,7 @@ function TimelineItem({
 
   return (
     <>
-      <PhotoPreviewModal photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <PhotoViewer photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
       <Paper
         elevation={2}
         sx={{

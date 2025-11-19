@@ -158,6 +158,7 @@ export default function MapView({
 
         {/* Mobile zoom controls */}
         <MapZoomControls searchCenter={searchCenter} />
+
       </MapContainer>
     </Box>
   );

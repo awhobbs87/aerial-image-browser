@@ -16,7 +16,18 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { GridView, Map as MapIcon, ExpandLess, Search as SearchIcon, Timeline } from "@mui/icons-material";
+import { 
+  GridView, 
+  Map as MapIcon, 
+  ExpandLess, 
+  Search as SearchIcon, 
+  Timeline, 
+  Menu, 
+  ChevronLeft, 
+  FilterList, 
+  History,
+  PhotoLibrary,
+} from "@mui/icons-material";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
@@ -24,17 +35,20 @@ import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
 import PhotoTimeline from "./components/PhotoTimeline";
-import FilterPanel, { type Filters } from "./components/FilterPanel";
+import FilterPanel, { type Filters, FILTER_PRESETS } from "./components/FilterPanel";
+import MobileFilterSheet from "./components/MobileFilterSheet";
 import FavoritesModal from "./components/FavoritesModal";
 import BackToTop from "./components/BackToTop";
 import LoadingBar from "./components/LoadingBar";
 import ComparisonModal from "./components/ComparisonModal";
-import ComparisonTray from "./components/ComparisonTray";
+import ComparisonFAB from "./components/ComparisonFAB";
 import ThenNowModal from "./components/ThenNowModal";
+import ChangelogModal from "./components/ChangelogModal";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
+import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "2.0.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -54,7 +68,7 @@ const queryClient = new QueryClient({
 });
 
 type ViewMode = "grid" | "map";
-type ResultsViewMode = "grid" | "timeline";
+type ResultsViewMode = "grid" | "timeline" | "gallery";
 type ThemeMode = "light" | "dark" | "system";
 const getPhotoKey = (photo: EnhancedPhoto) => `${photo.layerId}-${photo.OBJECTID}`;
 
@@ -98,8 +112,9 @@ function AppContent() {
   const [visibleGridPhotos, setVisibleGridPhotos] = useState<EnhancedPhoto[]>([]);
   const [searchCenter, setSearchCenter] = useState<[number, number] | null>(null);
   const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(40); // percentage
-  const [isResizing, setIsResizing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
   const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
@@ -120,7 +135,11 @@ function AppContent() {
   }, [themeMode]);
 
   // Use React Query hook for fetching photos
-  const { data, isLoading, error } = useSearchLocation(searchParams);
+  const {
+    data,
+    isLoading,
+    error,
+  } = useSearchLocation(searchParams);
 
   // Extract available scales from fetched photos
   const availableScales = useMemo(() => {
@@ -149,6 +168,18 @@ function AppContent() {
       max: Math.max(...years),
     };
   }, [data?.photos]);
+
+  // Check if filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      filters.startDate !== null ||
+      filters.endDate !== null ||
+      filters.selectedScales.length > 0 ||
+      !filters.layerTypes.aerial ||
+      !filters.layerTypes.ortho ||
+      !filters.layerTypes.digital
+    );
+  }, [filters]);
 
   // Filter photos (client-side filtering for real-time updates)
   const filteredPhotos = useMemo(() => {
@@ -299,47 +330,31 @@ function AppContent() {
     setViewMode("map");
   }, []);
 
-  const handleMapClick = useCallback(
-    (lat: number, lon: number) => {
-      // Update search when clicking on map
-      handleSearch(lat, lon);
-    },
-    [handleSearch]
-  );
+  const handleMapClick = useCallback((lat: number, lon: number) => {
+    handleSearch(lat, lon);
+  }, [handleSearch]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
   }, []);
 
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
+  const handleQuickFilterPreset = useCallback(
+    (presetId: string) => {
+      const preset = FILTER_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return;
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing) return;
-      e.preventDefault();
-
-      const newWidth = (e.clientX / window.innerWidth) * 100;
-      // Constrain between 25% and 60%
-      if (newWidth >= 25 && newWidth <= 60) {
-        setSidebarWidth(newWidth);
+      let selectedScales = preset.filters.selectedScales;
+      if (presetId === "high-detail") {
+        selectedScales = availableScales.filter((scale) => scale <= 5000);
       }
-    },
-    [isResizing]
-  );
 
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+      setFilters({
+        ...preset.filters,
+        selectedScales,
+      });
+    },
+    [availableScales]
+  );
 
   useEffect(() => {
     if (!data?.photos) {
@@ -405,10 +420,6 @@ function AppContent() {
           display: "flex",
           flexDirection: "column",
           minHeight: "100vh",
-          ...(isResizing && {
-            userSelect: 'none',
-            cursor: 'col-resize',
-          }),
         }}
       >
         <AppBar
@@ -428,44 +439,85 @@ function AppContent() {
             minHeight: 0, // Important for flexbox scrolling
           }}
         >
+          {/* Toggle button - Desktop only, always visible */}
+          <IconButton
+            onClick={handleToggleSidebar}
+            sx={{
+              display: { xs: "none", md: "flex" },
+              position: "absolute",
+              left: sidebarOpen ? 460 : 8,
+              top: 80,
+              zIndex: 1001,
+              bgcolor: "background.paper",
+              border: 1,
+              borderColor: "divider",
+              boxShadow: 2,
+              transition: "left 0.3s ease-in-out",
+              "&:hover": {
+                bgcolor: "action.hover",
+              },
+            }}
+            size="small"
+          >
+            {sidebarOpen ? <ChevronLeft /> : <Menu />}
+          </IconButton>
+
           {/* Left Sidebar - Search, Filters, Results */}
           <Box
             sx={{
-              width: { xs: "100%", md: `${sidebarWidth}%` },
-              display: "flex",
+              width: { 
+                xs: "100%", 
+                md: sidebarOpen ? "480px" : 0 
+              },
+              display: { 
+                xs: "block", 
+                md: sidebarOpen ? "flex" : "none" 
+              },
               flexDirection: "column",
-              borderRight: { md: 1 },
+              borderRight: { md: sidebarOpen ? 1 : 0 },
               borderColor: { md: "divider" },
               overflowY: "auto",
-              maxHeight: { xs: "none", md: "calc(100vh - 64px)" }, // 64px = AppBar height
+              overflowX: "hidden",
+              maxHeight: { xs: "none", md: "calc(100vh - 64px)" },
               position: "relative",
+              transition: "width 0.3s ease-in-out",
+              flexShrink: 0,
+              overscrollBehavior: "contain", // Prevent scroll chaining
+              WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+            }}
+            onWheel={(e) => {
+              // Prevent page scroll when scrolling sidebar
+              const target = e.currentTarget;
+              const isScrolling = target.scrollHeight > target.clientHeight;
+              const isAtTop = target.scrollTop === 0;
+              const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 1;
+              
+              if (isScrolling) {
+                // If we're scrolling within the sidebar, stop propagation
+                if (!(isAtTop && e.deltaY < 0) && !(isAtBottom && e.deltaY > 0)) {
+                  e.stopPropagation();
+                }
+              }
+            }}
+            onTouchMove={(e) => {
+              // Prevent body scroll on touch devices when scrolling sidebar
+              const target = e.currentTarget;
+              if (target.scrollHeight > target.clientHeight) {
+                e.stopPropagation();
+              }
             }}
           >
-            {/* Resize handle */}
-            <Box
-              onMouseDown={handleMouseDown}
-              sx={{
-                display: { xs: "none", md: "block" },
-                position: "absolute",
-                right: -2,
-                top: 0,
-                bottom: 0,
-                width: 4,
-                cursor: "col-resize",
-                bgcolor: "transparent",
-                zIndex: 1001,
-                userSelect: 'none',
-                "&:hover": {
-                  bgcolor: "primary.main",
-                  opacity: 0.5,
-                },
-                ...(isResizing && {
-                  bgcolor: "primary.main",
-                  opacity: 0.7,
-                }),
+            <Box 
+              sx={{ 
+                py: 2, 
+                px: { xs: 2, md: 3 }, 
+                maxWidth: "100%", 
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 0,
               }}
-            />
-            <Container maxWidth="lg" sx={{ py: 2, flexGrow: 1 }}>
+            >
               {/* Search Bar - Mobile only in sidebar, Desktop in floating box on map */}
               <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
                 <SearchBar onSearch={handleSearch} loading={isLoading} />
@@ -473,13 +525,117 @@ function AppContent() {
 
               {searchParams && (
                 <>
-                  <Box sx={{ mb: 2 }}>
+                  {/* Desktop Filter Panel */}
+                  <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
                     <FilterPanel
                       filters={filters}
                       onFiltersChange={setFilters}
                       availableScales={availableScales}
                       dateRange={dateRange}
+                      showQuickFilters={false}
                     />
+                  </Box>
+
+                  {/* Mobile Filter Button */}
+                  <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setMobileFilterOpen(true)}
+                      startIcon={<FilterList />}
+                      sx={{
+                        py: 1.5,
+                        fontSize: "0.9375rem",
+                        fontWeight: 600,
+                        minHeight: 48, // Better touch target
+                      }}
+                    >
+                      Filters
+                      {hasActiveFilters && (
+                        <Chip
+                          label="Active"
+                          size="small"
+                          color="primary"
+                          sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+                        />
+                      )}
+                    </Button>
+                  </Box>
+
+                  {/* Comparison Tools */}
+                  <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
+                    <Box
+                      sx={{
+                        border: (theme) => `1px solid ${theme.palette.primary.main}55`,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(16, 185, 129, 0.08)"
+                            : "rgba(16, 185, 129, 0.04)",
+                        borderRadius: 1.5,
+                        p: 1.25,
+                      }}
+                    >
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        justifyContent="space-between"
+                      >
+                        <Stack spacing={0.5}>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={700}
+                            color="primary.main"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            <CompareArrowsIcon fontSize="small" />
+                            Comparison Tools
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ lineHeight: 1.3, fontSize: "0.72rem" }}
+                          >
+                            Select photos below to compare or run Then vs Now
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<CompareArrowsIcon fontSize="inherit" />}
+                            disabled={comparisonSelection.length < 2}
+                            onClick={handleOpenComparisonModal}
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 110,
+                            }}
+                          >
+                            Compare ({comparisonSelection.length}/2)
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            size="small"
+                            disabled={comparisonSelection.length !== 1}
+                            onClick={handleOpenThenNowModal}
+                            startIcon={<History fontSize="inherit" />}
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 110,
+                            }}
+                          >
+                            Then vs Now
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Box>
                   </Box>
 
                   {/* Mobile-only View Toggle */}
@@ -507,93 +663,78 @@ function AppContent() {
                   {/* Results Grid (always visible on desktop, conditional on mobile) */}
                   <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
                     {filteredPhotos.length > 0 && (
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={2}
-                        alignItems={{ xs: "flex-start", sm: "center" }}
-                        justifyContent="space-between"
-                        sx={{ mb: 2 }}
-                      >
-                        <ToggleButtonGroup
-                          value={resultsViewMode}
-                          exclusive
-                          onChange={handleResultsViewModeChange}
-                          size="small"
-                          aria-label="results view mode"
-                        >
-                          <ToggleButton value="grid" aria-label="grid results view">
-                            <GridView sx={{ mr: 1 }} fontSize="small" />
-                            Grid
-                          </ToggleButton>
-                          <ToggleButton value="timeline" aria-label="timeline results view">
-                            <Timeline sx={{ mr: 1 }} fontSize="small" />
-                            Timeline
-                          </ToggleButton>
-                        </ToggleButtonGroup>
-                        <Box
-                          sx={{
-                            flex: 1,
-                            width: "100%",
-                            p: 2,
-                            borderRadius: 2,
-                            border: (theme) => `2px solid ${theme.palette.primary.main}`,
-                            bgcolor: (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "rgba(16, 185, 129, 0.08)"
-                                : "rgba(16, 185, 129, 0.04)",
-                          }}
-                        >
-                          <Stack spacing={1.5}>
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight={700}
-                              color="primary.main"
-                              sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                            >
-                              <CompareArrowsIcon fontSize="small" />
-                              Comparison Tools
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-                              Select photos from the grid below to compare or view changes over time
-                            </Typography>
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="large"
-                                startIcon={<CompareArrowsIcon />}
-                                disabled={comparisonSelection.length === 0}
-                                onClick={handleOpenComparisonModal}
-                                sx={{
-                                  fontWeight: 700,
-                                  boxShadow: 3,
-                                  "&:hover": {
-                                    boxShadow: 6,
-                                  },
-                                }}
-                              >
-                                Compare Photos ({comparisonSelection.length}/2)
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="secondary"
-                                size="large"
-                                disabled={comparisonSelection.length !== 1}
-                                onClick={handleOpenThenNowModal}
-                                sx={{
-                                  fontWeight: 700,
-                                  boxShadow: 3,
-                                  "&:hover": {
-                                    boxShadow: 6,
-                                  },
-                                }}
-                              >
-                                Then vs Now
-                              </Button>
-                            </Stack>
+                      <>
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                          <ToggleButtonGroup
+                            value={resultsViewMode}
+                            exclusive
+                            onChange={handleResultsViewModeChange}
+                            size="small"
+                            aria-label="results view mode"
+                          >
+                            <ToggleButton value="grid" aria-label="grid results view">
+                              <GridView sx={{ mr: 0.5 }} fontSize="small" />
+                              Grid
+                            </ToggleButton>
+                            <ToggleButton value="timeline" aria-label="timeline results view">
+                              <Timeline sx={{ mr: 0.5 }} fontSize="small" />
+                              Timeline
+                            </ToggleButton>
+                            <ToggleButton value="gallery" aria-label="gallery results view">
+                              <PhotoLibrary sx={{ mr: 0.5 }} fontSize="small" />
+                              Gallery
+                            </ToggleButton>
+                          </ToggleButtonGroup>
+                        </Box>
+
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 600,
+                              mb: 0.75,
+                              display: "block",
+                              fontSize: "0.7rem",
+                              color: "text.secondary",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                            }}
+                          >
+                            Quick Filters
+                          </Typography>
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                            {FILTER_PRESETS.map((preset) => {
+                              const Icon = preset.icon;
+                              return (
+                                <Tooltip key={preset.id} title={preset.description} arrow placement="top">
+                                  <Chip
+                                    icon={<Icon sx={{ fontSize: 14 }} />}
+                                    label={preset.label}
+                                    onClick={() => handleQuickFilterPreset(preset.id)}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                      height: 26,
+                                      fontSize: "0.7rem",
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                      transition: "all 0.2s ease-in-out",
+                                      "&:hover": {
+                                        borderColor: "primary.main",
+                                        bgcolor: (theme) =>
+                                          theme.palette.mode === "dark"
+                                            ? "rgba(0, 77, 64, 0.1)"
+                                            : "rgba(0, 77, 64, 0.05)",
+                                        transform: "translateY(-1px)",
+                                      },
+                                    }}
+                                  />
+                                </Tooltip>
+                              );
+                            })}
                           </Stack>
                         </Box>
-                      </Stack>
+                      </>
                     )}
 
                     {comparisonSelection.length > 0 && (
@@ -617,7 +758,18 @@ function AppContent() {
                       </Stack>
                     )}
 
-                    {resultsViewMode === "grid" ? (
+                    {resultsViewMode === 'gallery' ? (
+                      <PhotoViewer
+                        photos={filteredPhotos}
+                        open
+                        onClose={() => setResultsViewMode('grid')} // Go back to grid when closing
+                        initialIndex={0}
+                        favorites={favorites}
+                        onFavorite={handleFavorite}
+                        selection={comparisonSelectionKeys}
+                        onToggleSelect={handleToggleComparisonSelection}
+                      />
+                    ) : resultsViewMode === "grid" ? (
                       <PhotoGrid
                         photos={filteredPhotos}
                         loading={isLoading}
@@ -627,7 +779,6 @@ function AppContent() {
                         onShowOnMap={handlePhotoSelect}
                         onPhotoHover={setHoveredPhoto}
                         onVisiblePhotosChange={setVisibleGridPhotos}
-                        sidebarWidth={sidebarWidth}
                         selection={comparisonSelectionKeys}
                         onToggleSelect={handleToggleComparisonSelection}
                       />
@@ -652,17 +803,21 @@ function AppContent() {
                 <Box
                   sx={{
                     textAlign: "center",
-                    py: 6,
-                    px: 3,
+                    py: { xs: 4, md: 5 },
+                    px: { xs: 2, md: 2.5 },
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
                   {/* Hero Icon */}
                   <Box
                     sx={{
-                      width: 120,
-                      height: 120,
+                      width: { xs: 100, md: 80 },
+                      height: { xs: 100, md: 80 },
                       mx: "auto",
-                      mb: 3,
+                      mb: { xs: 2.5, md: 2 },
                       borderRadius: "50%",
                       background: (theme) =>
                         theme.palette.mode === "dark"
@@ -675,15 +830,16 @@ function AppContent() {
                         theme.palette.mode === "dark" ? "2px solid rgba(0, 77, 64, 0.3)" : "2px solid rgba(0, 77, 64, 0.2)",
                     }}
                   >
-                    <SearchIcon sx={{ fontSize: 60, color: "primary.main" }} />
+                    <SearchIcon sx={{ fontSize: { xs: 50, md: 40 }, color: "primary.main" }} />
                   </Box>
 
                   {/* Welcome Text */}
                   <Typography
-                    variant="h4"
+                    variant="h5"
                     gutterBottom
                     sx={{
                       fontWeight: 700,
+                      fontSize: { xs: "1.5rem", md: "1.25rem" },
                       background: (theme) =>
                         theme.palette.mode === "dark"
                           ? "linear-gradient(135deg, #39796b 0%, #10b981 100%)"
@@ -691,16 +847,22 @@ function AppContent() {
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
-                      mb: 2,
+                      mb: 1.5,
+                      px: 1,
                     }}
                   >
                     Explore Tasmania's Aerial History
                   </Typography>
 
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     color="text.secondary"
-                    sx={{ maxWidth: 600, mx: "auto", mb: 4, lineHeight: 1.7 }}
+                    sx={{ 
+                      mb: 3,
+                      lineHeight: 1.6,
+                      px: 1,
+                      fontSize: { xs: "0.9375rem", md: "0.875rem" },
+                    }}
                   >
                     Discover decades of aerial photography from across Tasmania. Search by location, filter by
                     date and scale, and explore the landscape through time.
@@ -709,65 +871,79 @@ function AppContent() {
                   {/* Quick Start Cards */}
                   <Box
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-                      gap: 2,
-                      maxWidth: 800,
-                      mx: "auto",
-                      mt: 4,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                      width: "100%",
+                      mt: 2,
                     }}
                   >
                     {[
                       {
-                        icon: <SearchIcon sx={{ fontSize: 32 }} />,
+                        icon: <SearchIcon sx={{ fontSize: { xs: 28, md: 24 } }} />,
                         title: "Search Any Location",
                         description: "Enter coordinates or search by place name",
                       },
                       {
-                        icon: <MapIcon sx={{ fontSize: 32 }} />,
+                        icon: <MapIcon sx={{ fontSize: { xs: 28, md: 24 } }} />,
                         title: "Explore on Map",
                         description: "Click anywhere on the map to discover photos",
                       },
                       {
-                        icon: <GridView sx={{ fontSize: 32 }} />,
+                        icon: <GridView sx={{ fontSize: { xs: 28, md: 24 } }} />,
                         title: "Filter & Sort",
                         description: "Refine results by date, scale, and image type",
                       },
                     ].map((feature, index) => (
                       <Paper
                         key={index}
-                        elevation={2}
+                        elevation={1}
                         sx={{
-                          p: 3,
+                          p: { xs: 2.5, md: 2 },
                           textAlign: "center",
-                          transition: "all 0.3s ease",
+                          transition: "all 0.2s ease",
                           cursor: "default",
-                          borderRadius: 3,
+                          borderRadius: 2,
                           border: (theme) =>
                             theme.palette.mode === "dark"
-                              ? "1px solid rgba(255, 255, 255, 0.1)"
-                              : "1px solid rgba(0, 0, 0, 0.08)",
+                              ? "1px solid rgba(255, 255, 255, 0.08)"
+                              : "1px solid rgba(0, 0, 0, 0.06)",
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.03)"
+                              : "rgba(0, 0, 0, 0.02)",
                           "&:hover": {
-                            transform: "translateY(-4px)",
+                            transform: "translateY(-2px)",
                             boxShadow: (theme) =>
                               theme.palette.mode === "dark"
-                                ? "0 12px 24px rgba(0, 0, 0, 0.5)"
-                                : "0 12px 24px rgba(0, 77, 64, 0.15)",
+                                ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+                                : "0 4px 12px rgba(0, 77, 64, 0.1)",
                           },
                         }}
                       >
                         <Box
                           sx={{
                             color: "primary.main",
-                            mb: 1.5,
+                            mb: 1,
+                            display: "flex",
+                            justifyContent: "center",
                           }}
                         >
                           {feature.icon}
                         </Box>
-                        <Typography variant="h6" gutterBottom fontWeight={600} fontSize="0.95rem">
+                        <Typography 
+                          variant="subtitle2" 
+                          gutterBottom 
+                          fontWeight={600} 
+                          sx={{ fontSize: { xs: "0.9rem", md: "0.85rem" }, mb: 0.5 }}
+                        >
                           {feature.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" fontSize="0.85rem">
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          sx={{ fontSize: { xs: "0.8rem", md: "0.75rem" }, lineHeight: 1.4 }}
+                        >
                           {feature.description}
                         </Typography>
                       </Paper>
@@ -775,24 +951,37 @@ function AppContent() {
                   </Box>
 
                   {/* Popular locations hint */}
-                  <Box sx={{ mt: 5 }}>
-                    <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                  <Box sx={{ mt: { xs: 4, md: 3 }, width: "100%" }}>
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      display="block" 
+                      mb={1.5}
+                      sx={{ fontSize: { xs: "0.75rem", md: "0.7rem" } }}
+                    >
                       Popular locations to start:
                     </Typography>
-                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
+                    <Box sx={{ display: "flex", gap: 0.75, justifyContent: "center", flexWrap: "wrap" }}>
                       {["Hobart", "Launceston", "Devonport", "Burnie"].map((city) => (
                         <Chip
                           key={city}
                           label={city}
                           size="small"
                           variant="outlined"
+                          onClick={() => {
+                            // Quick location search - you can implement this later
+                            console.log("Search for:", city);
+                          }}
                           sx={{
-                            fontSize: "0.75rem",
+                            fontSize: { xs: "0.7rem", md: "0.65rem" },
+                            height: { xs: 28, md: 24 },
                             cursor: "pointer",
+                            transition: "all 0.2s ease",
                             "&:hover": {
                               borderColor: "primary.main",
                               bgcolor: (theme) =>
-                                theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                                theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.15)" : "rgba(0, 77, 64, 0.08)",
+                              transform: "scale(1.05)",
                             },
                           }}
                         />
@@ -801,13 +990,14 @@ function AppContent() {
                   </Box>
                 </Box>
               )}
-            </Container>
+            </Box>
           </Box>
 
           {/* Right Side - Persistent Map (desktop only, or mobile when map mode active) */}
           <Box
             sx={{
-              width: { xs: "100%", md: `${100 - sidebarWidth}%` },
+              width: { xs: "100%", md: sidebarOpen ? "calc(100% - 480px)" : "100%" },
+              transition: "width 0.3s ease-in-out",
               display: {
                 xs: searchParams && viewMode === "map" ? "block" : "none",
                 md: "block", // Always show on desktop to contain floating search
@@ -838,31 +1028,30 @@ function AppContent() {
               >
                 <SearchBar onSearch={handleSearch} loading={isLoading} />
               </Box>
-              <Tooltip title={searchBoxExpanded ? "Hide search" : "Show search"} placement="left">
-                <IconButton
-                  onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
-                  sx={{
-                    position: "absolute",
-                    bottom: -48,
-                    right: 8,
-                    bgcolor: searchBoxExpanded ? "background.paper" : "primary.main",
-                    color: searchBoxExpanded ? "text.primary" : "primary.contrastText",
-                    boxShadow: 3,
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    "&:hover": {
-                      bgcolor: "primary.main",
-                      color: "primary.contrastText",
-                      boxShadow: 6,
-                      transform: "scale(1.05)",
-                    },
-                    transition: "all 0.2s ease-in-out",
-                  }}
-                  size="medium"
-                  aria-label={searchBoxExpanded ? "Hide search" : "Show search"}
-                >
-                  {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
-                </IconButton>
-              </Tooltip>
+              <Stack direction="row" spacing={1} sx={{ position: "absolute", bottom: -48, right: 8 }}>
+                <Tooltip title={searchBoxExpanded ? "Hide search" : "Show search"} placement="left">
+                  <IconButton
+                    onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
+                    sx={{
+                      bgcolor: searchBoxExpanded ? "background.paper" : "primary.main",
+                      color: searchBoxExpanded ? "text.primary" : "primary.contrastText",
+                      boxShadow: 3,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      "&:hover": {
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                        boxShadow: 6,
+                        transform: "scale(1.05)",
+                      },
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    size="medium"
+                    aria-label={searchBoxExpanded ? "Hide search" : "Show search"}
+                  >
+                    {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             </Box>
 
             {searchParams && (
@@ -903,7 +1092,7 @@ function AppContent() {
           </Box>
         </Box>
 
-        {/* Version Display - Subtle footer */}
+        {/* Version Display - Clickable to show changelog */}
         <Box
           sx={{
             position: "fixed",
@@ -914,15 +1103,18 @@ function AppContent() {
         >
           <Typography
             variant="caption"
+            onClick={() => setChangelogOpen(true)}
             sx={{
               fontSize: "0.65rem",
               color: "text.disabled",
               opacity: 0.5,
               fontWeight: 500,
               userSelect: "none",
+              cursor: "pointer",
               transition: "opacity 0.2s ease-in-out",
               "&:hover": {
-                opacity: 0.8,
+                opacity: 1,
+                color: "primary.main",
               },
             }}
           >
@@ -948,9 +1140,9 @@ function AppContent() {
       {/* Back to Top Button */}
       <BackToTop />
 
-      <ComparisonTray
+      <ComparisonFAB
         photos={comparisonSelection}
-        onOpen={handleOpenComparisonModal}
+        onOpenComparison={handleOpenComparisonModal}
         onOpenThenNow={handleOpenThenNowModal}
         onRemove={handleRemoveComparisonPhoto}
         onClear={handleClearComparisonSelection}
@@ -971,6 +1163,19 @@ function AppContent() {
         photo={primaryComparisonPhoto}
         onClose={() => setThenNowModalOpen(false)}
       />
+
+      {/* Mobile Filter Sheet */}
+      <MobileFilterSheet
+        open={mobileFilterOpen}
+        onClose={() => setMobileFilterOpen(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+        availableScales={availableScales}
+        dateRange={dateRange}
+      />
+
+      {/* Changelog Modal */}
+      <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </ThemeProvider>
   );
 }
