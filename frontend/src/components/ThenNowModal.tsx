@@ -398,17 +398,29 @@ useEffect(() => {
           </Box>
           
           {/* Fine-Tune Alignment Controls - Desktop only above image */}
-          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+          <Accordion 
+            className="rounded-xl"
+            sx={{ 
+              borderRadius: 2,
+              '&:before': {
+                display: 'none',
+              },
+            }} 
+            elevation={1}
+          >
+            <AccordionSummary 
+              expandIcon={<ExpandMore />}
+              className="px-4 py-2"
+            >
               <Stack direction="row" spacing={1} alignItems="center">
                 <Tune />
-                <Typography variant="subtitle2" fontWeight={600}>
+                <Typography variant="subtitle2" className="font-semibold">
                   Fine-Tune Alignment
                 </Typography>
                 <Chip label="Advanced" size="small" color="primary" variant="outlined" />
               </Stack>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails className="px-4 py-3">
               <Stack spacing={3}>
                 <Alert severity="info" icon={<Info />}>
                   Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
@@ -642,41 +654,31 @@ useEffect(() => {
             />
           </Box>
 
-          {/* Photo labels */}
+          {/* Date overlays - Tailwind classes */}
           {imageLoaded && nowImageLoaded && !nowImageError && (
             <Fade in timeout={500}>
               <Box>
-                <Chip
-                  label={`THEN (${photo.dateFormatted || "Unknown"})`}
-                  size="small"
+                <Box
+                  className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10"
                   sx={{
-                    position: "absolute",
-                    bottom: 16,
-                    left: 16,
-                    zIndex: 4,
-                    bgcolor: "rgba(0,0,0,0.7)",
-                    color: "white",
-                    backdropFilter: "blur(8px)",
+                    backdropFilter: "blur(4px)",
                   }}
-                />
-                <Chip
-                  label="NOW (Satellite)"
-                  size="small"
+                >
+                  THEN ({photo.dateFormatted || "Unknown"})
+                </Box>
+                <Box
+                  className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10"
                   sx={{
-                    position: "absolute",
-                    bottom: 16,
-                    right: 16,
-                    zIndex: 4,
-                    bgcolor: "rgba(0,0,0,0.7)",
-                    color: "white",
-                    backdropFilter: "blur(8px)",
+                    backdropFilter: "blur(4px)",
                   }}
-                />
+                >
+                  NOW (Satellite)
+                </Box>
               </Box>
             </Fade>
           )}
 
-          {/* Slider handle */}
+          {/* Slider handle - 40px minimum touch target */}
           <Box
             onPointerDown={(e) => {
               const handle = e.currentTarget as HTMLElement | null;
@@ -721,17 +723,12 @@ useEffect(() => {
               window.addEventListener("pointerup", upListener);
               window.addEventListener("pointercancel", upListener);
             }}
+            className="absolute top-0 bottom-0 cursor-ew-resize touch-none z-10"
             sx={{
-              position: "absolute",
-              top: 0,
-              bottom: 0,
               left: `calc(${sliderValue}% - 2px)`,
               width: 4,
               bgcolor: "primary.main",
               boxShadow: "0 0 16px rgba(16, 185, 129, 0.8)",
-              cursor: "ew-resize",
-              touchAction: "none",
-              zIndex: 3,
               transition: "box-shadow 0.2s ease-in-out",
               "&:hover": {
                 boxShadow: "0 0 24px rgba(16, 185, 129, 1)",
@@ -744,12 +741,15 @@ useEffect(() => {
                 transform: "translate(-50%, -50%)",
                 width: 40,
                 height: 40,
+                minWidth: 40,
+                minHeight: 40,
                 borderRadius: "50%",
                 border: "3px solid currentColor",
                 backgroundColor: (theme) =>
                   theme.palette.mode === "dark"
                     ? "rgba(0,0,0,0.6)"
-                    : "rgba(255,255,255,0.8)",
+                    : "rgba(255,255,255,0.9)",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
               },
               "&::after": {
                 content: '""',
@@ -820,18 +820,30 @@ useEffect(() => {
         </Box>
 
         {/* Mobile: Adjustment Controls - Reduced spacing for better visibility */}
-        <Box sx={{ display: { xs: "block", md: "none" }, mt: 1 }}>
-          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
-          <AccordionSummary expandIcon={<ExpandMore />}>
+        <Box className="mt-2" sx={{ display: { xs: "block", md: "none" } }}>
+          <Accordion 
+            className="rounded-xl"
+            sx={{ 
+              borderRadius: 2,
+              '&:before': {
+                display: 'none',
+              },
+            }} 
+            elevation={1}
+          >
+          <AccordionSummary 
+            expandIcon={<ExpandMore />}
+            className="px-3 py-2"
+          >
             <Stack direction="row" spacing={1} alignItems="center">
               <Tune />
-              <Typography variant="subtitle2" fontWeight={600}>
+              <Typography variant="subtitle2" className="font-semibold">
                 Fine-Tune Alignment
               </Typography>
               <Chip label="Advanced" size="small" color="primary" variant="outlined" />
             </Stack>
           </AccordionSummary>
-          <AccordionDetails>
+          <AccordionDetails className="px-3 py-2">
             <Stack spacing={3}>
               <Alert severity="info" icon={<Info />}>
                 Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
@@ -1220,11 +1232,12 @@ useEffect(() => {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
+      maxWidth="md"
       fullWidth
       fullScreen={isMobile}
+      className="rounded-xl"
       PaperProps={{
-        sx: { borderRadius: { xs: 0, sm: 3 }, minHeight: "80vh" },
+        sx: { borderRadius: { xs: 0, sm: '12px' }, minHeight: "80vh" },
       }}
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1 }}>
@@ -1270,16 +1283,32 @@ useEffect(() => {
 
       <DialogContent dividers sx={{ pt: 2, pb: { xs: 2, md: 1 }, px: { xs: 2, md: 3 } }}>
         {photo && (
-          <Tabs
-            value={tab}
-            onChange={(_e, value) => setTab(value)}
-            variant="scrollable"
-            allowScrollButtonsMobile
-            sx={{ mb: 2 }}
+          <Box
+            className="mb-4 rounded-lg p-1"
+            sx={{
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+            }}
           >
-            <Tab label="Side-by-Side" value="side-by-side" />
-            <Tab label="Slider Comparison" value="slider" />
-          </Tabs>
+            <Tabs
+              value={tab}
+              onChange={(_e, value) => setTab(value)}
+              variant="scrollable"
+              allowScrollButtonsMobile
+              className="min-h-0"
+              sx={{
+                '& .MuiTab-root': {
+                  minHeight: 40,
+                  padding: '8px 16px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                },
+              }}
+            >
+              <Tab label="Side-by-Side" value="side-by-side" />
+              <Tab label="Slider Comparison" value="slider" />
+            </Tabs>
+          </Box>
         )}
         {renderContent()}
       </DialogContent>

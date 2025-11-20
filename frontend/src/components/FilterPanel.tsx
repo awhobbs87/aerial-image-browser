@@ -129,7 +129,6 @@ export default function FilterPanel({
   dateRange = null,
   showQuickFilters = true,
 }: FilterPanelProps) {
-  const theme = useTheme();
 
   // Group available scales into categories
   const scaleCategories = React.useMemo(() => {
@@ -323,18 +322,10 @@ export default function FilterPanel({
     <Box sx={{ mb: 1.5 }}>
       {/* Filter Presets */}
       {showQuickFilters && (
-        <Box sx={{ mb: 1.5 }}>
+        <Box className="mb-3">
           <Typography
             variant="caption"
-            sx={{
-              fontWeight: 600,
-              mb: 0.75,
-              display: "block",
-              fontSize: "0.7rem",
-              color: "text.secondary",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
+            className="text-xs font-semibold mb-1.5 block uppercase tracking-wide text-gray-600 dark:text-gray-400"
           >
             Quick Filters
           </Typography>
@@ -349,11 +340,11 @@ export default function FilterPanel({
                     onClick={() => applyPreset(preset.id)}
                     size="small"
                     variant="outlined"
+                    className="text-xs font-semibold cursor-pointer"
                     sx={{
-                      height: 26,
+                      height: 24,
                       fontSize: "0.7rem",
                       fontWeight: 600,
-                      cursor: "pointer",
                       transition: "all 0.2s ease-in-out",
                       "&:hover": {
                         borderColor: "primary.main",
@@ -370,21 +361,38 @@ export default function FilterPanel({
         </Box>
       )}
 
-      {/* Active Filters Chips - Compact display */}
+      {/* Active Filters Chips - Compact display with count */}
       {hasActiveFilters && (
-        <Box sx={{ mb: 1 }}>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+        <Box className="mb-2">
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
+            <Chip
+              label={`Active Filters (${[
+                hasDateFilter && "Date",
+                hasScaleFilter && "Scale",
+                hasLayerFilter && "Types",
+              ].filter(Boolean).length})`}
+              size="small"
+              color="primary"
+              variant="filled"
+              className="text-xs font-semibold"
+              sx={{
+                height: 24,
+                fontSize: "0.7rem",
+                fontWeight: 600,
+              }}
+            />
             {hasDateFilter && (
               <Chip
                 icon={<CalendarToday sx={{ fontSize: 14 }} />}
                 label={getDateFilterLabel()}
                 onDelete={clearDateFilter}
                 color="primary"
-                variant="filled"
+                variant="outlined"
                 size="small"
+                className="text-xs"
                 sx={{
                   height: 24,
-                  fontSize: "0.75rem",
+                  fontSize: "0.7rem",
                   "& .MuiChip-deleteIcon": {
                     fontSize: 16,
                   },
@@ -397,11 +405,12 @@ export default function FilterPanel({
                 label={getScaleFilterLabel()}
                 onDelete={clearScaleFilter}
                 color="secondary"
-                variant="filled"
+                variant="outlined"
                 size="small"
+                className="text-xs"
                 sx={{
                   height: 24,
-                  fontSize: "0.75rem",
+                  fontSize: "0.7rem",
                   "& .MuiChip-deleteIcon": {
                     fontSize: 16,
                   },
@@ -414,11 +423,12 @@ export default function FilterPanel({
                 label={getLayerFilterLabel()}
                 onDelete={resetLayerTypes}
                 color="success"
-                variant="filled"
+                variant="outlined"
                 size="small"
+                className="text-xs"
                 sx={{
                   height: 24,
-                  fontSize: "0.75rem",
+                  fontSize: "0.7rem",
                   "& .MuiChip-deleteIcon": {
                     fontSize: 16,
                   },
@@ -427,13 +437,14 @@ export default function FilterPanel({
             )}
             <Chip
               icon={<Clear sx={{ fontSize: 14 }} />}
-              label="Clear"
+              label="Clear All"
               onClick={handleClearFilters}
               variant="outlined"
               size="small"
+              className="text-xs"
               sx={{
                 height: 24,
-                fontSize: "0.75rem",
+                fontSize: "0.7rem",
               }}
             />
           </Stack>

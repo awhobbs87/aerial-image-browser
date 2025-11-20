@@ -140,16 +140,7 @@ export default function PhotoGrid({
   // Loading state - show skeleton cards
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: 'repeat(2, 1fr)', // Mobile: 2 columns
-            md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-          },
-          gap: 2,
-        }}
-      >
+      <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
           <PhotoCardSkeleton key={`skeleton-${index}`} />
         ))}
@@ -196,16 +187,7 @@ export default function PhotoGrid({
   const renderPhotos = () => {
     if (groupBy === "none") {
       return (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-              md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-            },
-            gap: 2,
-          }}
-        >
+        <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {processedPhotos.ungrouped?.map((photo, index) => (
             <PhotoCard
               key={`${photo.layerId}-${photo.OBJECTID}`}
@@ -235,10 +217,33 @@ export default function PhotoGrid({
         {groupKeys.map((groupKey) => {
           const groupPhotos = processedPhotos[groupKey];
           return (
-            <Accordion key={groupKey} defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography variant="h6">{groupKey}</Typography>
+            <Accordion 
+              key={groupKey} 
+              defaultExpanded
+              sx={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                bgcolor: 'background.paper',
+                '&:before': {
+                  display: 'none',
+                },
+                borderRadius: 2,
+                mb: 1,
+              }}
+            >
+              <AccordionSummary 
+                expandIcon={<ExpandMore />}
+                sx={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 11,
+                  bgcolor: 'background.paper',
+                  borderRadius: 2,
+                }}
+              >
+                <Box className="flex items-center gap-4">
+                  <Typography variant="h6" className="font-semibold">{groupKey}</Typography>
                   <Chip
                     label={`${groupPhotos.length} photos`}
                     size="small"
@@ -247,16 +252,7 @@ export default function PhotoGrid({
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-                      md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-                    },
-                    gap: 2,
-                  }}
-                >
+                <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {groupPhotos.map((photo) => {
                     // Find the index in the full sorted array for gallery
                     const photoIndex = sortedPhotos.findIndex(

@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import {
   Card,
   CardContent,
-  CardActions,
   Typography,
   Chip,
   IconButton,
@@ -11,7 +10,6 @@ import {
   Tooltip,
   CircularProgress,
   Checkbox,
-  Divider,
 } from "@mui/material";
 import {
   Favorite,
@@ -20,13 +18,12 @@ import {
   Map as MapIcon,
   Visibility,
   Download,
-  OpenInNew,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
 import LazyImage from "./LazyImage";
 import PhotoViewer from "./PhotoViewer";
-import { layerTypeColors, borderRadius, fontSize, iconSize } from "../theme/tokens";
+import { layerTypeColors, fontSize, iconSize } from "../theme/tokens";
 
 interface PhotoCardProps {
   photo: EnhancedPhoto;
@@ -136,34 +133,34 @@ function PhotoCard({
     <>
       <PhotoViewer photo={photo} open={previewOpen} onClose={() => setPreviewOpen(false)} />
       <Card
+        className={`h-full flex flex-col rounded-xl overflow-hidden relative transition-all duration-200 ${
+          isSelected 
+            ? 'border-l-4 border-emerald-400 shadow-lg' 
+            : 'border-l-4'
+        }`}
         sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: `${borderRadius.lg}px`,
-          overflow: "hidden",
-          position: "relative",
-          borderLeft: `4px solid ${layerTypeColors[photo.layerType].border}`,
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          borderLeftColor: isSelected 
+            ? '#34d399' 
+            : layerTypeColors[photo.layerType].border,
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: (theme) =>
               theme.palette.mode === 'dark'
                 ? '0 8px 24px rgba(0, 0, 0, 0.5)'
                 : '0 8px 24px rgba(0, 0, 0, 0.15)',
+            '& .action-strip': {
+              opacity: 1,
+            },
           },
         }}
         onMouseEnter={() => onPhotoHover?.(photo)}
         onMouseLeave={() => onPhotoHover?.(null)}
       >
-        {/* Thumbnail with overlays */}
+        {/* Thumbnail with overlays - Square/4:3 aspect ratio */}
         <Box
           onClick={handleThumbnailClick}
+          className="relative overflow-hidden cursor-pointer aspect-[4/3]"
           sx={{
-            position: "relative",
-            height: 150,
-            overflow: "hidden",
-            cursor: onThumbnailClick ? 'pointer' : 'default',
             '&::after': {
               content: '""',
               position: 'absolute',
@@ -187,13 +184,16 @@ function PhotoCard({
                   zIndex: 1,
                   pointerEvents: 'none',
                 },
+                '& .action-strip': {
+                  opacity: 1,
+                },
               },
             }),
           }}
         >
-          <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={150} />
+          <LazyImage src={thumbnailUrl} alt={photo.IMAGE_NAME} height={200} />
 
-          {/* Selection checkbox - wrapped in clickable div */}
+          {/* Selection checkbox */}
           <Tooltip
             title={
               isSelected
@@ -205,43 +205,107 @@ function PhotoCard({
           >
             <Box
               onClick={handleSelectToggle}
-              sx={{
-                position: "absolute",
-                top: 6,
-                left: 6,
-                zIndex: 2,
-                cursor: 'pointer',
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? "rgba(0,0,0,0.7)"
-                    : "rgba(255,255,255,0.9)",
-                borderRadius: 1,
-                '&:hover': {
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "rgba(0,0,0,0.85)"
-                      : "rgba(255,255,255,1)",
-                },
-              }}
+              className="absolute top-2 left-2 z-10 cursor-pointer bg-white/90 dark:bg-black/70 rounded hover:bg-white dark:hover:bg-black/85 transition-colors"
             >
               <Checkbox
                 checked={isSelected}
                 color="secondary"
+                size="small"
                 inputProps={{ "aria-label": "Select photo for comparison" }}
               />
             </Box>
           </Tooltip>
+
+          {/* Hover-only action strip */}
+          <Box
+            className="action-strip absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 p-2 z-10"
+            sx={{
+              opacity: 0,
+              transition: 'opacity 0.2s ease',
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Tooltip title="Preview image" arrow placement="top">
+              <IconButton
+                size="small"
+                className="!text-white hover:!bg-white/20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewImage();
+                }}
+                disabled={!photo.DOWNLOAD_LINK}
+              >
+                <Visibility sx={{ fontSize: iconSize.md }} />
+              </IconButton>
+            </Tooltip>
+            {onShowOnMap && photo.geometry && (
+              <Tooltip title="Show on map" arrow placement="top">
+                <IconButton
+                  size="small"
+                  className="!text-white hover:!bg-white/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowOnMap(e);
+                  }}
+                >
+                  <MapIcon sx={{ fontSize: iconSize.md }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {photo.DOWNLOAD_LINK && (
+              <Tooltip title="Download WebP" arrow placement="top">
+                <IconButton
+                  size="small"
+                  className="!text-white hover:!bg-white/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(e);
+                  }}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <CircularProgress size={18} className="!text-white" />
+                  ) : (
+                    <Download sx={{ fontSize: iconSize.md }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+            {onFavorite && (
+              <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">
+                <IconButton
+                  size="small"
+                  className="!text-white hover:!bg-white/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFavorite(e);
+                  }}
+                >
+                  {isFavorite ? (
+                    <Favorite sx={{ fontSize: iconSize.md }} />
+                  ) : (
+                    <FavoriteBorder sx={{ fontSize: iconSize.md }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
 
         {/* Card content - metadata */}
-        <CardContent sx={{ flexGrow: 1, py: 1.5, px: 1.5, '&:last-child': { pb: 1.5 } }}>
-          <Stack spacing={1}>
-            {/* Type and status chips */}
-            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+        <CardContent className="flex-grow p-3">
+          <Stack spacing={1.5}>
+            {/* AERIAL chip - MUI Chip small */}
+            <Box className="flex gap-1.5 flex-wrap">
               <Chip
                 label={LAYER_TYPE_LABELS[photo.layerType]}
                 color={LAYER_TYPE_COLORS[photo.layerType]}
                 size="small"
+                className="text-xs font-semibold"
                 sx={{
                   fontSize: fontSize.xs,
                   height: 22,
@@ -257,6 +321,7 @@ function PhotoCard({
                     color="success"
                     size="small"
                     variant="outlined"
+                    className="text-xs font-semibold"
                     sx={{
                       fontSize: fontSize.xs,
                       height: 22,
@@ -267,164 +332,24 @@ function PhotoCard({
               )}
             </Box>
 
-            {/* Date and Scale */}
+            {/* Date + Scale text - Tailwind typography */}
             <Box>
               <Typography
                 variant="h6"
                 component="div"
-                sx={{
-                  fontSize: fontSize.sm,
-                  fontWeight: 600,
-                  lineHeight: 1.3,
-                  color: 'text.primary',
-                  mb: 0.25,
-                }}
+                className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5"
               >
                 {photo.dateFormatted || "Unknown Date"}
               </Typography>
               <Typography
                 variant="body2"
-                color="text.secondary"
-                sx={{
-                  fontSize: fontSize.xs,
-                  fontWeight: 500,
-                }}
+                className="text-xs font-medium text-gray-600 dark:text-gray-400"
               >
                 {photo.scaleFormatted || "N/A"}
               </Typography>
             </Box>
-
           </Stack>
         </CardContent>
-
-        <Divider sx={{ mx: 1.5 }} />
-
-        {/* Action buttons - improved layout with freed space */}
-        <CardActions
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            px: 1.5,
-            py: 1.25,
-            gap: 1,
-            flexWrap: "wrap",
-            "& .MuiIconButton-root": {
-              minWidth: { xs: 40, sm: 36 },
-              minHeight: { xs: 40, sm: 36 },
-            },
-          }}
-        >
-          {/* Left side - View actions */}
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Tooltip title="Preview image" arrow placement="top">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={handleViewImage}
-                disabled={!photo.DOWNLOAD_LINK}
-                sx={{
-                  transition: 'all 0.2s ease',
-                  '&:hover': { transform: 'scale(1.1)' },
-                }}
-              >
-                <Visibility sx={{ fontSize: iconSize.md }} />
-              </IconButton>
-            </Tooltip>
-
-            {onShowOnMap && photo.geometry && (
-              <Tooltip title="Show on map" arrow placement="top">
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={handleShowOnMap}
-                  sx={{
-                    transition: 'all 0.2s ease',
-                    '&:hover': { transform: 'scale(1.1)' },
-                  }}
-                >
-                  <MapIcon sx={{ fontSize: iconSize.md }} />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Stack>
-
-          {/* Right side - Download link and favorite */}
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            {photo.DOWNLOAD_LINK && (
-              <>
-                <Tooltip title="Download WebP (2-5 MB)" arrow placement="top">
-                  <IconButton
-                    size="small"
-                    color="secondary"
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    sx={{
-                      transition: 'all 0.2s ease',
-                      '&:hover': { transform: 'scale(1.1)' },
-                    }}
-                  >
-                    {downloading ? (
-                      <CircularProgress size={18} color="secondary" />
-                    ) : (
-                      <Download sx={{ fontSize: iconSize.md }} />
-                    )}
-                  </IconButton>
-                </Tooltip>
-
-                <Box
-                  component="a"
-                  href={photo.DOWNLOAD_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    fontSize: fontSize.xs,
-                    color: 'text.secondary',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    transition: 'all 0.2s ease',
-                    px: 0.5,
-                    py: 0.25,
-                    borderRadius: 0.5,
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      color: 'primary.main',
-                      bgcolor: 'action.hover',
-                    },
-                  }}
-                >
-                  <OpenInNew sx={{ fontSize: 14 }} />
-                  Download TIFF
-                </Box>
-              </>
-            )}
-
-            {onFavorite && (
-              <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={handleFavorite}
-                  sx={{
-                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    '&:hover': {
-                      transform: 'scale(1.15) rotate(5deg)',
-                    },
-                  }}
-                >
-                  {isFavorite ? (
-                    <Favorite sx={{ fontSize: iconSize.md }} />
-                  ) : (
-                    <FavoriteBorder sx={{ fontSize: iconSize.md }} />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
-          </Stack>
-        </CardActions>
       </Card>
     </>
   );

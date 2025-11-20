@@ -156,29 +156,24 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
 
   return (
     <Paper
-      elevation={4}
+      className="rounded-xl overflow-hidden"
+      elevation={2}
       sx={{
-        overflow: "hidden",
-        borderRadius: 2.5,
         background: (theme) =>
           theme.palette.mode === "dark"
             ? "rgba(30, 41, 59, 0.75)"
-            : "rgba(255, 255, 255, 0.7)",
+            : "rgba(255, 255, 255, 0.9)",
         backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)", // Safari support
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
         border: (theme) =>
           theme.palette.mode === "dark"
             ? "1px solid rgba(255, 255, 255, 0.1)"
-            : "1px solid rgba(255, 255, 255, 0.8)",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
-            : "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+            : "1px solid rgba(0, 0, 0, 0.08)",
       }}
     >
       <Stack spacing={0}>
-        {/* Main search input */}
-        <Box sx={{ p: 1.5 }}>
+        {/* Main search input - Compact */}
+        <Box className="p-2">
           <Autocomplete
             freeSolo
             fullWidth
@@ -208,16 +203,16 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                   {...props}
                   key={`${option.type}-${JSON.stringify(option.data)}`}
                   sx={{
-                    py: 1,
+                    py: 0.75,
                     "&:hover": {
                       bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.1)" : "rgba(99, 102, 241, 0.05)",
                     }
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    {option.type === "suggestion" && <Place color="primary" sx={{ fontSize: 20 }} />}
-                    {option.type === "history" && <History color="action" sx={{ fontSize: 20 }} />}
-                    {option.type === "preset" && <TravelExplore color="secondary" sx={{ fontSize: 20 }} />}
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {option.type === "suggestion" && <Place color="primary" sx={{ fontSize: 18 }} />}
+                    {option.type === "history" && <History color="action" sx={{ fontSize: 18 }} />}
+                    {option.type === "preset" && <TravelExplore color="secondary" sx={{ fontSize: 18 }} />}
                   </ListItemIcon>
                   <ListItemText
                     primary={
@@ -234,8 +229,8 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                         ? option.data.type
                         : "Quick location"
                     }
-                    primaryTypographyProps={{ fontSize: "0.875rem" }}
-                    secondaryTypographyProps={{ fontSize: "0.75rem" }}
+                    primaryTypographyProps={{ fontSize: "0.8125rem" }}
+                    secondaryTypographyProps={{ fontSize: "0.7rem" }}
                   />
                   {option.type === "history" && (
                     <IconButton
@@ -247,7 +242,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                         "&:hover": { opacity: 1 }
                       }}
                     >
-                      <Delete sx={{ fontSize: 18 }} />
+                      <Delete sx={{ fontSize: 16 }} />
                     </IconButton>
                   )}
                 </ListItem>
@@ -259,9 +254,11 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                 placeholder="Search location..."
                 variant="outlined"
                 size="small"
+                className="text-sm"
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    fontSize: "0.875rem",
+                    fontSize: "0.8125rem",
+                    height: 36,
                     "& fieldset": {
                       borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)",
                     },
@@ -275,10 +272,10 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                 }}
                 InputProps={{
                   ...params.InputProps,
-                  startAdornment: <Search sx={{ mr: 0.5, color: "action.active", fontSize: 20 }} />,
+                  startAdornment: <Search sx={{ mr: 0.5, color: "action.active", fontSize: 18 }} />,
                   endAdornment: (
                     <>
-                      {isSearching && <CircularProgress size={16} />}
+                      {isSearching && <CircularProgress size={14} />}
                       {params.InputProps.endAdornment}
                     </>
                   ),
@@ -306,18 +303,10 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
 
         <Divider sx={{ opacity: 0.6 }} />
 
-        {/* Action buttons row */}
-        <Box sx={{
-          display: "flex",
-          gap: 1,
-          p: 1.5,
-          pt: 1,
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
+        {/* Action buttons row - Compact */}
+        <Box className="flex gap-1.5 p-2 pt-1.5 flex-wrap items-center justify-between">
           {/* Quick location chips */}
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", flex: 1 }}>
+          <Box className="flex gap-1 flex-wrap flex-1">
             {LOCATION_PRESETS.map((preset) => (
               <Chip
                 key={preset.name}
@@ -330,6 +319,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                 }
                 size="small"
                 variant="outlined"
+                className="text-xs"
                 sx={{
                   fontSize: "0.7rem",
                   height: 24,
@@ -350,11 +340,11 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
             disabled={geolocating || loading}
             startIcon={geolocating ? <CircularProgress size={14} /> : <MyLocation sx={{ fontSize: 16 }} />}
             size="small"
+            className="text-xs whitespace-nowrap"
             sx={{
-              fontSize: "0.75rem",
+              fontSize: "0.7rem",
               height: 28,
               px: 1.5,
-              whiteSpace: "nowrap",
               textTransform: "none",
               fontWeight: 600,
               background: (theme) => theme.palette.mode === "dark"

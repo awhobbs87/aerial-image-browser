@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, lazy, Suspense, useEffect } from "react
 import {
   ThemeProvider,
   CssBaseline,
-  Container,
   Box,
   Typography,
   ToggleButtonGroup,
@@ -548,16 +547,14 @@ function AppContent() {
             >
               {/* Mobile Search Button - Show button after search, hide search bar */}
               {searchParams && (
-                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                <Box className="mb-4 md:mb-0" sx={{ display: { xs: "block", md: "none" } }}>
                   <Button
                     variant="outlined"
                     fullWidth
                     onClick={() => setMobileSearchOpen(true)}
                     startIcon={<SearchIcon />}
+                    className="py-3 text-sm font-semibold"
                     sx={{
-                      py: 1.5,
-                      fontSize: "0.9375rem",
-                      fontWeight: 600,
                       minHeight: 48,
                     }}
                   >
@@ -568,15 +565,15 @@ function AppContent() {
               
               {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
               {!searchParams && (
-                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                <Box className="mb-4 md:mb-0" sx={{ display: { xs: "block", md: "none" } }}>
                   <SearchBar onSearch={handleSearch} loading={isLoading} />
                 </Box>
               )}
 
               {searchParams && (
                 <>
-                  {/* Desktop Filter Panel */}
-                  <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
+                  {/* Desktop Filter Panel - Compact spacing */}
+                  <Box className="mb-3" sx={{ display: { xs: "none", md: "block" } }}>
                     <FilterPanel
                       filters={filters}
                       onFiltersChange={setFilters}
@@ -587,17 +584,15 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile Filter Button */}
-                  <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                  <Box className="mb-4 md:mb-0" sx={{ display: { xs: "block", md: "none" } }}>
                     <Button
                       variant="outlined"
                       fullWidth
                       onClick={() => setMobileFilterOpen(true)}
                       startIcon={<FilterList />}
+                      className="py-3 text-sm font-semibold"
                       sx={{
-                        py: 1.5,
-                        fontSize: "0.9375rem",
-                        fontWeight: 600,
-                        minHeight: 48, // Better touch target
+                        minHeight: 48,
                       }}
                     >
                       Filters
@@ -606,7 +601,8 @@ function AppContent() {
                           label="Active"
                           size="small"
                           color="primary"
-                          sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+                          className="ml-2"
+                          sx={{ height: 20, fontSize: "0.65rem" }}
                         />
                       )}
                     </Button>
@@ -689,25 +685,26 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile-only Unified 4-Button View Toggle */}
-                  <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 2 }}>
-                    <Paper elevation={1}>
+                  <Box className="flex justify-center mb-4 md:mb-0" sx={{ display: { xs: "flex", md: "none" } }}>
+                    <Paper elevation={1} className="rounded-lg">
                       <ToggleButtonGroup
                         value={mobileViewValue}
                         exclusive
                         onChange={handleMobileViewChange}
                         aria-label="view mode"
                         size="small"
+                        className="p-1"
                       >
-                        <ToggleButton value="grid" aria-label="grid view" sx={{ px: 1 }}>
+                        <ToggleButton value="grid" aria-label="grid view" className="px-3 py-2">
                           <GridView fontSize="small" />
                         </ToggleButton>
-                        <ToggleButton value="map" aria-label="map view" sx={{ px: 1 }}>
+                        <ToggleButton value="map" aria-label="map view" className="px-3 py-2">
                           <MapIcon fontSize="small" />
                         </ToggleButton>
-                        <ToggleButton value="timeline" aria-label="timeline view" sx={{ px: 1 }}>
+                        <ToggleButton value="timeline" aria-label="timeline view" className="px-3 py-2">
                           <Timeline fontSize="small" />
                         </ToggleButton>
-                        <ToggleButton value="gallery" aria-label="gallery view" sx={{ px: 1 }}>
+                        <ToggleButton value="gallery" aria-label="gallery view" className="px-3 py-2">
                           <PhotoLibrary fontSize="small" />
                         </ToggleButton>
                       </ToggleButtonGroup>
