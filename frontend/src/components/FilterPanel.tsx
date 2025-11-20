@@ -10,7 +10,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  useTheme,
 } from "@mui/material";
 import {
   Clear,
