@@ -37,6 +37,7 @@ import PhotoGrid from "./components/PhotoGrid";
 import PhotoTimeline from "./components/PhotoTimeline";
 import FilterPanel, { type Filters, FILTER_PRESETS } from "./components/FilterPanel";
 import MobileFilterSheet from "./components/MobileFilterSheet";
+import MobileSearchSheet from "./components/MobileSearchSheet";
 import FavoritesModal from "./components/FavoritesModal";
 import BackToTop from "./components/BackToTop";
 import LoadingBar from "./components/LoadingBar";
@@ -48,7 +49,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.1.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -114,6 +115,7 @@ function AppContent() {
   const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
@@ -324,6 +326,30 @@ function AppContent() {
     []
   );
 
+  // Unified handler for mobile 4-button control (Grid, Map, Timeline, Gallery)
+  const handleMobileViewChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newValue: string | null) => {
+      if (!newValue) return;
+      
+      if (newValue === "map") {
+        setViewMode("map");
+      } else {
+        // For grid, timeline, or gallery, set viewMode to grid and update resultsViewMode
+        setViewMode("grid");
+        if (newValue === "grid" || newValue === "timeline" || newValue === "gallery") {
+          setResultsViewMode(newValue as ResultsViewMode);
+        }
+      }
+    },
+    []
+  );
+
+  // Get the current value for the unified mobile control
+  const mobileViewValue = useMemo(() => {
+    if (viewMode === "map") return "map";
+    return resultsViewMode;
+  }, [viewMode, resultsViewMode]);
+
   const handlePhotoSelect = useCallback((photo: EnhancedPhoto) => {
     setSelectedPhoto(photo);
     // Auto-switch to map view when "Show on map" is clicked
@@ -428,6 +454,8 @@ function AppContent() {
           onToggleDarkMode={handleToggleDarkMode}
           favoritesCount={favorites.size}
           onViewFavorites={handleViewFavorites}
+          version={APP_VERSION}
+          onVersionClick={() => setChangelogOpen(true)}
         />
 
         {/* Desktop: Two-column layout, Mobile: Single column */}
@@ -518,10 +546,32 @@ function AppContent() {
                 minHeight: 0,
               }}
             >
-              {/* Search Bar - Mobile only in sidebar, Desktop in floating box on map */}
-              <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
-                <SearchBar onSearch={handleSearch} loading={isLoading} />
-              </Box>
+              {/* Mobile Search Button - Show button after search, hide search bar */}
+              {searchParams && (
+                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => setMobileSearchOpen(true)}
+                    startIcon={<SearchIcon />}
+                    sx={{
+                      py: 1.5,
+                      fontSize: "0.9375rem",
+                      fontWeight: 600,
+                      minHeight: 48,
+                    }}
+                  >
+                    Search Location
+                  </Button>
+                </Box>
+              )}
+              
+              {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
+              {!searchParams && (
+                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                  <SearchBar onSearch={handleSearch} loading={isLoading} />
+                </Box>
+              )}
 
               {searchParams && (
                 <>
@@ -638,8 +688,34 @@ function AppContent() {
                     </Box>
                   </Box>
 
-                  {/* Mobile-only View Toggle */}
-                  <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 3 }}>
+                  {/* Mobile-only Unified 4-Button View Toggle */}
+                  <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 2 }}>
+                    <Paper elevation={1}>
+                      <ToggleButtonGroup
+                        value={mobileViewValue}
+                        exclusive
+                        onChange={handleMobileViewChange}
+                        aria-label="view mode"
+                        size="small"
+                      >
+                        <ToggleButton value="grid" aria-label="grid view" sx={{ px: 1 }}>
+                          <GridView fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="map" aria-label="map view" sx={{ px: 1 }}>
+                          <MapIcon fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="timeline" aria-label="timeline view" sx={{ px: 1 }}>
+                          <Timeline fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="gallery" aria-label="gallery view" sx={{ px: 1 }}>
+                          <PhotoLibrary fontSize="small" />
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Paper>
+                  </Box>
+
+                  {/* Desktop View Toggle */}
+                  <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "center", mb: 3 }}>
                     <Paper elevation={1}>
                       <ToggleButtonGroup
                         value={viewMode}
@@ -664,7 +740,8 @@ function AppContent() {
                   <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
                     {filteredPhotos.length > 0 && (
                       <>
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                        {/* Desktop Results View Toggle */}
+                        <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end", mb: 2 }}>
                           <ToggleButtonGroup
                             value={resultsViewMode}
                             exclusive
@@ -1092,13 +1169,14 @@ function AppContent() {
           </Box>
         </Box>
 
-        {/* Version Display - Clickable to show changelog */}
+        {/* Version Display - Clickable to show changelog (Desktop only) */}
         <Box
           sx={{
             position: "fixed",
             bottom: 8,
             right: 8,
             zIndex: 1,
+            display: { xs: "none", md: "block" },
           }}
         >
           <Typography
@@ -1172,6 +1250,14 @@ function AppContent() {
         onFiltersChange={setFilters}
         availableScales={availableScales}
         dateRange={dateRange}
+      />
+
+      {/* Mobile Search Sheet */}
+      <MobileSearchSheet
+        open={mobileSearchOpen}
+        onClose={() => setMobileSearchOpen(false)}
+        onSearch={handleSearch}
+        loading={isLoading}
       />
 
       {/* Changelog Modal */}

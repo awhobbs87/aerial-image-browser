@@ -294,42 +294,28 @@ function PhotoCard({
               </Typography>
             </Box>
 
-            {/* Image name */}
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                fontSize: fontSize.xs,
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                opacity: 0.7,
-              }}
-              title={photo.IMAGE_NAME}
-            >
-              {photo.IMAGE_NAME}
-            </Typography>
           </Stack>
         </CardContent>
 
         <Divider sx={{ mx: 1.5 }} />
 
-        {/* Action buttons - always visible, organized logically */}
+        {/* Action buttons - improved layout with freed space */}
         <CardActions
           sx={{
             justifyContent: "space-between",
+            alignItems: "center",
             px: 1.5,
-            py: 1,
-            gap: 0.5,
+            py: 1.25,
+            gap: 1,
+            flexWrap: "wrap",
             "& .MuiIconButton-root": {
-              minWidth: { xs: 44, sm: 40 }, // Better touch targets on mobile
-              minHeight: { xs: 44, sm: 40 },
+              minWidth: { xs: 40, sm: 36 },
+              minHeight: { xs: 40, sm: 36 },
             },
           }}
         >
           {/* Left side - View actions */}
-          <Stack direction="row" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} alignItems="center">
             <Tooltip title="Preview image" arrow placement="top">
               <IconButton
                 size="small"
@@ -362,11 +348,11 @@ function PhotoCard({
             )}
           </Stack>
 
-          {/* Right side - Download and favorite */}
-          <Stack direction="row" spacing={0.5}>
+          {/* Right side - Download link and favorite */}
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             {photo.DOWNLOAD_LINK && (
               <>
-                <Tooltip title="Download (2-5 MB)" arrow placement="top">
+                <Tooltip title="Download WebP (2-5 MB)" arrow placement="top">
                   <IconButton
                     size="small"
                     color="secondary"
@@ -385,54 +371,58 @@ function PhotoCard({
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title="Open original TIFF in new tab" arrow placement="top">
-                  <Box
-                    component="a"
-                    href={photo.DOWNLOAD_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      fontSize: fontSize.xs,
+                <Box
+                  component="a"
+                  href={photo.DOWNLOAD_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontSize: fontSize.xs,
+                    color: 'text.secondary',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    transition: 'all 0.2s ease',
+                    px: 0.5,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    '&:hover': {
+                      textDecoration: 'underline',
                       color: 'primary.main',
-                      textDecoration: 'none',
-                      fontWeight: 600,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                        color: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <OpenInNew sx={{ fontSize: 14 }} />
-                    TIFF
-                  </Box>
-                </Tooltip>
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  <OpenInNew sx={{ fontSize: 14 }} />
+                  Download TIFF
+                </Box>
               </>
             )}
 
-            <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={handleFavorite}
-                sx={{
-                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  '&:hover': {
-                    transform: 'scale(1.15) rotate(5deg)',
-                  },
-                }}
-              >
-                {isFavorite ? (
-                  <Favorite sx={{ fontSize: iconSize.md }} />
-                ) : (
-                  <FavoriteBorder sx={{ fontSize: iconSize.md }} />
-                )}
-              </IconButton>
-            </Tooltip>
+            {onFavorite && (
+              <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={handleFavorite}
+                  sx={{
+                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    '&:hover': {
+                      transform: 'scale(1.15) rotate(5deg)',
+                    },
+                  }}
+                >
+                  {isFavorite ? (
+                    <Favorite sx={{ fontSize: iconSize.md }} />
+                  ) : (
+                    <FavoriteBorder sx={{ fontSize: iconSize.md }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
           </Stack>
         </CardActions>
       </Card>

@@ -13,9 +13,11 @@ interface AppBarProps {
   onToggleDarkMode: () => void;
   favoritesCount?: number;
   onViewFavorites?: () => void;
+  version?: string;
+  onVersionClick?: () => void;
 }
 
-export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0, onViewFavorites }: AppBarProps) {
+export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0, onViewFavorites, version, onVersionClick }: AppBarProps) {
   const getThemeIcon = () => {
     if (themeMode === "system") return <BrightnessAuto />;
     if (themeMode === "dark") return <Brightness4 />;
@@ -35,6 +37,29 @@ export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, color: "text.primary" }}>
           Tasmania Aerial Photos
         </Typography>
+        {version && onVersionClick && (
+          <Typography
+            variant="caption"
+            onClick={onVersionClick}
+            sx={{
+              display: { xs: "block", md: "none" },
+              fontSize: "0.65rem",
+              color: "text.disabled",
+              opacity: 0.6,
+              fontWeight: 500,
+              userSelect: "none",
+              cursor: "pointer",
+              transition: "opacity 0.2s ease-in-out",
+              mr: 1,
+              "&:hover": {
+                opacity: 1,
+                color: "primary.main",
+              },
+            }}
+          >
+            v{version}
+          </Typography>
+        )}
         {onViewFavorites && (
           <Tooltip title={`View ${favoritesCount} favorite${favoritesCount !== 1 ? 's' : ''}`}>
             <IconButton

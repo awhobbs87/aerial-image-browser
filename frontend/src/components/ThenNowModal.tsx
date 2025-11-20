@@ -130,6 +130,7 @@ export default function ThenNowModal({
   const nowImageUrlRef = useRef<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isLandscape = useMediaQuery("(orientation: landscape) and (max-width: 960px)");
 
   // Interactive adjustment controls
   const [offsetX, setOffsetX] = useState(0);
@@ -369,11 +370,159 @@ useEffect(() => {
 
     return (
       <>
+        {/* Desktop: Controls above image */}
+        <Box sx={{ display: { xs: "none", md: "block" }, mb: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Slider
+              value={sliderValue}
+              onChange={(_e, value) => setSliderValue(value as number)}
+              min={0}
+              max={100}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value}%`}
+              sx={{
+                "& .MuiSlider-thumb": {
+                  width: 20,
+                  height: 20,
+                },
+              }}
+            />
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                THEN ({photo.dateFormatted || "Unknown"})
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                NOW (Satellite)
+              </Typography>
+            </Stack>
+          </Box>
+          
+          {/* Fine-Tune Alignment Controls - Desktop only above image */}
+          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Tune />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Fine-Tune Alignment
+                </Typography>
+                <Chip label="Advanced" size="small" color="primary" variant="outlined" />
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack spacing={3}>
+                <Alert severity="info" icon={<Info />}>
+                  Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
+                </Alert>
+
+                {/* Position Controls */}
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                    <Typography variant="body2" fontWeight={600}>Position</Typography>
+                    <ButtonGroup size="small" variant="outlined">
+                      <Button onClick={() => setOffsetY(offsetY - 5)} title="Move Up"><ArrowUpward fontSize="small" /></Button>
+                      <Button onClick={() => setOffsetY(offsetY + 5)} title="Move Down"><ArrowDownward fontSize="small" /></Button>
+                      <Button onClick={() => setOffsetX(offsetX - 5)} title="Move Left"><ArrowBack fontSize="small" /></Button>
+                      <Button onClick={() => setOffsetX(offsetX + 5)} title="Move Right"><ArrowForward fontSize="small" /></Button>
+                    </ButtonGroup>
+                  </Stack>
+                  <Stack direction="row" spacing={2}>
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary">X: {offsetX}px</Typography>
+                      <Slider value={offsetX} onChange={(_e, v) => setOffsetX(v as number)} min={-200} max={200} step={1} size="small" />
+                    </Box>
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary">Y: {offsetY}px</Typography>
+                      <Slider value={offsetY} onChange={(_e, v) => setOffsetY(v as number)} min={-200} max={200} step={1} size="small" />
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Divider />
+
+                {/* Scale Control */}
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                    <Typography variant="body2" fontWeight={600}>Scale: {scale.toFixed(2)}x</Typography>
+                    <ButtonGroup size="small" variant="outlined">
+                      <Button onClick={() => setScale(Math.max(0.5, scale - 0.05))} title="Zoom Out"><ZoomOut fontSize="small" /></Button>
+                      <Button onClick={() => setScale(Math.min(2, scale + 0.05))} title="Zoom In"><ZoomIn fontSize="small" /></Button>
+                    </ButtonGroup>
+                  </Stack>
+                  <Slider value={scale} onChange={(_e, v) => setScale(v as number)} min={0.5} max={2} step={0.01} size="small" />
+                </Box>
+
+                <Divider />
+
+                {/* Rotation Control */}
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                    <Typography variant="body2" fontWeight={600}>Rotation: {rotation}°</Typography>
+                    <ButtonGroup size="small" variant="outlined">
+                      <Button onClick={() => setRotation(rotation - 1)} title="Rotate Left"><RotateLeft fontSize="small" /></Button>
+                      <Button onClick={() => setRotation(rotation + 1)} title="Rotate Right"><RotateRight fontSize="small" /></Button>
+                    </ButtonGroup>
+                  </Stack>
+                  <Slider value={rotation} onChange={(_e, v) => setRotation(v as number)} min={-45} max={45} step={0.1} size="small" />
+                </Box>
+
+                <Divider />
+
+                {/* Opacity Control */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} mb={1}>
+                    <OpacityIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
+                    Opacity: {Math.round(opacity * 100)}%
+                  </Typography>
+                  <Slider value={opacity} onChange={(_e, v) => setOpacity(v as number)} min={0} max={1} step={0.01} size="small" />
+                </Box>
+
+                <Divider />
+
+                {/* Crop Controls */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} mb={1}>
+                    <Crop sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
+                    Crop Edges (Remove Film Artifacts)
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Top: {cropTop}%</Typography>
+                      <Slider value={cropTop} onChange={(_e, v) => setCropTop(v as number)} min={0} max={20} step={0.1} size="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Bottom: {cropBottom}%</Typography>
+                      <Slider value={cropBottom} onChange={(_e, v) => setCropBottom(v as number)} min={0} max={20} step={0.1} size="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Left: {cropLeft}%</Typography>
+                      <Slider value={cropLeft} onChange={(_e, v) => setCropLeft(v as number)} min={0} max={20} step={0.1} size="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Right: {cropRight}%</Typography>
+                      <Slider value={cropRight} onChange={(_e, v) => setCropRight(v as number)} min={0} max={20} step={0.1} size="small" />
+                    </Box>
+                  </Stack>
+                </Box>
+
+                {/* Reset Button */}
+                <Button
+                  variant="outlined"
+                  startIcon={<RestartAlt />}
+                  onClick={resetAdjustments}
+                  fullWidth
+                >
+                  Reset All Adjustments
+                </Button>
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
+
         <Box
           sx={{
             position: "relative",
             width: "100%",
-            height: { xs: 400, md: 600 },
+            height: { xs: 400, md: 500 },
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 4,
@@ -636,7 +785,9 @@ useEffect(() => {
             />
           </Box>
         </Box>
-        <Box sx={{ mt: 3, mx: { xs: 2, md: 10 } }}>
+        
+        {/* Mobile: Controls below image */}
+        <Box sx={{ display: { xs: "block", md: "none" }, mt: 3, mx: 2 }}>
           <Slider
             value={sliderValue}
             onChange={(_e, value) => setSliderValue(value as number)}
@@ -659,17 +810,18 @@ useEffect(() => {
               NOW (Satellite)
             </Typography>
           </Stack>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontStyle: "italic", display: "block", textAlign: "center", mt: 2 }}
+          >
+            Use arrow keys (←/→) to adjust slider. Current imagery sourced from Esri World Imagery.
+          </Typography>
         </Box>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontStyle: "italic", display: "block", textAlign: "center", mt: 2 }}
-        >
-          Use arrow keys (←/→) to adjust slider. Current imagery sourced from Esri World Imagery.
-        </Typography>
 
-        {/* Adjustment Controls */}
-        <Accordion sx={{ mt: 3, borderRadius: 2 }} elevation={2}>
+        {/* Mobile: Adjustment Controls */}
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
+          <Accordion sx={{ mt: 3, borderRadius: 2 }} elevation={2}>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Tune />
@@ -784,9 +936,10 @@ useEffect(() => {
               >
                 Reset All Adjustments
               </Button>
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
       </>
     );
   };
@@ -813,11 +966,71 @@ useEffect(() => {
     }
 
     return (
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+      <Stack spacing={2}>
+        {/* Desktop: Rotation Controls Above Images */}
+        <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
+          <Paper sx={{ flex: 1, p: 1.5, borderRadius: 2 }} elevation={1}>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip label="THEN" size="small" color="primary" sx={{ fontWeight: 700 }} />
+                <Typography variant="body2" fontWeight={600}>
+                  {photo.dateFormatted || "Unknown Date"}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="text.secondary">Rotate:</Typography>
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton size="small" onClick={() => setThenRotation(thenRotation - 1)} title="Rotate Left">
+                    <RotateLeft fontSize="small" />
+                  </IconButton>
+                  <Button size="small" onClick={() => setThenRotation(0)} sx={{ minWidth: 50, px: 1, "&:not(:last-child)": { borderRight: "none" } }}>
+                    {thenRotation}°
+                  </Button>
+                  <IconButton size="small" onClick={() => setThenRotation(thenRotation + 1)} title="Rotate Right">
+                    <RotateRight fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+            </Stack>
+          </Paper>
+          <Paper sx={{ flex: 1, p: 1.5, borderRadius: 2 }} elevation={1}>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip label="NOW" size="small" color="secondary" sx={{ fontWeight: 700 }} />
+                <MapIcon color="action" fontSize="small" />
+                <Typography variant="body2" fontWeight={600}>
+                  Current Satellite Imagery
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="text.secondary">Rotate:</Typography>
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton size="small" onClick={() => setNowRotation(nowRotation - 1)} title="Rotate Left">
+                    <RotateLeft fontSize="small" />
+                  </IconButton>
+                  <Button size="small" onClick={() => setNowRotation(0)} sx={{ minWidth: 50, px: 1, "&:not(:last-child)": { borderRight: "none" } }}>
+                    {nowRotation}°
+                  </Button>
+                  <IconButton size="small" onClick={() => setNowRotation(nowRotation + 1)} title="Rotate Right">
+                    <RotateRight fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+            </Stack>
+          </Paper>
+        </Box>
+
+        <Stack 
+          direction={{ xs: isLandscape ? "row" : "column", md: "row" }} 
+          spacing={2}
+          sx={{
+            height: { xs: isLandscape ? "calc(100vh - 200px)" : "auto", md: "calc(100vh - 400px)" },
+          }}
+        >
         {/* Historical Photo */}
-        <Paper sx={{ flex: 1, p: 2, borderRadius: 3 }} elevation={3}>
-          <Stack spacing={1.5}>
-            <Stack direction="row" alignItems="center" spacing={1}>
+        <Paper sx={{ flex: 1, p: { xs: isLandscape ? 1 : 2, md: 2 }, borderRadius: 3, display: "flex", flexDirection: "column", minHeight: 0 }} elevation={3}>
+          <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ display: { xs: "flex", md: "none" } }}>
               <Chip
                 label="THEN"
                 size="small"
@@ -828,10 +1041,16 @@ useEffect(() => {
                 {photo.dateFormatted || "Unknown Date"}
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
-              {photo.IMAGE_NAME}
-            </Typography>
-            <Box sx={{ position: "relative" }}>
+            <Box 
+              sx={{ 
+                position: "relative",
+                height: { xs: isLandscape ? "100%" : "auto", md: "auto" },
+                minHeight: { xs: isLandscape ? 200 : "auto", md: "auto" },
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               {!imageLoaded && !imageError && (
                 <Fade in timeout={300}>
                   <Box
@@ -843,7 +1062,7 @@ useEffect(() => {
                       justifyContent: "center",
                       bgcolor: "rgba(0,0,0,0.05)",
                       borderRadius: 2,
-                      minHeight: 300,
+                      minHeight: { xs: isLandscape ? 200 : 300, md: 300 },
                     }}
                   >
                     <CircularProgress />
@@ -851,7 +1070,7 @@ useEffect(() => {
                 </Fade>
               )}
               {imageError && (
-                <Alert severity="error" sx={{ minHeight: 300 }}>
+                <Alert severity="error" sx={{ minHeight: { xs: isLandscape ? 200 : 300, md: 300 } }}>
                   Failed to load historical image
                 </Alert>
               )}
@@ -865,7 +1084,8 @@ useEffect(() => {
                   width: "100%",
                   borderRadius: 2,
                   objectFit: "contain",
-                  maxHeight: 400,
+                  maxHeight: { xs: isLandscape ? "100%" : 400, md: 400 },
+                  height: { xs: isLandscape ? "100%" : "auto", md: "auto" },
                   opacity: imageLoaded ? 1 : 0,
                   transition: "opacity 0.3s ease-in-out, transform 0.2s ease-in-out",
                   bgcolor: "black",
@@ -873,7 +1093,8 @@ useEffect(() => {
                 }}
               />
             </Box>
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            {/* Mobile: Rotation controls and scale */}
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ display: { xs: "flex", md: "none" } }}>
               {photo.SCALE && (
                 <Typography variant="caption" color="text.secondary">
                   Scale: 1:{photo.SCALE.toLocaleString()}
@@ -885,7 +1106,7 @@ useEffect(() => {
                   <IconButton size="small" onClick={() => setThenRotation(thenRotation - 1)} title="Rotate Left">
                     <RotateLeft fontSize="small" />
                   </IconButton>
-                  <Button size="small" onClick={() => setThenRotation(0)} sx={{ minWidth: 40 }}>
+                  <Button size="small" onClick={() => setThenRotation(0)} sx={{ minWidth: 50, px: 1, "&:not(:last-child)": { borderRight: "none" } }}>
                     {thenRotation}°
                   </Button>
                   <IconButton size="small" onClick={() => setThenRotation(thenRotation + 1)} title="Rotate Right">
@@ -894,13 +1115,19 @@ useEffect(() => {
                 </ButtonGroup>
               </Stack>
             </Stack>
+            {/* Desktop: Scale only */}
+            {photo.SCALE && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
+                Scale: 1:{photo.SCALE.toLocaleString()}
+              </Typography>
+            )}
           </Stack>
         </Paper>
 
         {/* Current View */}
-        <Paper sx={{ flex: 1, p: 2, borderRadius: 3 }} elevation={3}>
-          <Stack spacing={1.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
+        <Paper sx={{ flex: 1, p: { xs: isLandscape ? 1 : 2, md: 2 }, borderRadius: 3, display: "flex", flexDirection: "column", minHeight: 0 }} elevation={3}>
+          <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: "flex", md: "none" } }}>
               <Chip
                 label="NOW"
                 size="small"
@@ -912,13 +1139,10 @@ useEffect(() => {
                 Current Satellite Imagery
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
-              High-resolution satellite imagery covering the same footprint.
-            </Typography>
             <Box
               sx={{
                 width: "100%",
-                height: { xs: 320, md: 400 },
+                height: { xs: isLandscape ? "100%" : 320, md: 400 },
                 borderRadius: 2,
                 overflow: "hidden",
                 position: "relative",
@@ -926,6 +1150,7 @@ useEffect(() => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                minHeight: { xs: isLandscape ? 200 : 320, md: 400 },
               }}
             >
               {nowImageUrl && !nowImageError ? (
@@ -960,7 +1185,8 @@ useEffect(() => {
                 </Stack>
               )}
             </Box>
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            {/* Mobile: Rotation controls */}
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ display: { xs: "flex", md: "none" } }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
                 Data source: Esri World Imagery service.
               </Typography>
@@ -970,7 +1196,7 @@ useEffect(() => {
                   <IconButton size="small" onClick={() => setNowRotation(nowRotation - 1)} title="Rotate Left">
                     <RotateLeft fontSize="small" />
                   </IconButton>
-                  <Button size="small" onClick={() => setNowRotation(0)} sx={{ minWidth: 40 }}>
+                  <Button size="small" onClick={() => setNowRotation(0)} sx={{ minWidth: 50, px: 1, "&:not(:last-child)": { borderRight: "none" } }}>
                     {nowRotation}°
                   </Button>
                   <IconButton size="small" onClick={() => setNowRotation(nowRotation + 1)} title="Rotate Right">
@@ -979,8 +1205,13 @@ useEffect(() => {
                 </ButtonGroup>
               </Stack>
             </Stack>
+            {/* Desktop: Data source only */}
+            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", display: { xs: "none", md: "block" } }}>
+              Data source: Esri World Imagery service.
+            </Typography>
           </Stack>
         </Paper>
+        </Stack>
       </Stack>
     );
   };
@@ -1037,7 +1268,7 @@ useEffect(() => {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ pt: 2 }}>
+      <DialogContent dividers sx={{ pt: 2, pb: { xs: 2, md: 1 }, px: { xs: 2, md: 3 } }}>
         {photo && (
           <Tabs
             value={tab}
