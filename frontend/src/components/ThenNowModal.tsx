@@ -522,7 +522,7 @@ useEffect(() => {
           sx={{
             position: "relative",
             width: "100%",
-            height: { xs: 400, md: 500 },
+            height: { xs: 350, md: 500 },
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 4,
@@ -647,7 +647,7 @@ useEffect(() => {
             <Fade in timeout={500}>
               <Box>
                 <Chip
-                  label="NOW (Satellite)"
+                  label={`THEN (${photo.dateFormatted || "Unknown"})`}
                   size="small"
                   sx={{
                     position: "absolute",
@@ -660,7 +660,7 @@ useEffect(() => {
                   }}
                 />
                 <Chip
-                  label={`THEN (${photo.dateFormatted || "Unknown"})`}
+                  label="NOW (Satellite)"
                   size="small"
                   sx={{
                     position: "absolute",
@@ -787,7 +787,7 @@ useEffect(() => {
         </Box>
         
         {/* Mobile: Controls below image */}
-        <Box sx={{ display: { xs: "block", md: "none" }, mt: 3, mx: 2 }}>
+        <Box sx={{ display: { xs: "block", md: "none" }, mt: 1.5, mx: 2 }}>
           <Slider
             value={sliderValue}
             onChange={(_e, value) => setSliderValue(value as number)}
@@ -819,9 +819,9 @@ useEffect(() => {
           </Typography>
         </Box>
 
-        {/* Mobile: Adjustment Controls */}
-        <Box sx={{ display: { xs: "block", md: "none" } }}>
-          <Accordion sx={{ mt: 3, borderRadius: 2 }} elevation={2}>
+        {/* Mobile: Adjustment Controls - Reduced spacing for better visibility */}
+        <Box sx={{ display: { xs: "block", md: "none" }, mt: 1 }}>
+          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Tune />
