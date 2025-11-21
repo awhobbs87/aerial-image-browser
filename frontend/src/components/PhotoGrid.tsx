@@ -143,11 +143,9 @@ export default function PhotoGrid({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: 'repeat(2, 1fr)', // Mobile: 2 columns
-            md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-          },
-          gap: 2,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 1.5,
+          maxWidth: '100%',
         }}
       >
         {Array.from({ length: 6 }).map((_, index) => (
@@ -199,11 +197,9 @@ export default function PhotoGrid({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-              md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-            },
-            gap: 2,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 1.5,
+            maxWidth: '100%',
           }}
         >
           {processedPhotos.ungrouped?.map((photo, index) => (
@@ -250,11 +246,9 @@ export default function PhotoGrid({
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: {
-                      xs: 'repeat(2, 1fr)', // Mobile always 2 columns
-                      md: 'repeat(3, 1fr)', // Desktop: 3 columns (fixed)
-                    },
-                    gap: 2,
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: 1.5,
+                    maxWidth: '100%',
                   }}
                 >
                   {groupPhotos.map((photo) => {

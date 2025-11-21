@@ -15,30 +15,30 @@ const commonTheme = {
       "sans-serif",
     ].join(","),
     h1: {
-      fontWeight: 700,
+      fontWeight: 600,
       letterSpacing: "-0.02em",
       lineHeight: 1.2,
     },
     h2: {
-      fontWeight: 600,
+      fontWeight: 500,
       letterSpacing: "-0.01em",
       lineHeight: 1.3,
     },
     h3: {
-      fontWeight: 600,
+      fontWeight: 500,
       letterSpacing: "-0.01em",
       lineHeight: 1.3,
     },
     h4: {
-      fontWeight: 600,
+      fontWeight: 500,
       lineHeight: 1.4,
     },
     h5: {
-      fontWeight: 600,
+      fontWeight: 500,
       lineHeight: 1.4,
     },
     h6: {
-      fontWeight: 600,
+      fontWeight: 500,
       lineHeight: 1.4,
     },
     body1: {
@@ -54,7 +54,7 @@ const commonTheme = {
       letterSpacing: "0.025em",
     },
     button: {
-      fontWeight: 600,
+      fontWeight: 500,
       letterSpacing: "0.02em",
     },
   },
@@ -93,7 +93,7 @@ const commonTheme = {
       styleOverrides: {
         root: {
           textTransform: "none",
-          fontWeight: 600,
+          fontWeight: 500,
           borderRadius: 8,
           padding: "8px 20px",
           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -110,7 +110,7 @@ const commonTheme = {
     MuiChip: {
       styleOverrides: {
         root: {
-          fontWeight: 600,
+          fontWeight: 500,
           borderRadius: 8,
           transition: "all 0.2s ease-in-out",
           "&:hover": {
@@ -158,7 +158,7 @@ const commonTheme = {
       styleOverrides: {
         root: {
           textTransform: "none",
-          fontWeight: 600,
+          fontWeight: 500,
           borderRadius: 10,
           transition: "all 0.2s ease-in-out",
           "&.Mui-selected": {
@@ -190,9 +190,9 @@ export const lightTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#004d40", // Deep, earthy green
-      light: "#39796b",
-      dark: "#00251a",
+      main: "#059669", // Brighter emerald green for better visibility
+      light: "#10B981",
+      dark: "#047857",
       contrastText: "#ffffff",
     },
     secondary: {
@@ -222,14 +222,14 @@ export const lightTheme = createTheme({
       dark: "#2563eb",
     },
     background: {
-      default: "#fafafa", // Lighter, cleaner gray
-      paper: "#ffffff",
+      default: "#F9FAFB", // Softer neutral
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#1a1a1a", // Slightly darker for better contrast
-      secondary: "#6b7280", // Better contrast
+      primary: "#111827", // Darker for better contrast (4.5:1+)
+      secondary: "#6B7280", // Better contrast
     },
-    divider: "rgba(0, 0, 0, 0.12)",
+    divider: "rgba(0, 0, 0, 0.08)",
   },
   shadows: [
     "none",
@@ -268,9 +268,9 @@ export const darkTheme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#39796b", // Lighter green for dark mode
-      light: "#6ab7a7",
-      dark: "#004d40",
+      main: "#10B981", // Brighter emerald for dark mode visibility
+      light: "#34D399",
+      dark: "#059669",
       contrastText: "#ffffff",
     },
     secondary: {
@@ -300,14 +300,14 @@ export const darkTheme = createTheme({
       dark: "#3b82f6",
     },
     background: {
-      default: "#0f0f0f", // Darker for better contrast
-      paper: "#1a1a1a",
+      default: "#0A0A0A", // Rich neutral, not pure black
+      paper: "#1A1A1A",
     },
     text: {
-      primary: "#f5f5f5", // Lighter for better contrast
-      secondary: "#a3a3a3", // Better contrast
+      primary: "#EAEAEA", // Higher contrast for accessibility
+      secondary: "#B4B4B4", // Better contrast
     },
-    divider: "rgba(255, 255, 255, 0.12)",
+    divider: "rgba(255, 255, 255, 0.1)",
   },
   shadows: [
     "none",

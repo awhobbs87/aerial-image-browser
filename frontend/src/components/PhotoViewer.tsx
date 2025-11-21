@@ -14,6 +14,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  LinearProgress,
 } from "@mui/material";
 import {
   Close,
@@ -23,9 +24,17 @@ import {
   CalendarToday,
   PhotoSizeSelectActual,
   Image as ImageIcon,
+  Download,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
+
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  return "https://tas-aerial-browser.awhobbs.workers.dev";
+};
 
 interface PhotoViewerProps {
   photo: EnhancedPhoto | null;
@@ -50,6 +59,10 @@ export default function PhotoViewer({
 }: PhotoViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [conversionProgress, setConversionProgress] = useState(0);
+  const [conversionError, setConversionError] = useState<string | null>(null);
+  const [webpUrl, setWebpUrl] = useState<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -111,7 +124,82 @@ export default function PhotoViewer({
   const handleClose = () => {
     setImageLoaded(false);
     setCurrentIndex(0);
+    setConverting(false);
+    setConversionProgress(0);
+    setConversionError(null);
+    if (webpUrl) {
+      URL.revokeObjectURL(webpUrl);
+      setWebpUrl(null);
+    }
     onClose();
+  };
+
+  const handleConvertToWebP = async () => {
+    if (!currentPhoto?.DOWNLOAD_LINK) {
+      setConversionError("No download link available");
+      return;
+    }
+
+    setConverting(true);
+    setConversionProgress(0);
+    setConversionError(null);
+
+    try {
+      // Use backend proxy endpoint to avoid CORS issues
+      setConversionProgress(20);
+      const formData = new FormData();
+      formData.append("tiffUrl", currentPhoto.DOWNLOAD_LINK);
+
+      const apiBaseUrl = getApiBaseUrl();
+      const convertResponse = await fetch(`${apiBaseUrl}/api/convert/webp`, {
+        method: "POST",
+        body: formData,
+      });
+
+      setConversionProgress(70);
+
+      if (!convertResponse.ok) {
+        let errorText = "";
+        try {
+          const errorJson = await convertResponse.json();
+          errorText = errorJson.error || errorJson.details || JSON.stringify(errorJson);
+        } catch {
+          errorText = await convertResponse.text();
+        }
+        throw new Error(`Conversion failed: ${convertResponse.status} - ${errorText}`);
+      }
+
+      setConversionProgress(90);
+      
+      // Response should be the WEBP blob directly
+      const webpBlob = await convertResponse.blob();
+
+      // Step 3: Create download URL
+      const url = URL.createObjectURL(webpBlob);
+      setWebpUrl(url);
+      setConversionProgress(100);
+
+      // Trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = currentPhoto.IMAGE_NAME.replace(/\.tif(f)?$/i, ".webp");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        setWebpUrl(null);
+        setConversionProgress(0);
+      }, 1000);
+    } catch (error) {
+      console.error("Conversion error:", error);
+      setConversionError(error instanceof Error ? error.message : "Conversion failed");
+      setConversionProgress(0);
+    } finally {
+      setConverting(false);
+    }
   };
 
   if (!currentPhoto) return null;
@@ -128,10 +216,11 @@ export default function PhotoViewer({
       onClose={handleClose}
       maxWidth={isGalleryMode ? "lg" : "md"}
       fullWidth
-      sx={{
-        "& .MuiDialog-paper": {
-          borderRadius: 3,
-          maxHeight: "95vh",
+      fullScreen={isMobile}
+      PaperProps={{
+        sx: {
+          borderRadius: { xs: 0, sm: 3 },
+          maxHeight: { xs: "100vh", sm: "95vh" },
         },
       }}
     >
@@ -147,17 +236,17 @@ export default function PhotoViewer({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <ImageIcon color="primary" />
-          <Typography variant="h6">
+          <ImageIcon color="primary" sx={{ fontSize: 20 }} />
+          <Typography variant="h6" sx={{ fontSize: "1rem", fontWeight: 500 }}>
             {isGalleryMode ? "Photo Gallery" : "Photo Preview"}
           </Typography>
           {isGalleryMode && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
               {currentIndex + 1} / {photoList.length}
             </Typography>
           )}
         </Box>
-        <IconButton onClick={handleClose} size="small">
+        <IconButton onClick={handleClose} size="small" aria-label="Close modal">
           <Close />
         </IconButton>
       </Box>
@@ -261,11 +350,11 @@ export default function PhotoViewer({
         </Box>
 
         {/* Photo metadata */}
-        <Box sx={{ p: 3 }}>
-          <Stack spacing={2}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Stack spacing={1.5}>
             {/* Header with chips */}
             <Box>
-              <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}>
                 <Chip
                   label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
                   color={
@@ -276,6 +365,7 @@ export default function PhotoViewer({
                       : "warning"
                   }
                   size="small"
+                  sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
                 />
                 {currentPhoto.cached && (
                   <Chip
@@ -283,10 +373,11 @@ export default function PhotoViewer({
                     color="success"
                     size="small"
                     variant="outlined"
+                    sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
                   />
                 )}
               </Box>
-              <Typography variant="h5" gutterBottom fontWeight={600}>
+              <Typography variant="h6" gutterBottom sx={{ fontSize: "0.9375rem", fontWeight: 500 }}>
                 {currentPhoto.dateFormatted || "Unknown Date"}
               </Typography>
             </Box>
@@ -348,88 +439,64 @@ export default function PhotoViewer({
               )}
             </Stack>
 
-            {/* File size warning with download link */}
-            <Box
-              sx={{
-                mt: 2,
-                p: 2,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? "rgba(251, 191, 36, 0.1)"
-                    : "rgba(251, 191, 36, 0.1)",
-                borderRadius: 2,
-                border: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? "1px solid rgba(251, 191, 36, 0.3)"
-                    : "1px solid rgba(251, 191, 36, 0.3)",
-              }}
-            >
-              <Typography variant="body2" color="warning.dark" fontWeight={600} sx={{ mb: 1 }}>
-                Full Resolution TIFF
-              </Typography>
-              {currentPhoto.DOWNLOAD_LINK ? (
-                <>
-                  <Box
-                    component="a"
-                    href={currentPhoto.DOWNLOAD_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      display: "inline-block",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      color: "primary.main",
-                      textDecoration: "none",
-                      mb: 0.5,
-                      "&:hover": {
-                        textDecoration: "underline",
-                      },
-                    }}
-                  >
-                    Download Full Resolution TIFF →
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Original high-resolution TIFF file ({estimatedSize}). On iOS: long-press the
-                    link to download.
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="caption" color="text.secondary" display="block">
-                  Download not available for this photo.
-                </Typography>
-              )}
-            </Box>
           </Stack>
         </Box>
       </DialogContent>
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
-        <Button onClick={handleClose} color="inherit" size="large">
-          Close
-        </Button>
-        {currentPhoto.DOWNLOAD_LINK && (
-          <Box
-            component="a"
-            href={currentPhoto.DOWNLOAD_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              fontSize: "0.875rem",
-              fontWeight: 600,
-              color: "primary.main",
-              textDecoration: "none",
-              px: 2,
-              py: 1,
-              "&:hover": {
-                textDecoration: "underline",
-              },
-            }}
-          >
-            Download Full Resolution TIFF
+      <DialogActions sx={{ p: 2, gap: 1, justifyContent: "flex-end", borderTop: 1, borderColor: "divider", flexDirection: "column", alignItems: "stretch" }}>
+        {/* Progress indicator */}
+        {converting && (
+          <Box sx={{ width: "100%", mb: 1 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                Converting to WEBP... {conversionProgress}%
+              </Typography>
+            </Stack>
+            <LinearProgress variant="determinate" value={conversionProgress} sx={{ height: 4, borderRadius: 2 }} />
           </Box>
         )}
+
+        {/* Error message */}
+        {conversionError && (
+          <Box sx={{ width: "100%", mb: 1, p: 1, bgcolor: "error.light", borderRadius: 1 }}>
+            <Typography variant="caption" color="error" sx={{ fontSize: "0.75rem" }}>
+              {conversionError}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Action buttons */}
+        <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: "100%" }}>
+          <Button onClick={handleClose} color="inherit" size="medium" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
+            Close
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleConvertToWebP}
+            disabled={converting || !currentPhoto?.DOWNLOAD_LINK}
+            startIcon={converting ? <CircularProgress size={16} /> : <Download />}
+            size="medium"
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+          >
+            Convert to WEBP
+          </Button>
+          {currentPhoto.DOWNLOAD_LINK && (
+            <Button
+              variant="contained"
+              component="a"
+              href={currentPhoto.DOWNLOAD_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="medium"
+              sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+            >
+              Download TIFF
+            </Button>
+          )}
+        </Stack>
       </DialogActions>
     </Dialog>
   );

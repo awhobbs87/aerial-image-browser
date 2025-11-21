@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, lazy, Suspense, useEffect } from "react
 import {
   ThemeProvider,
   CssBaseline,
-  Container,
   Box,
   Typography,
   ToggleButtonGroup,
@@ -49,7 +48,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -470,19 +469,22 @@ function AppContent() {
           {/* Toggle button - Desktop only, always visible */}
           <IconButton
             onClick={handleToggleSidebar}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             sx={{
               display: { xs: "none", md: "flex" },
               position: "absolute",
               left: sidebarOpen ? 460 : 8,
-              top: 80,
+              top: sidebarOpen ? 80 : 120, // Move down when collapsed to avoid zoom controls
               zIndex: 1001,
               bgcolor: "background.paper",
               border: 1,
               borderColor: "divider",
               boxShadow: 2,
-              transition: "left 0.3s ease-in-out",
+              transition: "all 0.3s ease-in-out",
               "&:hover": {
-                bgcolor: "action.hover",
+                bgcolor: "background.paper",
+                opacity: 0.9,
+                transform: "scale(1.05)",
               },
             }}
             size="small"
@@ -612,125 +614,232 @@ function AppContent() {
                     </Button>
                   </Box>
 
-                  {/* Comparison Tools */}
-                  <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
-                    <Box
-                      sx={{
-                        border: (theme) => `1px solid ${theme.palette.primary.main}55`,
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(16, 185, 129, 0.08)"
-                            : "rgba(16, 185, 129, 0.04)",
-                        borderRadius: 1.5,
-                        p: 1.25,
-                      }}
+                  {/* Comparison Tools - Unified styling */}
+                  <Box
+                    sx={{
+                      mb: 2,
+                      display: { xs: "none", md: "block" },
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(42, 42, 42, 0.6)" // surfaceElevated
+                          : "rgba(249, 250, 251, 0.8)", // surfaceAlt
+                      borderRadius: 1.5,
+                      px: 2,
+                      py: 1.5,
+                      border: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "1px solid rgba(255, 255, 255, 0.1)"
+                          : "1px solid rgba(0, 0, 0, 0.08)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 1px 3px rgba(0, 0, 0, 0.3)"
+                          : "0 1px 3px rgba(0, 0, 0, 0.06)",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                      justifyContent="space-between"
                     >
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1}
-                        alignItems={{ xs: "flex-start", sm: "center" }}
-                        justifyContent="space-between"
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: "0.8125rem",
+                          fontWeight: 400,
+                          letterSpacing: "0.01em",
+                          color: (theme) =>
+                            theme.palette.mode === "dark" ? "#B4B4B4" : "#6B7280", // textSecondary
+                        }}
                       >
-                        <Stack spacing={0.5}>
-                          <Typography
-                            variant="subtitle2"
-                            fontWeight={700}
-                            color="primary.main"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            <CompareArrowsIcon fontSize="small" />
-                            Comparison Tools
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ lineHeight: 1.3, fontSize: "0.72rem" }}
-                          >
-                            Select photos below to compare or run Then vs Now
-                          </Typography>
-                        </Stack>
-                        <Stack direction="row" spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            startIcon={<CompareArrowsIcon fontSize="inherit" />}
-                            disabled={comparisonSelection.length < 2}
-                            onClick={handleOpenComparisonModal}
-                            sx={{
-                              fontWeight: 600,
-                              minWidth: 110,
-                            }}
-                          >
-                            Compare ({comparisonSelection.length}/2)
-                          </Button>
-                          <Button
-                            variant="contained"
-                            color="secondary"
-                            size="small"
-                            disabled={comparisonSelection.length !== 1}
-                            onClick={handleOpenThenNowModal}
-                            startIcon={<History fontSize="inherit" />}
-                            sx={{
-                              fontWeight: 600,
-                              minWidth: 110,
-                            }}
-                          >
-                            Then vs Now
-                          </Button>
-                        </Stack>
+                        Select photos to compare or run Then vs Now
+                      </Typography>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Button
+                          variant={comparisonSelection.length >= 2 ? "contained" : "outlined"}
+                          color="primary"
+                          size="small"
+                          startIcon={<CompareArrowsIcon fontSize="small" />}
+                          disabled={comparisonSelection.length < 2}
+                          onClick={handleOpenComparisonModal}
+                          sx={{
+                            fontWeight: 500,
+                            minWidth: 120,
+                            fontSize: "0.8125rem",
+                            textTransform: "none",
+                            px: 1.75,
+                            py: 0.75,
+                            borderRadius: 1,
+                            "&.Mui-disabled": {
+                              opacity: 0.4,
+                              borderColor: "divider",
+                            },
+                            "&:hover:not(.Mui-disabled)": {
+                              transform: "translateY(-1px)",
+                              boxShadow: 2,
+                            },
+                          }}
+                        >
+                          Compare ({comparisonSelection.length}/2)
+                        </Button>
+                        <Button
+                          variant={comparisonSelection.length === 1 ? "contained" : "outlined"}
+                          color="secondary"
+                          size="small"
+                          disabled={comparisonSelection.length !== 1}
+                          onClick={handleOpenThenNowModal}
+                          startIcon={<History fontSize="small" />}
+                          sx={{
+                            fontWeight: 500,
+                            minWidth: 120,
+                            fontSize: "0.8125rem",
+                            textTransform: "none",
+                            px: 1.75,
+                            py: 0.75,
+                            borderRadius: 1,
+                            "&.Mui-disabled": {
+                              opacity: 0.4,
+                              borderColor: "divider",
+                            },
+                            "&:hover:not(.Mui-disabled)": {
+                              transform: "translateY(-1px)",
+                              boxShadow: 2,
+                            },
+                          }}
+                        >
+                          Then vs Now
+                        </Button>
                       </Stack>
-                    </Box>
+                    </Stack>
                   </Box>
 
                   {/* Mobile-only Unified 4-Button View Toggle */}
-                  <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 2 }}>
-                    <Paper elevation={1}>
+                  <Box sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>
+                    <Paper elevation={0} sx={{ bgcolor: "transparent", display: "flex", justifyContent: "center" }}>
                       <ToggleButtonGroup
                         value={mobileViewValue}
                         exclusive
                         onChange={handleMobileViewChange}
                         aria-label="view mode"
                         size="small"
+                        sx={{
+                          "& .MuiToggleButton-root": {
+                            px: 1.25,
+                            py: 0.5,
+                            fontSize: "0.75rem",
+                            fontWeight: 500,
+                            textTransform: "none",
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                          },
+                        }}
                       >
-                        <ToggleButton value="grid" aria-label="grid view" sx={{ px: 1 }}>
-                          <GridView fontSize="small" />
+                        <ToggleButton value="grid" aria-label="grid view">
+                          <GridView sx={{ mr: 0.5, fontSize: 16 }} />
+                          Grid
                         </ToggleButton>
-                        <ToggleButton value="map" aria-label="map view" sx={{ px: 1 }}>
-                          <MapIcon fontSize="small" />
+                        <ToggleButton value="map" aria-label="map view">
+                          <MapIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                          Map
                         </ToggleButton>
-                        <ToggleButton value="timeline" aria-label="timeline view" sx={{ px: 1 }}>
-                          <Timeline fontSize="small" />
+                        <ToggleButton value="timeline" aria-label="timeline view">
+                          <Timeline sx={{ mr: 0.5, fontSize: 16 }} />
+                          Timeline
                         </ToggleButton>
-                        <ToggleButton value="gallery" aria-label="gallery view" sx={{ px: 1 }}>
-                          <PhotoLibrary fontSize="small" />
+                        <ToggleButton value="gallery" aria-label="gallery view">
+                          <PhotoLibrary sx={{ mr: 0.5, fontSize: 16 }} />
+                          Gallery
                         </ToggleButton>
                       </ToggleButtonGroup>
                     </Paper>
                   </Box>
 
-                  {/* Desktop View Toggle */}
-                  <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "center", mb: 3 }}>
-                    <Paper elevation={1}>
+                  {/* Desktop 4-Button View Controls - Unified styling */}
+                  <Box sx={{ display: { xs: "none", md: "block" }, mb: 2 }}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(42, 42, 42, 0.6)"
+                            : "rgba(249, 250, 251, 0.8)",
+                        display: "inline-block",
+                        borderRadius: 1.5,
+                        p: 0.5,
+                        border: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "1px solid rgba(255, 255, 255, 0.1)"
+                            : "1px solid rgba(0, 0, 0, 0.08)",
+                        boxShadow: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "0 1px 3px rgba(0, 0, 0, 0.3)"
+                            : "0 1px 3px rgba(0, 0, 0, 0.06)",
+                      }}
+                    >
                       <ToggleButtonGroup
-                        value={viewMode}
+                        value={viewMode === "map" ? "map" : resultsViewMode}
                         exclusive
-                        onChange={handleViewModeChange}
+                        onChange={(e, value) => {
+                          if (value === "map") {
+                            handleViewModeChange(e, "map");
+                          } else if (value === "grid" || value === "timeline" || value === "gallery") {
+                            handleViewModeChange(e, "grid");
+                            handleResultsViewModeChange(e, value);
+                          }
+                        }}
                         aria-label="view mode"
                         size="small"
+                        sx={{
+                          gap: 0.5,
+                          "& .MuiToggleButton-root": {
+                            px: 1.5,
+                            py: 0.625,
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            textTransform: "none",
+                            border: "none",
+                            borderRadius: 1,
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? "#B4B4B4" : "#6B7280",
+                            bgcolor: "transparent",
+                            "&:hover": {
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(255, 255, 255, 0.08)"
+                                  : "rgba(0, 0, 0, 0.04)",
+                            },
+                            "&.Mui-selected": {
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(16, 185, 129, 0.2)"
+                                  : "rgba(5, 150, 105, 0.1)",
+                              color: (theme) =>
+                                theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                              fontWeight: 600,
+                              "&:hover": {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(16, 185, 129, 0.25)"
+                                    : "rgba(5, 150, 105, 0.15)",
+                              },
+                            },
+                          },
+                        }}
                       >
                         <ToggleButton value="grid" aria-label="grid view">
-                          <GridView sx={{ mr: 1 }} />
+                          <GridView sx={{ mr: 0.75, fontSize: 16 }} />
                           Grid
                         </ToggleButton>
                         <ToggleButton value="map" aria-label="map view">
-                          <MapIcon sx={{ mr: 1 }} />
+                          <MapIcon sx={{ mr: 0.75, fontSize: 16 }} />
                           Map
+                        </ToggleButton>
+                        <ToggleButton value="timeline" aria-label="timeline view">
+                          <Timeline sx={{ mr: 0.75, fontSize: 16 }} />
+                          Timeline
+                        </ToggleButton>
+                        <ToggleButton value="gallery" aria-label="gallery view">
+                          <PhotoLibrary sx={{ mr: 0.75, fontSize: 16 }} />
+                          Gallery
                         </ToggleButton>
                       </ToggleButtonGroup>
                     </Paper>
@@ -740,29 +849,6 @@ function AppContent() {
                   <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
                     {filteredPhotos.length > 0 && (
                       <>
-                        {/* Desktop Results View Toggle */}
-                        <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end", mb: 2 }}>
-                          <ToggleButtonGroup
-                            value={resultsViewMode}
-                            exclusive
-                            onChange={handleResultsViewModeChange}
-                            size="small"
-                            aria-label="results view mode"
-                          >
-                            <ToggleButton value="grid" aria-label="grid results view">
-                              <GridView sx={{ mr: 0.5 }} fontSize="small" />
-                              Grid
-                            </ToggleButton>
-                            <ToggleButton value="timeline" aria-label="timeline results view">
-                              <Timeline sx={{ mr: 0.5 }} fontSize="small" />
-                              Timeline
-                            </ToggleButton>
-                            <ToggleButton value="gallery" aria-label="gallery results view">
-                              <PhotoLibrary sx={{ mr: 0.5 }} fontSize="small" />
-                              Gallery
-                            </ToggleButton>
-                          </ToggleButtonGroup>
-                        </Box>
 
                         <Box sx={{ mb: 2 }}>
                           <Typography
@@ -837,14 +923,11 @@ function AppContent() {
 
                     {resultsViewMode === 'gallery' ? (
                       <PhotoViewer
+                        photo={filteredPhotos[0] || null}
                         photos={filteredPhotos}
                         open
                         onClose={() => setResultsViewMode('grid')} // Go back to grid when closing
                         initialIndex={0}
-                        favorites={favorites}
-                        onFavorite={handleFavorite}
-                        selection={comparisonSelectionKeys}
-                        onToggleSelect={handleToggleComparisonSelection}
                       />
                     ) : resultsViewMode === "grid" ? (
                       <PhotoGrid

@@ -36,6 +36,38 @@ export const fontSize = {
   xl: '1.25rem',
 } as const;
 
+// Unified color tokens for both themes
+export const colorTokens = {
+  light: {
+    surface: '#FFFFFF',
+    surfaceAlt: '#F9FAFB',
+    surfaceElevated: '#FFFFFF',
+    border: 'rgba(0, 0, 0, 0.08)',
+    borderHover: 'rgba(0, 0, 0, 0.12)',
+    textPrimary: '#111827',
+    textSecondary: '#6B7280',
+    textTertiary: '#9CA3AF',
+    accent: '#059669', // Emerald green - brighter for light mode
+    accentHover: '#047857',
+    accentLight: 'rgba(5, 150, 105, 0.1)',
+    divider: 'rgba(0, 0, 0, 0.08)',
+  },
+  dark: {
+    surface: '#1A1A1A',
+    surfaceAlt: '#242424',
+    surfaceElevated: '#2A2A2A',
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderHover: 'rgba(255, 255, 255, 0.15)',
+    textPrimary: '#EAEAEA',
+    textSecondary: '#B4B4B4',
+    textTertiary: '#8A8A8A',
+    accent: '#10B981', // Emerald green - brighter for dark mode
+    accentHover: '#34D399',
+    accentLight: 'rgba(16, 185, 129, 0.15)',
+    divider: 'rgba(255, 255, 255, 0.1)',
+  },
+} as const;
+
 export const shadows = {
   sm: '0 1px 3px rgba(0, 77, 64, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
   md: '0 4px 12px rgba(0, 77, 64, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08)',

@@ -338,7 +338,7 @@ export default function FilterPanel({
           >
             Quick Filters
           </Typography>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
             {FILTER_PRESETS.map((preset) => {
               const Icon = preset.icon;
               return (
@@ -350,16 +350,35 @@ export default function FilterPanel({
                     size="small"
                     variant="outlined"
                     sx={{
-                      height: 26,
-                      fontSize: "0.7rem",
-                      fontWeight: 600,
+                      height: 28,
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
                       cursor: "pointer",
                       transition: "all 0.2s ease-in-out",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(255, 255, 255, 0.1)"
+                          : "rgba(0, 0, 0, 0.08)",
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#B4B4B4" : "#6B7280",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(42, 42, 42, 0.4)"
+                          : "rgba(249, 250, 251, 0.6)",
                       "&:hover": {
-                        borderColor: "primary.main",
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
                         bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.1)" : "rgba(0, 77, 64, 0.05)",
+                          theme.palette.mode === "dark"
+                            ? "rgba(16, 185, 129, 0.15)"
+                            : "rgba(5, 150, 105, 0.08)",
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
                         transform: "translateY(-1px)",
+                        boxShadow: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "0 2px 4px rgba(0, 0, 0, 0.3)"
+                            : "0 2px 4px rgba(0, 0, 0, 0.08)",
                       },
                     }}
                   />
@@ -443,17 +462,25 @@ export default function FilterPanel({
       {/* Compact Filter Panel - Collapsible by default */}
       <Accordion
         defaultExpanded={false}
-        elevation={1}
+        elevation={0}
         sx={{
           overflow: "hidden",
           background: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+            theme.palette.mode === "dark"
+              ? "rgba(42, 42, 42, 0.6)"
+              : "rgba(249, 250, 251, 0.8)",
           border: (theme) =>
-            theme.palette.mode === "dark" ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(0, 0, 0, 0.08)",
+            theme.palette.mode === "dark"
+              ? "1px solid rgba(255, 255, 255, 0.1)"
+              : "1px solid rgba(0, 0, 0, 0.08)",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 1px 3px rgba(0, 0, 0, 0.3)"
+              : "0 1px 3px rgba(0, 0, 0, 0.06)",
           '&:before': {
             display: 'none',
           },
-          borderRadius: 2,
+          borderRadius: 1.5,
         }}
       >
         <AccordionSummary

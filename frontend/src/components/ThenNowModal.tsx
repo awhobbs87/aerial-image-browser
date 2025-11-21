@@ -20,11 +20,10 @@ import {
   Tab,
   Slider,
   Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   ButtonGroup,
   Divider,
+  Drawer,
+  Portal,
 } from "@mui/material";
 import { 
   Map as MapIcon, 
@@ -39,13 +38,12 @@ import {
   ZoomOut,
   RotateLeft,
   RotateRight,
-  Opacity as OpacityIcon,
-  Crop,
-  ExpandMore,
   ArrowUpward,
   ArrowDownward,
   ArrowBack,
   ArrowForward,
+  Image,
+  Satellite,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -132,23 +130,36 @@ export default function ThenNowModal({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isLandscape = useMediaQuery("(orientation: landscape) and (max-width: 960px)");
 
-  // Interactive adjustment controls
-  const [offsetX, setOffsetX] = useState(0);
-  const [offsetY, setOffsetY] = useState(0);
-  const [scale, setScale] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [opacity, setOpacity] = useState(1);
-  const [cropTop, setCropTop] = useState(0);
-  const [cropBottom, setCropBottom] = useState(0);
-  const [cropLeft, setCropLeft] = useState(0);
-  const [cropRight, setCropRight] = useState(0);
-  
-  // Side-by-side rotation controls
+  // Target image selection for fine-tuning
+  const [targetImage, setTargetImage] = useState<"then" | "now">("then");
+
+  // Transform states for THEN image
+  const [thenOffsetX, setThenOffsetX] = useState(0);
+  const [thenOffsetY, setThenOffsetY] = useState(0);
+  const [thenScale, setThenScale] = useState(1);
   const [thenRotation, setThenRotation] = useState(0);
+  const [thenOpacity, setThenOpacity] = useState(1);
+  const [thenCropTop, setThenCropTop] = useState(0);
+  const [thenCropBottom, setThenCropBottom] = useState(0);
+  const [thenCropLeft, setThenCropLeft] = useState(0);
+  const [thenCropRight, setThenCropRight] = useState(0);
+
+  // Transform states for NOW image
+  const [nowOffsetX, setNowOffsetX] = useState(0);
+  const [nowOffsetY, setNowOffsetY] = useState(0);
+  const [nowScale, setNowScale] = useState(1);
   const [nowRotation, setNowRotation] = useState(0);
+  const [nowOpacity, setNowOpacity] = useState(1);
+  const [nowCropTop, setNowCropTop] = useState(0);
+  const [nowCropBottom, setNowCropBottom] = useState(0);
+  const [nowCropLeft, setNowCropLeft] = useState(0);
+  const [nowCropRight, setNowCropRight] = useState(0);
   
   // Loading progress tracking
   const [loadingProgress, setLoadingProgress] = useState<string>("Initializing...");
+  
+  // Drawer state for fine-tune controls
+  const [controlsDrawerOpen, setControlsDrawerOpen] = useState(false);
 
   const previewUrl = useMemo(() => {
     if (!photo) return null;
@@ -320,31 +331,97 @@ useEffect(() => {
       setNowImageLoaded(false);
       setNowImageError(false);
       setSliderValue(50);
-      setOffsetX(0);
-      setOffsetY(0);
-      setScale(1);
-      setRotation(0);
-      setOpacity(1);
-      setCropTop(0);
-      setCropBottom(0);
-      setCropLeft(0);
-      setCropRight(0);
+      setTargetImage("then");
+      // Reset THEN transforms
+      setThenOffsetX(0);
+      setThenOffsetY(0);
+      setThenScale(1);
       setThenRotation(0);
+      setThenOpacity(1);
+      setThenCropTop(0);
+      setThenCropBottom(0);
+      setThenCropLeft(0);
+      setThenCropRight(0);
+      // Reset NOW transforms
+      setNowOffsetX(0);
+      setNowOffsetY(0);
+      setNowScale(1);
       setNowRotation(0);
+      setNowOpacity(1);
+      setNowCropTop(0);
+      setNowCropBottom(0);
+      setNowCropLeft(0);
+      setNowCropRight(0);
       setLoadingProgress("Initializing...");
     }
   }, [photo, open]);
 
-  const resetAdjustments = () => {
-    setOffsetX(0);
-    setOffsetY(0);
-    setScale(1);
-    setRotation(0);
-    setOpacity(1);
-    setCropTop(0);
-    setCropBottom(0);
-    setCropLeft(0);
-    setCropRight(0);
+  // Get current transform values based on target image
+  const getCurrentTransforms = () => {
+    if (targetImage === "then") {
+      return {
+        offsetX: thenOffsetX,
+        offsetY: thenOffsetY,
+        scale: thenScale,
+        rotation: thenRotation,
+        opacity: thenOpacity,
+        cropTop: thenCropTop,
+        cropBottom: thenCropBottom,
+        cropLeft: thenCropLeft,
+        cropRight: thenCropRight,
+        setOffsetX: setThenOffsetX,
+        setOffsetY: setThenOffsetY,
+        setScale: setThenScale,
+        setRotation: setThenRotation,
+        setOpacity: setThenOpacity,
+        setCropTop: setThenCropTop,
+        setCropBottom: setThenCropBottom,
+        setCropLeft: setThenCropLeft,
+        setCropRight: setThenCropRight,
+      };
+    } else {
+      return {
+        offsetX: nowOffsetX,
+        offsetY: nowOffsetY,
+        scale: nowScale,
+        rotation: nowRotation,
+        opacity: nowOpacity,
+        cropTop: nowCropTop,
+        cropBottom: nowCropBottom,
+        cropLeft: nowCropLeft,
+        cropRight: nowCropRight,
+        setOffsetX: setNowOffsetX,
+        setOffsetY: setNowOffsetY,
+        setScale: setNowScale,
+        setRotation: setNowRotation,
+        setOpacity: setNowOpacity,
+        setCropTop: setNowCropTop,
+        setCropBottom: setNowCropBottom,
+        setCropLeft: setNowCropLeft,
+        setCropRight: setNowCropRight,
+      };
+    }
+  };
+
+  const resetAllAdjustments = () => {
+    setThenOffsetX(0);
+    setThenOffsetY(0);
+    setThenScale(1);
+    setThenRotation(0);
+    setThenOpacity(1);
+    setThenCropTop(0);
+    setThenCropBottom(0);
+    setThenCropLeft(0);
+    setThenCropRight(0);
+    setNowOffsetX(0);
+    setNowOffsetY(0);
+    setNowScale(1);
+    setNowRotation(0);
+    setNowOpacity(1);
+    setNowCropTop(0);
+    setNowCropBottom(0);
+    setNowCropLeft(0);
+    setNowCropRight(0);
   };
 
   // Keyboard shortcuts for slider
@@ -370,152 +447,47 @@ useEffect(() => {
 
     return (
       <>
-        {/* Desktop: Controls above image */}
+        {/* Desktop: Slider and controls button */}
         <Box sx={{ display: { xs: "none", md: "block" }, mb: 2 }}>
-          <Box sx={{ mb: 2 }}>
-            <Slider
-              value={sliderValue}
-              onChange={(_e, value) => setSliderValue(value as number)}
-              min={0}
-              max={100}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(value) => `${value}%`}
-              sx={{
-                "& .MuiSlider-thumb": {
-                  width: 20,
-                  height: 20,
-                },
-              }}
-            />
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                THEN ({photo.dateFormatted || "Unknown"})
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                NOW (Satellite)
-              </Typography>
-            </Stack>
-          </Box>
-          
-          {/* Fine-Tune Alignment Controls - Desktop only above image */}
-          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Tune />
-                <Typography variant="subtitle2" fontWeight={600}>
-                  Fine-Tune Alignment
+          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+            <Box sx={{ flex: 1 }}>
+              <Slider
+                value={sliderValue}
+                onChange={(_e, value) => setSliderValue(value as number)}
+                min={0}
+                max={100}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => `${value}%`}
+                sx={{
+                  "& .MuiSlider-thumb": {
+                    width: 18,
+                    height: 18,
+                  },
+                  "& .MuiSlider-valueLabel": {
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                  },
+                }}
+              />
+              <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                  THEN ({photo.dateFormatted || "Unknown"})
                 </Typography>
-                <Chip label="Advanced" size="small" color="primary" variant="outlined" />
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                  NOW (Satellite)
+                </Typography>
               </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Stack spacing={3}>
-                <Alert severity="info" icon={<Info />}>
-                  Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
-                </Alert>
-
-                {/* Position Controls */}
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="body2" fontWeight={600}>Position</Typography>
-                    <ButtonGroup size="small" variant="outlined">
-                      <Button onClick={() => setOffsetY(offsetY - 5)} title="Move Up"><ArrowUpward fontSize="small" /></Button>
-                      <Button onClick={() => setOffsetY(offsetY + 5)} title="Move Down"><ArrowDownward fontSize="small" /></Button>
-                      <Button onClick={() => setOffsetX(offsetX - 5)} title="Move Left"><ArrowBack fontSize="small" /></Button>
-                      <Button onClick={() => setOffsetX(offsetX + 5)} title="Move Right"><ArrowForward fontSize="small" /></Button>
-                    </ButtonGroup>
-                  </Stack>
-                  <Stack direction="row" spacing={2}>
-                    <Box flex={1}>
-                      <Typography variant="caption" color="text.secondary">X: {offsetX}px</Typography>
-                      <Slider value={offsetX} onChange={(_e, v) => setOffsetX(v as number)} min={-200} max={200} step={1} size="small" />
-                    </Box>
-                    <Box flex={1}>
-                      <Typography variant="caption" color="text.secondary">Y: {offsetY}px</Typography>
-                      <Slider value={offsetY} onChange={(_e, v) => setOffsetY(v as number)} min={-200} max={200} step={1} size="small" />
-                    </Box>
-                  </Stack>
-                </Box>
-
-                <Divider />
-
-                {/* Scale Control */}
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="body2" fontWeight={600}>Scale: {scale.toFixed(2)}x</Typography>
-                    <ButtonGroup size="small" variant="outlined">
-                      <Button onClick={() => setScale(Math.max(0.5, scale - 0.05))} title="Zoom Out"><ZoomOut fontSize="small" /></Button>
-                      <Button onClick={() => setScale(Math.min(2, scale + 0.05))} title="Zoom In"><ZoomIn fontSize="small" /></Button>
-                    </ButtonGroup>
-                  </Stack>
-                  <Slider value={scale} onChange={(_e, v) => setScale(v as number)} min={0.5} max={2} step={0.01} size="small" />
-                </Box>
-
-                <Divider />
-
-                {/* Rotation Control */}
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="body2" fontWeight={600}>Rotation: {rotation}°</Typography>
-                    <ButtonGroup size="small" variant="outlined">
-                      <Button onClick={() => setRotation(rotation - 1)} title="Rotate Left"><RotateLeft fontSize="small" /></Button>
-                      <Button onClick={() => setRotation(rotation + 1)} title="Rotate Right"><RotateRight fontSize="small" /></Button>
-                    </ButtonGroup>
-                  </Stack>
-                  <Slider value={rotation} onChange={(_e, v) => setRotation(v as number)} min={-45} max={45} step={0.1} size="small" />
-                </Box>
-
-                <Divider />
-
-                {/* Opacity Control */}
-                <Box>
-                  <Typography variant="body2" fontWeight={600} mb={1}>
-                    <OpacityIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                    Opacity: {Math.round(opacity * 100)}%
-                  </Typography>
-                  <Slider value={opacity} onChange={(_e, v) => setOpacity(v as number)} min={0} max={1} step={0.01} size="small" />
-                </Box>
-
-                <Divider />
-
-                {/* Crop Controls */}
-                <Box>
-                  <Typography variant="body2" fontWeight={600} mb={1}>
-                    <Crop sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                    Crop Edges (Remove Film Artifacts)
-                  </Typography>
-                  <Stack spacing={1.5}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Top: {cropTop}%</Typography>
-                      <Slider value={cropTop} onChange={(_e, v) => setCropTop(v as number)} min={0} max={20} step={0.1} size="small" />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Bottom: {cropBottom}%</Typography>
-                      <Slider value={cropBottom} onChange={(_e, v) => setCropBottom(v as number)} min={0} max={20} step={0.1} size="small" />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Left: {cropLeft}%</Typography>
-                      <Slider value={cropLeft} onChange={(_e, v) => setCropLeft(v as number)} min={0} max={20} step={0.1} size="small" />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Right: {cropRight}%</Typography>
-                      <Slider value={cropRight} onChange={(_e, v) => setCropRight(v as number)} min={0} max={20} step={0.1} size="small" />
-                    </Box>
-                  </Stack>
-                </Box>
-
-                {/* Reset Button */}
-                <Button
-                  variant="outlined"
-                  startIcon={<RestartAlt />}
-                  onClick={resetAdjustments}
-                  fullWidth
-                >
-                  Reset All Adjustments
-                </Button>
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+            <Button
+              variant="outlined"
+              startIcon={<Tune />}
+              onClick={() => setControlsDrawerOpen(true)}
+              size="small"
+              sx={{ minWidth: 140 }}
+            >
+              Fine-Tune
+            </Button>
+          </Stack>
         </Box>
 
         <Box
@@ -558,7 +530,7 @@ useEffect(() => {
             </Fade>
           )}
 
-          {/* Satellite imagery (background) */}
+          {/* Satellite imagery (background) - NOW image with transforms applied directly */}
           <Box
             sx={{
               position: "absolute",
@@ -566,6 +538,7 @@ useEffect(() => {
               zIndex: 1,
               pointerEvents: "none",
               backgroundColor: "rgba(15,23,42,0.95)",
+              overflow: "hidden",
             }}
           >
             {nowImageUrl && !nowImageError ? (
@@ -580,12 +553,19 @@ useEffect(() => {
                 }}
                 sx={{
                   position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
+                  // Apply crop by adjusting position and size
+                  left: `${nowCropLeft}%`,
+                  top: `${nowCropTop}%`,
+                  right: `${nowCropRight}%`,
+                  bottom: `${nowCropBottom}%`,
+                  width: `calc(100% - ${nowCropLeft + nowCropRight}%)`,
+                  height: `calc(100% - ${nowCropTop + nowCropBottom}%)`,
                   objectFit: "cover",
-                  opacity: nowImageLoaded ? 1 : 0,
+                  opacity: nowImageLoaded ? nowOpacity : 0,
                   transition: "opacity 0.3s ease-in-out",
+                  // Apply transforms directly to the image in real coordinate space
+                  transform: `translate(${nowOffsetX}px, ${nowOffsetY}px) scale(${nowScale}) rotate(${nowRotation}deg)`,
+                  transformOrigin: "center center",
                 }}
               />
             ) : (
@@ -610,14 +590,20 @@ useEffect(() => {
             )}
           </Box>
 
-          {/* Historical photo (foreground with slider) - with cropping wrapper */}
+          {/* Historical photo (foreground with slider) - THEN image with transforms applied directly */}
+          {/* 
+            Transform Model: All transforms (translate, scale, rotate, crop) are applied directly 
+            to the image element itself, not to a wrapper container. This ensures the image moves 
+            in real coordinate space relative to the viewport, not just within a masked container.
+            The slider only controls visibility (clipPath), not the transform itself.
+          */}
           <Box
             sx={{
               position: "absolute",
               inset: 0,
               zIndex: 2,
               pointerEvents: "none",
-              clipPath: `inset(${cropTop}% ${cropRight}% ${cropBottom}% ${cropLeft}%)`,
+              overflow: "hidden",
             }}
           >
             <Box
@@ -628,55 +614,92 @@ useEffect(() => {
               onError={() => setImageError(true)}
               sx={{
                 position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
+                // Apply crop by adjusting position and size (pre-compositing)
+                left: `${thenCropLeft}%`,
+                top: `${thenCropTop}%`,
+                right: `${thenCropRight}%`,
+                bottom: `${thenCropBottom}%`,
+                width: `calc(100% - ${thenCropLeft + thenCropRight}%)`,
+                height: `calc(100% - ${thenCropTop + thenCropBottom}%)`,
                 objectFit: "cover",
-                pointerEvents: "none",
-                clipPath: `polygon(0 0, ${sliderValue}% 0, ${sliderValue}% 100%, 0 100%)`,
-                opacity: imageLoaded ? opacity : 0,
+                opacity: imageLoaded ? thenOpacity : 0,
                 transition: "opacity 0.3s ease-in-out",
-                transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale}) rotate(${rotation}deg)`,
+                // Apply transforms directly to the image in real coordinate space
+                transform: `translate(${thenOffsetX}px, ${thenOffsetY}px) scale(${thenScale}) rotate(${thenRotation}deg)`,
                 transformOrigin: "center center",
+                // Slider only reveals/hides the transformed image, doesn't contain the transform
+                clipPath: `polygon(0 0, ${sliderValue}% 0, ${sliderValue}% 100%, 0 100%)`,
               }}
             />
           </Box>
 
-          {/* Photo labels */}
+          {/* Photo labels with active indicator */}
           {imageLoaded && nowImageLoaded && !nowImageError && (
             <Fade in timeout={500}>
               <Box>
                 <Chip
                   label={`THEN (${photo.dateFormatted || "Unknown"})`}
                   size="small"
+                  icon={targetImage === "then" ? <Tune sx={{ fontSize: 14 }} /> : undefined}
                   sx={{
                     position: "absolute",
                     bottom: 16,
                     left: 16,
                     zIndex: 4,
-                    bgcolor: "rgba(0,0,0,0.7)",
+                    bgcolor: targetImage === "then" 
+                      ? (theme) => theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.9)" : "rgba(5, 150, 105, 0.9)"
+                      : "rgba(0,0,0,0.7)",
                     color: "white",
                     backdropFilter: "blur(8px)",
+                    border: targetImage === "then" 
+                      ? (theme) => `2px solid ${theme.palette.mode === "dark" ? "#10B981" : "#059669"}`
+                      : "none",
+                    fontWeight: targetImage === "then" ? 600 : 400,
                   }}
                 />
                 <Chip
                   label="NOW (Satellite)"
                   size="small"
+                  icon={targetImage === "now" ? <Tune sx={{ fontSize: 14 }} /> : undefined}
                   sx={{
                     position: "absolute",
                     bottom: 16,
                     right: 16,
                     zIndex: 4,
-                    bgcolor: "rgba(0,0,0,0.7)",
+                    bgcolor: targetImage === "now"
+                      ? (theme) => theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.9)" : "rgba(5, 150, 105, 0.9)"
+                      : "rgba(0,0,0,0.7)",
                     color: "white",
                     backdropFilter: "blur(8px)",
+                    border: targetImage === "now"
+                      ? (theme) => `2px solid ${theme.palette.mode === "dark" ? "#10B981" : "#059669"}`
+                      : "none",
+                    fontWeight: targetImage === "now" ? 600 : 400,
                   }}
                 />
               </Box>
             </Fade>
           )}
 
-          {/* Slider handle */}
+          {/* Visual highlight border around active image */}
+          {controlsDrawerOpen && (
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 3,
+                pointerEvents: "none",
+                border: (theme) => 
+                  `3px solid ${targetImage === "then" 
+                    ? (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.6)" : "rgba(5, 150, 105, 0.6)")
+                    : "transparent"}`,
+                borderRadius: 3,
+                transition: "border-color 0.3s ease",
+              }}
+            />
+          )}
+
+          {/* Slider handle - larger for mobile */}
           <Box
             onPointerDown={(e) => {
               const handle = e.currentTarget as HTMLElement | null;
@@ -726,15 +749,19 @@ useEffect(() => {
               top: 0,
               bottom: 0,
               left: `calc(${sliderValue}% - 2px)`,
-              width: 4,
+              width: { xs: 6, md: 4 },
               bgcolor: "primary.main",
-              boxShadow: "0 0 16px rgba(16, 185, 129, 0.8)",
+              boxShadow: (theme) => theme.palette.mode === "dark"
+                ? "0 0 12px rgba(16, 185, 129, 0.6)"
+                : "0 0 12px rgba(0, 77, 64, 0.4)",
               cursor: "ew-resize",
               touchAction: "none",
               zIndex: 3,
               transition: "box-shadow 0.2s ease-in-out",
               "&:hover": {
-                boxShadow: "0 0 24px rgba(16, 185, 129, 1)",
+                boxShadow: (theme) => theme.palette.mode === "dark"
+                  ? "0 0 20px rgba(16, 185, 129, 0.8)"
+                  : "0 0 20px rgba(0, 77, 64, 0.6)",
               },
               "&::before": {
                 content: '""',
@@ -742,14 +769,17 @@ useEffect(() => {
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 40,
-                height: 40,
+                width: { xs: 48, md: 40 },
+                height: { xs: 48, md: 40 },
                 borderRadius: "50%",
-                border: "3px solid currentColor",
+                border: (theme) => `2px solid ${theme.palette.primary.main}`,
                 backgroundColor: (theme) =>
                   theme.palette.mode === "dark"
-                    ? "rgba(0,0,0,0.6)"
-                    : "rgba(255,255,255,0.8)",
+                    ? "rgba(0,0,0,0.7)"
+                    : "rgba(255,255,255,0.9)",
+                boxShadow: (theme) => theme.palette.mode === "dark"
+                  ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                  : "0 2px 8px rgba(0, 0, 0, 0.15)",
               },
               "&::after": {
                 content: '""',
@@ -757,9 +787,9 @@ useEffect(() => {
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 24,
+                width: { xs: 28, md: 24 },
                 height: 2,
-                bgcolor: "currentColor",
+                bgcolor: "primary.main",
               },
             }}
           >
@@ -767,9 +797,9 @@ useEffect(() => {
               sx={{
                 position: "absolute",
                 top: "50%",
-                left: -28,
+                left: { xs: -32, md: -28 },
                 transform: "translateY(-50%)",
-                fontSize: 20,
+                fontSize: { xs: 24, md: 20 },
                 color: "primary.main",
               }}
             />
@@ -777,168 +807,54 @@ useEffect(() => {
               sx={{
                 position: "absolute",
                 top: "50%",
-                right: -28,
+                right: { xs: -32, md: -28 },
                 transform: "translateY(-50%)",
-                fontSize: 20,
+                fontSize: { xs: 24, md: 20 },
                 color: "primary.main",
               }}
             />
           </Box>
         </Box>
         
-        {/* Mobile: Controls below image */}
+        {/* Mobile: Slider and controls button */}
         <Box sx={{ display: { xs: "block", md: "none" }, mt: 1.5, mx: 2 }}>
-          <Slider
-            value={sliderValue}
-            onChange={(_e, value) => setSliderValue(value as number)}
-            min={0}
-            max={100}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${value}%`}
-            sx={{
-              "& .MuiSlider-thumb": {
-                width: 20,
-                height: 20,
-              },
-            }}
-          />
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-            <Typography variant="caption" color="text.secondary">
-              THEN ({photo.dateFormatted || "Unknown"})
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              NOW (Satellite)
-            </Typography>
-          </Stack>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ fontStyle: "italic", display: "block", textAlign: "center", mt: 2 }}
-          >
-            Use arrow keys (←/→) to adjust slider. Current imagery sourced from Esri World Imagery.
-          </Typography>
-        </Box>
-
-        {/* Mobile: Adjustment Controls - Reduced spacing for better visibility */}
-        <Box sx={{ display: { xs: "block", md: "none" }, mt: 1 }}>
-          <Accordion sx={{ borderRadius: 2 }} elevation={2}>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Tune />
-              <Typography variant="subtitle2" fontWeight={600}>
-                Fine-Tune Alignment
+          <Stack spacing={1.5}>
+            <Slider
+              value={sliderValue}
+              onChange={(_e, value) => setSliderValue(value as number)}
+              min={0}
+              max={100}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value}%`}
+              sx={{
+                "& .MuiSlider-thumb": {
+                  width: 24,
+                  height: 24,
+                },
+                "& .MuiSlider-valueLabel": {
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                },
+              }}
+            />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                THEN ({photo.dateFormatted || "Unknown"})
               </Typography>
-              <Chip label="Advanced" size="small" color="primary" variant="outlined" />
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                NOW (Satellite)
+              </Typography>
             </Stack>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Stack spacing={3}>
-              <Alert severity="info" icon={<Info />}>
-                Adjust the historical photo to better align with the satellite imagery. Use these controls to compensate for perspective differences and remove film artifacts.
-              </Alert>
-
-              {/* Position Controls */}
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="body2" fontWeight={600}>Position</Typography>
-                  <ButtonGroup size="small" variant="outlined">
-                    <Button onClick={() => setOffsetY(offsetY - 5)} title="Move Up"><ArrowUpward fontSize="small" /></Button>
-                    <Button onClick={() => setOffsetY(offsetY + 5)} title="Move Down"><ArrowDownward fontSize="small" /></Button>
-                    <Button onClick={() => setOffsetX(offsetX - 5)} title="Move Left"><ArrowBack fontSize="small" /></Button>
-                    <Button onClick={() => setOffsetX(offsetX + 5)} title="Move Right"><ArrowForward fontSize="small" /></Button>
-                  </ButtonGroup>
-                </Stack>
-                <Stack direction="row" spacing={2}>
-                  <Box flex={1}>
-                    <Typography variant="caption" color="text.secondary">X: {offsetX}px</Typography>
-                    <Slider value={offsetX} onChange={(_e, v) => setOffsetX(v as number)} min={-200} max={200} step={1} size="small" />
-                  </Box>
-                  <Box flex={1}>
-                    <Typography variant="caption" color="text.secondary">Y: {offsetY}px</Typography>
-                    <Slider value={offsetY} onChange={(_e, v) => setOffsetY(v as number)} min={-200} max={200} step={1} size="small" />
-                  </Box>
-                </Stack>
-              </Box>
-
-              <Divider />
-
-              {/* Scale Control */}
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="body2" fontWeight={600}>Scale: {scale.toFixed(2)}x</Typography>
-                  <ButtonGroup size="small" variant="outlined">
-                    <Button onClick={() => setScale(Math.max(0.5, scale - 0.05))} title="Zoom Out"><ZoomOut fontSize="small" /></Button>
-                    <Button onClick={() => setScale(Math.min(2, scale + 0.05))} title="Zoom In"><ZoomIn fontSize="small" /></Button>
-                  </ButtonGroup>
-                </Stack>
-                <Slider value={scale} onChange={(_e, v) => setScale(v as number)} min={0.5} max={2} step={0.01} size="small" />
-              </Box>
-
-              <Divider />
-
-              {/* Rotation Control */}
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="body2" fontWeight={600}>Rotation: {rotation}°</Typography>
-                  <ButtonGroup size="small" variant="outlined">
-                    <Button onClick={() => setRotation(rotation - 1)} title="Rotate Left"><RotateLeft fontSize="small" /></Button>
-                    <Button onClick={() => setRotation(rotation + 1)} title="Rotate Right"><RotateRight fontSize="small" /></Button>
-                  </ButtonGroup>
-                </Stack>
-                <Slider value={rotation} onChange={(_e, v) => setRotation(v as number)} min={-45} max={45} step={0.1} size="small" />
-              </Box>
-
-              <Divider />
-
-              {/* Opacity Control */}
-              <Box>
-                <Typography variant="body2" fontWeight={600} mb={1}>
-                  <OpacityIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                  Opacity: {Math.round(opacity * 100)}%
-                </Typography>
-                <Slider value={opacity} onChange={(_e, v) => setOpacity(v as number)} min={0} max={1} step={0.01} size="small" />
-              </Box>
-
-              <Divider />
-
-              {/* Crop Controls */}
-              <Box>
-                <Typography variant="body2" fontWeight={600} mb={1}>
-                  <Crop sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                  Crop Edges (Remove Film Artifacts)
-                </Typography>
-                <Stack spacing={1.5}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Top: {cropTop}%</Typography>
-                    <Slider value={cropTop} onChange={(_e, v) => setCropTop(v as number)} min={0} max={20} step={0.1} size="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Bottom: {cropBottom}%</Typography>
-                    <Slider value={cropBottom} onChange={(_e, v) => setCropBottom(v as number)} min={0} max={20} step={0.1} size="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Left: {cropLeft}%</Typography>
-                    <Slider value={cropLeft} onChange={(_e, v) => setCropLeft(v as number)} min={0} max={20} step={0.1} size="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Right: {cropRight}%</Typography>
-                    <Slider value={cropRight} onChange={(_e, v) => setCropRight(v as number)} min={0} max={20} step={0.1} size="small" />
-                  </Box>
-                </Stack>
-              </Box>
-
-              {/* Reset Button */}
-              <Button
-                variant="outlined"
-                startIcon={<RestartAlt />}
-                onClick={resetAdjustments}
-                fullWidth
-              >
-                Reset All Adjustments
-              </Button>
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+            <Button
+              variant="outlined"
+              startIcon={<Tune />}
+              onClick={() => setControlsDrawerOpen(true)}
+              size="small"
+              fullWidth
+            >
+              Fine-Tune Alignment
+            </Button>
+          </Stack>
         </Box>
       </>
     );
@@ -1227,28 +1143,28 @@ useEffect(() => {
         sx: { borderRadius: { xs: 0, sm: 3 }, minHeight: "80vh" },
       }}
     >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1 }}>
+      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1, pt: 2.5, pb: 1.5 }}>
         <Stack spacing={0.5}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="h5" fontWeight={700}>
+            <Typography variant="h6" sx={{ fontSize: "1rem", fontWeight: 500 }}>
               Then vs Now
             </Typography>
             <Tooltip
               title={
                 <Box sx={{ p: 0.5 }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontSize: "0.875rem" }}>
                     <strong>Note on alignment:</strong>
                   </Typography>
-                  <Typography variant="caption" component="div">
+                  <Typography variant="caption" component="div" sx={{ fontSize: "0.75rem" }}>
                     The historical photo and current satellite imagery may not align perfectly because:
                   </Typography>
-                  <Typography variant="caption" component="ul" sx={{ mt: 0.5, pl: 2 }}>
+                  <Typography variant="caption" component="ul" sx={{ mt: 0.5, pl: 2, fontSize: "0.75rem" }}>
                     <li>Historical photos used different projection systems</li>
                     <li>Camera angles and perspectives vary</li>
                     <li>Terrain changes over time affect georeferencing</li>
                     <li>Modern satellite imagery uses different capture methods</li>
                   </Typography>
-                  <Typography variant="caption" sx={{ mt: 1, display: "block", fontStyle: "italic" }}>
+                  <Typography variant="caption" sx={{ mt: 1, display: "block", fontStyle: "italic", fontSize: "0.75rem" }}>
                     Use this feature to compare general area changes rather than precise measurements.
                   </Typography>
                 </Box>
@@ -1256,14 +1172,14 @@ useEffect(() => {
               arrow
               placement="bottom-start"
             >
-              <InfoOutlined sx={{ fontSize: 20, color: "text.secondary", cursor: "help" }} />
+              <InfoOutlined sx={{ fontSize: 18, color: "text.secondary", cursor: "help" }} />
             </Tooltip>
           </Stack>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8125rem" }}>
             Compare historical aerial photography with current satellite imagery
           </Typography>
         </Stack>
-        <IconButton onClick={onClose} aria-label="Close Then vs Now modal">
+        <IconButton onClick={onClose} aria-label="Close Then vs Now modal" size="small">
           <Close />
         </IconButton>
       </DialogTitle>
@@ -1275,7 +1191,16 @@ useEffect(() => {
             onChange={(_e, value) => setTab(value)}
             variant="scrollable"
             allowScrollButtonsMobile
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: 2,
+              "& .MuiTab-root": {
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                textTransform: "none",
+                minHeight: 40,
+                px: 2,
+              },
+            }}
           >
             <Tab label="Side-by-Side" value="side-by-side" />
             <Tab label="Slider Comparison" value="slider" />
@@ -1284,8 +1209,8 @@ useEffect(() => {
         {renderContent()}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} color="inherit">
+      <DialogActions sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider", justifyContent: "flex-end", gap: 1 }}>
+        <Button onClick={onClose} color="inherit" size="medium" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
           Close
         </Button>
         {photo && photo.DOWNLOAD_LINK ? (
@@ -1295,15 +1220,1480 @@ useEffect(() => {
             href={photo.DOWNLOAD_LINK}
             target="_blank"
             rel="noopener noreferrer"
+            size="medium"
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
           >
-            Download Original TIFF
+            Download TIFF
           </Button>
         ) : (
-          <Button variant="contained" disabled>
-            Download Original TIFF
+          <Button variant="contained" disabled size="medium" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
+            Download TIFF
           </Button>
         )}
       </DialogActions>
+
+      {/* Fine-Tune Alignment Drawer - Desktop: Side drawer */}
+      <Portal container={document.body}>
+        <Drawer
+          anchor="right"
+          open={controlsDrawerOpen && !isMobile}
+          onClose={() => setControlsDrawerOpen(false)}
+          PaperProps={{
+            sx: {
+              width: { xs: "100%", sm: 360 },
+              maxWidth: "90vw",
+              zIndex: 1400, // Higher than modal (1300)
+            },
+          }}
+          ModalProps={{
+            container: document.body,
+            style: { zIndex: 1400 },
+          }}
+        >
+        <Box sx={{ p: 2.5, height: "100%", overflowY: "auto" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
+            <Typography variant="h6" sx={{ fontSize: "1.125rem", fontWeight: 600 }}>
+              Fine-Tune Alignment
+            </Typography>
+            <IconButton 
+              onClick={() => setControlsDrawerOpen(false)} 
+              size="small" 
+              aria-label="Close drawer"
+              sx={{
+                color: "text.primary",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Stack>
+
+          {/* Target Image Selector */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, mb: 1, display: "block", color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Target Image
+            </Typography>
+            <ButtonGroup fullWidth size="small" variant="outlined">
+              <Button
+                variant={targetImage === "then" ? "contained" : "outlined"}
+                startIcon={<Image />}
+                onClick={() => setTargetImage("then")}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: targetImage === "then" ? 600 : 500,
+                  "&.MuiButton-contained": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    "&:hover": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#34D399" : "#047857",
+                    },
+                  },
+                }}
+              >
+                THEN
+              </Button>
+              <Button
+                variant={targetImage === "now" ? "contained" : "outlined"}
+                startIcon={<Satellite />}
+                onClick={() => setTargetImage("now")}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: targetImage === "now" ? 600 : 500,
+                  "&.MuiButton-contained": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    "&:hover": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#34D399" : "#047857",
+                    },
+                  },
+                }}
+              >
+                NOW
+              </Button>
+            </ButtonGroup>
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+
+          <Stack spacing={3}>
+            {/* Position Controls */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                  Position
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const transforms = getCurrentTransforms();
+                    transforms.setOffsetX(0);
+                    transforms.setOffsetY(0);
+                  }}
+                  sx={{
+                    color: "text.secondary",
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                      color: "text.primary",
+                    },
+                  }}
+                  title="Reset position"
+                >
+                  <RestartAlt fontSize="small" />
+                </IconButton>
+              </Stack>
+              <Stack direction="row" spacing={1} mb={1.5}>
+                <ButtonGroup size="small" variant="outlined" sx={{ flex: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOffsetY(transforms.offsetY - 5);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Move up"
+                  >
+                    <ArrowUpward fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOffsetY(transforms.offsetY + 5);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Move down"
+                  >
+                    <ArrowDownward fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOffsetX(transforms.offsetX - 5);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Move left"
+                  >
+                    <ArrowBack fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOffsetX(transforms.offsetX + 5);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Move right"
+                  >
+                    <ArrowForward fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+              <Stack direction="row" spacing={2}>
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      X
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().offsetX}
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().offsetX}
+                    onChange={(_e, v) => getCurrentTransforms().setOffsetX(v as number)}
+                    min={-200}
+                    max={200}
+                    step={1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      Y
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().offsetY}
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().offsetY}
+                    onChange={(_e, v) => getCurrentTransforms().setOffsetY(v as number)}
+                    min={-200}
+                    max={200}
+                    step={1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Scale Control */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                  Scale
+                </Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                    {getCurrentTransforms().scale.toFixed(2)}x
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setScale(1);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
+                      },
+                    }}
+                    title="Reset scale"
+                  >
+                    <RestartAlt fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+              <Stack direction="row" spacing={1} mb={1.5}>
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setScale(Math.max(0.5, transforms.scale - 0.05));
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Zoom out"
+                  >
+                    <ZoomOut fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setScale(Math.min(2, transforms.scale + 0.05));
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Zoom in"
+                  >
+                    <ZoomIn fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+              <Slider
+                value={getCurrentTransforms().scale}
+                onChange={(_e, v) => getCurrentTransforms().setScale(v as number)}
+                min={0.5}
+                max={2}
+                step={0.01}
+                size="small"
+                sx={{
+                  "& .MuiSlider-thumb": {
+                    width: 18,
+                    height: 18,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                    "&:hover": {
+                      boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                    },
+                  },
+                  "& .MuiSlider-track": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: "none",
+                  },
+                  "& .MuiSlider-rail": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Divider />
+
+            {/* Rotation Control */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                  Rotation
+                </Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                    {Math.round(getCurrentTransforms().rotation)}°
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setRotation(0);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
+                      },
+                    }}
+                    title="Reset rotation"
+                  >
+                    <RestartAlt fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+              <Stack direction="row" spacing={1} mb={1.5} alignItems="center">
+                <ButtonGroup size="small" variant="outlined">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setRotation(transforms.rotation - 1);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Rotate left"
+                  >
+                    <RotateLeft fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setRotation(transforms.rotation + 1);
+                    }}
+                    sx={{
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    title="Rotate right"
+                  >
+                    <RotateRight fontSize="small" />
+                  </IconButton>
+                </ButtonGroup>
+              </Stack>
+              <Slider
+                value={getCurrentTransforms().rotation}
+                onChange={(_e, v) => getCurrentTransforms().setRotation(v as number)}
+                min={-45}
+                max={45}
+                step={0.1}
+                size="small"
+                sx={{
+                  "& .MuiSlider-thumb": {
+                    width: 18,
+                    height: 18,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                    "&:hover": {
+                      boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                    },
+                  },
+                  "& .MuiSlider-track": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: "none",
+                  },
+                  "& .MuiSlider-rail": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Divider />
+
+            {/* Opacity Control */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                  Opacity
+                </Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                    {Math.round(getCurrentTransforms().opacity * 100)}%
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOpacity(1);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
+                      },
+                    }}
+                    title="Reset opacity"
+                  >
+                    <RestartAlt fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+              <Slider
+                value={getCurrentTransforms().opacity}
+                onChange={(_e, v) => getCurrentTransforms().setOpacity(v as number)}
+                min={0}
+                max={1}
+                step={0.01}
+                size="small"
+                sx={{
+                  "& .MuiSlider-thumb": {
+                    width: 18,
+                    height: 18,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                    "&:hover": {
+                      boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                    },
+                  },
+                  "& .MuiSlider-track": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                    border: "none",
+                  },
+                  "& .MuiSlider-rail": {
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Divider />
+
+            {/* Crop Controls */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                  Crop Edges
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const transforms = getCurrentTransforms();
+                    transforms.setCropTop(0);
+                    transforms.setCropBottom(0);
+                    transforms.setCropLeft(0);
+                    transforms.setCropRight(0);
+                  }}
+                  sx={{
+                    color: "text.secondary",
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                      color: "text.primary",
+                    },
+                  }}
+                  title="Reset crop"
+                >
+                  <RestartAlt fontSize="small" />
+                </IconButton>
+              </Stack>
+              <Stack spacing={2}>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      Top
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().cropTop.toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().cropTop}
+                    onChange={(_e, v) => getCurrentTransforms().setCropTop(v as number)}
+                    min={0}
+                    max={20}
+                    step={0.1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      Bottom
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().cropBottom.toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().cropBottom}
+                    onChange={(_e, v) => getCurrentTransforms().setCropBottom(v as number)}
+                    min={0}
+                    max={20}
+                    step={0.1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      Left
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().cropLeft.toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().cropLeft}
+                    onChange={(_e, v) => getCurrentTransforms().setCropLeft(v as number)}
+                    min={0}
+                    max={20}
+                    step={0.1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                      Right
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                      {getCurrentTransforms().cropRight.toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                  <Slider
+                    value={getCurrentTransforms().cropRight}
+                    onChange={(_e, v) => getCurrentTransforms().setCropRight(v as number)}
+                    min={0}
+                    max={20}
+                    step={0.1}
+                    size="small"
+                    sx={{
+                      "& .MuiSlider-thumb": {
+                        width: 18,
+                        height: 18,
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                        "&:hover": {
+                          boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                        },
+                      },
+                      "& .MuiSlider-track": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                        border: "none",
+                      },
+                      "& .MuiSlider-rail": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            <Button
+              variant="outlined"
+              startIcon={<RestartAlt />}
+              onClick={resetAllAdjustments}
+              fullWidth
+              size="medium"
+              sx={{
+                mt: 1,
+                textTransform: "none",
+                fontWeight: 500,
+                borderColor: "divider",
+                color: "text.primary",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  borderColor: "primary.main",
+                },
+              }}
+            >
+              Reset All Adjustments
+            </Button>
+          </Stack>
+        </Box>
+      </Drawer>
+      </Portal>
+
+      {/* Fine-Tune Alignment Drawer - Mobile: Bottom drawer */}
+      <Portal container={document.body}>
+        <Drawer
+          anchor="bottom"
+          open={controlsDrawerOpen && isMobile}
+          onClose={() => setControlsDrawerOpen(false)}
+          PaperProps={{
+            sx: {
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: "80vh",
+              zIndex: 1400, // Higher than modal (1300)
+            },
+          }}
+          ModalProps={{
+            container: document.body,
+            style: { zIndex: 1400 },
+          }}
+        >
+          <Box sx={{ p: 2.5, height: "100%", overflowY: "auto" }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
+              <Typography variant="h6" sx={{ fontSize: "1.125rem", fontWeight: 600 }}>
+                Fine-Tune Alignment
+              </Typography>
+              <IconButton 
+                onClick={() => setControlsDrawerOpen(false)} 
+                size="small" 
+                aria-label="Close drawer"
+                sx={{
+                  color: "text.primary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                  },
+                }}
+              >
+                <Close />
+              </IconButton>
+            </Stack>
+
+            {/* Target Image Selector */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, mb: 1, display: "block", color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Target Image
+              </Typography>
+              <ButtonGroup fullWidth size="small" variant="outlined">
+                <Button
+                  variant={targetImage === "then" ? "contained" : "outlined"}
+                  startIcon={<Image />}
+                  onClick={() => setTargetImage("then")}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: targetImage === "then" ? 600 : 500,
+                    "&.MuiButton-contained": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      "&:hover": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#34D399" : "#047857",
+                      },
+                    },
+                  }}
+                >
+                  THEN
+                </Button>
+                <Button
+                  variant={targetImage === "now" ? "contained" : "outlined"}
+                  startIcon={<Satellite />}
+                  onClick={() => setTargetImage("now")}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: targetImage === "now" ? 600 : 500,
+                    "&.MuiButton-contained": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      "&:hover": {
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "#34D399" : "#047857",
+                      },
+                    },
+                  }}
+                >
+                  NOW
+                </Button>
+              </ButtonGroup>
+            </Box>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Stack spacing={3}>
+              {/* Position Controls */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                    Position
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setOffsetX(0);
+                      transforms.setOffsetY(0);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
+                      },
+                    }}
+                    title="Reset position"
+                  >
+                    <RestartAlt fontSize="small" />
+                  </IconButton>
+                </Stack>
+                <Stack direction="row" spacing={1} mb={1.5}>
+                  <ButtonGroup size="small" variant="outlined" sx={{ flex: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setOffsetY(transforms.offsetY - 5);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Move up"
+                    >
+                      <ArrowUpward fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setOffsetY(transforms.offsetY + 5);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Move down"
+                    >
+                      <ArrowDownward fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setOffsetX(transforms.offsetX - 5);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Move left"
+                    >
+                      <ArrowBack fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setOffsetX(transforms.offsetX + 5);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Move right"
+                    >
+                      <ArrowForward fontSize="small" />
+                    </IconButton>
+                  </ButtonGroup>
+                </Stack>
+                <Stack direction="row" spacing={2}>
+                  <Box sx={{ flex: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        X
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().offsetX}
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().offsetX}
+                      onChange={(_e, v) => getCurrentTransforms().setOffsetX(v as number)}
+                      min={-200}
+                      max={200}
+                      step={1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        Y
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().offsetY}
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().offsetY}
+                      onChange={(_e, v) => getCurrentTransforms().setOffsetY(v as number)}
+                      min={-200}
+                      max={200}
+                      step={1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Divider />
+
+              {/* Scale Control */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                    Scale
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                      {getCurrentTransforms().scale.toFixed(2)}x
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setScale(1);
+                      }}
+                      sx={{
+                        color: "text.secondary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          color: "text.primary",
+                        },
+                      }}
+                      title="Reset scale"
+                    >
+                      <RestartAlt fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                <Stack direction="row" spacing={1} mb={1.5}>
+                  <ButtonGroup size="small" variant="outlined">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setScale(Math.max(0.5, transforms.scale - 0.05));
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Zoom out"
+                    >
+                      <ZoomOut fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setScale(Math.min(2, transforms.scale + 0.05));
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Zoom in"
+                    >
+                      <ZoomIn fontSize="small" />
+                    </IconButton>
+                  </ButtonGroup>
+                </Stack>
+                <Slider
+                  value={getCurrentTransforms().scale}
+                  onChange={(_e, v) => getCurrentTransforms().setScale(v as number)}
+                  min={0.5}
+                  max={2}
+                  step={0.01}
+                  size="small"
+                  sx={{
+                    "& .MuiSlider-thumb": {
+                      width: 20,
+                      height: 20,
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                      "&:hover": {
+                        boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                      },
+                    },
+                    "& .MuiSlider-track": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: "none",
+                    },
+                    "& .MuiSlider-rail": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Divider />
+
+              {/* Rotation Control */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                    Rotation
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                      {Math.round(getCurrentTransforms().rotation)}°
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setRotation(0);
+                      }}
+                      sx={{
+                        color: "text.secondary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          color: "text.primary",
+                        },
+                      }}
+                      title="Reset rotation"
+                    >
+                      <RestartAlt fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                <Stack direction="row" spacing={1} mb={1.5} alignItems="center">
+                  <ButtonGroup size="small" variant="outlined">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setRotation(transforms.rotation - 1);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Rotate left"
+                    >
+                      <RotateLeft fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setRotation(transforms.rotation + 1);
+                      }}
+                      sx={{
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      title="Rotate right"
+                    >
+                      <RotateRight fontSize="small" />
+                    </IconButton>
+                  </ButtonGroup>
+                </Stack>
+                <Slider
+                  value={getCurrentTransforms().rotation}
+                  onChange={(_e, v) => getCurrentTransforms().setRotation(v as number)}
+                  min={-45}
+                  max={45}
+                  step={0.1}
+                  size="small"
+                  sx={{
+                    "& .MuiSlider-thumb": {
+                      width: 20,
+                      height: 20,
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                      "&:hover": {
+                        boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                      },
+                    },
+                    "& .MuiSlider-track": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: "none",
+                    },
+                    "& .MuiSlider-rail": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Divider />
+
+              {/* Opacity Control */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                    Opacity
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary", minWidth: 50, textAlign: "right" }}>
+                      {Math.round(getCurrentTransforms().opacity * 100)}%
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const transforms = getCurrentTransforms();
+                        transforms.setOpacity(1);
+                      }}
+                      sx={{
+                        color: "text.secondary",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          color: "text.primary",
+                        },
+                      }}
+                      title="Reset opacity"
+                    >
+                      <RestartAlt fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                <Slider
+                  value={getCurrentTransforms().opacity}
+                  onChange={(_e, v) => getCurrentTransforms().setOpacity(v as number)}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  size="small"
+                  sx={{
+                    "& .MuiSlider-thumb": {
+                      width: 20,
+                      height: 20,
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                      "&:hover": {
+                        boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                      },
+                    },
+                    "& .MuiSlider-track": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                      border: "none",
+                    },
+                    "& .MuiSlider-rail": {
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Divider />
+
+              {/* Crop Controls */}
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle2" sx={{ fontSize: "0.875rem", fontWeight: 600, color: "text.primary" }}>
+                    Crop Edges
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const transforms = getCurrentTransforms();
+                      transforms.setCropTop(0);
+                      transforms.setCropBottom(0);
+                      transforms.setCropLeft(0);
+                      transforms.setCropRight(0);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
+                      },
+                    }}
+                    title="Reset crop"
+                  >
+                    <RestartAlt fontSize="small" />
+                  </IconButton>
+                </Stack>
+                <Stack spacing={2}>
+                  <Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        Top
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().cropTop.toFixed(1)}%
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().cropTop}
+                      onChange={(_e, v) => getCurrentTransforms().setCropTop(v as number)}
+                      min={0}
+                      max={20}
+                      step={0.1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        Bottom
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().cropBottom.toFixed(1)}%
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().cropBottom}
+                      onChange={(_e, v) => getCurrentTransforms().setCropBottom(v as number)}
+                      min={0}
+                      max={20}
+                      step={0.1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        Left
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().cropLeft.toFixed(1)}%
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().cropLeft}
+                      onChange={(_e, v) => getCurrentTransforms().setCropLeft(v as number)}
+                      min={0}
+                      max={20}
+                      step={0.1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                        Right
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.primary" }}>
+                        {getCurrentTransforms().cropRight.toFixed(1)}%
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      value={getCurrentTransforms().cropRight}
+                      onChange={(_e, v) => getCurrentTransforms().setCropRight(v as number)}
+                      min={0}
+                      max={20}
+                      step={0.1}
+                      size="small"
+                      sx={{
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: (theme) => `2px solid ${theme.palette.mode === "dark" ? "#1A1A1A" : "#FFFFFF"}`,
+                          "&:hover": {
+                            boxShadow: (theme) => `0 0 0 8px ${theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.16)" : "rgba(5, 150, 105, 0.16)"}`,
+                          },
+                        },
+                        "& .MuiSlider-track": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                          border: "none",
+                        },
+                        "& .MuiSlider-rail": {
+                          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                          opacity: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Divider />
+
+              <Button
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                onClick={resetAllAdjustments}
+                fullWidth
+                size="medium"
+                sx={{
+                  mt: 1,
+                  textTransform: "none",
+                  fontWeight: 500,
+                  borderColor: "divider",
+                  color: "text.primary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    borderColor: "primary.main",
+                  },
+                }}
+              >
+                Reset All Adjustments
+              </Button>
+            </Stack>
+          </Box>
+        </Drawer>
+      </Portal>
     </Dialog>
   );
 }

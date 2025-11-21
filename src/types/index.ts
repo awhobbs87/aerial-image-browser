@@ -4,6 +4,7 @@ export interface Bindings {
   TIFF_STORAGE: R2Bucket;
   THUMBNAIL_STORAGE: R2Bucket;
   API_BASE_URL: string;
+  CONVERTHUB_API_KEY?: string;
 }
 
 export interface PhotoAttributes {

@@ -555,3 +555,166 @@ api.get("/image/:layerId/:imageName", async (c) => {
     },
   });
 });
+
+// ConvertHub proxy endpoint - converts TIFF to WEBP using ConvertHub API
+api.post("/convert/webp", async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File;
+    const tiffUrl = formData.get("tiffUrl") as string;
+
+    if (!file && !tiffUrl) {
+      return c.json({ success: false, error: "Either file or tiffUrl must be provided" }, 400);
+    }
+
+    const CONVERTHUB_API_KEY = c.env.CONVERTHUB_API_KEY || "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
+    const CONVERTHUB_API_URL = "https://api.converthub.com/v1/convert";
+
+    let tiffBlob: Blob;
+
+    // If tiffUrl is provided, fetch the file
+    if (tiffUrl) {
+      const tiffResponse = await fetch(tiffUrl);
+      if (!tiffResponse.ok) {
+        return c.json(
+          { success: false, error: `Failed to fetch TIFF: ${tiffResponse.statusText}` },
+          tiffResponse.status
+        );
+      }
+      tiffBlob = await tiffResponse.blob();
+    } else if (file) {
+      tiffBlob = file;
+    } else {
+      return c.json({ success: false, error: "No file or URL provided" }, 400);
+    }
+
+    // Convert using ConvertHub API
+    // Note: ConvertHub has dimension limits, so we'll add resize parameters
+    const convertFormData = new FormData();
+    const fileName = file?.name || tiffUrl?.split('/').pop() || "image.tiff";
+    convertFormData.append("file", tiffBlob, fileName);
+    convertFormData.append("target_format", "webp");
+    convertFormData.append("quality", "95"); // High quality
+    
+    // Add resize parameters to prevent "width or height exceeds limit" error
+    // Try multiple parameter name variations as ConvertHub API format may vary
+    // ConvertHub typically has a limit around 16384 pixels per dimension
+    // We'll set a safe limit of 8192 pixels max per dimension
+    convertFormData.append("max_width", "8192");
+    convertFormData.append("max_height", "8192");
+    // Also try alternative parameter names
+    convertFormData.append("width", "8192");
+    convertFormData.append("height", "8192");
+    convertFormData.append("resize", "8192x8192");
+
+    console.log(`Converting file to WEBP: ${fileName}, size: ${tiffBlob.size} bytes`);
+
+    const convertResponse = await fetch(CONVERTHUB_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+      },
+      body: convertFormData,
+    });
+
+    console.log(`ConvertHub response status: ${convertResponse.status}`);
+    console.log(`ConvertHub response headers:`, Object.fromEntries(convertResponse.headers.entries()));
+
+    if (!convertResponse.ok) {
+      let errorText = "";
+      try {
+        const errorJson = await convertResponse.json();
+        errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+      } catch {
+        errorText = await convertResponse.text();
+      }
+      return c.json(
+        { success: false, error: `Conversion failed: ${convertResponse.status} - ${errorText}` },
+        convertResponse.status
+      );
+    }
+
+    // Check if response is JSON (with download URL) or binary (direct file)
+    const contentType = convertResponse.headers.get("content-type") || "";
+    let webpBlob: Blob;
+
+    if (contentType.includes("application/json")) {
+      // API returned JSON - try to extract download URL or file data
+      const jsonResponse = await convertResponse.json();
+      console.log("ConvertHub JSON response:", JSON.stringify(jsonResponse, null, 2));
+      
+      // Try various possible field names for download URL
+      const downloadUrl = 
+        jsonResponse.download_url || 
+        jsonResponse.url || 
+        jsonResponse.file_url ||
+        jsonResponse.downloadUrl ||
+        jsonResponse.fileUrl ||
+        jsonResponse.result?.url ||
+        jsonResponse.data?.url ||
+        jsonResponse.file?.url;
+      
+      // Check if there's base64 encoded file data
+      const base64Data = 
+        jsonResponse.data ||
+        jsonResponse.file ||
+        jsonResponse.content ||
+        jsonResponse.result?.data;
+      
+      if (downloadUrl) {
+        // Fetch the converted file from URL
+        const downloadResponse = await fetch(downloadUrl);
+        if (!downloadResponse.ok) {
+          return c.json(
+            { success: false, error: `Failed to download converted file: ${downloadResponse.statusText}` },
+            downloadResponse.status
+          );
+        }
+        webpBlob = await downloadResponse.blob();
+      } else if (base64Data && typeof base64Data === 'string' && base64Data.startsWith('data:')) {
+        // Handle data URL
+        const response = await fetch(base64Data);
+        webpBlob = await response.blob();
+      } else if (base64Data && typeof base64Data === 'string') {
+        // Handle base64 string
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        webpBlob = new Blob([bytes], { type: 'image/webp' });
+      } else {
+        // Log the full response for debugging
+        console.error("Unexpected ConvertHub response format:", jsonResponse);
+        return c.json({ 
+          success: false, 
+          error: "Unexpected API response format",
+          details: "No download URL or file data found in response",
+          response: jsonResponse
+        }, 500);
+      }
+    } else {
+      // Direct binary response
+      webpBlob = await convertResponse.blob();
+    }
+
+    // Return the converted WEBP file
+    return new Response(webpBlob, {
+      headers: {
+        "Content-Type": "image/webp",
+        "Content-Disposition": 'attachment; filename="converted.webp"',
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (error) {
+    console.error("ConvertHub conversion error:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to convert image",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
+  }
+});
