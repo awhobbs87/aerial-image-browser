@@ -3,6 +3,43 @@ set -e
 
 echo "🔍 Running pre-commit checks..."
 
+# Check if version and changelog are updated
+echo "📋 Checking version and changelog updates..."
+
+# Get current version from package.json
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+FRONTEND_VERSION=$(node -p "require('./frontend/package.json').version")
+APP_VERSION=$(grep 'const APP_VERSION =' frontend/src/App.tsx | sed -E 's/.*const APP_VERSION = "([^"]+)".*/\1/' || echo "")
+
+# Check if versions match
+if [ "$CURRENT_VERSION" != "$FRONTEND_VERSION" ]; then
+    echo "❌ Version mismatch: package.json ($CURRENT_VERSION) != frontend/package.json ($FRONTEND_VERSION)"
+    exit 1
+fi
+
+if [ "$CURRENT_VERSION" != "$APP_VERSION" ]; then
+    echo "❌ Version mismatch: package.json ($CURRENT_VERSION) != App.tsx ($APP_VERSION)"
+    exit 1
+fi
+
+# Check if CHANGELOG.md has entry for current version
+if ! grep -q "## \[$CURRENT_VERSION\]" CHANGELOG.md; then
+    echo "❌ CHANGELOG.md missing entry for version $CURRENT_VERSION"
+    echo "   Please add a changelog entry before committing."
+    exit 1
+fi
+
+# Check if there are uncommitted changes to version files
+if git diff --cached --name-only | grep -qE "(package.json|App.tsx|CHANGELOG.md)"; then
+    echo "✅ Version and changelog files are being updated"
+else
+    # Check if version files have been modified but not staged
+    if git diff --name-only | grep -qE "(package.json|App.tsx|CHANGELOG.md)"; then
+        echo "⚠️  Warning: Version or changelog files modified but not staged"
+        echo "   Consider staging these changes if they're part of this commit"
+    fi
+fi
+
 if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
     echo "📝 Linting frontend..."
     cd frontend && npm run lint && cd ..

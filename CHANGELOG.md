@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2025-01-27
+
+### Added
+- Windows 7 Aero-style transparent search bar:
+  - Enhanced transparency (35% opacity) with 40px blur for better map visibility
+  - Improved backdrop-filter with 200% saturation for frosted glass effect
+  - Translucent input fields and location chips
+- Natural pan/drag functionality for full-screen photo preview:
+  - Touch support for mobile devices (iOS and Android)
+  - Click and drag support for desktop
+  - Panning works at any zoom level (not just when zoomed in)
+  - Smooth drag experience similar to viewing large photos
+
+### Changed
+- Comparison section styling:
+  - More compact design with reduced vertical space
+  - Frosted glass appearance with Apple Liquid Glass design tokens
+  - Dynamic hint text that changes based on selection state
+  - More prominent buttons with solid colors when active
+- Full-screen preview panning:
+  - Removed pan button controls in favor of natural drag behavior
+  - Improved cursor feedback (grab/grabbing states)
+  - Better touch handling on iOS to prevent text selection
+
+### Fixed
+- iOS text selection issue when trying to pan images:
+  - Added user-select: none and WebkitUserSelect: none
+  - Added WebkitTouchCallout: none to prevent iOS callout menu
+  - Prevented native drag and context menu behaviors
+  - Improved touch event handling with proper preventDefault
+
 ## [2.2.0] - 2024-11-24
 
 ### Added
