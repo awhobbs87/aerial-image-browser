@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import geocodingService, { type SearchSuggestion } from "../lib/geocoding";
 import searchHistory, { type SearchHistoryItem } from "../lib/searchHistory";
+import { appleLiquidGlass, getThemeValue, createBackdropFilter } from "../theme/apple-liquid-glass";
 
 interface SearchBarProps {
   onSearch: (lat: number, lon: number, locationName?: string) => void;
@@ -156,24 +157,34 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
 
   return (
     <Paper
-      elevation={4}
+      elevation={0}
       sx={{
         overflow: "hidden",
-        borderRadius: 2.5,
-        background: (theme) =>
+        borderRadius: appleLiquidGlass.radius.large,
+        // Windows 7 Aero style: Very transparent with strong blur
+        bgcolor: (theme) =>
           theme.palette.mode === "dark"
-            ? "rgba(30, 41, 59, 0.75)"
-            : "rgba(255, 255, 255, 0.7)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)", // Safari support
-        border: (theme) =>
-          theme.palette.mode === "dark"
-            ? "1px solid rgba(255, 255, 255, 0.1)"
-            : "1px solid rgba(255, 255, 255, 0.8)",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
-            : "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+            ? "rgba(42, 42, 42, 0.35)" // Very transparent - Windows 7 Aero style
+            : "rgba(255, 255, 255, 0.35)", // Very transparent - Windows 7 Aero style
+        backdropFilter: "blur(40px) saturate(200%)",
+        WebkitBackdropFilter: "blur(40px) saturate(200%)",
+        "@supports not (backdrop-filter: blur(40px))": {
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "rgba(42, 42, 42, 0.75)" // Fallback: less transparent when blur not supported
+              : "rgba(255, 255, 255, 0.75)",
+        },
+        border: (theme) => `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
+        boxShadow: (theme) => {
+          const shadows = getThemeValue(
+            {
+              light: appleLiquidGlass.shadows.light,
+              dark: appleLiquidGlass.shadows.dark,
+            },
+            theme.palette.mode === "dark"
+          );
+          return `${shadows.elevated}, ${shadows.innerFrosted}`;
+        },
       }}
     >
       <Stack spacing={0}>
@@ -262,14 +273,18 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     fontSize: "0.875rem",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(255, 255, 255, 0.05)"
+                        : "rgba(255, 255, 255, 0.5)", // Translucent input background
                     "& fieldset": {
-                      borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)",
+                      borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark"),
                     },
                     "&:hover fieldset": {
-                      borderColor: "primary.main",
+                      borderColor: (theme) => theme.palette.primary.main,
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: "primary.main",
+                      borderColor: (theme) => theme.palette.primary.main,
                     },
                   },
                 }}
@@ -304,7 +319,12 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
           />
         </Box>
 
-        <Divider sx={{ opacity: 0.6 }} />
+        <Divider
+          sx={{
+            borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.hairline, theme.palette.mode === "dark"),
+            opacity: 0.5,
+          }}
+        />
 
         {/* Action buttons row */}
         <Box sx={{
@@ -333,10 +353,19 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
                 sx={{
                   fontSize: "0.7rem",
                   height: 24,
-                  borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.15)",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(255, 255, 255, 0.3)", // Translucent chip background
+                  borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.medium, theme.palette.mode === "dark"),
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
                   "&:hover": {
                     borderColor: "primary.main",
-                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(8, 145, 178, 0.1)" : "rgba(8, 145, 178, 0.05)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(8, 145, 178, 0.15)"
+                        : "rgba(8, 145, 178, 0.1)",
                   },
                 }}
               />

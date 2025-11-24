@@ -153,14 +153,17 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
-    }
+    // Allow panning at any zoom level
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && zoomLevel > 1) {
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
       setPanPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
@@ -169,6 +172,35 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
   };
 
   const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch event handlers for mobile panning - work at any zoom level
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX - panPosition.x, y: touch.clientY - panPosition.y });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      const touch = e.touches[0];
+      setPanPosition({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
 
@@ -472,15 +504,25 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
             justifyContent: "center",
             alignItems: "center",
             overflow: "hidden",
-            cursor: zoomLevel > 1 ? "grab" : "default",
-            "&:active": {
-              cursor: zoomLevel > 1 ? "grabbing" : "default",
+            cursor: isDragging ? "grabbing" : "grab",
+            touchAction: "none", // Prevent default touch behaviors (scrolling, zooming)
+            userSelect: "none", // Prevent text selection
+            WebkitUserSelect: "none", // iOS Safari
+            WebkitTouchCallout: "none", // iOS Safari - prevent callout menu
+            // Prevent text selection on all children
+            "& *": {
+              userSelect: "none",
+              WebkitUserSelect: "none",
             },
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           onWheel={handleWheel}
         >
           {/* Zoom controls */}
@@ -569,6 +611,8 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
             key={displayImageUrl} // Force re-render when URL changes
             src={displayImageUrl}
             alt={photo.IMAGE_NAME}
+            onDragStart={(e) => e.preventDefault()} // Prevent native drag
+            onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
             style={{
               maxWidth: "none",
               maxHeight: "none",
@@ -577,7 +621,11 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
               transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
               transformOrigin: "center center",
               transition: isDragging ? "none" : "transform 0.1s ease-out",
-              cursor: zoomLevel > 1 ? "grab" : "default",
+              cursor: isDragging ? "grabbing" : "grab",
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              WebkitTouchCallout: "none",
+              pointerEvents: "auto",
             }}
             draggable={false}
           />

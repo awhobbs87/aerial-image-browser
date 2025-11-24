@@ -30,6 +30,7 @@ import {
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
+import { appleLiquidGlass, getThemeValue, createBackdropFilter } from "./theme/apple-liquid-glass";
 import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
@@ -614,47 +615,53 @@ function AppContent() {
                     </Button>
                   </Box>
 
-                  {/* Comparison Tools - Unified styling */}
+                  {/* Comparison Tools - Compact, Active Design */}
                   <Box
                     sx={{
                       mb: 2,
                       display: { xs: "none", md: "block" },
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "rgba(42, 42, 42, 0.6)" // surfaceElevated
-                          : "rgba(249, 250, 251, 0.8)", // surfaceAlt
-                      borderRadius: 1.5,
-                      px: 2,
-                      py: 1.5,
-                      border: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "1px solid rgba(255, 255, 255, 0.1)"
-                          : "1px solid rgba(0, 0, 0, 0.08)",
-                      boxShadow: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "0 1px 3px rgba(0, 0, 0, 0.3)"
-                          : "0 1px 3px rgba(0, 0, 0, 0.06)",
+                      // Apple Liquid Glass: Frosted glass with subtle elevation
+                      bgcolor: (theme) => getThemeValue(appleLiquidGlass.backgrounds.frosted, theme.palette.mode === "dark"),
+                      ...createBackdropFilter(appleLiquidGlass.backdrop.module),
+                      borderRadius: appleLiquidGlass.radius.medium,
+                      px: 1.5,
+                      py: 1,
+                      border: (theme) => `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
+                      boxShadow: (theme) => {
+                        const shadows = getThemeValue(
+                          {
+                            light: appleLiquidGlass.shadows.light,
+                            dark: appleLiquidGlass.shadows.dark,
+                          },
+                          theme.palette.mode === "dark"
+                        );
+                        return `${shadows.medium}, ${shadows.innerFrosted}`;
+                      },
                     }}
                   >
                     <Stack
                       direction="row"
-                      spacing={2}
+                      spacing={1.5}
                       alignItems="center"
                       justifyContent="space-between"
                     >
                       <Typography
-                        variant="body2"
+                        variant="caption"
                         sx={{
-                          fontSize: "0.8125rem",
-                          fontWeight: 400,
-                          letterSpacing: "0.01em",
-                          color: (theme) =>
-                            theme.palette.mode === "dark" ? "#B4B4B4" : "#6B7280", // textSecondary
+                          fontSize: appleLiquidGlass.typography.hint.fontSize,
+                          fontWeight: 500,
+                          color: (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
+                          flex: 1,
+                          minWidth: 0,
                         }}
                       >
-                        Select photos to compare or run Then vs Now
+                        {comparisonSelection.length === 0
+                          ? "Select photos to compare"
+                          : comparisonSelection.length === 1
+                          ? "Select another photo or use Then vs Now"
+                          : "Ready to compare"}
                       </Typography>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
                         <Button
                           variant={comparisonSelection.length >= 2 ? "contained" : "outlined"}
                           color="primary"
@@ -663,21 +670,42 @@ function AppContent() {
                           disabled={comparisonSelection.length < 2}
                           onClick={handleOpenComparisonModal}
                           sx={{
-                            fontWeight: 500,
-                            minWidth: 120,
-                            fontSize: "0.8125rem",
+                            fontWeight: 600,
+                            minWidth: 100,
+                            fontSize: appleLiquidGlass.typography.button.fontSize,
                             textTransform: "none",
-                            px: 1.75,
-                            py: 0.75,
-                            borderRadius: 1,
+                            px: 1.5,
+                            py: 0.625,
+                            borderRadius: appleLiquidGlass.radius.small,
+                            bgcolor: comparisonSelection.length >= 2
+                              ? (theme) => theme.palette.primary.main
+                              : "transparent",
+                            color: comparisonSelection.length >= 2
+                              ? "#ffffff"
+                              : (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
+                            border: (theme) => `1px solid ${
+                              comparisonSelection.length >= 2
+                                ? theme.palette.primary.main
+                                : getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")
+                            }`,
                             "&.Mui-disabled": {
-                              opacity: 0.4,
-                              borderColor: "divider",
+                              opacity: appleLiquidGlass.opacity.disabled,
+                              borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark"),
                             },
                             "&:hover:not(.Mui-disabled)": {
-                              transform: "translateY(-1px)",
-                              boxShadow: 2,
+                              bgcolor: comparisonSelection.length >= 2
+                                ? (theme) => theme.palette.primary.dark
+                                : (theme) => getThemeValue(appleLiquidGlass.backgrounds.button.hover, theme.palette.mode === "dark"),
+                              transform: appleLiquidGlass.transforms.hover.button,
+                              boxShadow: (theme) => getThemeValue(
+                                {
+                                  light: appleLiquidGlass.shadows.light.medium,
+                                  dark: appleLiquidGlass.shadows.dark.medium,
+                                },
+                                theme.palette.mode === "dark"
+                              ),
                             },
+                            transition: appleLiquidGlass.transitions.standard,
                           }}
                         >
                           Compare ({comparisonSelection.length}/2)
@@ -690,21 +718,42 @@ function AppContent() {
                           onClick={handleOpenThenNowModal}
                           startIcon={<History fontSize="small" />}
                           sx={{
-                            fontWeight: 500,
-                            minWidth: 120,
-                            fontSize: "0.8125rem",
+                            fontWeight: 600,
+                            minWidth: 100,
+                            fontSize: appleLiquidGlass.typography.button.fontSize,
                             textTransform: "none",
-                            px: 1.75,
-                            py: 0.75,
-                            borderRadius: 1,
+                            px: 1.5,
+                            py: 0.625,
+                            borderRadius: appleLiquidGlass.radius.small,
+                            bgcolor: comparisonSelection.length === 1
+                              ? (theme) => theme.palette.secondary.main
+                              : "transparent",
+                            color: comparisonSelection.length === 1
+                              ? "#ffffff"
+                              : (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
+                            border: (theme) => `1px solid ${
+                              comparisonSelection.length === 1
+                                ? theme.palette.secondary.main
+                                : getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")
+                            }`,
                             "&.Mui-disabled": {
-                              opacity: 0.4,
-                              borderColor: "divider",
+                              opacity: appleLiquidGlass.opacity.disabled,
+                              borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark"),
                             },
                             "&:hover:not(.Mui-disabled)": {
-                              transform: "translateY(-1px)",
-                              boxShadow: 2,
+                              bgcolor: comparisonSelection.length === 1
+                                ? (theme) => theme.palette.secondary.dark
+                                : (theme) => getThemeValue(appleLiquidGlass.backgrounds.button.hover, theme.palette.mode === "dark"),
+                              transform: appleLiquidGlass.transforms.hover.button,
+                              boxShadow: (theme) => getThemeValue(
+                                {
+                                  light: appleLiquidGlass.shadows.light.medium,
+                                  dark: appleLiquidGlass.shadows.dark.medium,
+                                },
+                                theme.palette.mode === "dark"
+                              ),
                             },
+                            transition: appleLiquidGlass.transitions.standard,
                           }}
                         >
                           Then vs Now
