@@ -30,10 +30,6 @@ import {
   ZoomIn,
   ZoomOut,
   FitScreen,
-  KeyboardArrowUp,
-  KeyboardArrowDown,
-  KeyboardArrowLeft,
-  KeyboardArrowRight,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -302,23 +298,6 @@ export default function PhotoViewer({
     setPanPosition({ x: 0, y: 0 });
   };
 
-  const handlePan = (direction: 'up' | 'down' | 'left' | 'right') => {
-    const panStep = 50; // Pixels to pan per click
-    setPanPosition((prev) => {
-      switch (direction) {
-        case 'up':
-          return { ...prev, y: prev.y + panStep };
-        case 'down':
-          return { ...prev, y: prev.y - panStep };
-        case 'left':
-          return { ...prev, x: prev.x + panStep };
-        case 'right':
-          return { ...prev, x: prev.x - panStep };
-        default:
-          return prev;
-      }
-    });
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow panning at any zoom level, but only if clicking on the image area
