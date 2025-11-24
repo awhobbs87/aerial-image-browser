@@ -23,3 +23,4 @@ bucket_name = "tas-aerial-browser-thumbnails"
 [vars]
 API_BASE_URL = "https://services.thelist.tas.gov.au/arcgis/rest/services/AerialPhotoViewer/AerialPhoto_TimeV2/MapServer"
 CONVERTHUB_API_KEY = "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb"
+TIFF_CONVERSION_SERVICE_URL = "https://tiff.awhq.uk"

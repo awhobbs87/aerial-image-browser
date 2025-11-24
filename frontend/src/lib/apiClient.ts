@@ -144,6 +144,189 @@ class ApiClient {
     const queryString = params.toString();
     return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }
+
+  /**
+   * Check if TIFF conversion service is available
+   */
+  async checkConversionServiceHealth(): Promise<{ available: boolean; status?: string }> {
+    try {
+      const response = await fetch(`${this.client.defaults.baseURL}/api/convert-tiff-health`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await response.json() as { success: boolean; available: boolean; status?: string };
+      return { available: data.available || false, status: data.status };
+    } catch {
+      return { available: false };
+    }
+  }
+
+  /**
+   * Convert TIFF from URL using the conversion service
+   * Returns the converted image URL and metadata
+   */
+  async convertTiffFromUrl(
+    tiffUrl: string,
+    onProgress?: (progress: number) => void
+  ): Promise<{
+    url: string;
+    format: string;
+    originalSize: number;
+    convertedSize: number;
+    duration?: number;
+  }> {
+    const baseUrl = this.client.defaults.baseURL;
+    
+    // Simulate progress for URL conversion (we can't track server-side progress)
+    if (onProgress) {
+      onProgress(10);
+      setTimeout(() => onProgress(30), 500);
+      setTimeout(() => onProgress(60), 2000);
+      setTimeout(() => onProgress(80), 4000);
+    }
+
+    const response = await fetch(`${baseUrl}/api/convert-tiff-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url: tiffUrl }),
+      signal: AbortSignal.timeout(600000), // 10 minutes
+    });
+
+    if (!response.ok) {
+      let errorText = "";
+      try {
+        const errorJson = await response.json() as { error?: string };
+        errorText = errorJson.error || `HTTP ${response.status}`;
+      } catch {
+        errorText = await response.text() || `HTTP ${response.status}`;
+      }
+      throw new Error(errorText);
+    }
+
+    const data = await response.json() as {
+      success: boolean;
+      url?: string;
+      format?: string;
+      originalSize?: number;
+      convertedSize?: number;
+      duration?: number;
+      error?: string;
+    };
+
+    if (!data.success || !data.url) {
+      throw new Error(data.error || "Conversion failed");
+    }
+
+    if (onProgress) {
+      onProgress(100);
+    }
+
+    return {
+      url: data.url,
+      format: data.format || "webp",
+      originalSize: data.originalSize || 0,
+      convertedSize: data.convertedSize || 0,
+      duration: data.duration,
+    };
+  }
+
+  /**
+   * Convert TIFF from file upload using the conversion service
+   * Returns the converted image URL and metadata
+   */
+  async convertTiffFromFile(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<{
+    url: string;
+    format: string;
+    originalSize: number;
+    convertedSize: number;
+    duration?: number;
+  }> {
+    const baseUrl = this.client.defaults.baseURL;
+    
+    // Validate file type
+    if (!file.name.toLowerCase().match(/\.(tif|tiff)$/)) {
+      throw new Error("Only TIFF files are allowed");
+    }
+
+    // Validate file size (1GB limit)
+    if (file.size > 1024 * 1024 * 1024) {
+      throw new Error("File size exceeds 1GB limit");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // Use XMLHttpRequest for upload progress tracking
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable && onProgress) {
+          // Upload is ~30% of total process
+          const uploadPercent = (e.loaded / e.total) * 30;
+          onProgress(uploadPercent);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status === 200) {
+          try {
+            const data = JSON.parse(xhr.responseText) as {
+              success: boolean;
+              url?: string;
+              format?: string;
+              originalSize?: number;
+              convertedSize?: number;
+              duration?: number;
+              error?: string;
+            };
+
+            if (data.success && data.url) {
+              if (onProgress) {
+                onProgress(100);
+              }
+              resolve({
+                url: data.url,
+                format: data.format || "webp",
+                originalSize: data.originalSize || 0,
+                convertedSize: data.convertedSize || 0,
+                duration: data.duration,
+              });
+            } else {
+              reject(new Error(data.error || "Conversion failed"));
+            }
+          } catch (parseError) {
+            reject(new Error("Failed to parse response"));
+          }
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText) as { error?: string };
+            reject(new Error(errorData.error || `HTTP ${xhr.status}`));
+          } catch {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Network error occurred"));
+      });
+
+      xhr.addEventListener("timeout", () => {
+        reject(new Error("Request timed out"));
+      });
+
+      xhr.timeout = 600000; // 10 minutes
+      xhr.open("POST", `${baseUrl}/api/convert-tiff-upload`);
+      xhr.send(formData);
+    });
+  }
 }
 
 // Create a singleton instance

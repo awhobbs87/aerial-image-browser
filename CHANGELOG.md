@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2024-11-24
+
+### Added
+- TIFF to WEBP/PNG conversion service integration:
+  - Automatic background conversion when opening photo preview modals
+  - Silent conversion service that converts TIFF images to WEBP format for better web performance
+  - Conversion progress indicator at bottom of image preview
+  - Automatic fallback to thumbnail if conversion fails
+- Enhanced full-screen image viewing:
+  - Fit-to-screen zoom functionality that automatically calculates optimal zoom level
+  - Pan controls (up, down, left, right) for navigating zoomed images
+  - Pan controls appear when zoomed in (zoom > 100%)
+  - Improved zoom controls with separate fit-to-screen and reset buttons
+  - Zoom level indicator in both top-left corner and pan control center
+
+### Changed
+- Conversion progress bar moved from top to bottom of image preview for better visibility
+- Photo preview now automatically displays converted WEBP images instead of thumbnails when available
+- Full-screen mode zoom controls reorganized with clearer button purposes
+
+### Improved
+- Better image loading experience with thumbnail shown while conversion happens in background
+- Improved mobile image viewing with proper fallback handling
+- Enhanced desktop image viewing with automatic high-quality image conversion
+- Better error handling for conversion failures with graceful fallback to thumbnails
+
 ## [2.1.0] - 2024-11-19
 
 ### Added

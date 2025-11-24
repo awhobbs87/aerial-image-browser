@@ -556,155 +556,215 @@ api.get("/image/:layerId/:imageName", async (c) => {
   });
 });
 
-// ConvertHub proxy endpoint - converts TIFF to WEBP using ConvertHub API
+// Temporary TIF proxy endpoint - serves files from R2 for ConvertHub
+api.get("/temp-tiff/:key", async (c) => {
+  const key = c.req.param("key");
+  
+  try {
+    const file = await c.env.TIFF_STORAGE.get(`temp/${key}`);
+    if (!file) {
+      return c.json({ success: false, error: "File not found" }, 404);
+    }
+    
+    return new Response(file.body, {
+      headers: {
+        "Content-Type": "image/tiff",
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (error) {
+    return c.json(
+      { success: false, error: "Failed to serve file" },
+      500
+    );
+  }
+});
+
+// ConvertHub proxy endpoint - converts TIFF to WEBP using ConvertHub API v2
 api.post("/convert/webp", async (c) => {
   try {
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File;
-    const tiffUrl = formData.get("tiffUrl") as string;
+    const body = await c.req.json() as { tiffUrl?: string };
+    const { tiffUrl } = body;
 
-    if (!file && !tiffUrl) {
-      return c.json({ success: false, error: "Either file or tiffUrl must be provided" }, 400);
+    if (!tiffUrl) {
+      return c.json({ success: false, error: "Missing tiffUrl" }, 400);
     }
 
     const CONVERTHUB_API_KEY = c.env.CONVERTHUB_API_KEY || "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
-    const CONVERTHUB_API_URL = "https://api.converthub.com/v1/convert";
+    const CONVERTHUB_API_BASE = "https://api.converthub.com/v2";
+    const WORKER_BASE_URL = "https://tas-aerial-browser.awhobbs.workers.dev";
 
-    let tiffBlob: Blob;
-
-    // If tiffUrl is provided, fetch the file
-    if (tiffUrl) {
-      const tiffResponse = await fetch(tiffUrl);
-      if (!tiffResponse.ok) {
-        return c.json(
-          { success: false, error: `Failed to fetch TIFF: ${tiffResponse.statusText}` },
-          tiffResponse.status
-        );
-      }
-      tiffBlob = await tiffResponse.blob();
-    } else if (file) {
-      tiffBlob = file;
-    } else {
-      return c.json({ success: false, error: "No file or URL provided" }, 400);
-    }
-
-    // Convert using ConvertHub API
-    // Note: ConvertHub has dimension limits, so we'll add resize parameters
-    const convertFormData = new FormData();
-    const fileName = file?.name || tiffUrl?.split('/').pop() || "image.tiff";
-    convertFormData.append("file", tiffBlob, fileName);
-    convertFormData.append("target_format", "webp");
-    convertFormData.append("quality", "95"); // High quality
-    
-    // Add resize parameters to prevent "width or height exceeds limit" error
-    // Try multiple parameter name variations as ConvertHub API format may vary
-    // ConvertHub typically has a limit around 16384 pixels per dimension
-    // We'll set a safe limit of 8192 pixels max per dimension
-    convertFormData.append("max_width", "8192");
-    convertFormData.append("max_height", "8192");
-    // Also try alternative parameter names
-    convertFormData.append("width", "8192");
-    convertFormData.append("height", "8192");
-    convertFormData.append("resize", "8192x8192");
-
-    console.log(`Converting file to WEBP: ${fileName}, size: ${tiffBlob.size} bytes`);
-
-    const convertResponse = await fetch(CONVERTHUB_API_URL, {
-      method: "POST",
+    // Step 0: Proxy the TIF through Worker (bypasses anti-bot, auth, redirects, domain-blocking)
+    console.log(`Proxying TIF from: ${tiffUrl}`);
+    const tiffResponse = await fetch(tiffUrl, {
       headers: {
-        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        "User-Agent": "Mozilla/5.0 (compatible; Cloudflare-Worker/1.0)",
       },
-      body: convertFormData,
     });
 
-    console.log(`ConvertHub response status: ${convertResponse.status}`);
-    console.log(`ConvertHub response headers:`, Object.fromEntries(convertResponse.headers.entries()));
-
-    if (!convertResponse.ok) {
-      let errorText = "";
-      try {
-        const errorJson = await convertResponse.json();
-        errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
-      } catch {
-        errorText = await convertResponse.text();
-      }
+    if (!tiffResponse.ok) {
       return c.json(
-        { success: false, error: `Conversion failed: ${convertResponse.status} - ${errorText}` },
-        convertResponse.status
+        { success: false, error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}` },
+        502
       );
     }
 
-    // Check if response is JSON (with download URL) or binary (direct file)
-    const contentType = convertResponse.headers.get("content-type") || "";
-    let webpBlob: Blob;
+    // Read the TIF file
+    const tiffBuffer = await tiffResponse.arrayBuffer();
+    console.log(`Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
 
-    if (contentType.includes("application/json")) {
-      // API returned JSON - try to extract download URL or file data
-      const jsonResponse = await convertResponse.json();
-      console.log("ConvertHub JSON response:", JSON.stringify(jsonResponse, null, 2));
-      
-      // Try various possible field names for download URL
-      const downloadUrl = 
-        jsonResponse.download_url || 
-        jsonResponse.url || 
-        jsonResponse.file_url ||
-        jsonResponse.downloadUrl ||
-        jsonResponse.fileUrl ||
-        jsonResponse.result?.url ||
-        jsonResponse.data?.url ||
-        jsonResponse.file?.url;
-      
-      // Check if there's base64 encoded file data
-      const base64Data = 
-        jsonResponse.data ||
-        jsonResponse.file ||
-        jsonResponse.content ||
-        jsonResponse.result?.data;
-      
-      if (downloadUrl) {
-        // Fetch the converted file from URL
-        const downloadResponse = await fetch(downloadUrl);
-        if (!downloadResponse.ok) {
-          return c.json(
-            { success: false, error: `Failed to download converted file: ${downloadResponse.statusText}` },
-            downloadResponse.status
-          );
+    // Upload to R2 temporarily
+    const tempKey = `temp/${Date.now()}-${Math.random().toString(36).substring(7)}.tif`;
+    await c.env.TIFF_STORAGE.put(tempKey, tiffBuffer, {
+      httpMetadata: {
+        contentType: "image/tiff",
+      },
+    });
+    console.log(`Uploaded TIF to R2: ${tempKey}`);
+
+    // Create proxy URL that ConvertHub can access
+    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split('/').pop()}`;
+
+    // 1. Start ConvertHub Job using proxy URL
+    console.log(`Starting conversion: ${proxyUrl} → webp`);
+    const startResponse = await fetch(`${CONVERTHUB_API_BASE}/convert-url`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file_url: proxyUrl,
+        target_format: "webp",
+        output_filename: "converted.webp",
+      }),
+    });
+
+    if (!startResponse.ok) {
+      let errorText = "";
+      try {
+        const errorJson = (await startResponse.json()) as { message?: string; error?: string } | unknown;
+        if (typeof errorJson === "object" && errorJson !== null) {
+          const err = errorJson as { message?: string; error?: string };
+          errorText = err.message || err.error || JSON.stringify(errorJson);
+        } else {
+          errorText = JSON.stringify(errorJson);
         }
-        webpBlob = await downloadResponse.blob();
-      } else if (base64Data && typeof base64Data === 'string' && base64Data.startsWith('data:')) {
-        // Handle data URL
-        const response = await fetch(base64Data);
-        webpBlob = await response.blob();
-      } else if (base64Data && typeof base64Data === 'string') {
-        // Handle base64 string
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        webpBlob = new Blob([bytes], { type: 'image/webp' });
-      } else {
-        // Log the full response for debugging
-        console.error("Unexpected ConvertHub response format:", jsonResponse);
-        return c.json({ 
-          success: false, 
-          error: "Unexpected API response format",
-          details: "No download URL or file data found in response",
-          response: jsonResponse
-        }, 500);
+      } catch {
+        errorText = await startResponse.text();
       }
-    } else {
-      // Direct binary response
-      webpBlob = await convertResponse.blob();
+      return c.json(
+        { success: false, error: `Failed to start conversion: ${startResponse.status} - ${errorText}` },
+        500
+      );
     }
 
-    // Return the converted WEBP file
-    return new Response(webpBlob, {
+    const startJson = (await startResponse.json()) as {
+      success?: boolean;
+      job_id?: string;
+      status?: string;
+    };
+
+    if (!startJson.success || !startJson.job_id) {
+      return c.json(
+        { success: false, error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}` },
+        500
+      );
+    }
+
+    const jobId = startJson.job_id;
+    console.log(`Conversion job started: ${jobId}`);
+
+    // 2. Poll until completed
+    let status = startJson.status || "processing";
+    const maxPollAttempts = 60; // 5 minutes max
+    const pollInterval = 2000; // 2 seconds
+
+    for (let attempt = 0; attempt < maxPollAttempts; attempt++) {
+      if (status === "completed") {
+        break;
+      }
+      if (status === "failed") {
+        return c.json({ success: false, error: "Conversion job failed" }, 500);
+      }
+
+      // Wait before polling (skip wait on first iteration)
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+
+      const pollResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        },
+      });
+
+      if (!pollResponse.ok) {
+        return c.json(
+          { success: false, error: `Failed to check job status: ${pollResponse.status}` },
+          500
+        );
+      }
+
+      const pollJson = (await pollResponse.json()) as { status?: string };
+      status = pollJson.status || "unknown";
+      console.log(`Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`);
+
+      if (status === "completed") {
+        break;
+      }
+      if (status === "failed") {
+        return c.json({ success: false, error: "Conversion job failed" }, 500);
+      }
+    }
+
+    if (status !== "completed") {
+      return c.json(
+        { success: false, error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}` },
+        500
+      );
+    }
+
+    // 3. Get download URL
+    console.log(`Job ${jobId} completed, fetching download URL`);
+    const downloadResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}/download`, {
       headers: {
-        "Content-Type": "image/webp",
-        "Content-Disposition": 'attachment; filename="converted.webp"',
-        "Cache-Control": "no-cache",
+        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
       },
+    });
+
+    if (!downloadResponse.ok) {
+      return c.json(
+        { success: false, error: `Failed to get download URL: ${downloadResponse.status}` },
+        500
+      );
+    }
+
+    const downloadJson = (await downloadResponse.json()) as {
+      success?: boolean;
+      download_url?: string;
+      filename?: string;
+    };
+
+    if (!downloadJson.success || !downloadJson.download_url) {
+      return c.json(
+        { success: false, error: `Invalid download response: ${JSON.stringify(downloadJson)}` },
+        500
+      );
+    }
+
+    console.log(`Download URL: ${downloadJson.download_url}`);
+
+    // 4. Clean up temporary R2 file (async, don't wait)
+    c.env.TIFF_STORAGE.delete(tempKey).catch((err: Error) => {
+      console.error(`Failed to delete temp file ${tempKey}:`, err);
+    });
+
+    // 5. Return download URL to frontend
+    return c.json({
+      success: true,
+      downloadUrl: downloadJson.download_url,
+      filename: downloadJson.filename || "converted.webp",
     });
   } catch (error) {
     console.error("ConvertHub conversion error:", error);
@@ -713,6 +773,526 @@ api.post("/convert/webp", async (c) => {
         success: false,
         error: "Failed to convert image",
         details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
+  }
+});
+
+// ConvertHub proxy endpoint - converts TIFF to PNG using ConvertHub API v2
+api.post("/convert/png", async (c) => {
+  try {
+    const body = await c.req.json() as { tiffUrl?: string };
+    const { tiffUrl } = body;
+
+    if (!tiffUrl) {
+      return c.json({ success: false, error: "Missing tiffUrl" }, 400);
+    }
+
+    const CONVERTHUB_API_KEY = c.env.CONVERTHUB_API_KEY || "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
+    const CONVERTHUB_API_BASE = "https://api.converthub.com/v2";
+    const WORKER_BASE_URL = "https://tas-aerial-browser.awhobbs.workers.dev";
+
+    // Step 0: Proxy the TIF through Worker (bypasses anti-bot, auth, redirects, domain-blocking)
+    console.log(`Proxying TIF from: ${tiffUrl}`);
+    const tiffResponse = await fetch(tiffUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Cloudflare-Worker/1.0)",
+      },
+    });
+
+    if (!tiffResponse.ok) {
+      return c.json(
+        { success: false, error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}` },
+        502
+      );
+    }
+
+    // Read the TIF file
+    const tiffBuffer = await tiffResponse.arrayBuffer();
+    console.log(`Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
+
+    // Upload to R2 temporarily
+    const tempKey = `temp/${Date.now()}-${Math.random().toString(36).substring(7)}.tif`;
+    await c.env.TIFF_STORAGE.put(tempKey, tiffBuffer, {
+      httpMetadata: {
+        contentType: "image/tiff",
+      },
+    });
+    console.log(`Uploaded TIF to R2: ${tempKey}`);
+
+    // Create proxy URL that ConvertHub can access
+    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split('/').pop()}`;
+
+    // 1. Start ConvertHub Job using proxy URL
+    console.log(`Starting conversion: ${proxyUrl} → png`);
+    const startResponse = await fetch(`${CONVERTHUB_API_BASE}/convert-url`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file_url: proxyUrl,
+        target_format: "png",
+        output_filename: "converted.png",
+      }),
+    });
+
+    if (!startResponse.ok) {
+      let errorText = "";
+      try {
+        const errorJson = (await startResponse.json()) as { message?: string; error?: string } | unknown;
+        if (typeof errorJson === "object" && errorJson !== null) {
+          const err = errorJson as { message?: string; error?: string };
+          errorText = err.message || err.error || JSON.stringify(errorJson);
+        } else {
+          errorText = JSON.stringify(errorJson);
+        }
+      } catch {
+        errorText = await startResponse.text();
+      }
+      return c.json(
+        { success: false, error: `Failed to start conversion: ${startResponse.status} - ${errorText}` },
+        500
+      );
+    }
+
+    const startJson = (await startResponse.json()) as {
+      success?: boolean;
+      job_id?: string;
+      status?: string;
+    };
+
+    if (!startJson.success || !startJson.job_id) {
+      return c.json(
+        { success: false, error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}` },
+        500
+      );
+    }
+
+    const jobId = startJson.job_id;
+    console.log(`Conversion job started: ${jobId}`);
+
+    // 2. Poll until completed
+    let status = startJson.status || "processing";
+    const maxPollAttempts = 60; // 5 minutes max
+    const pollInterval = 2000; // 2 seconds
+
+    for (let attempt = 0; attempt < maxPollAttempts; attempt++) {
+      if (status === "completed") {
+        break;
+      }
+      if (status === "failed") {
+        return c.json({ success: false, error: "Conversion job failed" }, 500);
+      }
+
+      // Wait before polling (skip wait on first iteration)
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+
+      const pollResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        },
+      });
+
+      if (!pollResponse.ok) {
+        return c.json(
+          { success: false, error: `Failed to check job status: ${pollResponse.status}` },
+          500
+        );
+      }
+
+      const pollJson = (await pollResponse.json()) as { status?: string };
+      status = pollJson.status || "unknown";
+      console.log(`Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`);
+
+      if (status === "completed") {
+        break;
+      }
+      if (status === "failed") {
+        return c.json({ success: false, error: "Conversion job failed" }, 500);
+      }
+    }
+
+    if (status !== "completed") {
+      return c.json(
+        { success: false, error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}` },
+        500
+      );
+    }
+
+    // 3. Get download URL
+    console.log(`Job ${jobId} completed, fetching download URL`);
+    const downloadResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}/download`, {
+      headers: {
+        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+      },
+    });
+
+    if (!downloadResponse.ok) {
+      return c.json(
+        { success: false, error: `Failed to get download URL: ${downloadResponse.status}` },
+        500
+      );
+    }
+
+    const downloadJson = (await downloadResponse.json()) as {
+      success?: boolean;
+      download_url?: string;
+      filename?: string;
+    };
+
+    if (!downloadJson.success || !downloadJson.download_url) {
+      return c.json(
+        { success: false, error: `Invalid download response: ${JSON.stringify(downloadJson)}` },
+        500
+      );
+    }
+
+    console.log(`Download URL: ${downloadJson.download_url}`);
+
+    // 4. Clean up temporary R2 file (async, don't wait)
+    c.env.TIFF_STORAGE.delete(tempKey).catch((err: Error) => {
+      console.error(`Failed to delete temp file ${tempKey}:`, err);
+    });
+
+    // 5. Return download URL to frontend
+    return c.json({
+      success: true,
+      downloadUrl: downloadJson.download_url,
+      filename: downloadJson.filename || "converted.png",
+    });
+  } catch (error) {
+    console.error("ConvertHub conversion error:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to convert image",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
+  }
+});
+
+// TIFF Conversion Service - Health Check
+api.get("/convert-tiff-health", async (c) => {
+  try {
+    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
+    
+    if (!CONVERSION_SERVICE_URL) {
+      return c.json({ 
+        success: false, 
+        error: "TIFF conversion service URL not configured",
+        available: false 
+      }, 503);
+    }
+
+    const response = await fetch(`${CONVERSION_SERVICE_URL}/health`, {
+      method: "GET",
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+
+    if (!response.ok) {
+      return c.json({ 
+        success: false, 
+        error: `Service returned ${response.status}`,
+        available: false 
+      }, 502);
+    }
+
+    const data = await response.json() as { status?: string; timestamp?: string };
+    return c.json({ 
+      success: true, 
+      status: data.status,
+      timestamp: data.timestamp,
+      available: true 
+    });
+  } catch (error) {
+    console.error("TIFF conversion service health check error:", error);
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Service unavailable",
+      available: false 
+    }, 503);
+  }
+});
+
+// TIFF Conversion Service - Convert from URL
+api.post("/convert-tiff-url", async (c) => {
+  try {
+    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
+    
+    if (!CONVERSION_SERVICE_URL) {
+      return c.json({ 
+        success: false, 
+        error: "TIFF conversion service URL not configured" 
+      }, 503);
+    }
+
+    const body = await c.req.json() as { url?: string };
+    const { url } = body;
+
+    if (!url) {
+      return c.json({ success: false, error: "Missing url" }, 400);
+    }
+
+    // Forward request to conversion service
+    console.log(`Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-url`);
+    let response: Response;
+    try {
+      response = await fetch(`${CONVERSION_SERVICE_URL}/convert-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(600000), // 10 minutes timeout
+      });
+    } catch (fetchError) {
+      console.error("Fetch error details:", fetchError);
+      throw new Error(`Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`);
+    }
+
+    if (!response.ok) {
+      let errorText = "";
+      try {
+        const errorJson = await response.json() as { error?: string };
+        errorText = errorJson.error || `HTTP ${response.status}`;
+      } catch {
+        errorText = await response.text() || `HTTP ${response.status}`;
+      }
+      const statusCode = response.status >= 500 ? 502 : (response.status >= 400 ? 400 : 500);
+      return c.json({ 
+        success: false, 
+        error: errorText 
+      }, statusCode);
+    }
+
+    const data = await response.json() as {
+      success?: boolean;
+      url?: string;
+      format?: string;
+      originalSize?: number;
+      convertedSize?: number;
+      duration?: number;
+      error?: string;
+    };
+
+    if (data.success) {
+      // Return a proxy URL instead of the direct R2 URL to avoid CORS issues
+      const baseUrl = c.req.url.split('/api')[0];
+      const proxyUrl = `${baseUrl}/api/convert-tiff-proxy?url=${encodeURIComponent(data.url || "")}`;
+      return c.json({
+        success: true,
+        url: proxyUrl, // Use proxy URL instead of direct R2 URL
+        format: data.format,
+        originalSize: data.originalSize,
+        convertedSize: data.convertedSize,
+        duration: data.duration,
+      });
+    } else {
+      return c.json({ 
+        success: false, 
+        error: data.error || "Conversion failed" 
+      }, 500);
+    }
+  } catch (error) {
+    console.error("TIFF conversion service error:", error);
+    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
+    if (error instanceof Error && error.name === "AbortError") {
+      return c.json({ 
+        success: false, 
+        error: "Conversion timed out (10 minutes)" 
+      }, 500);
+    }
+    // Provide more detailed error information
+    const errorMessage = error instanceof Error ? error.message : "Conversion failed";
+    const isNetworkError = error instanceof Error && (
+      error.message.includes("fetch") || 
+      error.message.includes("network") ||
+      error.name === "TypeError"
+    );
+    
+    return c.json({ 
+      success: false, 
+      error: isNetworkError 
+        ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
+        : errorMessage
+    }, 500);
+  }
+});
+
+// TIFF Conversion Service - Convert from File Upload
+api.post("/convert-tiff-upload", async (c) => {
+  try {
+    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
+    
+    if (!CONVERSION_SERVICE_URL) {
+      return c.json({ 
+        success: false, 
+        error: "TIFF conversion service URL not configured" 
+      }, 503);
+    }
+
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return c.json({ success: false, error: "No file uploaded" }, 400);
+    }
+
+    // Validate file type
+    const fileName = file.name.toLowerCase();
+    if (!fileName.match(/\.(tif|tiff)$/)) {
+      return c.json({ 
+        success: false, 
+        error: "Only TIFF files are allowed" 
+      }, 400);
+    }
+
+    // Validate file size (1GB limit)
+    if (file.size > 1024 * 1024 * 1024) {
+      return c.json({ 
+        success: false, 
+        error: "File size exceeds 1GB limit" 
+      }, 400);
+    }
+
+    // Create new FormData to forward to conversion service
+    const forwardFormData = new FormData();
+    forwardFormData.append("file", file);
+
+    // Forward request to conversion service
+    console.log(`Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-upload`);
+    let response: Response;
+    try {
+      response = await fetch(`${CONVERSION_SERVICE_URL}/convert-upload`, {
+        method: "POST",
+        body: forwardFormData,
+        signal: AbortSignal.timeout(600000), // 10 minutes timeout
+      });
+    } catch (fetchError) {
+      console.error("Fetch error details:", fetchError);
+      throw new Error(`Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`);
+    }
+
+    if (!response.ok) {
+      let errorText = "";
+      try {
+        const errorJson = await response.json() as { error?: string };
+        errorText = errorJson.error || `HTTP ${response.status}`;
+      } catch {
+        errorText = await response.text() || `HTTP ${response.status}`;
+      }
+      const statusCode = response.status >= 500 ? 502 : (response.status >= 400 ? 400 : 500);
+      return c.json({ 
+        success: false, 
+        error: errorText 
+      }, statusCode);
+    }
+
+    const data = await response.json() as {
+      success?: boolean;
+      url?: string;
+      format?: string;
+      originalSize?: number;
+      convertedSize?: number;
+      duration?: number;
+      error?: string;
+    };
+
+    if (data.success) {
+      // Return a proxy URL instead of the direct R2 URL to avoid CORS issues
+      const baseUrl = c.req.url.split('/api')[0];
+      const proxyUrl = `${baseUrl}/api/convert-tiff-proxy?url=${encodeURIComponent(data.url || "")}`;
+      return c.json({
+        success: true,
+        url: proxyUrl, // Use proxy URL instead of direct R2 URL
+        format: data.format,
+        originalSize: data.originalSize,
+        convertedSize: data.convertedSize,
+        duration: data.duration,
+      });
+    } else {
+      return c.json({ 
+        success: false, 
+        error: data.error || "Conversion failed" 
+      }, 500);
+    }
+  } catch (error) {
+    console.error("TIFF conversion service error:", error);
+    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
+    if (error instanceof Error && error.name === "AbortError") {
+      return c.json({ 
+        success: false, 
+        error: "Conversion timed out (10 minutes)" 
+      }, 500);
+    }
+    // Provide more detailed error information
+    const errorMessage = error instanceof Error ? error.message : "Conversion failed";
+    const isNetworkError = error instanceof Error && (
+      error.message.includes("fetch") || 
+      error.message.includes("network") ||
+      error.name === "TypeError"
+    );
+    
+    return c.json({ 
+      success: false, 
+      error: isNetworkError 
+        ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
+        : errorMessage
+    }, 500);
+  }
+});
+
+// TIFF Conversion Service - Proxy endpoint to fetch converted images with CORS headers
+api.get("/convert-tiff-proxy", async (c) => {
+  try {
+    const imageUrl = c.req.query("url");
+    
+    if (!imageUrl) {
+      return c.json({ success: false, error: "Missing url parameter" }, 400);
+    }
+
+    // Fetch the converted image from R2
+    const imageResponse = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Cloudflare-Worker/1.0)",
+      },
+    });
+
+    if (!imageResponse.ok) {
+      return c.json(
+        { success: false, error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}` },
+        502
+      );
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+
+    // Determine content type from response
+    const contentType = imageResponse.headers.get("Content-Type") || "image/webp";
+
+    // Return the image with CORS headers
+    return new Response(imageBuffer, {
+      headers: {
+        "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch (error) {
+    console.error("TIFF conversion proxy error:", error);
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to proxy image",
       },
       500
     );

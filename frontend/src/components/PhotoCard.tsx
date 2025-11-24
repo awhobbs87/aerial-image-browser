@@ -6,7 +6,6 @@ import {
   IconButton,
   Box,
   Tooltip,
-  CircularProgress,
   Checkbox,
   Link,
 } from "@mui/material";
@@ -14,7 +13,6 @@ import {
   Favorite,
   FavoriteBorder,
   Visibility,
-  Download,
 } from "@mui/icons-material";
 import type { EnhancedPhoto, LayerType } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -49,7 +47,6 @@ function PhotoCard({
 }: PhotoCardProps) {
   const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
 
   const handleViewImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,44 +63,6 @@ function PhotoCard({
     e.stopPropagation();
     if (onFavorite) {
       onFavorite(photo);
-    }
-  };
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!photo.DOWNLOAD_LINK || downloading) return;
-
-    setDownloading(true);
-    try {
-      const downloadUrl = apiClient.getWebPUrl(photo.IMAGE_NAME, photo.layerId);
-
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        throw new Error('Failed to download file');
-      }
-
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = `${photo.IMAGE_NAME.replace(/\.tif$/i, '')}.webp`;
-      link.style.display = 'none';
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-      }, 100);
-    } catch (error) {
-      console.error('Download failed:', error);
-      if (photo.DOWNLOAD_LINK) {
-        window.open(photo.DOWNLOAD_LINK, '_blank');
-      }
-    } finally {
-      setDownloading(false);
     }
   };
 
@@ -279,76 +238,36 @@ function PhotoCard({
                   minHeight: { xs: 44, md: 32 },
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark"
-                      ? "rgba(0,0,0,0.7)"
-                      : "rgba(255,255,255,0.95)",
+                      ? "rgba(37, 99, 235, 0.8)" // Blue-600 with opacity for dark mode
+                      : "rgba(59, 130, 246, 0.9)", // Blue-500 with opacity for light mode
                   backdropFilter: "blur(4px)",
-                  color: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.9)"
-                      : "rgba(0,0,0,0.85)",
-                  opacity: 0.85,
+                  color: "white",
+                  opacity: 0.9,
                   transition: 'all 0.2s ease',
                   '&:hover': {
                     opacity: 1,
                     transform: 'scale(1.1)',
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(0,0,0,0.9)"
-                        : "rgba(255,255,255,1)",
+                        ? "rgba(37, 99, 235, 1)" // Blue-600 solid for dark mode
+                        : "rgba(59, 130, 246, 1)", // Blue-500 solid for light mode
+                  },
+                  '&:disabled': {
+                    opacity: 0.5,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(0,0,0,0.5)"
+                        : "rgba(255,255,255,0.5)",
                     color: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "#FFFFFF"
-                        : "#000000",
+                        ? "rgba(255,255,255,0.5)"
+                        : "rgba(0,0,0,0.5)",
                   },
                 }}
               >
                 <Visibility sx={{ fontSize: { xs: 20, md: 16 } }} />
               </IconButton>
             </Tooltip>
-
-            {photo.DOWNLOAD_LINK && (
-              <Tooltip title="Download TIFF" arrow placement="top">
-                <IconButton
-                  size="small"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  aria-label="Download TIFF"
-                  sx={{
-                    minWidth: { xs: 44, md: 32 },
-                    minHeight: { xs: 44, md: 32 },
-                    bgcolor: (theme) =>
-                      theme.palette.mode === "dark"
-                        ? "rgba(0,0,0,0.7)"
-                        : "rgba(255,255,255,0.95)",
-                    backdropFilter: "blur(4px)",
-                    color: (theme) =>
-                      theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.9)"
-                        : "rgba(0,0,0,0.85)",
-                    opacity: 0.85,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      opacity: 1,
-                      transform: 'scale(1.1)',
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "rgba(0,0,0,0.9)"
-                          : "rgba(255,255,255,1)",
-                      color: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "#FFFFFF"
-                          : "#000000",
-                    },
-                  }}
-                >
-                  {downloading ? (
-                    <CircularProgress size={16} color="secondary" />
-                  ) : (
-                    <Download sx={{ fontSize: { xs: 20, md: 16 } }} />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
 
             {onFavorite && (
               <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"} arrow placement="top">

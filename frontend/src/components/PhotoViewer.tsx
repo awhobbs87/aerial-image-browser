@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   LinearProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   Close,
@@ -25,6 +26,14 @@ import {
   PhotoSizeSelectActual,
   Image as ImageIcon,
   Download,
+  Fullscreen,
+  ZoomIn,
+  ZoomOut,
+  FitScreen,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
+  KeyboardArrowLeft,
+  KeyboardArrowRight,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
@@ -62,7 +71,14 @@ export default function PhotoViewer({
   const [converting, setConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
   const [conversionError, setConversionError] = useState<string | null>(null);
-  const [webpUrl, setWebpUrl] = useState<string | null>(null);
+  const [convertedImageUrl, setConvertedImageUrl] = useState<string | null>(null);
+  const [useConvertedImage, setUseConvertedImage] = useState(false);
+  const [fullScreenOpen, setFullScreenOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -71,10 +87,116 @@ export default function PhotoViewer({
   const photoList = isGalleryMode ? photos : photo ? [photo] : [];
   const currentPhoto = photoList[currentIndex] || photo;
 
+  const thumbnailUrl = currentPhoto
+    ? apiClient.getThumbnailUrl(currentPhoto.IMAGE_NAME, currentPhoto.layerId)
+    : "";
+  const displayImageUrl = useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl;
+  const [convertedImageLoaded, setConvertedImageLoaded] = useState(false);
+
+  // Auto-convert function
+  const handleAutoConvert = useCallback(async () => {
+    if (!currentPhoto?.DOWNLOAD_LINK) {
+      console.log('No DOWNLOAD_LINK available for conversion');
+      return;
+    }
+
+    console.log('Starting conversion for:', currentPhoto.IMAGE_NAME);
+    setConverting(true);
+    setConversionProgress(0);
+    setConversionError(null);
+    setConvertedImageLoaded(false);
+
+    try {
+      // Use the new TIFF conversion service via API client
+      const result = await apiClient.convertTiffFromUrl(
+        currentPhoto.DOWNLOAD_LINK,
+        (progress) => setConversionProgress(progress)
+      );
+
+      console.log('Conversion result:', result);
+
+      // Fetch the converted image from the result URL
+      const imageResponse = await fetch(result.url);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download converted image: ${imageResponse.statusText}`);
+      }
+
+      const webpBlob = await imageResponse.blob();
+      const url = URL.createObjectURL(webpBlob);
+      
+      console.log('Converted image ready, preparing to switch');
+      setConvertedImageUrl(url);
+      // Don't switch to converted image until it's loaded - keep showing thumbnail
+      // The image will preload and then we'll switch once onLoad fires
+      setConversionProgress(100);
+    } catch (error) {
+      console.error("Conversion error:", error);
+      setConversionError(error instanceof Error ? error.message : "Conversion failed");
+      // Fallback to thumbnail - don't set useConvertedImage to true
+      setUseConvertedImage(false);
+      setConvertedImageLoaded(false);
+    } finally {
+      setConverting(false);
+    }
+  }, [currentPhoto?.DOWNLOAD_LINK, currentPhoto?.IMAGE_NAME]);
+
   // Reset loading state when changing photos
   useEffect(() => {
+    // Only reset if we're actually changing to a different photo
     setImageLoaded(false);
+    setUseConvertedImage(false);
+    setConvertedImageLoaded(false);
+    // Clear previous converted image
+    setConvertedImageUrl((prev) => {
+      if (prev && prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+    setConversionError(null);
+    setConverting(false);
+    setConversionProgress(0);
   }, [currentIndex, currentPhoto?.IMAGE_NAME]);
+
+  // Automatically convert when modal opens or photo changes
+  useEffect(() => {
+    if (!open || !currentPhoto?.DOWNLOAD_LINK) {
+      console.log('Not converting - missing requirements:', { open, hasDownloadLink: !!currentPhoto?.DOWNLOAD_LINK });
+      return;
+    }
+
+    // Check if we should convert
+    if (converting) {
+      console.log('Conversion already in progress, skipping');
+      return;
+    }
+
+    if (convertedImageUrl) {
+      console.log('Converted image already exists, skipping conversion');
+      return;
+    }
+
+    // Start conversion
+    console.log('Starting auto-conversion for:', currentPhoto.IMAGE_NAME, 'DOWNLOAD_LINK:', currentPhoto.DOWNLOAD_LINK);
+    handleAutoConvert();
+  }, [open, currentPhoto?.DOWNLOAD_LINK, currentPhoto?.IMAGE_NAME, currentIndex, handleAutoConvert, converting, convertedImageUrl]);
+
+  // Switch to converted image once it's loaded
+  useEffect(() => {
+    if (convertedImageUrl && convertedImageLoaded && !useConvertedImage) {
+      console.log('Converted image loaded, switching to it');
+      setUseConvertedImage(true);
+      setImageLoaded(true);
+    }
+  }, [convertedImageUrl, convertedImageLoaded, useConvertedImage]);
+
+  // Reset image loaded state when thumbnail URL changes (but not when switching to converted)
+  useEffect(() => {
+    // Only reset if we're not switching to a converted image
+    if (!useConvertedImage) {
+      setImageLoaded(false);
+    }
+  }, [thumbnailUrl]);
 
   // Update initial index when prop changes
   useEffect(() => {
@@ -127,88 +249,106 @@ export default function PhotoViewer({
     setConverting(false);
     setConversionProgress(0);
     setConversionError(null);
-    if (webpUrl) {
-      URL.revokeObjectURL(webpUrl);
-      setWebpUrl(null);
+    setUseConvertedImage(false);
+    setFullScreenOpen(false);
+    setZoomLevel(1);
+    setPanPosition({ x: 0, y: 0 });
+    if (convertedImageUrl) {
+      // Don't revoke if it's a URL from the proxy (not a blob URL)
+      if (convertedImageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(convertedImageUrl);
+      }
+      setConvertedImageUrl(null);
     }
     onClose();
   };
 
-  const handleConvertToWebP = async () => {
-    if (!currentPhoto?.DOWNLOAD_LINK) {
-      setConversionError("No download link available");
-      return;
+  const handleFullScreen = () => {
+    setFullScreenOpen(true);
+    setZoomLevel(1);
+    setPanPosition({ x: 0, y: 0 });
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.25, 5));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.25, 0.1));
+  };
+
+  const handleResetZoom = () => {
+    // Reset to 100% zoom and center position
+    // Use requestAnimationFrame to avoid issues on mobile
+    requestAnimationFrame(() => {
+      setZoomLevel(1);
+      setPanPosition({ x: 0, y: 0 });
+    });
+  };
+
+  const handleFitToScreen = () => {
+    // Calculate zoom to fit image to screen
+    if (imageDimensions) {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const scaleX = viewportWidth / imageDimensions.width;
+      const scaleY = viewportHeight / imageDimensions.height;
+      const fitZoom = Math.min(scaleX, scaleY) * 0.95; // 95% to add some padding
+      setZoomLevel(Math.max(0.1, Math.min(fitZoom, 5))); // Clamp between 0.1 and 5
+    } else {
+      // Fallback if dimensions not available
+      setZoomLevel(0.5);
     }
+    setPanPosition({ x: 0, y: 0 });
+  };
 
-    setConverting(true);
-    setConversionProgress(0);
-    setConversionError(null);
-
-    try {
-      // Use backend proxy endpoint to avoid CORS issues
-      setConversionProgress(20);
-      const formData = new FormData();
-      formData.append("tiffUrl", currentPhoto.DOWNLOAD_LINK);
-
-      const apiBaseUrl = getApiBaseUrl();
-      const convertResponse = await fetch(`${apiBaseUrl}/api/convert/webp`, {
-        method: "POST",
-        body: formData,
-      });
-
-      setConversionProgress(70);
-
-      if (!convertResponse.ok) {
-        let errorText = "";
-        try {
-          const errorJson = await convertResponse.json();
-          errorText = errorJson.error || errorJson.details || JSON.stringify(errorJson);
-        } catch {
-          errorText = await convertResponse.text();
-        }
-        throw new Error(`Conversion failed: ${convertResponse.status} - ${errorText}`);
+  const handlePan = (direction: 'up' | 'down' | 'left' | 'right') => {
+    const panStep = 50; // Pixels to pan per click
+    setPanPosition((prev) => {
+      switch (direction) {
+        case 'up':
+          return { ...prev, y: prev.y + panStep };
+        case 'down':
+          return { ...prev, y: prev.y - panStep };
+        case 'left':
+          return { ...prev, x: prev.x + panStep };
+        case 'right':
+          return { ...prev, x: prev.x - panStep };
+        default:
+          return prev;
       }
+    });
+  };
 
-      setConversionProgress(90);
-      
-      // Response should be the WEBP blob directly
-      const webpBlob = await convertResponse.blob();
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
+    }
+  };
 
-      // Step 3: Create download URL
-      const url = URL.createObjectURL(webpBlob);
-      setWebpUrl(url);
-      setConversionProgress(100);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      setPanPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
 
-      // Trigger download
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = currentPhoto.IMAGE_NAME.replace(/\.tif(f)?$/i, ".webp");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
-      // Clean up after a delay
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-        setWebpUrl(null);
-        setConversionProgress(0);
-      }, 1000);
-    } catch (error) {
-      console.error("Conversion error:", error);
-      setConversionError(error instanceof Error ? error.message : "Conversion failed");
-      setConversionProgress(0);
-    } finally {
-      setConverting(false);
+  const handleWheel = (e: React.WheelEvent) => {
+    if (fullScreenOpen) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoomLevel((prev) => Math.max(0.5, Math.min(5, prev + delta)));
     }
   };
 
   if (!currentPhoto) return null;
-
-  const thumbnailUrl = apiClient.getThumbnailUrl(
-    currentPhoto.IMAGE_NAME,
-    currentPhoto.layerId
-  );
-  const estimatedSize = "~10-30 MB";
 
   return (
     <Dialog
@@ -252,7 +392,7 @@ export default function PhotoViewer({
       </Box>
 
       <DialogContent sx={{ p: 0 }}>
-        {/* Image Preview */}
+        {/* Image Preview with conversion status */}
         <Box
           sx={{
             position: "relative",
@@ -262,8 +402,64 @@ export default function PhotoViewer({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            overflow: "hidden",
           }}
         >
+          {/* Conversion progress overlay - moved to bottom */}
+          {converting && (
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 16,
+                left: 16,
+                right: 16,
+                zIndex: 2,
+                bgcolor: "background.paper",
+                borderRadius: 1,
+                p: 1.5,
+                boxShadow: 2,
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                <CircularProgress size={16} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                  Converting to WEBP... {conversionProgress}%
+                </Typography>
+              </Stack>
+              <LinearProgress variant="determinate" value={conversionProgress} sx={{ height: 4, borderRadius: 2 }} />
+            </Box>
+          )}
+
+          {/* Full screen button - only enable when converted image is loaded */}
+          {imageLoaded && (
+            <Tooltip title={convertedImageLoaded && useConvertedImage ? "Full screen" : "Waiting for high-quality image..."}>
+              <span>
+                <IconButton
+                  onClick={handleFullScreen}
+                  disabled={!convertedImageLoaded || !useConvertedImage}
+                  sx={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    zIndex: 2,
+                    bgcolor: "background.paper",
+                    boxShadow: 2,
+                    "&:hover": {
+                      bgcolor: "background.paper",
+                      transform: "scale(1.1)",
+                    },
+                    "&:disabled": {
+                      opacity: 0.5,
+                    },
+                  }}
+                  size="medium"
+                >
+                  <Fullscreen />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+
           {/* Navigation buttons - only show in gallery mode */}
           {isGalleryMode && (
             <>
@@ -336,17 +532,47 @@ export default function PhotoViewer({
               }}
             />
           )}
+          {/* Thumbnail image - always shown initially */}
           <img
+            key={`thumbnail-${thumbnailUrl}`}
             src={thumbnailUrl}
             alt={currentPhoto.IMAGE_NAME}
-            onLoad={() => setImageLoaded(true)}
+            onLoad={() => {
+              if (!useConvertedImage) {
+                setImageLoaded(true);
+              }
+            }}
             style={{
               maxWidth: "100%",
               maxHeight: isMobile ? "50vh" : "60vh",
               objectFit: "contain",
-              display: imageLoaded ? "block" : "none",
+              display: useConvertedImage ? "none" : (imageLoaded ? "block" : "none"),
             }}
           />
+          {/* Converted image - preload and show when ready */}
+          {convertedImageUrl && (
+            <img
+              key={`converted-${convertedImageUrl}`}
+              src={convertedImageUrl}
+              alt={`${currentPhoto.IMAGE_NAME} (converted)`}
+              onLoad={() => {
+                console.log('Converted image loaded successfully');
+                setConvertedImageLoaded(true);
+              }}
+              onError={() => {
+                console.error('Converted image failed to load, falling back to thumbnail');
+                setUseConvertedImage(false);
+                setConvertedImageLoaded(false);
+                setImageLoaded(true); // Ensure thumbnail is shown
+              }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: isMobile ? "50vh" : "60vh",
+                objectFit: "contain",
+                display: useConvertedImage && convertedImageLoaded ? "block" : "none",
+              }}
+            />
+          )}
         </Box>
 
         {/* Photo metadata */}
@@ -445,25 +671,12 @@ export default function PhotoViewer({
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: "flex-end", borderTop: 1, borderColor: "divider", flexDirection: "column", alignItems: "stretch" }}>
-        {/* Progress indicator */}
-        {converting && (
-          <Box sx={{ width: "100%", mb: 1 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-              <CircularProgress size={16} />
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
-                Converting to WEBP... {conversionProgress}%
-              </Typography>
-            </Stack>
-            <LinearProgress variant="determinate" value={conversionProgress} sx={{ height: 4, borderRadius: 2 }} />
-          </Box>
-        )}
-
-        {/* Error message */}
-        {conversionError && (
-          <Box sx={{ width: "100%", mb: 1, p: 1, bgcolor: "error.light", borderRadius: 1 }}>
-            <Typography variant="caption" color="error" sx={{ fontSize: "0.75rem" }}>
-              {conversionError}
+      <DialogActions sx={{ p: 2, gap: 1, justifyContent: "flex-end", borderTop: 1, borderColor: "divider" }}>
+        {/* Error message (only show if conversion failed and we're using thumbnail) */}
+        {conversionError && !useConvertedImage && (
+          <Box sx={{ width: '100%', mb: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
+            <Typography variant="caption" color="warning.dark" sx={{ fontSize: '0.75rem' }}>
+              Using thumbnail (conversion failed: {conversionError})
             </Typography>
           </Box>
         )}
@@ -473,16 +686,6 @@ export default function PhotoViewer({
           <Button onClick={handleClose} color="inherit" size="medium" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
             Close
           </Button>
-          <Button
-            variant="outlined"
-            onClick={handleConvertToWebP}
-            disabled={converting || !currentPhoto?.DOWNLOAD_LINK}
-            startIcon={converting ? <CircularProgress size={16} /> : <Download />}
-            size="medium"
-            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-          >
-            Convert to WEBP
-          </Button>
           {currentPhoto.DOWNLOAD_LINK && (
             <Button
               variant="contained"
@@ -490,6 +693,7 @@ export default function PhotoViewer({
               href={currentPhoto.DOWNLOAD_LINK}
               target="_blank"
               rel="noopener noreferrer"
+              startIcon={<Download />}
               size="medium"
               sx={{ fontSize: "0.875rem", fontWeight: 500 }}
             >
@@ -498,6 +702,248 @@ export default function PhotoViewer({
           )}
         </Stack>
       </DialogActions>
+
+      {/* Full Screen Zoom Dialog */}
+      <Dialog
+        open={fullScreenOpen}
+        onClose={() => setFullScreenOpen(false)}
+        maxWidth={false}
+        fullWidth
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: "rgba(0, 0, 0, 0.95)",
+            m: 0,
+            borderRadius: 0,
+          },
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "hidden",
+            cursor: zoomLevel > 1 ? "grab" : "default",
+            "&:active": {
+              cursor: zoomLevel > 1 ? "grabbing" : "default",
+            },
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        >
+          {/* Zoom controls */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 3,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+            }}
+          >
+            <Tooltip title="Zoom in">
+              <IconButton
+                onClick={handleZoomIn}
+                sx={{
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "white",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                }}
+              >
+                <ZoomIn />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Zoom out">
+              <IconButton
+                onClick={handleZoomOut}
+                sx={{
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "white",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                }}
+              >
+                <ZoomOut />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Fit to screen">
+              <IconButton
+                onClick={handleFitToScreen}
+                sx={{
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "white",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                }}
+              >
+                <FitScreen />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Reset zoom">
+              <IconButton
+                onClick={handleResetZoom}
+                sx={{
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "white",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                }}
+              >
+                <ZoomOut />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Close">
+              <IconButton
+                onClick={() => setFullScreenOpen(false)}
+                sx={{
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "white",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                }}
+              >
+                <Close />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Zoom level indicator */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              zIndex: 3,
+              bgcolor: "rgba(0, 0, 0, 0.5)",
+              color: "white",
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="caption">
+              {Math.round(zoomLevel * 100)}%
+            </Typography>
+          </Box>
+
+          {/* Pan controls - only show when zoomed */}
+          {zoomLevel > 1 && (
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 16,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 3,
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+                alignItems: "center",
+              }}
+            >
+              {/* Up button */}
+              <Tooltip title="Pan up">
+                <IconButton
+                  onClick={() => handlePan('up')}
+                  sx={{
+                    bgcolor: "rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                  }}
+                  size="small"
+                >
+                  <KeyboardArrowUp />
+                </IconButton>
+              </Tooltip>
+              {/* Middle row - left, center (zoom indicator), right */}
+              <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                <Tooltip title="Pan left">
+                  <IconButton
+                    onClick={() => handlePan('left')}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                    size="small"
+                  >
+                    <KeyboardArrowLeft />
+                  </IconButton>
+                </Tooltip>
+                <Box
+                  sx={{
+                    bgcolor: "rgba(0, 0, 0, 0.5)",
+                    color: "white",
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 1,
+                    minWidth: 60,
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                    {Math.round(zoomLevel * 100)}%
+                  </Typography>
+                </Box>
+                <Tooltip title="Pan right">
+                  <IconButton
+                    onClick={() => handlePan('right')}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                    size="small"
+                  >
+                    <KeyboardArrowRight />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              {/* Down button */}
+              <Tooltip title="Pan down">
+                <IconButton
+                  onClick={() => handlePan('down')}
+                  sx={{
+                    bgcolor: "rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                  }}
+                  size="small"
+                >
+                  <KeyboardArrowDown />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+
+          {/* Zoomed image */}
+          <img
+            key={useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl} // Force re-render when URL changes
+            src={useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl}
+            alt={currentPhoto.IMAGE_NAME}
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+            }}
+            style={{
+              maxWidth: "none",
+              maxHeight: "none",
+              width: "auto",
+              height: "auto",
+              transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
+              transformOrigin: "center center",
+              transition: isDragging ? "none" : "transform 0.1s ease-out",
+              cursor: zoomLevel > 1 ? "grab" : "default",
+            }}
+            draggable={false}
+          />
+        </Box>
+      </Dialog>
     </Dialog>
   );
 }
