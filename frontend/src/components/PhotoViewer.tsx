@@ -874,7 +874,7 @@ export default function PhotoViewer({
           </Box>
 
           {/* Pan controls - hidden, using natural drag instead */}
-          {false && zoomLevel > 1 && (
+          {zoomLevel > 1 && false && (
             <Box
               sx={{
                 position: "absolute",

@@ -24,7 +24,7 @@ import {
 } from "@mui/icons-material";
 import geocodingService, { type SearchSuggestion } from "../lib/geocoding";
 import searchHistory, { type SearchHistoryItem } from "../lib/searchHistory";
-import { appleLiquidGlass, getThemeValue, createBackdropFilter } from "../theme/apple-liquid-glass";
+import { appleLiquidGlass, getThemeValue } from "../theme/apple-liquid-glass";
 
 interface SearchBarProps {
   onSearch: (lat: number, lon: number, locationName?: string) => void;
