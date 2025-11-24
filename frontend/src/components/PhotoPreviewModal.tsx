@@ -75,23 +75,11 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
     panPositionRef.current = panPosition;
   }, [panPosition]);
 
-  if (!photo) return null;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const thumbnailUrl = apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId);
+  const thumbnailUrl = photo ? apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId) : "";
   const displayImageUrl = useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl;
-
-  // Automatically convert when modal opens
-  useEffect(() => {
-    if (open && photo?.DOWNLOAD_LINK && !convertedImageUrl && !converting) {
-      handleAutoConvert();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, photo?.DOWNLOAD_LINK]);
-
-  // Reset image loaded state when image URL changes
-  useEffect(() => {
-    setImageLoaded(false);
-  }, [displayImageUrl]);
 
   // Reset state when modal closes
   const handleClose = () => {
@@ -150,6 +138,21 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
       setConverting(false);
     }
   };
+
+  // Automatically convert when modal opens
+  useEffect(() => {
+    if (open && photo?.DOWNLOAD_LINK && !convertedImageUrl && !converting) {
+      handleAutoConvert();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, photo?.DOWNLOAD_LINK]);
+
+  // Reset image loaded state when image URL changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [displayImageUrl]);
+
+  if (!photo) return null;
 
   const handleFullScreen = () => {
     setFullScreenOpen(true);
@@ -326,9 +329,6 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
       setPanPosition({ x: newPanX, y: newPanY });
     }
   };
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Dialog
