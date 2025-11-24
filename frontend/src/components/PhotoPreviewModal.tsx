@@ -34,6 +34,8 @@ import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import ThenNowModal from "./ThenNowModal";
 
+// Auto-deployment test: This commit triggers Worker and Pages deployments
+
 interface PhotoPreviewModalProps {
   photo: EnhancedPhoto | null;
   open: boolean;
