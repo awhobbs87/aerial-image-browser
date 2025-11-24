@@ -33,6 +33,22 @@ To enable Pages auto-deployment, add these secrets in your GitHub repository:
    - **Account** → **Workers Scripts** → **Edit** (if needed)
 4. Copy the token and add it to GitHub secrets
 
+## Cloudflare Pages Configuration
+
+**IMPORTANT**: To prevent build conflicts, configure your Cloudflare Pages project:
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Pages** → `tas-aerial-explorer`
+2. Go to **Settings** → **Builds & deployments**
+3. Set the following:
+   - **Build command**: Leave empty or set to `echo "Build handled by GitHub Actions"`
+   - **Build output directory**: `frontend/dist`
+   - **Root directory**: `/` (root of repo)
+   - **Environment variables**: None required
+
+**OR** disable auto-build entirely:
+- In Pages settings, disable "Auto-build from Git"
+- All deployments will come from GitHub Actions only
+
 ## How It Works
 
 ### Worker Auto-Deploy
@@ -45,6 +61,7 @@ To enable Pages auto-deployment, add these secrets in your GitHub repository:
 - Triggers on pushes to `main` that affect `frontend/` directory
 - Builds the frontend and deploys to Cloudflare Pages
 - Requires `CLOUDFLARE_API_TOKEN` secret
+- Uses `skipBuild: true` to prevent Cloudflare from rebuilding
 
 ## Manual Deployment (Fallback)
 
@@ -69,3 +86,11 @@ To test the auto-deploy setup:
    - **Worker**: Cloudflare Dashboard → Workers → Deployments
    - **Pages**: GitHub Actions tab → Latest workflow run
 
+## Troubleshooting
+
+### Build Errors in Cloudflare Pages
+
+If you see build errors like "Cannot find package '@vitejs/plugin-react'":
+- This means Cloudflare Pages is trying to auto-build
+- Solution: Configure Pages settings as described above, or disable auto-build
+- The GitHub Actions workflow handles all building and deployment

@@ -39,4 +39,6 @@ jobs:
           projectName: tas-aerial-explorer
           directory: frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Skip build - we build in GitHub Actions
+          skipBuild: true
 
