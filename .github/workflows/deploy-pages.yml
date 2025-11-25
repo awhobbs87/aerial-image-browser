@@ -38,5 +38,5 @@ jobs:
           accountId: 7330403de4c2446fd5f3cc58548a9cd4
           projectName: tas-aerial-explorer
           directory: frontend/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          gitHubToken: ${{ secrets.DEPLOY_TOKEN }}
 
