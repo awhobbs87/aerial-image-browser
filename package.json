@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
-    "build:frontend": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm ci && npm run build",
     "build": "npm run build:frontend",
     "deploy": "npm run build && wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply PHOTOS_DB",
