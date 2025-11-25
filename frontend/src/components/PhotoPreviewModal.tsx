@@ -435,6 +435,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           minScale={0.5}
           maxScale={5}
           centerOnInit
+          centerZoomedOut
           wheel={{ step: 0.1 }}
           pinch={{
             step: 0.5,
@@ -447,12 +448,9 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           panning={{
             disabled: false,
             velocityDisabled: false,
-            lockAxisX: false,
-            lockAxisY: false,
           }}
-          disablePadding
-          smooth
-          limitToBounds={false}
+          alignmentAnimation={{ disabled: false, sizeX: 0, sizeY: 0 }}
+          velocityAnimation={{ disabled: false, sensitivity: 1, animationTime: 400 }}
         >
           {({ zoomIn, zoomOut, resetTransform, state }) => (
             <Box
@@ -552,15 +550,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                 wrapperStyle={{
                   width: "100%",
                   height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   touchAction: "none",
-                }}
-                contentStyle={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                 }}
               >
                 <img
@@ -570,10 +560,9 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                   onDragStart={(e) => e.preventDefault()}
                   onContextMenu={(e) => e.preventDefault()}
                   style={{
-                    width: "auto",
-                    height: "auto",
-                    maxWidth: "100vw",
-                    maxHeight: "100vh",
+                    display: "block",
+                    width: "100vw",
+                    height: "100vh",
                     objectFit: "contain",
                     userSelect: "none",
                     WebkitUserSelect: "none",
