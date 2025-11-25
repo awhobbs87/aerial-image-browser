@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
-  DialogTitle,
   Button,
   Box,
   Typography,
@@ -33,13 +32,6 @@ import {
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
-
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  return "https://tas-aerial-browser.awhobbs.workers.dev";
-};
 
 interface PhotoViewerProps {
   photo: EnhancedPhoto | null;
@@ -208,7 +200,7 @@ export default function PhotoViewer({
     if (!useConvertedImage) {
       setImageLoaded(false);
     }
-  }, [thumbnailUrl]);
+  }, [thumbnailUrl, useConvertedImage]);
 
   // Update initial index when prop changes
   useEffect(() => {
@@ -990,8 +982,8 @@ export default function PhotoViewer({
 
           {/* Zoomed image */}
           <img
-            key={useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl} // Force re-render when URL changes
-            src={useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl}
+            key={displayImageUrl} // Force re-render when URL changes
+            src={displayImageUrl}
             alt={currentPhoto.IMAGE_NAME}
             onLoad={(e) => {
               const img = e.currentTarget;

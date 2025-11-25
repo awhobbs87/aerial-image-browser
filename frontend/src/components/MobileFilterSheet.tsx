@@ -1,6 +1,7 @@
 import { Drawer, IconButton, Box, Typography, Divider } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import FilterPanel, { type Filters } from "./FilterPanel";
+import FilterPanel from "./FilterPanel";
+import type { Filters } from "./filterPanelConfig";
 
 interface MobileFilterSheetProps {
   open: boolean;

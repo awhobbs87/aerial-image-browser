@@ -94,7 +94,7 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
   }, [validPhotos, selectedPhoto, hoveredPhoto]);
 
   const limitedPhotos = prioritizedPhotos;
-
+  
   const isLimited = validPhotos.length > MAX_POLYGONS;
 
   // Memoize polygon data calculations
@@ -123,7 +123,7 @@ function PhotoMarkers({ photos, selectedPhoto, hoveredPhoto, onPhotoClick }: Pho
 
   return (
     <>
-      {validPhotos.length > MAX_POLYGONS && (
+      {isLimited && (
         <Alert
           severity="info"
           sx={{

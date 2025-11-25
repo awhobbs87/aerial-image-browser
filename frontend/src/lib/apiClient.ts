@@ -301,7 +301,7 @@ class ApiClient {
             } else {
               reject(new Error(data.error || "Conversion failed"));
             }
-          } catch (parseError) {
+          } catch {
             reject(new Error("Failed to parse response"));
           }
         } else {

@@ -99,13 +99,13 @@ export default function ComparisonModal({
   const secondaryUrl = secondaryPhoto ? getPreviewUrl(secondaryPhoto) : null;
   const hasTwoPhotos = photos.length >= 2;
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setTab("slider");
     setSliderValue(50);
     setImageLoaded({ primary: false, secondary: false });
     setImageError({ primary: false, secondary: false });
     onClose();
-  };
+  }, [onClose]);
 
   const handleSwapPhotos = useCallback(() => {
     if (photos.length >= 2) {
@@ -152,7 +152,7 @@ export default function ComparisonModal({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, tab, hasTwoPhotos, handleSwapPhotos]);
+  }, [open, tab, hasTwoPhotos, handleSwapPhotos, handleClose]);
 
   const allImagesLoaded = imageLoaded.primary && imageLoaded.secondary;
   const anyImageError = imageError.primary || imageError.secondary;
