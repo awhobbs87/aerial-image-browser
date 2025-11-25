@@ -436,9 +436,23 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           maxScale={5}
           centerOnInit
           wheel={{ step: 0.1 }}
-          pinch={{ step: 5 }}
-          doubleClick={{ mode: "toggle", step: 1 }}
-          panning={{ velocityDisabled: false }}
+          pinch={{
+            step: 0.5,
+            disabled: false,
+          }}
+          doubleClick={{
+            mode: "zoomIn",
+            step: 0.7,
+          }}
+          panning={{
+            disabled: false,
+            velocityDisabled: false,
+            lockAxisX: false,
+            lockAxisY: false,
+          }}
+          disablePadding
+          smooth
+          limitToBounds={false}
         >
           {({ zoomIn, zoomOut, resetTransform, state }) => (
             <Box
@@ -536,16 +550,17 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
               {/* Zoomed image with TransformComponent */}
               <TransformComponent
                 wrapperStyle={{
-                  width: "100vw",
-                  height: "100vh",
-                  cursor: "grab",
-                }}
-                contentStyle={{
                   width: "100%",
                   height: "100%",
                   display: "flex",
-                  justifyContent: "center",
                   alignItems: "center",
+                  justifyContent: "center",
+                  touchAction: "none",
+                }}
+                contentStyle={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <img
@@ -555,12 +570,15 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                   onDragStart={(e) => e.preventDefault()}
                   onContextMenu={(e) => e.preventDefault()}
                   style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
+                    width: "auto",
+                    height: "auto",
+                    maxWidth: "100vw",
+                    maxHeight: "100vh",
                     objectFit: "contain",
                     userSelect: "none",
                     WebkitUserSelect: "none",
                     WebkitTouchCallout: "none",
+                    pointerEvents: "none",
                   }}
                   draggable={false}
                 />
