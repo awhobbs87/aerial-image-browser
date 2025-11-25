@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -75,6 +75,22 @@ export default function PhotoViewer({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [pinchStart, setPinchStart] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
+  const [lastZoomLevel, setLastZoomLevel] = useState(1);
+  
+  // Refs to track latest values for use in event handlers (avoid stale closures)
+  const zoomLevelRef = useRef(zoomLevel);
+  const panPositionRef = useRef(panPosition);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    zoomLevelRef.current = zoomLevel;
+  }, [zoomLevel]);
+  
+  useEffect(() => {
+    panPositionRef.current = panPosition;
+  }, [panPosition]);
+  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -322,19 +338,49 @@ export default function PhotoViewer({
     setIsDragging(false);
   };
 
-  // Touch event handlers for mobile panning - work at any zoom level
+  // Calculate distance between two touches
+  const getTouchDistance = (touch1: React.Touch, touch2: React.Touch): number => {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Calculate center point between two touches
+  const getTouchCenter = (touch1: React.Touch, touch2: React.Touch): { x: number; y: number } => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  };
+
+  // Touch event handlers for mobile panning and pinch-to-zoom
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
+      // Single touch - start panning
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(true);
       const touch = e.touches[0];
       setDragStart({ x: touch.clientX - panPosition.x, y: touch.clientY - panPosition.y });
+      setPinchStart(null);
+    } else if (e.touches.length === 2) {
+      // Two touches - start pinch-to-zoom
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      // Guard against division by zero: if touches are at the same location, use minimum distance
+      const minDistance = 1; // Minimum 1px to prevent division by zero
+      const safeDistance = Math.max(distance, minDistance);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      setPinchStart({ distance: safeDistance, center });
+      setLastZoomLevel(zoomLevel);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && e.touches.length === 1) {
+    if (e.touches.length === 1 && isDragging) {
+      // Single touch - continue panning
       e.preventDefault();
       e.stopPropagation();
       const touch = e.touches[0];
@@ -342,6 +388,38 @@ export default function PhotoViewer({
         x: touch.clientX - dragStart.x,
         y: touch.clientY - dragStart.y,
       });
+    } else if (e.touches.length === 2 && pinchStart) {
+      // Two touches - pinch-to-zoom
+      e.preventDefault();
+      e.stopPropagation();
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      // Guard against division by zero: ensure pinchStart.distance is never 0
+      if (pinchStart.distance === 0) {
+        return; // Skip this update if initial distance was invalid
+      }
+      const scale = distance / pinchStart.distance;
+      const newZoom = Math.max(0.5, Math.min(5, lastZoomLevel * scale));
+      
+      // Get container bounds to convert touch coordinates correctly
+      const containerRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      
+      // Convert pinch center to container-relative coordinates (like wheel handler)
+      const centerX = center.x - containerRect.left - containerRect.width / 2;
+      const centerY = center.y - containerRect.top - containerRect.height / 2;
+      
+      // Calculate the point on the image that the pinch center is over
+      // Use lastZoomLevel (the zoom at pinch start) for consistency with newZoom calculation
+      // This ensures the coordinate transformation matches the zoom scaling
+      const imageX = (centerX - panPosition.x) / lastZoomLevel;
+      const imageY = (centerY - panPosition.y) / lastZoomLevel;
+      
+      // Adjust pan position so the same point on the image stays under the pinch center
+      const newPanX = centerX - imageX * newZoom;
+      const newPanY = centerY - imageY * newZoom;
+      
+      setZoomLevel(newZoom);
+      setPanPosition({ x: newPanX, y: newPanY });
     }
   };
 
@@ -349,13 +427,48 @@ export default function PhotoViewer({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    setPinchStart(null);
+    if (e.touches.length === 1) {
+      // One touch remaining - switch to panning
+      // Use ref to get current panPosition (avoids stale closure value)
+      const touch = e.touches[0];
+      const currentPan = panPositionRef.current;
+      setDragStart({ x: touch.clientX - currentPan.x, y: touch.clientY - currentPan.y });
+      setIsDragging(true);
+      setPinchStart(null);
+    }
+    // Note: lastZoomLevel is already set correctly in handleTouchStart when a new pinch begins
+    // No need to update it here as zoomLevel would be stale from closure
   };
 
   const handleWheel = (e: React.WheelEvent) => {
     if (fullScreenOpen) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoomLevel((prev) => Math.max(0.5, Math.min(5, prev + delta)));
+      
+      // Use refs to get current values (avoids stale closures during rapid wheel events)
+      const currentZoom = zoomLevelRef.current;
+      const currentPan = panPositionRef.current;
+      
+      // Get mouse position relative to the container center
+      const containerRect = e.currentTarget.getBoundingClientRect();
+      const mouseX = e.clientX - containerRect.left - containerRect.width / 2;
+      const mouseY = e.clientY - containerRect.top - containerRect.height / 2;
+      
+      // Calculate the point on the image that the mouse is over
+      // This accounts for current pan and zoom
+      const imageX = (mouseX - currentPan.x) / currentZoom;
+      const imageY = (mouseY - currentPan.y) / currentZoom;
+      
+      // Calculate new zoom level
+      const newZoom = Math.max(0.5, Math.min(5, currentZoom + delta));
+      
+      // Adjust pan position so the same point on the image stays under the mouse
+      const newPanX = mouseX - imageX * newZoom;
+      const newPanY = mouseY - imageY * newZoom;
+      
+      setZoomLevel(newZoom);
+      setPanPosition({ x: newPanX, y: newPanY });
     }
   };
 
@@ -739,7 +852,7 @@ export default function PhotoViewer({
             alignItems: "center",
             overflow: "hidden",
             cursor: isDragging ? "grabbing" : "grab",
-            touchAction: "none", // Prevent default touch behaviors (scrolling, zooming)
+            touchAction: "none", // Handle all touch gestures manually for full control
             userSelect: "none", // Prevent text selection
             WebkitUserSelect: "none", // iOS Safari
             WebkitTouchCallout: "none", // iOS Safari - prevent callout menu
@@ -769,11 +882,20 @@ export default function PhotoViewer({
               display: "flex",
               flexDirection: "column",
               gap: 1,
+              // Prevent touch events from interfering with button clicks
+              touchAction: "auto",
+              pointerEvents: "auto",
             }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             <Tooltip title="Zoom in">
               <IconButton
-                onClick={handleZoomIn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomIn();
+                }}
                 sx={{
                   bgcolor: "rgba(255, 255, 255, 0.1)",
                   color: "white",
@@ -785,7 +907,10 @@ export default function PhotoViewer({
             </Tooltip>
             <Tooltip title="Zoom out">
               <IconButton
-                onClick={handleZoomOut}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomOut();
+                }}
                 sx={{
                   bgcolor: "rgba(255, 255, 255, 0.1)",
                   color: "white",
@@ -797,7 +922,10 @@ export default function PhotoViewer({
             </Tooltip>
             <Tooltip title="Fit to screen">
               <IconButton
-                onClick={handleFitToScreen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFitToScreen();
+                }}
                 sx={{
                   bgcolor: "rgba(255, 255, 255, 0.1)",
                   color: "white",
@@ -809,7 +937,10 @@ export default function PhotoViewer({
             </Tooltip>
             <Tooltip title="Reset zoom">
               <IconButton
-                onClick={handleResetZoom}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleResetZoom();
+                }}
                 sx={{
                   bgcolor: "rgba(255, 255, 255, 0.1)",
                   color: "white",
@@ -821,7 +952,10 @@ export default function PhotoViewer({
             </Tooltip>
             <Tooltip title="Close">
               <IconButton
-                onClick={() => setFullScreenOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullScreenOpen(false);
+                }}
                 sx={{
                   bgcolor: "rgba(255, 255, 255, 0.1)",
                   color: "white",
