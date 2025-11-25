@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2025-11-25
+
+### Added
+- Professional zoom/pan image viewer with react-zoom-pan-pinch library:
+  - Smooth zoom transitions with proper easing animations
+  - Mouse wheel zoom at cursor position (not center)
+  - Buttery smooth pinch-to-zoom on mobile devices
+  - Double-tap to toggle zoom functionality
+  - Panning with momentum/inertia for natural feel
+  - Better touch gesture recognition on mobile
+
+### Changed
+- Replaced manual zoom/pan implementation (~155 lines) with react-zoom-pan-pinch library
+- Improved PhotoPreviewModal zoom controls to use library functions
+- Enhanced zoom behavior: minScale 0.5, maxScale 5, smooth 0.1 step increments
+
+### Improved
+- Significantly reduced component complexity in PhotoPreviewModal
+- Better mobile performance with native gesture handling
+- Easier maintenance with battle-tested library replacing custom code
+- Industry-standard interaction patterns matching native photo viewers
+
+### Removed
+- Manual touch event handlers (getTouchDistance, getTouchCenter)
+- Complex state management (zoomLevel, panPosition, isDragging, dragStart, pinchStart, lastZoomLevel)
+- Refs for tracking stale closures (zoomLevelRef, panPositionRef)
+- 8 custom event handler functions
+
 ## [2.3.0] - 2025-01-27
 
 ### Added
