@@ -29,7 +29,8 @@ import {
   FitScreen,
   History,
 } from "@mui/icons-material";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import ThenNowModal from "./ThenNowModal";
@@ -56,26 +57,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
   const [convertedImageUrl, setConvertedImageUrl] = useState<string | null>(null);
   const [useConvertedImage, setUseConvertedImage] = useState(false);
   const [fullScreenOpen, setFullScreenOpen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [pinchStart, setPinchStart] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
-  const [lastZoomLevel, setLastZoomLevel] = useState(1);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
-  
-  // Refs to track latest values for use in event handlers (avoid stale closures)
-  const zoomLevelRef = useRef(zoomLevel);
-  const panPositionRef = useRef(panPosition);
-  
-  // Keep refs in sync with state
-  useEffect(() => {
-    zoomLevelRef.current = zoomLevel;
-  }, [zoomLevel]);
-  
-  useEffect(() => {
-    panPositionRef.current = panPosition;
-  }, [panPosition]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -91,8 +73,6 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
     setConversionError(null);
     setUseConvertedImage(false);
     setFullScreenOpen(false);
-    setZoomLevel(1);
-    setPanPosition({ x: 0, y: 0 });
     if (convertedImageUrl) {
       // Don't revoke if it's a URL from the proxy (not a blob URL)
       if (convertedImageUrl.startsWith('blob:')) {
@@ -158,178 +138,6 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
 
   const handleFullScreen = () => {
     setFullScreenOpen(true);
-    setZoomLevel(1);
-    setPanPosition({ x: 0, y: 0 });
-  };
-
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.25, 5));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
-  };
-
-  const handleResetZoom = () => {
-    setZoomLevel(1);
-    setPanPosition({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Allow panning at any zoom level
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.preventDefault();
-      e.stopPropagation();
-      setPanPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Calculate distance between two touches
-  const getTouchDistance = (touch1: React.Touch, touch2: React.Touch): number => {
-    const dx = touch2.clientX - touch1.clientX;
-    const dy = touch2.clientY - touch1.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // Calculate center point between two touches
-  const getTouchCenter = (touch1: React.Touch, touch2: React.Touch): { x: number; y: number } => {
-    return {
-      x: (touch1.clientX + touch2.clientX) / 2,
-      y: (touch1.clientY + touch2.clientY) / 2,
-    };
-  };
-
-  // Touch event handlers for mobile panning and pinch-to-zoom
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      // Single touch - start panning
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(true);
-      const touch = e.touches[0];
-      setDragStart({ x: touch.clientX - panPosition.x, y: touch.clientY - panPosition.y });
-      setPinchStart(null);
-    } else if (e.touches.length === 2) {
-      // Two touches - start pinch-to-zoom
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      const distance = getTouchDistance(e.touches[0], e.touches[1]);
-      // Guard against division by zero: if touches are at the same location, use minimum distance
-      const minDistance = 1; // Minimum 1px to prevent division by zero
-      const safeDistance = Math.max(distance, minDistance);
-      const center = getTouchCenter(e.touches[0], e.touches[1]);
-      setPinchStart({ distance: safeDistance, center });
-      setLastZoomLevel(zoomLevel);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging) {
-      // Single touch - continue panning
-      e.preventDefault();
-      e.stopPropagation();
-      const touch = e.touches[0];
-      setPanPosition({
-        x: touch.clientX - dragStart.x,
-        y: touch.clientY - dragStart.y,
-      });
-    } else if (e.touches.length === 2 && pinchStart) {
-      // Two touches - pinch-to-zoom
-      e.preventDefault();
-      e.stopPropagation();
-      const distance = getTouchDistance(e.touches[0], e.touches[1]);
-      // Guard against division by zero: ensure pinchStart.distance is never 0
-      if (pinchStart.distance === 0) {
-        return; // Skip this update if initial distance was invalid
-      }
-      const scale = distance / pinchStart.distance;
-      const newZoom = Math.max(0.5, Math.min(5, lastZoomLevel * scale));
-      
-      // Get container bounds to convert touch coordinates correctly
-      const containerRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const center = getTouchCenter(e.touches[0], e.touches[1]);
-      
-      // Convert pinch center to container-relative coordinates (like wheel handler)
-      const centerX = center.x - containerRect.left - containerRect.width / 2;
-      const centerY = center.y - containerRect.top - containerRect.height / 2;
-      
-      // Calculate the point on the image that the pinch center is over
-      // Use lastZoomLevel (the zoom at pinch start) for consistency with newZoom calculation
-      // This ensures the coordinate transformation matches the zoom scaling
-      const imageX = (centerX - panPosition.x) / lastZoomLevel;
-      const imageY = (centerY - panPosition.y) / lastZoomLevel;
-      
-      // Adjust pan position so the same point on the image stays under the pinch center
-      const newPanX = centerX - imageX * newZoom;
-      const newPanY = centerY - imageY * newZoom;
-      
-      setZoomLevel(newZoom);
-      setPanPosition({ x: newPanX, y: newPanY });
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    setPinchStart(null);
-    if (e.touches.length === 1) {
-      // One touch remaining - switch to panning
-      // Use ref to get current panPosition (avoids stale closure value)
-      const touch = e.touches[0];
-      const currentPan = panPositionRef.current;
-      setDragStart({ x: touch.clientX - currentPan.x, y: touch.clientY - currentPan.y });
-      setIsDragging(true);
-      setPinchStart(null);
-    }
-    // Note: lastZoomLevel is already set correctly in handleTouchStart when a new pinch begins
-    // No need to update it here as zoomLevel would be stale from closure
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (fullScreenOpen) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      
-      // Use refs to get current values (avoids stale closures during rapid wheel events)
-      const currentZoom = zoomLevelRef.current;
-      const currentPan = panPositionRef.current;
-      
-      // Get mouse position relative to the container center
-      const containerRect = e.currentTarget.getBoundingClientRect();
-      const mouseX = e.clientX - containerRect.left - containerRect.width / 2;
-      const mouseY = e.clientY - containerRect.top - containerRect.height / 2;
-      
-      // Calculate the point on the image that the mouse is over
-      // This accounts for current pan and zoom
-      const imageX = (mouseX - currentPan.x) / currentZoom;
-      const imageY = (mouseY - currentPan.y) / currentZoom;
-      
-      // Calculate new zoom level
-      const newZoom = Math.max(0.5, Math.min(5, currentZoom + delta));
-      
-      // Adjust pan position so the same point on the image stays under the mouse
-      const newPanX = mouseX - imageX * newZoom;
-      const newPanY = mouseY - imageY * newZoom;
-      
-      setZoomLevel(newZoom);
-      setPanPosition({ x: newPanX, y: newPanY });
-    }
   };
 
   return (
@@ -622,159 +430,151 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           },
         }}
       >
-        <Box
-          sx={{
-            position: "relative",
-            width: "100vw",
-            height: "100vh",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            overflow: "hidden",
-            cursor: isDragging ? "grabbing" : "grab",
-            touchAction: "none", // Handle all touch gestures manually for full control
-            userSelect: "none", // Prevent text selection
-            WebkitUserSelect: "none", // iOS Safari
-            WebkitTouchCallout: "none", // iOS Safari - prevent callout menu
-            // Prevent text selection on all children
-            "& *": {
-              userSelect: "none",
-              WebkitUserSelect: "none",
-            },
+        <TransformWrapper
+          initialScale={1}
+          minScale={0.5}
+          maxScale={5}
+          centerOnInit
+          centerZoomedOut
+          wheel={{ step: 0.1 }}
+          pinch={{
+            step: 0.5,
+            disabled: false,
           }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onWheel={handleWheel}
+          doubleClick={{
+            mode: "zoomIn",
+            step: 0.7,
+          }}
+          panning={{
+            disabled: false,
+            velocityDisabled: false,
+          }}
+          alignmentAnimation={{ disabled: false, sizeX: 0, sizeY: 0 }}
+          velocityAnimation={{ disabled: false, sensitivity: 1, animationTime: 400 }}
         >
-          {/* Zoom controls */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              zIndex: 3,
-              display: "flex",
-              flexDirection: "column",
-              gap: 1,
-              // Prevent touch events from interfering with button clicks
-              touchAction: "auto",
-              pointerEvents: "auto",
-            }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-          >
-            <Tooltip title="Zoom in">
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleZoomIn();
-                }}
+          {({ zoomIn, zoomOut, resetTransform, state }) => (
+            <Box
+              sx={{
+                position: "relative",
+                width: "100vw",
+                height: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                overflow: "hidden",
+              }}
+            >
+              {/* Zoom controls */}
+              <Box
                 sx={{
-                  bgcolor: "rgba(255, 255, 255, 0.1)",
-                  color: "white",
-                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  zIndex: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
                 }}
               >
-                <ZoomIn />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Zoom out">
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleZoomOut();
-                }}
-                sx={{
-                  bgcolor: "rgba(255, 255, 255, 0.1)",
-                  color: "white",
-                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                }}
-              >
-                <ZoomOut />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Reset zoom">
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleResetZoom();
-                }}
-                sx={{
-                  bgcolor: "rgba(255, 255, 255, 0.1)",
-                  color: "white",
-                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                }}
-              >
-                <FitScreen />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Close">
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setFullScreenOpen(false);
-                }}
-                sx={{
-                  bgcolor: "rgba(255, 255, 255, 0.1)",
-                  color: "white",
-                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                }}
-              >
-                <Close />
-              </IconButton>
-            </Tooltip>
-          </Box>
+                <Tooltip title="Zoom in">
+                  <IconButton
+                    onClick={() => zoomIn()}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                  >
+                    <ZoomIn />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Zoom out">
+                  <IconButton
+                    onClick={() => zoomOut()}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                  >
+                    <ZoomOut />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Reset zoom">
+                  <IconButton
+                    onClick={() => resetTransform()}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                  >
+                    <FitScreen />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Close">
+                  <IconButton
+                    onClick={() => setFullScreenOpen(false)}
+                    sx={{
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+                    }}
+                  >
+                    <Close />
+                  </IconButton>
+                </Tooltip>
+              </Box>
 
-          {/* Zoom level indicator */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              zIndex: 3,
-              bgcolor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              px: 2,
-              py: 1,
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="caption">
-              {Math.round(zoomLevel * 100)}%
-            </Typography>
-          </Box>
+              {/* Zoom level indicator */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 16,
+                  left: 16,
+                  zIndex: 3,
+                  bgcolor: "rgba(0, 0, 0, 0.5)",
+                  color: "white",
+                  px: 2,
+                  py: 1,
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="caption">
+                  {Math.round(state.scale * 100)}%
+                </Typography>
+              </Box>
 
-          {/* Zoomed image */}
-          <img
-            key={displayImageUrl} // Force re-render when URL changes
-            src={displayImageUrl}
-            alt={photo.IMAGE_NAME}
-            onDragStart={(e) => e.preventDefault()} // Prevent native drag
-            onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
-            style={{
-              maxWidth: "none",
-              maxHeight: "none",
-              width: "auto",
-              height: "auto",
-              transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
-              transformOrigin: "center center",
-              transition: isDragging ? "none" : "transform 0.1s ease-out",
-              cursor: isDragging ? "grabbing" : "grab",
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              WebkitTouchCallout: "none",
-              pointerEvents: "auto",
-            }}
-            draggable={false}
-          />
-        </Box>
+              {/* Zoomed image with TransformComponent */}
+              <TransformComponent
+                wrapperStyle={{
+                  width: "100%",
+                  height: "100%",
+                  touchAction: "none",
+                }}
+              >
+                <img
+                  key={displayImageUrl}
+                  src={displayImageUrl}
+                  alt={photo.IMAGE_NAME}
+                  onDragStart={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{
+                    display: "block",
+                    width: "100vw",
+                    height: "100vh",
+                    objectFit: "contain",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTouchCallout: "none",
+                    pointerEvents: "none",
+                  }}
+                  draggable={false}
+                />
+              </TransformComponent>
+            </Box>
+          )}
+        </TransformWrapper>
       </Dialog>
 
       {/* Then vs Now Modal */}

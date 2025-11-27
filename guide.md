@@ -1,8 +1,8 @@
 # 🏗️ Tasmania Aerial Photo Explorer - Complete Project Guide
 
-**Progressive Web App | Version 1.5.0 | Current Status: Production Ready**
+**Progressive Web App | Version 2.4.0 | Current Status: Production Ready**
 
-**Last Updated:** 2025-11-14
+**Last Updated:** 2025-11-25
 
 ---
 
@@ -742,6 +742,88 @@ Time: ~2-3s first conversion, <100ms cached
 - Backend: https://tas-aerial-browser.awhobbs.workers.dev
 - Frontend: https://34e3ea4c.tas-aerial-explorer.pages.dev
 - Worker Version: 9b962e02-25cc-4541-a14e-e768eb8f5909
+
+---
+
+### Stage 18: Professional Zoom/Pan Image Viewer ✅
+**Status: Complete (2025-11-25)**
+
+**Problem:** The PhotoPreviewModal had a clunky zoom/pan experience:
+- Manual mouse/touch event handling (~155 lines) was error-prone
+- Fixed zoom increments (0.25) were too coarse for precision
+- No double-tap to zoom functionality
+- No momentum/inertia when panning
+- Pinch-to-zoom worked but lacked polish
+- Complex state management with refs to avoid stale closures
+- Difficult to maintain and extend
+
+**Solution:** Replaced manual implementation with `react-zoom-pan-pinch` library
+
+**Library Features:**
+- **Professional-grade zoom/pan** with smooth animations
+- **Mouse wheel zoom** with cursor-focused zooming
+- **Pinch-to-zoom** on mobile (buttery smooth performance)
+- **Double-tap to zoom** for quick interaction
+- **Panning with momentum/inertia** for natural feel
+- **Boundaries** to prevent over-panning
+- **Zero dependencies** - lightweight (~20KB)
+- **Battle-tested** - widely used in production apps
+
+**Implementation Details:**
+- Replaced 155+ lines of manual event handlers with clean declarative API
+- Integrated TransformWrapper and TransformComponent
+- Wired existing zoom control buttons to library functions
+- Preserved zoom level indicator showing current scale percentage
+- Maintained all existing UI (controls, close button, metadata)
+
+**Configuration:**
+```typescript
+<TransformWrapper
+  initialScale={1}
+  minScale={0.5}
+  maxScale={5}
+  centerOnInit
+  wheel={{ step: 0.1 }}           // Smooth wheel zoom
+  pinch={{ step: 5 }}              // Responsive pinch zoom
+  doubleClick={{ mode: "toggle", step: 1 }}  // Toggle zoom on double-tap
+  panning={{ velocityDisabled: false }}       // Enable momentum
+>
+```
+
+**User Experience Improvements:**
+- ✅ Smoother zoom transitions with proper easing
+- ✅ More intuitive pan behavior with momentum
+- ✅ Better touch gesture recognition on mobile
+- ✅ Double-tap to zoom in/out quickly
+- ✅ Mouse wheel zooms at cursor position (not center)
+- ✅ Professional feel matching native photo viewers
+
+**Code Quality Improvements:**
+- ✅ Removed complex state management (zoomLevel, panPosition, isDragging, dragStart, pinchStart, lastZoomLevel)
+- ✅ Removed refs to track state (zoomLevelRef, panPositionRef)
+- ✅ Eliminated manual touch event calculations (getTouchDistance, getTouchCenter)
+- ✅ Deleted 8 event handler functions
+- ✅ Reduced component complexity significantly
+- ✅ Easier to maintain and extend
+
+**Files Modified:**
+- `frontend/package.json` - Added react-zoom-pan-pinch dependency, version 1.6.0
+- `frontend/src/components/PhotoPreviewModal.tsx` - Replaced manual zoom/pan with library
+- `guide.md` - Stage 18 documentation, version 1.6.0
+
+**Performance:**
+- No performance regression - library is highly optimized
+- Reduced bundle size (removed custom code, added lightweight library)
+- Better mobile performance with native gesture handling
+
+**Benefits:**
+- ✅ Professional user experience
+- ✅ Significant code simplification
+- ✅ Better mobile touch gestures
+- ✅ Easier future maintenance
+- ✅ Industry-standard interaction patterns
+
+**Version:** 1.6.0
 
 ---
 
