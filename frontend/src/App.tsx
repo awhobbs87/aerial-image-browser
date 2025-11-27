@@ -208,8 +208,18 @@ function AppContent() {
       );
     }
 
+    // Filter by layer type if toggled
+    const { aerial, ortho, digital } = filters.layerTypes;
+    if (!aerial || !ortho || !digital) {
+      photos = photos.filter((photo) => {
+        if (photo.layerType === "aerial") return aerial;
+        if (photo.layerType === "ortho") return ortho;
+        return digital;
+      });
+    }
+
     return photos;
-  }, [data?.photos, filters.selectedScales, filters.startDate, filters.endDate]);
+  }, [data?.photos, filters.selectedScales, filters.startDate, filters.endDate, filters.layerTypes]);
 
   // Get favorite photos for modal
   const favoritePhotos = useMemo(() => {
@@ -265,7 +275,11 @@ function AppContent() {
       if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
       if (filters.layerTypes.digital) activeLayerTypes.push("digital");
 
-      // Note: Scale filtering will be done client-side after fetching
+      // Derive scale bounds for server-side filtering (exact selection enforced client-side)
+      const hasScaleSelection = filters.selectedScales.length > 0;
+      const minScale = hasScaleSelection ? Math.min(...filters.selectedScales) : undefined;
+      const maxScale = hasScaleSelection ? Math.max(...filters.selectedScales) : undefined;
+
       setSearchParams({
         lat,
         lon,
@@ -273,6 +287,8 @@ function AppContent() {
         startDate: filters.startDate?.toISOString(),
         endDate: filters.endDate?.toISOString(),
         imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
+        minScale,
+        maxScale,
       });
 
       // Set search center for map to zoom to

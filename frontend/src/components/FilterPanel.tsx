@@ -38,6 +38,20 @@ export default function FilterPanel({
   showQuickFilters = true,
 }: FilterPanelProps) {
 
+  const setsEqual = (a: Set<string>, b: Set<string>) => {
+    if (a.size !== b.size) return false;
+    for (const value of a) {
+      if (!b.has(value)) return false;
+    }
+    return true;
+  };
+
+  const arraysEqualAsSet = (a: number[], b: number[]) => {
+    if (a.length !== b.length) return false;
+    const setB = new Set(b);
+    return a.every((value) => setB.has(value));
+  };
+
   // Group available scales into categories
   const scaleCategories = React.useMemo(() => {
     return SCALE_CATEGORIES.map(category => {
@@ -55,29 +69,48 @@ export default function FilterPanel({
     }).filter(cat => cat.count > 0);
   }, [availableScales]);
 
-  // Track which categories are selected (start with NONE selected = show all)
+  // Track which categories are selected (default to all when results are present)
   const [selectedCategories, setSelectedCategories] = React.useState<Set<string>>(new Set());
 
-  // Update filters when categories change
+  // Sync category selection from existing filters (e.g., when reopening sheet)
   React.useEffect(() => {
-    // If no categories are selected, clear the scale filter (show all)
-    if (selectedCategories.size === 0) {
-      if (filters.selectedScales.length > 0) {
-        onFiltersChange({
-          ...filters,
-          selectedScales: [],
-        });
+    if (scaleCategories.length === 0) {
+      if (selectedCategories.size !== 0) {
+        setSelectedCategories(new Set());
       }
       return;
     }
 
-    // Get scales from selected categories
-    const selectedScales = scaleCategories
-      .filter(cat => selectedCategories.has(cat.id))
-      .flatMap(cat => cat.scales);
+    const derivedSelection =
+      filters.selectedScales.length > 0
+        ? new Set(
+            scaleCategories
+              .filter((cat) => cat.scales.some((scale) => filters.selectedScales.includes(scale)))
+              .map((cat) => cat.id)
+          )
+        : new Set(scaleCategories.map((cat) => cat.id));
 
-    if (selectedScales.length > 0 &&
-        JSON.stringify(selectedScales.sort()) !== JSON.stringify([...filters.selectedScales].sort())) {
+    if (!setsEqual(selectedCategories, derivedSelection)) {
+      setSelectedCategories(derivedSelection);
+    }
+  }, [filters.selectedScales, scaleCategories, selectedCategories]);
+
+  // Update filters when categories change
+  React.useEffect(() => {
+    if (scaleCategories.length === 0) {
+      return;
+    }
+
+    const selectingAll =
+      selectedCategories.size === 0 || selectedCategories.size === scaleCategories.length;
+
+    const selectedScales = selectingAll
+      ? []
+      : scaleCategories
+          .filter((cat) => selectedCategories.has(cat.id))
+          .flatMap((cat) => cat.scales);
+
+    if (!arraysEqualAsSet(selectedScales, filters.selectedScales)) {
       onFiltersChange({
         ...filters,
         selectedScales,
@@ -207,8 +240,7 @@ export default function FilterPanel({
   };
 
   const getScaleFilterLabel = () => {
-    if (selectedCategories.size === 0) return "No scales selected";
-    if (selectedCategories.size === scaleCategories.length) return "";
+    if (selectedCategories.size === 0 || selectedCategories.size === scaleCategories.length) return "";
     const labels = scaleCategories
       .filter(cat => selectedCategories.has(cat.id))
       .map(cat => cat.label);
