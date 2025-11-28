@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] - 2025-11-29
+
+### Fixed
+- **Mobile Welcome Screen**: Hidden welcome cards on mobile when no search is active
+  - Map now displays immediately on mobile without welcome screen overlay
+  - Welcome cards only show on desktop (md breakpoint and up)
+  - Improves mobile user experience by removing visual clutter
+
 ## [2.7.0] - 2025-11-29
 
 ### Added

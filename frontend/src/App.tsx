@@ -50,7 +50,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.7.0";
+const APP_VERSION = "2.8.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -1086,7 +1086,7 @@ function AppContent() {
                     py: { xs: 3, md: 5 },
                     px: { xs: 1.5, md: 2.5 },
                     width: "100%",
-                    display: "flex",
+                    display: { xs: "none", md: "flex" }, // Hide on mobile, show on desktop
                     flexDirection: "column",
                     alignItems: "center",
                   }}

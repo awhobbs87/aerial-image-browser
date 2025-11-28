@@ -29,6 +29,13 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.8.0",
+    date: "2025-11-29",
+    changes: [
+      { type: "fixed", description: "Mobile Welcome Screen: Hidden welcome cards on mobile when no search is active - map displays immediately without overlay" },
+    ],
+  },
+  {
     version: "2.7.0",
     date: "2025-11-29",
     changes: [
