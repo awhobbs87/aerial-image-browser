@@ -426,9 +426,16 @@ export default function PhotoGrid({
             page={page}
             onChange={handlePageChange}
             color="primary"
-            size={{ xs: "medium", md: "large" }}
+            size="medium"
             showFirstButton
             showLastButton
+            sx={{
+              '& .MuiPaginationItem-root': {
+                fontSize: { xs: '0.875rem', md: '1rem' },
+                minWidth: { xs: 28, md: 32 },
+                height: { xs: 28, md: 32 },
+              }
+            }}
           />
         </Box>
       )}
