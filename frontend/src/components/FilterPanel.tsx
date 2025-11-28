@@ -73,6 +73,7 @@ export default function FilterPanel({
   const [selectedCategories, setSelectedCategories] = React.useState<Set<string>>(new Set());
 
   // Sync category selection from existing filters (e.g., when reopening sheet)
+  // Only run when scaleCategories or filters.selectedScales actually change
   React.useEffect(() => {
     if (scaleCategories.length === 0) {
       if (selectedCategories.size !== 0) {
@@ -93,11 +94,15 @@ export default function FilterPanel({
     if (!setsEqual(selectedCategories, derivedSelection)) {
       setSelectedCategories(derivedSelection);
     }
-  }, [filters.selectedScales, scaleCategories, selectedCategories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.selectedScales, scaleCategories]);
 
   // Update filters when categories change
+  // Use a ref to track if we're in the middle of updating to prevent loops
+  const isUpdatingRef = React.useRef(false);
+
   React.useEffect(() => {
-    if (scaleCategories.length === 0) {
+    if (scaleCategories.length === 0 || isUpdatingRef.current) {
       return;
     }
 
@@ -111,12 +116,18 @@ export default function FilterPanel({
           .flatMap((cat) => cat.scales);
 
     if (!arraysEqualAsSet(selectedScales, filters.selectedScales)) {
+      isUpdatingRef.current = true;
       onFiltersChange({
         ...filters,
         selectedScales,
       });
+      // Reset flag after a tick to allow next update
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 0);
     }
-  }, [selectedCategories, scaleCategories, filters, onFiltersChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategories, scaleCategories]);
 
   // Calculate year range for slider
   const yearRange = React.useMemo(() => {
