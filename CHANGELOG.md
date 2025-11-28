@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2025-11-28
+
+### Added
+- **Web Worker TIFF Conversion**: Client-side TIFF to WebP conversion in background thread
+  - Off-main-thread processing prevents UI blocking
+  - Lossless WebP conversion (quality 100) for maximum detail
+  - Increased pixel budget from 20M to 50M pixels (allows ~7000x7000 images)
+  - Progress reporting during conversion (10%, 30%, 50%, 70%, 90%, 100%)
+- **OpenSeadragon Integration**: Professional image viewer with intelligent zoom limits
+  - Intelligent zoom limits based on image megapixels (prevents crashes/black screens)
+  - Debounced zoom events (100ms) to prevent lag
+  - Smooth animations and touch-optimized gestures
+  - minPixelRatio 1.0 for crisp rendering at all zoom levels
+- **R2 Caching for Client Conversions**: Automatically cache client-converted WebP to R2
+  - Check R2 cache before converting (avoid redundant work)
+  - Upload converted WebP to R2 for future users
+  - New PUT /api/webp/:layerId/:imageName endpoint for cache uploads
+  - Client-side conversions now benefit all users
+
+### Changed
+- Replaced react-zoom-pan-pinch with OpenSeadragon for better large image handling
+- TIFF conversion now uses client-side Web Worker instead of external service
+- Increased WebP quality from 95 to 100 (lossless) for sharper images
+- Zoom limits now calculated dynamically based on image size:
+  - <1MP: max 20x zoom
+  - 1-5MP: max 15x zoom
+  - 5-15MP: max 10x zoom
+  - 15-25MP: max 5x zoom
+  - >25MP: max 3x zoom
+
+### Improved
+- **Image Sharpness**: Significantly improved detail at high zoom levels
+  - Lossless WebP compression preserves maximum detail
+  - Higher pixel budget reduces downsampling
+  - Better rendering quality with minPixelRatio 1.0
+- **Performance**: Conversion happens in background thread (no UI blocking)
+- **Cache Efficiency**: Client-converted images shared via R2 cache
+
+### Technical
+- Created `frontend/src/workers/tiffConversion.worker.ts` for background TIFF conversion
+- Created `frontend/src/hooks/useTiffConversion.ts` for worker lifecycle management
+- Created `frontend/src/components/OpenSeadragonViewer.tsx` with intelligent zoom
+- Updated `PhotoPreviewModal` to use new conversion pipeline
+- Added R2 cache upload/check methods to apiClient
+
 ## [2.5.0] - 2025-11-28
 
 ### Added

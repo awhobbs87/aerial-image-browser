@@ -24,16 +24,14 @@ import {
   Image as ImageIcon,
   Download,
   Fullscreen,
-  ZoomIn,
-  ZoomOut,
-  FitScreen,
   History,
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
 import ThenNowModal from "./ThenNowModal";
+import { useTiffConversion } from "../hooks/useTiffConversion";
+import OpenSeadragonViewer from "./OpenSeadragonViewer";
 
 // Auto-deployment test: This commit triggers Worker and Pages deployments
 
@@ -51,81 +49,62 @@ const LAYER_TYPE_LABELS: Record<string, string> = {
 
 export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreviewModalProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [converting, setConverting] = useState(false);
-  const [conversionProgress, setConversionProgress] = useState(0);
-  const [conversionError, setConversionError] = useState<string | null>(null);
-  const [convertedImageUrl, setConvertedImageUrl] = useState<string | null>(null);
-  const [useConvertedImage, setUseConvertedImage] = useState(false);
   const [fullScreenOpen, setFullScreenOpen] = useState(false);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  // Use the new TIFF conversion hook
+  const {
+    converting,
+    progress: conversionProgress,
+    error: conversionError,
+    convertedImageUrl,
+    imageWidth,
+    imageHeight,
+    convertTiff,
+    cleanup,
+  } = useTiffConversion();
+
   const thumbnailUrl = photo ? apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId) : "";
-  const displayImageUrl = useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl;
+  const displayImageUrl = convertedImageUrl || thumbnailUrl;
 
   // Reset state when modal closes
   const handleClose = () => {
     setImageLoaded(false);
-    setConverting(false);
-    setConversionProgress(0);
-    setConversionError(null);
-    setUseConvertedImage(false);
     setFullScreenOpen(false);
-    if (convertedImageUrl) {
-      // Don't revoke if it's a URL from the proxy (not a blob URL)
-      if (convertedImageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(convertedImageUrl);
-      }
-      setConvertedImageUrl(null);
-    }
+    cleanup(); // Clean up worker and blob URLs
     onClose();
   };
 
-  const handleAutoConvert = async () => {
-    if (!photo?.DOWNLOAD_LINK) {
-      return;
-    }
-
-    setConverting(true);
-    setConversionProgress(0);
-    setConversionError(null);
-
-    try {
-      // Use the new TIFF conversion service via API client
-      const result = await apiClient.convertTiffFromUrl(
-        photo.DOWNLOAD_LINK,
-        (progress) => setConversionProgress(progress)
-      );
-
-      // Fetch the converted image from the result URL
-      const imageResponse = await fetch(result.url);
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to download converted image: ${imageResponse.statusText}`);
-      }
-
-      const webpBlob = await imageResponse.blob();
-      const url = URL.createObjectURL(webpBlob);
-      
-      setConvertedImageUrl(url);
-      setUseConvertedImage(true);
-      setConversionProgress(100);
-    } catch (error) {
-      console.error("Conversion error:", error);
-      setConversionError(error instanceof Error ? error.message : "Conversion failed");
-      // Fallback to thumbnail - don't set useConvertedImage to true
-      setUseConvertedImage(false);
-    } finally {
-      setConverting(false);
-    }
-  };
-
-  // Automatically convert when modal opens
+  // Automatically convert when modal opens (check R2 cache first)
   useEffect(() => {
-    if (open && photo?.DOWNLOAD_LINK && !convertedImageUrl && !converting) {
-      handleAutoConvert();
-    }
+    const loadImage = async () => {
+      if (open && photo?.DOWNLOAD_LINK && !convertedImageUrl && !converting) {
+        // First, check if WebP is already cached in R2
+        const isCached = await apiClient.isWebPCached(photo.IMAGE_NAME, photo.layerId);
+
+        if (isCached) {
+          // Use the cached WebP from R2 (server-side)
+          console.log(`Using R2-cached WebP for ${photo.IMAGE_NAME}`);
+          // TODO: Load directly from R2 instead of converting
+          // For now, we still convert locally but this will be improved
+        }
+
+        // Convert locally and upload to R2
+        console.log(`Converting TIFF locally for ${photo.IMAGE_NAME}`);
+        const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
+        await convertTiff(tiffUrl, {
+          quality: 100,
+          imageName: photo.IMAGE_NAME,
+          layerId: photo.layerId,
+          uploadToR2: true,
+        });
+      }
+    };
+
+    loadImage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, photo?.DOWNLOAD_LINK]);
 
@@ -375,7 +354,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
 
       <DialogActions sx={{ p: 2, gap: 1, justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
         {/* Error message (only show if conversion failed and we're using thumbnail) */}
-        {conversionError && !useConvertedImage && (
+        {conversionError && !convertedImageUrl && (
           <Box sx={{ width: '100%', mb: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
             <Typography variant="caption" color="warning.dark" sx={{ fontSize: '0.75rem' }}>
               Using thumbnail (conversion failed: {conversionError})
@@ -415,167 +394,15 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
         </Stack>
       </DialogActions>
 
-      {/* Full Screen Zoom Dialog */}
-      <Dialog
-        open={fullScreenOpen}
-        onClose={() => setFullScreenOpen(false)}
-        maxWidth={false}
-        fullWidth
-        fullScreen
-        PaperProps={{
-          sx: {
-            bgcolor: "rgba(0, 0, 0, 0.95)",
-            m: 0,
-            borderRadius: 0,
-          },
-        }}
-      >
-        <TransformWrapper
-          initialScale={1}
-          minScale={0.5}
-          maxScale={5}
-          centerOnInit
-          centerZoomedOut
-          wheel={{ step: 0.1 }}
-          pinch={{
-            step: 0.5,
-            disabled: false,
-          }}
-          doubleClick={{
-            mode: "zoomIn",
-            step: 0.7,
-          }}
-          panning={{
-            disabled: false,
-            velocityDisabled: false,
-          }}
-          alignmentAnimation={{ disabled: false, sizeX: 0, sizeY: 0 }}
-          velocityAnimation={{ disabled: false, sensitivity: 1, animationTime: 400 }}
-        >
-          {({ zoomIn, zoomOut, resetTransform, state }) => (
-            <Box
-              sx={{
-                position: "relative",
-                width: "100vw",
-                height: "100vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                overflow: "hidden",
-              }}
-            >
-              {/* Zoom controls */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 16,
-                  right: 16,
-                  zIndex: 3,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1,
-                }}
-              >
-                <Tooltip title="Zoom in">
-                  <IconButton
-                    onClick={() => zoomIn()}
-                    sx={{
-                      bgcolor: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                    }}
-                  >
-                    <ZoomIn />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Zoom out">
-                  <IconButton
-                    onClick={() => zoomOut()}
-                    sx={{
-                      bgcolor: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                    }}
-                  >
-                    <ZoomOut />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Reset zoom">
-                  <IconButton
-                    onClick={() => resetTransform()}
-                    sx={{
-                      bgcolor: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                    }}
-                  >
-                    <FitScreen />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Close">
-                  <IconButton
-                    onClick={() => setFullScreenOpen(false)}
-                    sx={{
-                      bgcolor: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-                    }}
-                  >
-                    <Close />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-
-              {/* Zoom level indicator */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 16,
-                  left: 16,
-                  zIndex: 3,
-                  bgcolor: "rgba(0, 0, 0, 0.5)",
-                  color: "white",
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="caption">
-                  {Math.round(state.scale * 100)}%
-                </Typography>
-              </Box>
-
-              {/* Zoomed image with TransformComponent */}
-              <TransformComponent
-                wrapperStyle={{
-                  width: "100%",
-                  height: "100%",
-                  touchAction: "none",
-                }}
-              >
-                <img
-                  key={displayImageUrl}
-                  src={displayImageUrl}
-                  alt={photo.IMAGE_NAME}
-                  onDragStart={(e) => e.preventDefault()}
-                  onContextMenu={(e) => e.preventDefault()}
-                  style={{
-                    display: "block",
-                    width: "100vw",
-                    height: "100vh",
-                    objectFit: "contain",
-                    userSelect: "none",
-                    WebkitUserSelect: "none",
-                    WebkitTouchCallout: "none",
-                    pointerEvents: "none",
-                  }}
-                  draggable={false}
-                />
-              </TransformComponent>
-            </Box>
-          )}
-        </TransformWrapper>
-      </Dialog>
+      {/* Full Screen Zoom with OpenSeadragon */}
+      {fullScreenOpen && (
+        <OpenSeadragonViewer
+          imageUrl={displayImageUrl}
+          imageWidth={imageWidth}
+          imageHeight={imageHeight}
+          onClose={() => setFullScreenOpen(false)}
+        />
+      )}
 
       {/* Then vs Now Modal */}
       <ThenNowModal

@@ -1,0 +1,280 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import OpenSeadragon from 'openseadragon';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Close, ZoomIn, ZoomOut, FitScreen } from '@mui/icons-material';
+
+interface OpenSeadragonViewerProps {
+  imageUrl: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  onClose: () => void;
+}
+
+// Debounce utility
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+export default function OpenSeadragonViewer({
+  imageUrl,
+  imageWidth,
+  imageHeight,
+  onClose,
+}: OpenSeadragonViewerProps) {
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(100);
+
+  // Calculate intelligent zoom limits based on image size
+  const calculateZoomLimits = useCallback(() => {
+    if (!imageWidth || !imageHeight) {
+      return { minZoom: 0.5, maxZoom: 10, defaultZoom: 1 };
+    }
+
+    const totalPixels = imageWidth * imageHeight;
+    const megapixels = totalPixels / 1_000_000;
+
+    // Base limits
+    let minZoom = 0.5; // Always allow zooming out
+    let maxZoom = 10; // Default max
+
+    // Adjust maxZoom based on image size
+    if (megapixels < 1) {
+      // Small images: allow more zoom for detail
+      maxZoom = 20;
+    } else if (megapixels < 5) {
+      // Medium images: moderate zoom
+      maxZoom = 15;
+    } else if (megapixels < 15) {
+      // Large images: careful zoom
+      maxZoom = 10;
+    } else if (megapixels < 25) {
+      // Very large images: limited zoom to prevent memory issues
+      maxZoom = 5;
+    } else {
+      // Huge images: very limited zoom
+      maxZoom = 3;
+    }
+
+    console.log(`[OpenSeadragon] Image: ${imageWidth}x${imageHeight} (${megapixels.toFixed(1)}MP), maxZoom: ${maxZoom}`);
+
+    return { minZoom, maxZoom, defaultZoom: 1 };
+  }, [imageWidth, imageHeight]);
+
+  // Debounced zoom update to prevent lag
+  const debouncedZoomUpdate = useRef(
+    debounce((zoom: number) => {
+      setZoomLevel(Math.round(zoom * 100));
+    }, 100) // 100ms debounce
+  ).current;
+
+  useEffect(() => {
+    if (!viewerRef.current || osdRef.current) return;
+
+    const { minZoom, maxZoom, defaultZoom } = calculateZoomLimits();
+
+    // Initialize OpenSeadragon
+    const viewer = OpenSeadragon({
+      element: viewerRef.current,
+      prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/',
+      tileSources: {
+        type: 'image',
+        url: imageUrl,
+        buildPyramid: false, // Don't build tiles for single image
+      },
+      // Zoom settings
+      minZoomLevel: minZoom,
+      maxZoomLevel: maxZoom,
+      defaultZoomLevel: defaultZoom,
+      zoomPerClick: 1.4,
+      zoomPerScroll: 1.2,
+      // Smooth animations
+      animationTime: 0.3,
+      springStiffness: 10,
+      // Gesture settings
+      gestureSettingsMouse: {
+        clickToZoom: true,
+        dblClickToZoom: true,
+        pinchToZoom: true,
+        flickEnabled: true,
+        flickMinSpeed: 120,
+        flickMomentum: 0.25,
+      },
+      gestureSettingsTouch: {
+        clickToZoom: false,
+        dblClickToZoom: true,
+        pinchToZoom: true,
+        flickEnabled: true,
+        flickMinSpeed: 120,
+        flickMomentum: 0.25,
+      },
+      // Visual settings
+      showNavigationControl: false,
+      showHomeControl: false,
+      showZoomControl: false,
+      showFullPageControl: false,
+      constrainDuringPan: true,
+      visibilityRatio: 0.5,
+      minPixelRatio: 1.0, // Increased from 0.5 to maintain sharpness at all zoom levels
+      // Performance
+      imageLoaderLimit: 2,
+      timeout: 120000,
+      // Prevent over-zooming past image quality
+      maxImageCacheCount: 100,
+    });
+
+    // Listen to zoom changes (debounced)
+    viewer.addHandler('zoom', (event: any) => {
+      debouncedZoomUpdate(event.zoom);
+    });
+
+    // Prevent black screen by clamping zoom
+    viewer.addHandler('zoom', (event: any) => {
+      const currentZoom = event.zoom;
+      if (currentZoom > maxZoom) {
+        viewer.viewport.zoomTo(maxZoom, null, true);
+      } else if (currentZoom < minZoom) {
+        viewer.viewport.zoomTo(minZoom, null, true);
+      }
+    });
+
+    osdRef.current = viewer;
+
+    return () => {
+      viewer.destroy();
+      osdRef.current = null;
+    };
+  }, [imageUrl, calculateZoomLimits, debouncedZoomUpdate]);
+
+  const handleZoomIn = useCallback(() => {
+    if (osdRef.current) {
+      const currentZoom = osdRef.current.viewport.getZoom();
+      osdRef.current.viewport.zoomTo(currentZoom * 1.4);
+    }
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (osdRef.current) {
+      const currentZoom = osdRef.current.viewport.getZoom();
+      osdRef.current.viewport.zoomTo(currentZoom / 1.4);
+    }
+  }, []);
+
+  const handleResetZoom = useCallback(() => {
+    if (osdRef.current) {
+      osdRef.current.viewport.goHome();
+    }
+  }, []);
+
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        bgcolor: 'rgba(0, 0, 0, 0.95)',
+        zIndex: 9999,
+      }}
+    >
+      {/* Zoom controls */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 10000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
+        <Tooltip title="Zoom in">
+          <IconButton
+            onClick={handleZoomIn}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <ZoomIn />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Zoom out">
+          <IconButton
+            onClick={handleZoomOut}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <ZoomOut />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Reset zoom">
+          <IconButton
+            onClick={handleResetZoom}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <FitScreen />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Close">
+          <IconButton
+            onClick={onClose}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <Close />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      {/* Zoom level indicator */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 16,
+          left: 16,
+          zIndex: 10000,
+          bgcolor: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
+          px: 2,
+          py: 1,
+          borderRadius: 1,
+        }}
+      >
+        <Typography variant="caption">{zoomLevel}%</Typography>
+      </Box>
+
+      {/* OpenSeadragon viewer container */}
+      <div
+        ref={viewerRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+      />
+    </Box>
+  );
+}

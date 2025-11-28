@@ -264,6 +264,51 @@ api.get("/tiff/:layerId/:imageName", async (c) => {
   });
 });
 
+// Upload client-converted WebP to R2 cache
+api.put("/webp/:layerId/:imageName", async (c) => {
+  const layerId = parseInt(c.req.param("layerId"));
+  const imageName = c.req.param("imageName");
+
+  if (isNaN(layerId) || !imageName) {
+    return c.json({ success: false, error: "Invalid parameters" }, 400);
+  }
+
+  // Remove .tif extension if provided
+  const cleanImageName = imageName.replace(/\.tif$/i, "");
+
+  try {
+    // Get the WebP buffer from request body
+    const webpBuffer = await c.req.arrayBuffer();
+
+    if (!webpBuffer || webpBuffer.byteLength === 0) {
+      return c.json({ success: false, error: "Empty request body" }, 400);
+    }
+
+    const r2 = new R2Manager(c.env.TIFF_STORAGE, c.env.THUMBNAIL_STORAGE);
+
+    // Store in R2 cache
+    await r2.putWebP(cleanImageName, layerId, webpBuffer);
+
+    console.log(`Cached client-converted WebP for ${cleanImageName}: ${(webpBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+
+    return c.json({
+      success: true,
+      message: "WebP cached successfully",
+      size: webpBuffer.byteLength,
+    });
+  } catch (error) {
+    console.error(`Error caching WebP for ${cleanImageName}:`, error);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to cache WebP",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
+  }
+});
+
 // WebP conversion endpoint - converts TIFF to WebP with caching in R2
 api.get("/webp/:layerId/:imageName", async (c) => {
   const layerId = parseInt(c.req.param("layerId"));

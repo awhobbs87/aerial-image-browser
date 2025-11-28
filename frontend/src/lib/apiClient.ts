@@ -117,6 +117,60 @@ class ApiClient {
   }
 
   /**
+   * Check if WebP is cached in R2
+   * Makes a HEAD request to check cache status without downloading
+   */
+  async isWebPCached(imageName: string, layerId: number): Promise<boolean> {
+    try {
+      const cleanName = imageName.replace(/\.tif$/i, "");
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/webp/${layerId}/${cleanName}`,
+        { method: "HEAD" }
+      );
+      return response.ok && response.headers.get("X-Cache") === "HIT";
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Upload client-converted WebP to R2 cache
+   * This allows client-side conversions to be cached for other users
+   */
+  async uploadWebPToCache(
+    imageName: string,
+    layerId: number,
+    webpBuffer: ArrayBuffer
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const cleanName = imageName.replace(/\.tif$/i, "");
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/webp/${layerId}/${cleanName}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "image/webp",
+          },
+          body: webpBuffer,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json() as { error?: string };
+        return { success: false, error: errorData.error || "Upload failed" };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error uploading WebP to cache:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Upload failed",
+      };
+    }
+  }
+
+  /**
    * Get optimized image URL using Cloudflare Image Resizing
    * Converts TIFFs to web-optimized formats (WebP, JPEG) with optional resizing
    */
