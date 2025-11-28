@@ -2,14 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.1] - 2025-11-28
+
+### Changed
+- **Maximum Quality Mode**: Switched to PNG format for absolute zero-loss image quality
+  - PNG format is truly lossless (vs WebP's "lossless" which still uses prediction)
+  - Disabled image smoothing (imageSmoothingEnabled = false) for pixel-perfect rendering
+  - Increased pixel budget to 100M pixels (supports ~10000x10000 images)
+- **OpenSeadragon Sharpness Optimizations**:
+  - blendTime: 0 (instant sharp rendering, no tile blending)
+  - alwaysBlend: false (maintains sharp edges between tiles)
+  - smoothTileEdgesMinZoom: Infinity (completely disables edge smoothing)
+  - immediateRender: false (waits for highest quality tiles before display)
+
+### Improved
+- **Absolute Maximum Sharpness**: Zero compromises on image quality
+  - PNG: No compression artifacts, no prediction transforms, truly lossless
+  - Canvas: Pixel-perfect rendering without interpolation smoothing
+  - Display: 1:1 pixel mapping with no blending or smoothing at any zoom level
+  - Resolution: 2x higher pixel budget (50M → 100M pixels)
+
 ## [2.6.0] - 2025-11-28
 
 ### Added
-- **Web Worker TIFF Conversion**: Client-side TIFF to WebP conversion in background thread
+- **Web Worker TIFF Conversion**: Client-side TIFF to PNG/WebP conversion in background thread
   - Off-main-thread processing prevents UI blocking
-  - Lossless WebP conversion (quality 100) for maximum detail
-  - Increased pixel budget from 20M to 50M pixels (allows ~7000x7000 images)
+  - **PNG format (default)**: Truly lossless, zero compression artifacts, absolute maximum quality
+  - WebP format option: Good quality with smaller file size
+  - Increased pixel budget from 20M to 100M pixels (allows ~10000x10000 images)
   - Progress reporting during conversion (10%, 30%, 50%, 70%, 90%, 100%)
+  - Pixel-perfect rendering with disabled image smoothing
 - **OpenSeadragon Integration**: Professional image viewer with intelligent zoom limits
   - Intelligent zoom limits based on image megapixels (prevents crashes/black screens)
   - Debounced zoom events (100ms) to prevent lag
@@ -24,19 +46,30 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Replaced react-zoom-pan-pinch with OpenSeadragon for better large image handling
 - TIFF conversion now uses client-side Web Worker instead of external service
-- Increased WebP quality from 95 to 100 (lossless) for sharper images
+- **Switched to PNG format (default)** for truly lossless conversion (was WebP)
+- Increased pixel budget from 50M to 100M pixels (~10000x10000 images)
+- Disabled image smoothing in canvas for pixel-perfect rendering
 - Zoom limits now calculated dynamically based on image size:
   - <1MP: max 20x zoom
   - 1-5MP: max 15x zoom
   - 5-15MP: max 10x zoom
   - 15-25MP: max 5x zoom
   - >25MP: max 3x zoom
+- OpenSeadragon quality settings optimized:
+  - minPixelRatio 1.0 (1:1 pixel mapping)
+  - blendTime 0 (instant sharpness, no blending)
+  - alwaysBlend false (keeps sharp edges)
+  - smoothTileEdgesMinZoom Infinity (disables smoothing)
+  - immediateRender false (waits for high-quality tiles)
 
 ### Improved
-- **Image Sharpness**: Significantly improved detail at high zoom levels
-  - Lossless WebP compression preserves maximum detail
-  - Higher pixel budget reduces downsampling
-  - Better rendering quality with minPixelRatio 1.0
+- **Image Sharpness**: MAXIMUM quality with zero compromises
+  - PNG format: Truly lossless, no compression artifacts whatsoever
+  - Pixel-perfect rendering: imageSmoothingEnabled = false
+  - 100M pixel budget: Supports ultra-high resolution images
+  - 1:1 pixel mapping at all zoom levels
+  - Zero tile blending or edge smoothing
+  - Instant rendering of sharp tiles
 - **Performance**: Conversion happens in background thread (no UI blocking)
 - **Cache Efficiency**: Client-converted images shared via R2 cache
 

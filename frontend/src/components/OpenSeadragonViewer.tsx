@@ -123,12 +123,20 @@ export default function OpenSeadragonViewer({
       showFullPageControl: false,
       constrainDuringPan: true,
       visibilityRatio: 0.5,
-      minPixelRatio: 1.0, // Increased from 0.5 to maintain sharpness at all zoom levels
+      minPixelRatio: 1.0, // Maintain 1:1 pixel ratio for maximum sharpness
       // Performance
       imageLoaderLimit: 2,
       timeout: 120000,
       // Prevent over-zooming past image quality
       maxImageCacheCount: 100,
+      // Quality settings for maximum sharpness
+      compositeOperation: 'source-over', // Default, but explicit
+      smoothTileEdgesMinZoom: Infinity, // Disable tile edge smoothing (keep sharp)
+      immediateRender: false, // Wait for high-quality tiles
+      blendTime: 0, // No blending animation for instant sharpness
+      alwaysBlend: false, // Don't blend tiles (keeps sharp edges)
+      wrapHorizontal: false,
+      wrapVertical: false,
     });
 
     // Listen to zoom changes (debounced)

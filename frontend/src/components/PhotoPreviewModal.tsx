@@ -93,13 +93,14 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
         }
 
         // Convert locally and upload to R2
-        console.log(`Converting TIFF locally for ${photo.IMAGE_NAME}`);
+        console.log(`Converting TIFF locally for ${photo.IMAGE_NAME} (using PNG for maximum quality)`);
         const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
         await convertTiff(tiffUrl, {
           quality: 100,
           imageName: photo.IMAGE_NAME,
           layerId: photo.layerId,
           uploadToR2: true,
+          format: 'png', // Use PNG for absolute maximum quality
         });
       }
     };

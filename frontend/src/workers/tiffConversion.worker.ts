@@ -11,6 +11,7 @@ export interface ConversionMessage {
   tiffBuffer: ArrayBuffer;
   quality?: number;
   maxPixels?: number;
+  format?: 'webp' | 'png'; // Allow format selection
 }
 
 export interface ConversionResult {
@@ -20,13 +21,15 @@ export interface ConversionResult {
   progress?: number;
   width?: number;
   height?: number;
+  format?: string;
 }
 
-// Maximum memory allocation (increased for better quality)
-const MAX_PIXELS = 50_000_000; // 50 million pixels (allows ~7000x7000 images)
+// Maximum memory allocation (increased for maximum quality)
+// Note: Modern browsers can handle large canvases. 100M pixels = ~10000x10000 images
+const MAX_PIXELS = 100_000_000; // 100 million pixels for ultra-high resolution support
 
 self.onmessage = async (e: MessageEvent<ConversionMessage>) => {
-  const { tiffBuffer, quality = 100, maxPixels = MAX_PIXELS } = e.data; // Increased default quality to 100 (lossless)
+  const { tiffBuffer, quality = 100, maxPixels = MAX_PIXELS, format = 'png' } = e.data; // Default to PNG for maximum quality
 
   try {
     postMessage({ type: 'progress', progress: 10 } as ConversionResult);
@@ -68,11 +71,19 @@ self.onmessage = async (e: MessageEvent<ConversionMessage>) => {
 
     // Create canvas and convert
     const canvas = new OffscreenCanvas(targetWidth, targetHeight);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {
+      // Disable alpha for better performance if not needed
+      // alpha: false,
+      // High-quality rendering
+      willReadFrequently: false,
+    });
 
     if (!ctx) {
       throw new Error('Failed to get canvas context');
     }
+
+    // Disable image smoothing for pixel-perfect rendering (sharper)
+    ctx.imageSmoothingEnabled = false;
 
     if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
       // Resize needed
@@ -91,24 +102,40 @@ self.onmessage = async (e: MessageEvent<ConversionMessage>) => {
 
     postMessage({ type: 'progress', progress: 90 } as ConversionResult);
 
-    // Convert to WebP with high quality
-    // Note: quality 1.0 produces lossless WebP which preserves maximum detail
-    const blob = await canvas.convertToBlob({
-      type: 'image/webp',
-      quality: quality / 100, // 100 = lossless, 99 = near-lossless
-    });
+    // Convert to selected format (PNG for max quality, WebP for smaller size)
+    let outputBuffer: ArrayBuffer;
+    let outputFormat: string;
 
-    const webpBuffer = await blob.arrayBuffer();
-
-    console.log(`[Worker] WebP size: ${(webpBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+    if (format === 'png') {
+      // PNG: Truly lossless, no compression artifacts, maximum sharpness
+      // Larger file size but absolutely no quality loss
+      console.log('[Worker] Using PNG format for maximum quality');
+      const blob = await canvas.convertToBlob({
+        type: 'image/png',
+      });
+      outputBuffer = await blob.arrayBuffer();
+      outputFormat = 'png';
+      console.log(`[Worker] PNG size: ${(outputBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+    } else {
+      // WebP: Good quality with smaller file size
+      console.log('[Worker] Using WebP format');
+      const blob = await canvas.convertToBlob({
+        type: 'image/webp',
+        quality: quality / 100, // 100 = lossless, 99 = near-lossless
+      });
+      outputBuffer = await blob.arrayBuffer();
+      outputFormat = 'webp';
+      console.log(`[Worker] WebP size: ${(outputBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+    }
 
     postMessage({
       type: 'success',
-      webpBuffer,
+      webpBuffer: outputBuffer, // Keep name for compatibility
       width: targetWidth,
       height: targetHeight,
+      format: outputFormat,
       progress: 100,
-    } as ConversionResult, [webpBuffer]);
+    } as ConversionResult, [outputBuffer]);
 
   } catch (error) {
     console.error('[Worker] Conversion error:', error);

@@ -16,6 +16,7 @@ export interface ConversionOptions {
   imageName?: string;
   layerId?: number;
   uploadToR2?: boolean;
+  format?: 'webp' | 'png'; // Allow format selection
 }
 
 export function useTiffConversion() {
@@ -41,7 +42,9 @@ export function useTiffConversion() {
       if (result.type === 'progress') {
         setState(prev => ({ ...prev, progress: result.progress || 0 }));
       } else if (result.type === 'success' && result.webpBuffer) {
-        const blob = new Blob([result.webpBuffer], { type: 'image/webp' });
+        // Use the format from the result, default to PNG
+        const mimeType = result.format === 'webp' ? 'image/webp' : 'image/png';
+        const blob = new Blob([result.webpBuffer], { type: mimeType });
         const url = URL.createObjectURL(blob);
 
         // Upload to R2 cache in background (don't wait)
@@ -98,7 +101,7 @@ export function useTiffConversion() {
   }, []);
 
   const convertTiff = useCallback(async (tiffUrl: string, options: ConversionOptions = {}) => {
-    const { quality = 100, imageName, layerId, uploadToR2 = true } = options;
+    const { quality = 100, imageName, layerId, uploadToR2 = true, format = 'png' } = options;
 
     if (!workerRef.current) {
       setState(prev => ({ ...prev, error: 'Worker not initialized' }));
@@ -132,6 +135,7 @@ export function useTiffConversion() {
         type: 'convert',
         tiffBuffer,
         quality,
+        format, // Pass format selection to worker
       }, [tiffBuffer]); // Transfer ownership
 
     } catch (error) {
