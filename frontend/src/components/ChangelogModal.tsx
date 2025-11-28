@@ -29,6 +29,79 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.6.0",
+    date: "2025-11-28",
+    changes: [
+      { type: "added", description: "Web Worker TIFF Conversion: Client-side TIFF to PNG/WebP conversion in background thread - off-main-thread processing prevents UI blocking" },
+      { type: "added", description: "PNG format (default): Truly lossless, zero compression artifacts, absolute maximum quality. Increased pixel budget from 20M to 100M pixels (~10000x10000 images)" },
+      { type: "added", description: "OpenSeadragon Integration: Professional image viewer with intelligent zoom limits based on image megapixels (prevents crashes/black screens)" },
+      { type: "added", description: "R2 Caching for Client Conversions: Automatically cache client-converted WebP to R2, check R2 cache before converting (avoid redundant work)" },
+      { type: "changed", description: "Replaced react-zoom-pan-pinch with OpenSeadragon for better large image handling" },
+      { type: "changed", description: "TIFF conversion now uses client-side Web Worker instead of external service" },
+      { type: "changed", description: "Switched to PNG format (default) for truly lossless conversion (was WebP)" },
+      { type: "improved", description: "Image Sharpness: MAXIMUM quality with zero compromises - PNG format (truly lossless), pixel-perfect rendering, 100M pixel budget, 1:1 pixel mapping, zero tile blending" },
+      { type: "improved", description: "Performance: Conversion happens in background thread (no UI blocking)" },
+    ],
+  },
+  {
+    version: "2.5.0",
+    date: "2025-11-28",
+    changes: [
+      { type: "added", description: "Intelligent search caching (5-minute cache for geocoding results)" },
+      { type: "added", description: "Immediate loading feedback when typing in search bar" },
+      { type: "changed", description: "Reduced debounce time from 300ms to 150ms for faster search responsiveness" },
+      { type: "changed", description: "Optimized mobile UI with reduced padding across all components (sidebar, buttons, margins reduced by 25% on mobile)" },
+      { type: "improved", description: "Search now shows loading state immediately when typing (no delay)" },
+      { type: "improved", description: "More efficient use of screen space on mobile devices" },
+    ],
+  },
+  {
+    version: "2.4.0",
+    date: "2025-11-25",
+    changes: [
+      { type: "added", description: "Professional zoom/pan image viewer with react-zoom-pan-pinch library" },
+      { type: "added", description: "Smooth zoom transitions with proper easing animations, mouse wheel zoom at cursor position" },
+      { type: "added", description: "Buttery smooth pinch-to-zoom on mobile devices, double-tap to toggle zoom" },
+      { type: "changed", description: "Replaced manual zoom/pan implementation (~155 lines) with react-zoom-pan-pinch library" },
+      { type: "improved", description: "Significantly reduced component complexity in PhotoPreviewModal" },
+      { type: "improved", description: "Better mobile performance with native gesture handling" },
+    ],
+  },
+  {
+    version: "2.3.0",
+    date: "2025-01-27",
+    changes: [
+      { type: "added", description: "Windows 7 Aero-style transparent search bar with enhanced transparency (35% opacity) and 40px blur for better map visibility" },
+      { type: "added", description: "Natural pan/drag functionality for full-screen photo preview with touch support for mobile devices (iOS and Android)" },
+      { type: "changed", description: "Comparison section styling: More compact design with frosted glass appearance and dynamic hint text" },
+      { type: "changed", description: "Full-screen preview panning: Removed pan button controls in favor of natural drag behavior" },
+      { type: "fixed", description: "iOS text selection issue when trying to pan images (added user-select: none and WebkitTouchCallout: none)" },
+    ],
+  },
+  {
+    version: "2.2.0",
+    date: "2024-11-24",
+    changes: [
+      { type: "added", description: "TIFF to WEBP/PNG conversion service integration with automatic background conversion when opening photo preview modals" },
+      { type: "added", description: "Enhanced full-screen image viewing: Fit-to-screen zoom functionality with automatic optimal zoom level calculation" },
+      { type: "added", description: "Pan controls (up, down, left, right) for navigating zoomed images that appear when zoomed in (zoom > 100%)" },
+      { type: "changed", description: "Conversion progress bar moved from top to bottom of image preview for better visibility" },
+      { type: "improved", description: "Better image loading experience with thumbnail shown while conversion happens in background" },
+    ],
+  },
+  {
+    version: "2.1.0",
+    date: "2024-11-19",
+    changes: [
+      { type: "added", description: "Advanced alignment controls for Then vs Now modal: Interactive position adjustment (X/Y offset), scale control (0.5x to 2x), rotation control (±45°)" },
+      { type: "added", description: "Rotation controls for both images in side-by-side view" },
+      { type: "added", description: "Mobile search drawer (similar to filters) - search bar hidden after search" },
+      { type: "added", description: "Unified 4-button view control on mobile (Grid, Map, Timeline, Gallery)" },
+      { type: "changed", description: "Then vs Now modal now uses Esri World Imagery instead of LIST services for better reliability" },
+      { type: "improved", description: "Better space efficiency on mobile with optimized toggle button layouts" },
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2024-11-19",
     changes: [
