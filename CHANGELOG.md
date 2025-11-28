@@ -2,26 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.6.1] - 2025-11-28
-
-### Changed
-- **Maximum Quality Mode**: Switched to PNG format for absolute zero-loss image quality
-  - PNG format is truly lossless (vs WebP's "lossless" which still uses prediction)
-  - Disabled image smoothing (imageSmoothingEnabled = false) for pixel-perfect rendering
-  - Increased pixel budget to 100M pixels (supports ~10000x10000 images)
-- **OpenSeadragon Sharpness Optimizations**:
-  - blendTime: 0 (instant sharp rendering, no tile blending)
-  - alwaysBlend: false (maintains sharp edges between tiles)
-  - smoothTileEdgesMinZoom: Infinity (completely disables edge smoothing)
-  - immediateRender: false (waits for highest quality tiles before display)
-
-### Improved
-- **Absolute Maximum Sharpness**: Zero compromises on image quality
-  - PNG: No compression artifacts, no prediction transforms, truly lossless
-  - Canvas: Pixel-perfect rendering without interpolation smoothing
-  - Display: 1:1 pixel mapping with no blending or smoothing at any zoom level
-  - Resolution: 2x higher pixel budget (50M → 100M pixels)
-
 ## [2.6.0] - 2025-11-28
 
 ### Added
