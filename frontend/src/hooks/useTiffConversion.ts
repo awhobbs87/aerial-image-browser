@@ -46,7 +46,9 @@ export function useTiffConversion() {
 
         // Upload to R2 cache in background (don't wait)
         const worker = workerRef.current;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (worker && (worker as any).dataset) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { imageName, layerId } = (worker as any).dataset;
           if (imageName && layerId !== undefined) {
             console.log(`[useTiffConversion] Uploading WebP to R2 cache for ${imageName}`);
@@ -121,6 +123,7 @@ export function useTiffConversion() {
 
       // Store metadata for R2 upload later
       if (uploadToR2 && imageName && layerId !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         workerRef.current.dataset = { imageName, layerId } as any;
       }
 

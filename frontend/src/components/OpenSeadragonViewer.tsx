@@ -11,6 +11,7 @@ interface OpenSeadragonViewerProps {
 }
 
 // Debounce utility
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -42,7 +43,7 @@ export default function OpenSeadragonViewer({
     const megapixels = totalPixels / 1_000_000;
 
     // Base limits
-    let minZoom = 0.5; // Always allow zooming out
+    const minZoom = 0.5; // Always allow zooming out
     let maxZoom = 10; // Default max
 
     // Adjust maxZoom based on image size
@@ -131,11 +132,13 @@ export default function OpenSeadragonViewer({
     });
 
     // Listen to zoom changes (debounced)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     viewer.addHandler('zoom', (event: any) => {
       debouncedZoomUpdate(event.zoom);
     });
 
     // Prevent black screen by clamping zoom
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     viewer.addHandler('zoom', (event: any) => {
       const currentZoom = event.zoom;
       if (currentZoom > maxZoom) {

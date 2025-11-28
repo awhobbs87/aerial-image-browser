@@ -49,7 +49,6 @@ self.onmessage = async (e: MessageEvent<ConversionMessage>) => {
     // Calculate optimal dimensions
     let targetWidth = originalWidth;
     let targetHeight = originalHeight;
-    const aspectRatio = originalWidth / originalHeight;
 
     const totalPixels = targetWidth * targetHeight;
     if (totalPixels > maxPixels) {
