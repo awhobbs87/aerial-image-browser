@@ -32,7 +32,7 @@ declare global {
 }
 
 export interface ConversionOptions {
-  quality?: number; // 1-100, default 95 for high quality
+  quality?: number; // 1-100, default 99 for near-lossless quality
   maxWidth?: number; // Optional max width for resizing
   maxHeight?: number; // Optional max height for resizing
   maxPixels?: number; // Maximum total pixels (default 20M = ~4800x4200)
@@ -92,7 +92,7 @@ export async function convertTiffToWebP(
   tiffBuffer: ArrayBuffer,
   options: ConversionOptions = {}
 ): Promise<ArrayBuffer> {
-  const { quality = 95 } = options;
+  const { quality = 99 } = options;
 
   try {
     // Decode TIFF metadata first (doesn't decode pixel data yet)

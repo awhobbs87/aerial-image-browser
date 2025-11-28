@@ -10,6 +10,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import {
   Clear,
@@ -71,6 +73,9 @@ export default function FilterPanel({
 
   // Track which categories are selected (default to all when results are present)
   const [selectedCategories, setSelectedCategories] = React.useState<Set<string>>(new Set());
+
+  // Track manual max scale input
+  const [maxScaleInput, setMaxScaleInput] = React.useState<string>("");
 
   // Sync category selection from existing filters (e.g., when reopening sheet)
   // Only run when scaleCategories or filters.selectedScales actually change
@@ -146,6 +151,8 @@ export default function FilterPanel({
   }, [filters.startDate, filters.endDate, yearRange]);
 
   const handleCategoryToggle = (categoryId: string) => {
+    // Clear manual input when using categories
+    setMaxScaleInput("");
     setSelectedCategories(prev => {
       const newSet = new Set(prev);
       if (newSet.has(categoryId)) {
@@ -157,7 +164,33 @@ export default function FilterPanel({
     });
   };
 
+  const handleMaxScaleInput = (value: string) => {
+    setMaxScaleInput(value);
+
+    // Parse and apply if valid
+    const maxScale = parseInt(value, 10);
+    if (!isNaN(maxScale) && maxScale > 0) {
+      // Filter scales <= maxScale
+      const filteredScales = availableScales.filter(scale => scale <= maxScale);
+      onFiltersChange({
+        ...filters,
+        selectedScales: filteredScales,
+      });
+      // Clear category selection to show manual mode is active
+      setSelectedCategories(new Set());
+    } else if (value === "") {
+      // Reset to all when cleared
+      onFiltersChange({
+        ...filters,
+        selectedScales: [],
+      });
+      setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
+    }
+  };
+
   const handleClearFilters = () => {
+    setMaxScaleInput("");
+    setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
     onFiltersChange({
       startDate: null,
       endDate: null,
@@ -190,6 +223,7 @@ export default function FilterPanel({
   };
 
   const clearScaleFilter = () => {
+    setMaxScaleInput("");
     setSelectedCategories(new Set(scaleCategories.map(cat => cat.id)));
   };
 
@@ -729,6 +763,47 @@ export default function FilterPanel({
                       </Tooltip>
                     );
                   })}
+                </Box>
+
+                {/* Manual Max Scale Input */}
+                <Box sx={{ mt: 1 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    value={maxScaleInput}
+                    onChange={(e) => handleMaxScaleInput(e.target.value)}
+                    placeholder="e.g., 10000"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+                            Max scale 1:
+                          </Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        fontSize: "0.8rem",
+                        height: 32,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(0, 0, 0, 0.02)",
+                        "&:hover": {
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.08)"
+                              : "rgba(0, 0, 0, 0.04)",
+                        },
+                      },
+                    }}
+                    helperText={maxScaleInput ? `Showing images with scale ≤ 1:${maxScaleInput}` : "Filter by maximum scale (power users)"}
+                    FormHelperTextProps={{
+                      sx: { fontSize: "0.65rem", mt: 0.5 }
+                    }}
+                  />
                 </Box>
               </Box>
             )}
