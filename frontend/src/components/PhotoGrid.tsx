@@ -143,7 +143,7 @@ export default function PhotoGrid({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gridTemplateColumns: { xs: 'repeat(auto-fit, minmax(180px, 1fr))', md: 'repeat(auto-fit, minmax(160px, 1fr))' },
           gap: 1.5,
           maxWidth: '100%',
         }}
@@ -197,7 +197,7 @@ export default function PhotoGrid({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gridTemplateColumns: { xs: 'repeat(auto-fit, minmax(180px, 1fr))', md: 'repeat(auto-fit, minmax(160px, 1fr))' },
             gap: 1.5,
             maxWidth: '100%',
           }}
@@ -246,7 +246,7 @@ export default function PhotoGrid({
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gridTemplateColumns: { xs: 'repeat(auto-fit, minmax(180px, 1fr))', md: 'repeat(auto-fit, minmax(160px, 1fr))' },
                     gap: 1.5,
                     maxWidth: '100%',
                   }}

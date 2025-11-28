@@ -934,6 +934,19 @@ function AppContent() {
                           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                             {FILTER_PRESETS.map((preset) => {
                               const Icon = preset.icon;
+                              // Determine if this preset is "active" based on current filters
+                              const isActivePreset = (() => {
+                                if (preset.id === "historical") {
+                                  return filters.endDate && new Date(filters.endDate).getFullYear() <= 1980;
+                                } else if (preset.id === "modern") {
+                                  return filters.startDate && new Date(filters.startDate).getFullYear() >= 2000;
+                                } else if (preset.id === "high-detail") {
+                                  return filters.selectedScales.length > 0 &&
+                                         filters.selectedScales.every(s => s <= 5000);
+                                }
+                                return false;
+                              })();
+
                               return (
                                 <Tooltip key={preset.id} title={preset.description} arrow placement="top">
                                   <Chip
@@ -941,19 +954,35 @@ function AppContent() {
                                     label={preset.label}
                                     onClick={() => handleQuickFilterPreset(preset.id)}
                                     size="small"
-                                    variant="outlined"
+                                    variant={isActivePreset ? "filled" : "outlined"}
+                                    color={isActivePreset ? "primary" : "default"}
                                     sx={{
                                       height: 26,
                                       fontSize: "0.7rem",
                                       fontWeight: 600,
                                       cursor: "pointer",
                                       transition: "all 0.2s ease-in-out",
+                                      ...(isActivePreset && {
+                                        bgcolor: (theme) =>
+                                          theme.palette.mode === "dark"
+                                            ? "rgba(16, 185, 129, 0.3)"
+                                            : "rgba(5, 150, 105, 0.2)",
+                                        borderColor: (theme) =>
+                                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                        color: (theme) =>
+                                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                        fontWeight: 700,
+                                        "& .MuiChip-icon": {
+                                          color: (theme) =>
+                                            theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                        },
+                                      }),
                                       "&:hover": {
                                         borderColor: "primary.main",
                                         bgcolor: (theme) =>
                                           theme.palette.mode === "dark"
-                                            ? "rgba(0, 77, 64, 0.1)"
-                                            : "rgba(0, 77, 64, 0.05)",
+                                            ? "rgba(16, 185, 129, 0.2)"
+                                            : "rgba(5, 150, 105, 0.15)",
                                         transform: "translateY(-1px)",
                                       },
                                     }}

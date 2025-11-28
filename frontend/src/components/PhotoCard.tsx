@@ -219,11 +219,11 @@ function PhotoCard({
           <Box
             sx={{
               position: "absolute",
-              bottom: 8,
-              right: 8,
+              bottom: { xs: 6, md: 8 },
+              right: { xs: 6, md: 8 },
               zIndex: 2,
               display: "flex",
-              gap: 1.5,
+              gap: { xs: 0.75, md: 1.5 },
               alignItems: "center",
             }}
           >
@@ -234,12 +234,13 @@ function PhotoCard({
                 disabled={!photo.DOWNLOAD_LINK}
                 aria-label="Preview image"
                 sx={{
-                  minWidth: { xs: 44, md: 32 },
-                  minHeight: { xs: 44, md: 32 },
+                  width: { xs: 32, md: 32 },
+                  height: { xs: 32, md: 32 },
+                  padding: { xs: 0.5, md: 0 },
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark"
-                      ? "rgba(37, 99, 235, 0.8)" // Blue-600 with opacity for dark mode
-                      : "rgba(59, 130, 246, 0.9)", // Blue-500 with opacity for light mode
+                      ? "rgba(37, 99, 235, 0.8)"
+                      : "rgba(59, 130, 246, 0.9)",
                   backdropFilter: "blur(4px)",
                   color: "white",
                   opacity: 0.9,
@@ -249,8 +250,8 @@ function PhotoCard({
                     transform: 'scale(1.1)',
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(37, 99, 235, 1)" // Blue-600 solid for dark mode
-                        : "rgba(59, 130, 246, 1)", // Blue-500 solid for light mode
+                        ? "rgba(37, 99, 235, 1)"
+                        : "rgba(59, 130, 246, 1)",
                   },
                   '&:disabled': {
                     opacity: 0.5,
@@ -265,7 +266,7 @@ function PhotoCard({
                   },
                 }}
               >
-                <Visibility sx={{ fontSize: { xs: 20, md: 16 } }} />
+                <Visibility sx={{ fontSize: { xs: 16, md: 16 } }} />
               </IconButton>
             </Tooltip>
 
@@ -276,8 +277,9 @@ function PhotoCard({
                   onClick={handleFavorite}
                   aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
                   sx={{
-                    minWidth: { xs: 44, md: 32 },
-                    minHeight: { xs: 44, md: 32 },
+                    width: { xs: 32, md: 32 },
+                    height: { xs: 32, md: 32 },
+                    padding: { xs: 0.5, md: 0 },
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark"
                         ? "rgba(0,0,0,0.7)"
@@ -304,9 +306,9 @@ function PhotoCard({
                   }}
                 >
                   {isFavorite ? (
-                    <Favorite sx={{ fontSize: { xs: 20, md: 16 }, color: 'error.main' }} />
+                    <Favorite sx={{ fontSize: { xs: 16, md: 16 }, color: 'error.main' }} />
                   ) : (
-                    <FavoriteBorder sx={{ fontSize: { xs: 20, md: 16 } }} />
+                    <FavoriteBorder sx={{ fontSize: { xs: 16, md: 16 } }} />
                   )}
                 </IconButton>
               </Tooltip>
