@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2025-11-29
+
+### Added
+- **Pin-Drop Location Selection**: Click anywhere on the map to drop a pin, preview coordinates, then confirm to search
+  - Visual red marker with pulsing circle animation shows selected location
+  - Floating action buttons display coordinates and provide "Search Here" / "Cancel" options
+  - Replaces instant search behavior for better control and prevents accidental API calls
+- **Keyboard Shortcuts**: Press Escape key to cancel pending pin and remove marker
+- **Mobile-First Map Layout**: Map now displays by default on mobile devices
+  - Direct access to interactive map on app launch (no welcome screen)
+  - Tap anywhere on map to drop pin and search
+  - Better mobile user experience with immediate map interaction
+
+### Changed
+- **Search Behavior**: Map clicks now show pending pin instead of immediate search
+  - User must confirm with "Search Here" button to trigger API call
+  - Provides visual feedback and confirmation step for location selection
+- **Mobile Layout**: Map visibility logic updated to show map by default on mobile
+  - Display logic: show when !searchParams OR viewMode === "map"
+  - MapView always renders (no conditional rendering based on searchParams)
+
+### Improved
+- **Search Control**: Two-step confirmation process prevents accidental searches from map exploration
+- **Mobile UX**: Removed welcome screen barrier, immediate access to map functionality
+- **Visual Feedback**: Clear coordinate display and action buttons for better user understanding
+
+### Technical
+- Created `frontend/src/components/PendingPinMarker.tsx` - Red marker with pulsing animation
+- Created `frontend/src/components/PinActionButtons.tsx` - Floating action buttons with coordinates
+- Created `frontend/src/lib/formatCoordinates.ts` - Coordinate formatting utility
+- Updated `App.tsx` - Added pendingPin state, handlers, keyboard shortcuts, mobile layout logic
+- Updated `MapView.tsx` - Added pendingPin, onConfirmPin, onCancelPin props
+- Created `ARCHITECTURE_ANALYSIS.md` - Comprehensive project architecture documentation
+- Created `PIN_DROP_DESIGN_NOTES.md` - Implementation design and rationale
+
 ## [2.6.0] - 2025-11-28
 
 ### Added

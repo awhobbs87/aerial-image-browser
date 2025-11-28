@@ -50,7 +50,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "2.7.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -121,6 +121,7 @@ function AppContent() {
   const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
+  const [pendingPin, setPendingPin] = useState<[number, number] | null>(null);
   const [filters, setFilters] = useState<Filters>({
     startDate: null,
     endDate: null,
@@ -136,6 +137,18 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem("themeMode", themeMode);
   }, [themeMode]);
+
+  // Keyboard shortcut: Escape to cancel pending pin
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && pendingPin) {
+        setPendingPin(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [pendingPin]);
 
   // Use React Query hook for fetching photos
   const {
@@ -374,8 +387,20 @@ function AppContent() {
   }, []);
 
   const handleMapClick = useCallback((lat: number, lon: number) => {
-    handleSearch(lat, lon);
-  }, [handleSearch]);
+    // Set pending pin instead of immediate search
+    setPendingPin([lat, lon]);
+  }, []);
+
+  const handleConfirmPin = useCallback(() => {
+    if (pendingPin) {
+      handleSearch(pendingPin[0], pendingPin[1]);
+      setPendingPin(null);
+    }
+  }, [pendingPin, handleSearch]);
+
+  const handleCancelPin = useCallback(() => {
+    setPendingPin(null);
+  }, []);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -1248,13 +1273,13 @@ function AppContent() {
             </Box>
           </Box>
 
-          {/* Right Side - Persistent Map (desktop only, or mobile when map mode active) */}
+          {/* Right Side - Persistent Map (desktop always, mobile when no searchParams or when map mode active) */}
           <Box
             sx={{
               width: { xs: "100%", md: sidebarOpen ? "calc(100% - 480px)" : "100%" },
               transition: "width 0.3s ease-in-out",
               display: {
-                xs: searchParams && viewMode === "map" ? "block" : "none",
+                xs: !searchParams || viewMode === "map" ? "block" : "none",
                 md: "block", // Always show on desktop to contain floating search
               },
               position: "relative",
@@ -1309,41 +1334,42 @@ function AppContent() {
               </Stack>
             </Box>
 
-            {searchParams && (
-              <Suspense
-                fallback={
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      minHeight: "100%",
-                      width: "100%",
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                    }}
-                  >
-                    <Box sx={{ textAlign: "center" }}>
-                      <CircularProgress size={60} />
-                      <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
-                        Loading map...
-                      </Typography>
-                    </Box>
+            <Suspense
+              fallback={
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "100%",
+                    width: "100%",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                  }}
+                >
+                  <Box sx={{ textAlign: "center" }}>
+                    <CircularProgress size={60} />
+                    <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
+                      Loading map...
+                    </Typography>
                   </Box>
-                }
-              >
-                <MapView
-                  photos={mapPhotos}
-                  selectedPhoto={selectedPhoto}
-                  hoveredPhoto={hoveredPhoto}
-                  onPhotoClick={setSelectedPhoto}
-                  onMapClick={handleMapClick}
-                  searchCenter={searchCenter}
-                  autoZoom={true}
-                />
-              </Suspense>
-            )}
+                </Box>
+              }
+            >
+              <MapView
+                photos={mapPhotos}
+                selectedPhoto={selectedPhoto}
+                hoveredPhoto={hoveredPhoto}
+                onPhotoClick={setSelectedPhoto}
+                onMapClick={handleMapClick}
+                searchCenter={searchCenter}
+                autoZoom={true}
+                pendingPin={pendingPin}
+                onConfirmPin={handleConfirmPin}
+                onCancelPin={handleCancelPin}
+              />
+            </Suspense>
           </Box>
         </Box>
 

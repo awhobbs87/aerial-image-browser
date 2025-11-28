@@ -29,6 +29,20 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.7.0",
+    date: "2025-11-29",
+    changes: [
+      { type: "added", description: "Pin-Drop Location Selection: Click anywhere on the map to drop a pin, preview coordinates, then confirm to search - replaces instant search for better control" },
+      { type: "added", description: "Visual Pin Marker: Red marker with pulsing circle animation shows selected location before search" },
+      { type: "added", description: "Pin Action Buttons: Floating 'Search Here' and 'Cancel' buttons with coordinate display for confirming or canceling pin placement" },
+      { type: "added", description: "Keyboard Shortcuts: Press Escape key to cancel pending pin and remove marker" },
+      { type: "changed", description: "Mobile Layout: Map now displays by default on mobile (no welcome screen), tap to drop pin and search" },
+      { type: "changed", description: "Search Behavior: Map clicks now show pending pin instead of immediate search - confirm with button to trigger API call" },
+      { type: "improved", description: "Mobile User Experience: Direct access to interactive map on app launch, no need to navigate through welcome screen" },
+      { type: "improved", description: "Search Control: Visual feedback and confirmation step prevents accidental searches from map clicks" },
+    ],
+  },
+  {
     version: "2.6.0",
     date: "2025-11-28",
     changes: [

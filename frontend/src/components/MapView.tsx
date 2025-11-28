@@ -5,6 +5,8 @@ import { LatLngBounds } from 'leaflet';
 import '../lib/leafletConfig'; // Import to fix marker icons
 import PhotoMarkers from './PhotoMarkers';
 import MapZoomControls from './MapZoomControls';
+import PendingPinMarker from './PendingPinMarker';
+import PinActionButtons from './PinActionButtons';
 import type { EnhancedPhoto } from '../types/api';
 
 interface MapViewProps {
@@ -17,6 +19,9 @@ interface MapViewProps {
   zoom?: number;
   searchCenter?: [number, number] | null;
   autoZoom?: boolean;
+  pendingPin?: [number, number] | null;
+  onConfirmPin?: () => void;
+  onCancelPin?: () => void;
 }
 
 // Component to handle map events
@@ -105,6 +110,9 @@ export default function MapView({
   zoom = 8,
   searchCenter = null,
   autoZoom = true,
+  pendingPin = null,
+  onConfirmPin,
+  onCancelPin,
 }: MapViewProps) {
   return (
     <Box
@@ -135,7 +143,10 @@ export default function MapView({
 
         <MapController photos={photos} searchCenter={searchCenter} autoZoom={autoZoom} />
 
-        {/* Show search center marker */}
+        {/* Show pending pin marker (before search is confirmed) */}
+        {pendingPin && !searchCenter && <PendingPinMarker position={pendingPin} />}
+
+        {/* Show search center marker (after search is confirmed) */}
         {searchCenter && (
           <Marker position={searchCenter}>
             <Popup>
@@ -160,6 +171,11 @@ export default function MapView({
         <MapZoomControls searchCenter={searchCenter} />
 
       </MapContainer>
+
+      {/* Pin action buttons (outside MapContainer for proper positioning) */}
+      {pendingPin && onConfirmPin && onCancelPin && (
+        <PinActionButtons position={pendingPin} onConfirm={onConfirmPin} onCancel={onCancelPin} />
+      )}
     </Box>
   );
 }
