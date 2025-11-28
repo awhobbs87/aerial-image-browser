@@ -297,15 +297,15 @@ export default function PhotoGrid({
       <Paper
         elevation={1}
         sx={{
-          p: 1.5,
-          mb: 2,
+          p: { xs: 1, md: 1.5 },
+          mb: { xs: 1.5, md: 2 },
           background: (theme) =>
             theme.palette.mode === "dark"
               ? "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)"
               : "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
         }}
       >
-        <Stack spacing={1}>
+        <Stack spacing={{ xs: 0.75, md: 1 }}>
           {totalPages > 1 && (
             <Typography
               variant="caption"
@@ -320,7 +320,7 @@ export default function PhotoGrid({
           <Box
             sx={{
               display: "flex",
-              gap: 1.5,
+              gap: { xs: 1, md: 1.5 },
               flexWrap: "wrap",
               alignItems: "flex-start",
             }}
@@ -420,13 +420,13 @@ export default function PhotoGrid({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 3, md: 4 } }}>
           <Pagination
             count={totalPages}
             page={page}
             onChange={handlePageChange}
             color="primary"
-            size="large"
+            size={{ xs: "medium", md: "large" }}
             showFirstButton
             showLastButton
           />

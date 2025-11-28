@@ -50,7 +50,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.5.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -555,11 +555,11 @@ function AppContent() {
               }
             }}
           >
-            <Box 
-              sx={{ 
-                py: 2, 
-                px: { xs: 2, md: 3 }, 
-                maxWidth: "100%", 
+            <Box
+              sx={{
+                py: { xs: 1.5, md: 2 },
+                px: { xs: 1.5, md: 3 },
+                maxWidth: "100%",
                 display: "flex",
                 flexDirection: "column",
                 flex: 1,
@@ -568,17 +568,17 @@ function AppContent() {
             >
               {/* Mobile Search Button - Show button after search, hide search bar */}
               {searchParams && (
-                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
                   <Button
                     variant="outlined"
                     fullWidth
                     onClick={() => setMobileSearchOpen(true)}
                     startIcon={<SearchIcon />}
                     sx={{
-                      py: 1.5,
-                      fontSize: "0.9375rem",
+                      py: { xs: 1, md: 1.5 },
+                      fontSize: "0.875rem",
                       fontWeight: 600,
-                      minHeight: 48,
+                      minHeight: { xs: 40, md: 48 },
                     }}
                   >
                     Search Location
@@ -588,7 +588,7 @@ function AppContent() {
               
               {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
               {!searchParams && (
-                <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
                   <SearchBar onSearch={handleSearch} loading={isLoading} />
                 </Box>
               )}
@@ -607,17 +607,17 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile Filter Button */}
-                  <Box sx={{ mb: 2, display: { xs: "block", md: "none" } }}>
+                  <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
                     <Button
                       variant="outlined"
                       fullWidth
                       onClick={() => setMobileFilterOpen(true)}
                       startIcon={<FilterList />}
                       sx={{
-                        py: 1.5,
-                        fontSize: "0.9375rem",
+                        py: { xs: 1, md: 1.5 },
+                        fontSize: "0.875rem",
                         fontWeight: 600,
-                        minHeight: 48, // Better touch target
+                        minHeight: { xs: 40, md: 48 },
                       }}
                     >
                       Filters
@@ -780,7 +780,7 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile-only Unified 4-Button View Toggle */}
-                  <Box sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>
+                  <Box sx={{ display: { xs: "block", md: "none" }, mb: { xs: 1.5, md: 2 } }}>
                     <Paper elevation={0} sx={{ bgcolor: "transparent", display: "flex", justifyContent: "center" }}>
                       <ToggleButtonGroup
                         value={mobileViewValue}
@@ -790,8 +790,8 @@ function AppContent() {
                         size="small"
                         sx={{
                           "& .MuiToggleButton-root": {
-                            px: 1.25,
-                            py: 0.5,
+                            px: { xs: 1, md: 1.25 },
+                            py: { xs: 0.375, md: 0.5 },
                             fontSize: "0.75rem",
                             fontWeight: 500,
                             textTransform: "none",
@@ -916,12 +916,12 @@ function AppContent() {
                     {filteredPhotos.length > 0 && (
                       <>
 
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mb: { xs: 1.5, md: 2 } }}>
                           <Typography
                             variant="caption"
                             sx={{
                               fontWeight: 600,
-                              mb: 0.75,
+                              mb: { xs: 0.5, md: 0.75 },
                               display: "block",
                               fontSize: "0.7rem",
                               color: "text.secondary",
@@ -967,7 +967,7 @@ function AppContent() {
                     )}
 
                     {comparisonSelection.length > 0 && (
-                      <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" mb={{ xs: 1.5, md: 2 }}>
                         {comparisonSelection.map((photo) => (
                           <Chip
                             key={`compare-chip-${getPhotoKey(photo)}`}
@@ -1029,8 +1029,8 @@ function AppContent() {
                 <Box
                   sx={{
                     textAlign: "center",
-                    py: { xs: 4, md: 5 },
-                    px: { xs: 2, md: 2.5 },
+                    py: { xs: 3, md: 5 },
+                    px: { xs: 1.5, md: 2.5 },
                     width: "100%",
                     display: "flex",
                     flexDirection: "column",

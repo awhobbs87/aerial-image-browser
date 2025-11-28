@@ -39,6 +39,8 @@ interface NominatimResult {
 class GeocodingService {
   private baseUrl = "https://nominatim.openstreetmap.org";
   private userAgent = "TasmaniaAerialPhotoBrowser/1.0";
+  private cache = new Map<string, { results: SearchSuggestion[]; timestamp: number }>();
+  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   /**
    * Search for locations by query string (address, place name, etc.)
@@ -46,6 +48,14 @@ class GeocodingService {
   async searchLocations(query: string, limit: number = 5): Promise<SearchSuggestion[]> {
     if (!query || query.length < 2) {
       return [];
+    }
+
+    // Check cache first
+    const cacheKey = `${query.toLowerCase()}_${limit}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log(`Cache hit for "${query}"`);
+      return cached.results;
     }
 
     try {
@@ -99,7 +109,7 @@ class GeocodingService {
 
       console.log(`After filtering: ${filtered.length} results in Tasmania`);
 
-      return filtered.map((item) => ({
+      const results = filtered.map((item) => ({
         placeId: item.place_id,
         displayName: item.display_name,
         lat: parseFloat(item.lat),
@@ -107,6 +117,11 @@ class GeocodingService {
         type: item.type,
         importance: item.importance,
       }));
+
+      // Cache the results
+      this.cache.set(cacheKey, { results, timestamp: Date.now() });
+
+      return results;
     } catch (error) {
       console.error("Geocoding error:", error);
       return [];
@@ -194,13 +209,27 @@ class GeocodingService {
 
   /**
    * Format a location name from geocoding result
+   * Provides clean, readable formatting similar to Google Maps
    */
   formatLocationName(result: GeocodingResult | SearchSuggestion): string {
     if ("displayName" in result) {
-      // For SearchSuggestion or GeocodingResult
       const parts = result.displayName.split(", ");
-      // Return first 3 parts for brevity (e.g., "Hobart, Tasmania, Australia")
-      return parts.slice(0, 3).join(", ");
+
+      // Remove redundant "Tasmania" if it appears multiple times
+      const filtered = parts.filter((part, index, arr) => {
+        const lowerPart = part.toLowerCase();
+        if (lowerPart.includes("tasmania") || lowerPart === "tas") {
+          // Keep only the first occurrence
+          return arr.findIndex(p =>
+            p.toLowerCase().includes("tasmania") || p.toLowerCase() === "tas"
+          ) === index;
+        }
+        return true;
+      });
+
+      // Return cleaned up name (first 2-3 parts max)
+      // e.g., "Battery Point, Hobart TAS" or "Hobart, Tasmania"
+      return filtered.slice(0, Math.min(3, filtered.length)).join(", ");
     }
     return "Unknown location";
   }

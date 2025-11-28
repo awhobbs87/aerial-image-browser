@@ -60,16 +60,28 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
     const fetchSuggestions = async () => {
       if (searchQuery.length < 2) {
         setSuggestions([]);
+        setIsSearching(false);
         return;
       }
 
       setIsSearching(true);
-      const results = await geocodingService.searchLocations(searchQuery, 10); // Request more results
-      setSuggestions(results);
-      setIsSearching(false);
+      try {
+        const results = await geocodingService.searchLocations(searchQuery, 10);
+        setSuggestions(results);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, 200); // Faster response
+    // Show loading immediately when typing
+    if (searchQuery.length >= 2) {
+      setIsSearching(true);
+    }
+
+    const debounceTimer = setTimeout(fetchSuggestions, 150); // Slightly faster
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
@@ -189,7 +201,7 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
     >
       <Stack spacing={0}>
         {/* Main search input */}
-        <Box sx={{ p: 1.5 }}>
+        <Box sx={{ p: { xs: 1, md: 1.5 } }}>
           <Autocomplete
             freeSolo
             fullWidth
@@ -330,8 +342,8 @@ export default function SearchBar({ onSearch, loading = false }: SearchBarProps)
         <Box sx={{
           display: "flex",
           gap: 1,
-          p: 1.5,
-          pt: 1,
+          p: { xs: 1, md: 1.5 },
+          pt: { xs: 0.75, md: 1 },
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between"

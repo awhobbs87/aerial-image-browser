@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2025-11-28
+
+### Added
+- Intelligent search caching (5-minute cache for geocoding results)
+- Immediate loading feedback when typing in search bar
+- Better search result formatting (Google Maps style, removes duplicate Tasmania references)
+
+### Changed
+- Reduced debounce time from 300ms to 150ms for faster search responsiveness
+- Optimized mobile UI with reduced padding across all components:
+  - Sidebar padding reduced from 2/3 to 1.5/3 (mobile/desktop)
+  - Button heights reduced from 48px to 40px on mobile
+  - Margins and spacing reduced by 25% on mobile viewports
+  - Toggle buttons more compact (reduced padding)
+  - Welcome screen padding optimized for mobile
+  - Photo grid controls more compact on mobile
+  - Search bar action row padding reduced
+- Mobile view toggle buttons now 25% smaller with tighter spacing
+- Quick filter chips and buttons optimized for mobile touch targets
+
+### Improved
+- Search now shows loading state immediately when typing (no delay)
+- Better error handling in geocoding service
+- More efficient use of screen space on mobile devices
+- Faster perceived performance with instant visual feedback
+- Improved mobile one-handed usability with more compact controls
+
 ## [2.4.0] - 2025-11-25
 
 ### Added
