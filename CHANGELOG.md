@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.3] - 2025-12-05
+
+### Fixed
+
+- **Then vs Now Button in PhotoViewer**: Added missing "Then vs Now" button to PhotoViewer gallery modal
+  - Button now appears between "Close" and "Download TIFF" on both mobile and desktop
+  - Opens Then vs Now comparison modal for the current photo
+  - Fixed issue where button was added to wrong component (PhotoPreviewModal instead of PhotoViewer)
+- **Removed Redundant Location Text**: Removed "Location: Available on map" text from PhotoViewer
+  - Cleaner metadata display in photo gallery
+  - Location information is already evident from the map view
+
+### Technical
+
+- Updated `frontend/src/components/PhotoViewer.tsx`:
+  - Added `History` icon import from @mui/icons-material
+  - Added `ThenNowModal` component import
+  - Added `thenNowModalOpen` state management
+  - Changed DialogActions button container from Stack to Box with `flexWrap: 'wrap'`
+  - Added "Then vs Now" button with History icon
+  - Removed geometry-based location display section
+  - Removed unused `Place` icon import
+  - Integrated ThenNowModal component at end of render
+
 ## [2.9.2] - 2025-12-05
 
 ### Fixed
@@ -9,9 +33,11 @@ All notable changes to this project will be documented in this file.
 - **Then vs Now Button Visibility**: Fixed "Then vs Now" button not appearing on mobile in photo preview modal
   - Changed button layout from Stack to flex Box with wrapping enabled
   - Buttons now wrap properly on mobile screens ensuring all are visible
+  - NOTE: This was applied to wrong component, fixed in v2.9.3
 - **Removed Redundant Location Text**: Removed "Location: Available on map" text from photo metadata
   - Cleaner metadata display in photo preview modal
   - Location information is already evident from the map view
+  - NOTE: This was applied to wrong component, fixed in v2.9.3
 
 ### Technical
 

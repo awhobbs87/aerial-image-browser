@@ -20,7 +20,6 @@ import {
   Close,
   ChevronLeft,
   ChevronRight,
-  Place,
   CalendarToday,
   PhotoSizeSelectActual,
   Image as ImageIcon,
@@ -29,9 +28,11 @@ import {
   ZoomIn,
   ZoomOut,
   FitScreen,
+  History,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
+import ThenNowModal from "./ThenNowModal";
 
 interface PhotoViewerProps {
   photo: EnhancedPhoto | null;
@@ -59,30 +60,39 @@ export default function PhotoViewer({
   const [converting, setConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
   const [conversionError, setConversionError] = useState<string | null>(null);
-  const [convertedImageUrl, setConvertedImageUrl] = useState<string | null>(null);
+  const [convertedImageUrl, setConvertedImageUrl] = useState<string | null>(
+    null,
+  );
   const [useConvertedImage, setUseConvertedImage] = useState(false);
   const [fullScreenOpen, setFullScreenOpen] = useState(false);
+  const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const [pinchStart, setPinchStart] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [pinchStart, setPinchStart] = useState<{
+    distance: number;
+    center: { x: number; y: number };
+  } | null>(null);
   const [lastZoomLevel, setLastZoomLevel] = useState(1);
-  
+
   // Refs to track latest values for use in event handlers (avoid stale closures)
   const zoomLevelRef = useRef(zoomLevel);
   const panPositionRef = useRef(panPosition);
-  
+
   // Keep refs in sync with state
   useEffect(() => {
     zoomLevelRef.current = zoomLevel;
   }, [zoomLevel]);
-  
+
   useEffect(() => {
     panPositionRef.current = panPosition;
   }, [panPosition]);
-  
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -94,17 +104,18 @@ export default function PhotoViewer({
   const thumbnailUrl = currentPhoto
     ? apiClient.getThumbnailUrl(currentPhoto.IMAGE_NAME, currentPhoto.layerId)
     : "";
-  const displayImageUrl = useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl;
+  const displayImageUrl =
+    useConvertedImage && convertedImageUrl ? convertedImageUrl : thumbnailUrl;
   const [convertedImageLoaded, setConvertedImageLoaded] = useState(false);
 
   // Auto-convert function
   const handleAutoConvert = useCallback(async () => {
     if (!currentPhoto?.DOWNLOAD_LINK) {
-      console.log('No DOWNLOAD_LINK available for conversion');
+      console.log("No DOWNLOAD_LINK available for conversion");
       return;
     }
 
-    console.log('Starting conversion for:', currentPhoto.IMAGE_NAME);
+    console.log("Starting conversion for:", currentPhoto.IMAGE_NAME);
     setConverting(true);
     setConversionProgress(0);
     setConversionError(null);
@@ -114,28 +125,32 @@ export default function PhotoViewer({
       // Use the new TIFF conversion service via API client
       const result = await apiClient.convertTiffFromUrl(
         currentPhoto.DOWNLOAD_LINK,
-        (progress) => setConversionProgress(progress)
+        (progress) => setConversionProgress(progress),
       );
 
-      console.log('Conversion result:', result);
+      console.log("Conversion result:", result);
 
       // Fetch the converted image from the result URL
       const imageResponse = await fetch(result.url);
       if (!imageResponse.ok) {
-        throw new Error(`Failed to download converted image: ${imageResponse.statusText}`);
+        throw new Error(
+          `Failed to download converted image: ${imageResponse.statusText}`,
+        );
       }
 
       const webpBlob = await imageResponse.blob();
       const url = URL.createObjectURL(webpBlob);
-      
-      console.log('Converted image ready, preparing to switch');
+
+      console.log("Converted image ready, preparing to switch");
       setConvertedImageUrl(url);
       // Don't switch to converted image until it's loaded - keep showing thumbnail
       // The image will preload and then we'll switch once onLoad fires
       setConversionProgress(100);
     } catch (error) {
       console.error("Conversion error:", error);
-      setConversionError(error instanceof Error ? error.message : "Conversion failed");
+      setConversionError(
+        error instanceof Error ? error.message : "Conversion failed",
+      );
       // Fallback to thumbnail - don't set useConvertedImage to true
       setUseConvertedImage(false);
       setConvertedImageLoaded(false);
@@ -152,7 +167,7 @@ export default function PhotoViewer({
     setConvertedImageLoaded(false);
     // Clear previous converted image
     setConvertedImageUrl((prev) => {
-      if (prev && prev.startsWith('blob:')) {
+      if (prev && prev.startsWith("blob:")) {
         URL.revokeObjectURL(prev);
       }
       return null;
@@ -165,30 +180,46 @@ export default function PhotoViewer({
   // Automatically convert when modal opens or photo changes
   useEffect(() => {
     if (!open || !currentPhoto?.DOWNLOAD_LINK) {
-      console.log('Not converting - missing requirements:', { open, hasDownloadLink: !!currentPhoto?.DOWNLOAD_LINK });
+      console.log("Not converting - missing requirements:", {
+        open,
+        hasDownloadLink: !!currentPhoto?.DOWNLOAD_LINK,
+      });
       return;
     }
 
     // Check if we should convert
     if (converting) {
-      console.log('Conversion already in progress, skipping');
+      console.log("Conversion already in progress, skipping");
       return;
     }
 
     if (convertedImageUrl) {
-      console.log('Converted image already exists, skipping conversion');
+      console.log("Converted image already exists, skipping conversion");
       return;
     }
 
     // Start conversion
-    console.log('Starting auto-conversion for:', currentPhoto.IMAGE_NAME, 'DOWNLOAD_LINK:', currentPhoto.DOWNLOAD_LINK);
+    console.log(
+      "Starting auto-conversion for:",
+      currentPhoto.IMAGE_NAME,
+      "DOWNLOAD_LINK:",
+      currentPhoto.DOWNLOAD_LINK,
+    );
     handleAutoConvert();
-  }, [open, currentPhoto?.DOWNLOAD_LINK, currentPhoto?.IMAGE_NAME, currentIndex, handleAutoConvert, converting, convertedImageUrl]);
+  }, [
+    open,
+    currentPhoto?.DOWNLOAD_LINK,
+    currentPhoto?.IMAGE_NAME,
+    currentIndex,
+    handleAutoConvert,
+    converting,
+    convertedImageUrl,
+  ]);
 
   // Switch to converted image once it's loaded
   useEffect(() => {
     if (convertedImageUrl && convertedImageLoaded && !useConvertedImage) {
-      console.log('Converted image loaded, switching to it');
+      console.log("Converted image loaded, switching to it");
       setUseConvertedImage(true);
       setImageLoaded(true);
     }
@@ -259,7 +290,7 @@ export default function PhotoViewer({
     setPanPosition({ x: 0, y: 0 });
     if (convertedImageUrl) {
       // Don't revoke if it's a URL from the proxy (not a blob URL)
-      if (convertedImageUrl.startsWith('blob:')) {
+      if (convertedImageUrl.startsWith("blob:")) {
         URL.revokeObjectURL(convertedImageUrl);
       }
       setConvertedImageUrl(null);
@@ -306,13 +337,15 @@ export default function PhotoViewer({
     setPanPosition({ x: 0, y: 0 });
   };
 
-
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow panning at any zoom level, but only if clicking on the image area
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
+    setDragStart({
+      x: e.clientX - panPosition.x,
+      y: e.clientY - panPosition.y,
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -331,14 +364,20 @@ export default function PhotoViewer({
   };
 
   // Calculate distance between two touches
-  const getTouchDistance = (touch1: React.Touch, touch2: React.Touch): number => {
+  const getTouchDistance = (
+    touch1: React.Touch,
+    touch2: React.Touch,
+  ): number => {
     const dx = touch2.clientX - touch1.clientX;
     const dy = touch2.clientY - touch1.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   };
 
   // Calculate center point between two touches
-  const getTouchCenter = (touch1: React.Touch, touch2: React.Touch): { x: number; y: number } => {
+  const getTouchCenter = (
+    touch1: React.Touch,
+    touch2: React.Touch,
+  ): { x: number; y: number } => {
     return {
       x: (touch1.clientX + touch2.clientX) / 2,
       y: (touch1.clientY + touch2.clientY) / 2,
@@ -353,7 +392,10 @@ export default function PhotoViewer({
       e.stopPropagation();
       setIsDragging(true);
       const touch = e.touches[0];
-      setDragStart({ x: touch.clientX - panPosition.x, y: touch.clientY - panPosition.y });
+      setDragStart({
+        x: touch.clientX - panPosition.x,
+        y: touch.clientY - panPosition.y,
+      });
       setPinchStart(null);
     } else if (e.touches.length === 2) {
       // Two touches - start pinch-to-zoom
@@ -391,25 +433,27 @@ export default function PhotoViewer({
       }
       const scale = distance / pinchStart.distance;
       const newZoom = Math.max(0.5, Math.min(5, lastZoomLevel * scale));
-      
+
       // Get container bounds to convert touch coordinates correctly
-      const containerRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const containerRect = (
+        e.currentTarget as HTMLElement
+      ).getBoundingClientRect();
       const center = getTouchCenter(e.touches[0], e.touches[1]);
-      
+
       // Convert pinch center to container-relative coordinates (like wheel handler)
       const centerX = center.x - containerRect.left - containerRect.width / 2;
       const centerY = center.y - containerRect.top - containerRect.height / 2;
-      
+
       // Calculate the point on the image that the pinch center is over
       // Use lastZoomLevel (the zoom at pinch start) for consistency with newZoom calculation
       // This ensures the coordinate transformation matches the zoom scaling
       const imageX = (centerX - panPosition.x) / lastZoomLevel;
       const imageY = (centerY - panPosition.y) / lastZoomLevel;
-      
+
       // Adjust pan position so the same point on the image stays under the pinch center
       const newPanX = centerX - imageX * newZoom;
       const newPanY = centerY - imageY * newZoom;
-      
+
       setZoomLevel(newZoom);
       setPanPosition({ x: newPanX, y: newPanY });
     }
@@ -425,7 +469,10 @@ export default function PhotoViewer({
       // Use ref to get current panPosition (avoids stale closure value)
       const touch = e.touches[0];
       const currentPan = panPositionRef.current;
-      setDragStart({ x: touch.clientX - currentPan.x, y: touch.clientY - currentPan.y });
+      setDragStart({
+        x: touch.clientX - currentPan.x,
+        y: touch.clientY - currentPan.y,
+      });
       setIsDragging(true);
       setPinchStart(null);
     }
@@ -437,28 +484,28 @@ export default function PhotoViewer({
     if (fullScreenOpen) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      
+
       // Use refs to get current values (avoids stale closures during rapid wheel events)
       const currentZoom = zoomLevelRef.current;
       const currentPan = panPositionRef.current;
-      
+
       // Get mouse position relative to the container center
       const containerRect = e.currentTarget.getBoundingClientRect();
       const mouseX = e.clientX - containerRect.left - containerRect.width / 2;
       const mouseY = e.clientY - containerRect.top - containerRect.height / 2;
-      
+
       // Calculate the point on the image that the mouse is over
       // This accounts for current pan and zoom
       const imageX = (mouseX - currentPan.x) / currentZoom;
       const imageY = (mouseY - currentPan.y) / currentZoom;
-      
+
       // Calculate new zoom level
       const newZoom = Math.max(0.5, Math.min(5, currentZoom + delta));
-      
+
       // Adjust pan position so the same point on the image stays under the mouse
       const newPanX = mouseX - imageX * newZoom;
       const newPanY = mouseY - imageY * newZoom;
-      
+
       setZoomLevel(newZoom);
       setPanPosition({ x: newPanX, y: newPanY });
     }
@@ -497,7 +544,11 @@ export default function PhotoViewer({
             {isGalleryMode ? "Photo Gallery" : "Photo Preview"}
           </Typography>
           {isGalleryMode && (
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.75rem" }}
+            >
               {currentIndex + 1} / {photoList.length}
             </Typography>
           )}
@@ -536,19 +587,38 @@ export default function PhotoViewer({
                 boxShadow: 2,
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mb: 0.5 }}
+              >
                 <CircularProgress size={16} />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.75rem" }}
+                >
                   Converting to WEBP... {conversionProgress}%
                 </Typography>
               </Stack>
-              <LinearProgress variant="determinate" value={conversionProgress} sx={{ height: 4, borderRadius: 2 }} />
+              <LinearProgress
+                variant="determinate"
+                value={conversionProgress}
+                sx={{ height: 4, borderRadius: 2 }}
+              />
             </Box>
           )}
 
           {/* Full screen button - only enable when converted image is loaded */}
           {imageLoaded && (
-            <Tooltip title={convertedImageLoaded && useConvertedImage ? "Full screen" : "Waiting for high-quality image..."}>
+            <Tooltip
+              title={
+                convertedImageLoaded && useConvertedImage
+                  ? "Full screen"
+                  : "Waiting for high-quality image..."
+              }
+            >
               <span>
                 <IconButton
                   onClick={handleFullScreen}
@@ -662,7 +732,11 @@ export default function PhotoViewer({
               maxWidth: "100%",
               maxHeight: isMobile ? "50vh" : "60vh",
               objectFit: "contain",
-              display: useConvertedImage ? "none" : (imageLoaded ? "block" : "none"),
+              display: useConvertedImage
+                ? "none"
+                : imageLoaded
+                  ? "block"
+                  : "none",
             }}
           />
           {/* Converted image - preload and show when ready */}
@@ -672,11 +746,13 @@ export default function PhotoViewer({
               src={convertedImageUrl}
               alt={`${currentPhoto.IMAGE_NAME} (converted)`}
               onLoad={() => {
-                console.log('Converted image loaded successfully');
+                console.log("Converted image loaded successfully");
                 setConvertedImageLoaded(true);
               }}
               onError={() => {
-                console.error('Converted image failed to load, falling back to thumbnail');
+                console.error(
+                  "Converted image failed to load, falling back to thumbnail",
+                );
                 setUseConvertedImage(false);
                 setConvertedImageLoaded(false);
                 setImageLoaded(true); // Ensure thumbnail is shown
@@ -685,7 +761,8 @@ export default function PhotoViewer({
                 maxWidth: "100%",
                 maxHeight: isMobile ? "50vh" : "60vh",
                 objectFit: "contain",
-                display: useConvertedImage && convertedImageLoaded ? "block" : "none",
+                display:
+                  useConvertedImage && convertedImageLoaded ? "block" : "none",
               }}
             />
           )}
@@ -696,15 +773,17 @@ export default function PhotoViewer({
           <Stack spacing={1.5}>
             {/* Header with chips */}
             <Box>
-              <Box sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}>
+              <Box
+                sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}
+              >
                 <Chip
                   label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
                   color={
                     currentPhoto.layerType === "aerial"
                       ? "info"
                       : currentPhoto.layerType === "ortho"
-                      ? "success"
-                      : "warning"
+                        ? "success"
+                        : "warning"
                   }
                   size="small"
                   sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
@@ -719,7 +798,11 @@ export default function PhotoViewer({
                   />
                 )}
               </Box>
-              <Typography variant="h6" gutterBottom sx={{ fontSize: "0.9375rem", fontWeight: 500 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontSize: "0.9375rem", fontWeight: 500 }}
+              >
                 {currentPhoto.dateFormatted || "Unknown Date"}
               </Typography>
             </Box>
@@ -767,40 +850,70 @@ export default function PhotoViewer({
                   {currentPhoto.IMAGE_NAME}
                 </Typography>
               </Box>
-
-              {currentPhoto.geometry && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Place sx={{ fontSize: 20, color: "text.secondary" }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Location:
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    Available on map
-                  </Typography>
-                </Box>
-              )}
             </Stack>
-
           </Stack>
         </Box>
       </DialogContent>
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: "flex-end", borderTop: 1, borderColor: "divider" }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          gap: 1,
+          justifyContent: "flex-end",
+          borderTop: 1,
+          borderColor: "divider",
+        }}
+      >
         {/* Error message (only show if conversion failed and we're using thumbnail) */}
         {conversionError && !useConvertedImage && (
-          <Box sx={{ width: '100%', mb: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
-            <Typography variant="caption" color="warning.dark" sx={{ fontSize: '0.75rem' }}>
+          <Box
+            sx={{
+              width: "100%",
+              mb: 1,
+              p: 1,
+              bgcolor: "warning.light",
+              borderRadius: 1,
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="warning.dark"
+              sx={{ fontSize: "0.75rem" }}
+            >
               Using thumbnail (conversion failed: {conversionError})
             </Typography>
           </Box>
         )}
 
         {/* Action buttons */}
-        <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: "100%" }}>
-          <Button onClick={handleClose} color="inherit" size="medium" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button
+            onClick={handleClose}
+            color="inherit"
+            size="medium"
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+          >
             Close
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => setThenNowModalOpen(true)}
+            startIcon={<History />}
+            size="medium"
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+          >
+            Then vs Now
           </Button>
           {currentPhoto.DOWNLOAD_LINK && (
             <Button
@@ -816,7 +929,7 @@ export default function PhotoViewer({
               Download TIFF
             </Button>
           )}
-        </Stack>
+        </Box>
       </DialogActions>
 
       {/* Full Screen Zoom Dialog */}
@@ -987,7 +1100,10 @@ export default function PhotoViewer({
             alt={currentPhoto.IMAGE_NAME}
             onLoad={(e) => {
               const img = e.currentTarget;
-              setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+              setImageDimensions({
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+              });
             }}
             onDragStart={(e) => e.preventDefault()} // Prevent native drag
             onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
@@ -1009,7 +1125,13 @@ export default function PhotoViewer({
           />
         </Box>
       </Dialog>
+
+      {/* Then vs Now Modal */}
+      <ThenNowModal
+        open={thenNowModalOpen}
+        photo={currentPhoto}
+        onClose={() => setThenNowModalOpen(false)}
+      />
     </Dialog>
   );
 }
-
