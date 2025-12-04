@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  Button,
   Box,
   Typography,
   Chip,
@@ -19,10 +20,11 @@ import {
   CalendarToday,
   PhotoSizeSelectActual,
   Image as ImageIcon,
-  Place,
+  History,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import apiClient from "../lib/apiClient";
+import ThenNowModal from "./ThenNowModal";
 
 interface PhotoGalleryProps {
   photos: EnhancedPhoto[];
@@ -45,6 +47,7 @@ export default function PhotoGallery({
 }: PhotoGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -159,10 +162,14 @@ export default function PhotoGallery({
               transform: "translateY(-50%)",
               zIndex: 2,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)",
               "&:hover": {
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)",
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.2)"
+                    : "rgba(0, 0, 0, 0.1)",
               },
               "&.Mui-disabled": {
                 display: "none",
@@ -206,10 +213,14 @@ export default function PhotoGallery({
               transform: "translateY(-50%)",
               zIndex: 2,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)",
               "&:hover": {
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)",
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.2)"
+                    : "rgba(0, 0, 0, 0.1)",
               },
               "&.Mui-disabled": {
                 display: "none",
@@ -233,13 +244,18 @@ export default function PhotoGallery({
                     currentPhoto.layerType === "aerial"
                       ? "info"
                       : currentPhoto.layerType === "ortho"
-                      ? "success"
-                      : "warning"
+                        ? "success"
+                        : "warning"
                   }
                   size="small"
                 />
                 {currentPhoto.cached && (
-                  <Chip label="Cached" color="success" size="small" variant="outlined" />
+                  <Chip
+                    label="Cached"
+                    color="success"
+                    size="small"
+                    variant="outlined"
+                  />
                 )}
               </Box>
               <Typography variant="h5" gutterBottom fontWeight={600}>
@@ -262,7 +278,9 @@ export default function PhotoGallery({
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PhotoSizeSelectActual sx={{ fontSize: 20, color: "text.secondary" }} />
+                <PhotoSizeSelectActual
+                  sx={{ fontSize: 20, color: "text.secondary" }}
+                />
                 <Typography variant="body2" color="text.secondary">
                   Scale:
                 </Typography>
@@ -288,18 +306,6 @@ export default function PhotoGallery({
                   {currentPhoto.IMAGE_NAME}
                 </Typography>
               </Box>
-
-              {currentPhoto.geometry && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Place sx={{ fontSize: 20, color: "text.secondary" }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Location:
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    Available on map
-                  </Typography>
-                </Box>
-              )}
             </Stack>
 
             {/* File size warning with download link */}
@@ -308,7 +314,9 @@ export default function PhotoGallery({
                 mt: 2,
                 p: 2,
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(251, 191, 36, 0.1)" : "rgba(251, 191, 36, 0.1)",
+                  theme.palette.mode === "dark"
+                    ? "rgba(251, 191, 36, 0.1)"
+                    : "rgba(251, 191, 36, 0.1)",
                 borderRadius: 2,
                 border: (theme) =>
                   theme.palette.mode === "dark"
@@ -316,7 +324,12 @@ export default function PhotoGallery({
                     : "1px solid rgba(251, 191, 36, 0.3)",
               }}
             >
-              <Typography variant="body2" color="warning.dark" fontWeight={600} sx={{ mb: 1 }}>
+              <Typography
+                variant="body2"
+                color="warning.dark"
+                fontWeight={600}
+                sx={{ mb: 1 }}
+              >
                 Full Resolution TIFF
               </Typography>
               {currentPhoto.DOWNLOAD_LINK ? (
@@ -327,25 +340,34 @@ export default function PhotoGallery({
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      display: 'inline-block',
-                      fontSize: '0.875rem',
+                      display: "inline-block",
+                      fontSize: "0.875rem",
                       fontWeight: 600,
-                      color: 'primary.main',
-                      textDecoration: 'none',
+                      color: "primary.main",
+                      textDecoration: "none",
                       mb: 0.5,
-                      '&:hover': {
-                        textDecoration: 'underline',
+                      "&:hover": {
+                        textDecoration: "underline",
                       },
                     }}
                   >
                     Download Full Resolution TIFF →
                   </Box>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Original high-resolution TIFF file (~10-30 MB). On iOS: long-press the link to download.
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Original high-resolution TIFF file (~10-30 MB). On iOS:
+                    long-press the link to download.
                   </Typography>
                 </>
               ) : (
-                <Typography variant="caption" color="text.secondary" display="block">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
                   Download not available for this photo.
                 </Typography>
               )}
@@ -357,11 +379,42 @@ export default function PhotoGallery({
       <Divider />
 
       {/* Actions */}
-      <Box sx={{ p: 2, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
-        <IconButton onClick={onClose} size="small" color="inherit">
-          <Close />
-        </IconButton>
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1,
+          justifyContent: "flex-end",
+          alignItems: "center",
+        }}
+      >
+        <Button
+          onClick={onClose}
+          color="inherit"
+          size="medium"
+          sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+        >
+          Close
+        </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={() => setThenNowModalOpen(true)}
+          startIcon={<History />}
+          size="medium"
+          sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+        >
+          Then vs Now
+        </Button>
       </Box>
+
+      {/* Then vs Now Modal */}
+      <ThenNowModal
+        open={thenNowModalOpen}
+        photo={currentPhoto}
+        onClose={() => setThenNowModalOpen(false)}
+      />
     </Dialog>
   );
 }

@@ -61,7 +61,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.9.3";
+const APP_VERSION = "2.9.4";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));

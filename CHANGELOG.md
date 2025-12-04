@@ -2,11 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.4] - 2025-12-05
+
+### Fixed
+
+- **Then vs Now Button in PhotoGallery**: Added missing "Then vs Now" button to PhotoGallery component (the correct component)
+  - Button now appears between "Close" and end of actions on both mobile and desktop
+  - Opens Then vs Now comparison modal for the current photo
+  - Fixed issue where button was added to PhotoViewer instead of PhotoGallery
+  - PhotoGallery is the actual component shown when viewing photos from the gallery
+- **Removed Redundant Location Text**: Removed "Location: Available on map" text from PhotoGallery
+  - Cleaner metadata display in photo gallery
+  - Location information is already evident from the map view
+
+### Technical
+
+- Updated `frontend/src/components/PhotoGallery.tsx`:
+  - Added `Button` component import from @mui/material
+  - Added `History` icon import from @mui/icons-material
+  - Added `ThenNowModal` component import
+  - Added `thenNowModalOpen` state management
+  - Changed Actions box to use flexWrap for mobile-friendly button layout
+  - Added "Then vs Now" button after "Close" button
+  - Removed geometry-based location display section
+  - Removed unused `Place` icon import
+  - Integrated ThenNowModal component at end of Dialog
+
 ## [2.9.3] - 2025-12-05
 
 ### Fixed
 
 - **Then vs Now Button in PhotoViewer**: Added missing "Then vs Now" button to PhotoViewer gallery modal
+  - NOTE: This was the wrong component, fixed in v2.9.4 by adding to PhotoGallery instead
   - Button now appears between "Close" and "Download TIFF" on both mobile and desktop
   - Opens Then vs Now comparison modal for the current photo
   - Fixed issue where button was added to wrong component (PhotoPreviewModal instead of PhotoViewer)
