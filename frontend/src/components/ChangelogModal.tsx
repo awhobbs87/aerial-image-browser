@@ -29,6 +29,27 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.0.0",
+    date: "2025-12-05",
+    changes: [
+      {
+        type: "changed",
+        description:
+          "PhotoViewer Gallery Redesign: Complete metadata section overhaul - combined date header with chips (single row), converted 'Then vs Now' to bordered icon button, condensed Scale/File into single row, inline download link, reduced all padding (3→2, 2→1.5), smaller chips (22px→18px). Result: 50%+ vertical space savings on mobile",
+      },
+      {
+        type: "changed",
+        description:
+          "Footer Simplification: Gallery footer now shows only Close icon button (removed redundant text button)",
+      },
+      {
+        type: "fixed",
+        description:
+          "Code Cleanup: Deleted unused PhotoGallery component (382 lines) - was never imported or used. PhotoViewer is the single component for all photo viewing (both gallery and preview modes)",
+      },
+    ],
+  },
+  {
     version: "2.9.5",
     date: "2025-12-05",
     changes: [

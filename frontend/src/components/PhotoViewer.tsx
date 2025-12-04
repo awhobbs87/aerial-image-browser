@@ -2,14 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogActions,
   Box,
   Typography,
   Chip,
   Stack,
   IconButton,
   CircularProgress,
-  Divider,
   useTheme,
   useMediaQuery,
   LinearProgress,
@@ -920,25 +918,12 @@ export default function PhotoViewer({
             )}
           </Stack>
         </Box>
-      </DialogContent>
-
-      <Divider />
-
-      <DialogActions
-        sx={{
-          p: 2,
-          gap: 1,
-          justifyContent: "flex-end",
-          borderTop: 1,
-          borderColor: "divider",
-        }}
-      >
-        {/* Error message (only show if conversion failed and we're using thumbnail) */}
+        {/* Error message inline (only show if conversion failed and we're using thumbnail) */}
         {conversionError && !useConvertedImage && (
           <Box
             sx={{
-              width: "100%",
-              mb: 1,
+              mx: { xs: 1.5, sm: 2 },
+              mb: { xs: 1.5, sm: 2 },
               p: 1,
               bgcolor: "warning.light",
               borderRadius: 1,
@@ -953,22 +938,7 @@ export default function PhotoViewer({
             </Typography>
           </Box>
         )}
-
-        {/* Action buttons */}
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 1,
-            justifyContent: "flex-end",
-          }}
-        >
-          <IconButton onClick={handleClose} size="small" color="inherit">
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogActions>
+      </DialogContent>
 
       {/* Full Screen Zoom Dialog */}
       <Dialog
