@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.1] - 2025-12-05
+
+### Fixed
+
+- **Mobile Pinch-to-Zoom Crashes**: Complete fix for pinch-to-zoom crashes in fullscreen photo viewer
+  - Removed recursive zoom velocity algorithm that was causing feedback loops
+  - Implemented non-recursive zoom handler with recursion prevention flag
+  - Reduced zoom sensitivity to 1.1 (from 1.15) for much gentler mobile pinch control
+  - Added `isHandlingZoom` flag to prevent cascading zoom events
+  - Added animation constraint handler to prevent viewport from going off-screen
+  - More conservative zoom settings: slower animations (0.5s), gentler spring (8), limited zoom speed (1.5/s)
+  - Added strict viewport constraints: `maxZoomPixelRatio: 2.5`, `visibilityRatio: 1.0`
+  - Prevents black screens and crashes from aggressive pinch gestures
+
+### Technical
+
+- Updated `frontend/src/components/OpenSeadragonViewer.tsx`:
+  - Removed velocity tracking variables (`lastZoom`, `lastZoomTime`) that caused recursion
+  - Simplified zoom handler to only clamp when necessary, using `requestAnimationFrame`
+  - Added `viewer.addHandler("animation")` to continuously apply viewport constraints
+  - Reduced `zoomPerClick` to 1.3, `zoomPerScroll` to 1.1, `zoomPerSecond` to 1.5
+  - Increased `animationTime` to 0.5s and reduced `springStiffness` to 8
+
 ## [2.9.0] - 2025-12-05
 
 ### Added
@@ -18,6 +41,7 @@ All notable changes to this project will be documented in this file.
   - Added zoom velocity limiting (max 5.0 units/second) to prevent runaway zooming
   - Implemented intelligent zoom constraints based on image size
   - Prevents black screen crashes caused by extreme zoom levels
+  - NOTE: This fix had issues and was replaced by the complete fix in v2.9.1
 - **Image Refresh**: Fixed fullscreen viewer not updating when switching between different photos
   - Viewer now properly destroys and recreates OpenSeadragon instance on image URL change
   - Photo preview modal correctly displays new image when navigating between photos

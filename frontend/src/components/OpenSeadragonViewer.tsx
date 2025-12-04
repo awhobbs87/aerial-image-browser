@@ -96,8 +96,7 @@ export default function OpenSeadragonViewer({
     }
 
     const { minZoom, maxZoom, defaultZoom } = calculateZoomLimits();
-    let lastZoom = defaultZoom;
-    let lastZoomTime = Date.now();
+    let isHandlingZoom = false; // Prevent recursive zoom handling
 
     // Initialize OpenSeadragon
     const viewer = OpenSeadragon({
@@ -108,16 +107,21 @@ export default function OpenSeadragonViewer({
         type: "image",
         url: imageUrl,
       },
-      // Zoom settings
+      // Zoom settings - conservative values to prevent crashes
       minZoomLevel: minZoom,
       maxZoomLevel: maxZoom,
       defaultZoomLevel: defaultZoom,
-      zoomPerClick: 1.4,
-      zoomPerScroll: 1.15, // Reduced from 1.2 for smoother scroll/pinch zoom
-      zoomPerSecond: 2.0, // Limit zoom speed to prevent runaway zooming
+      zoomPerClick: 1.3, // Reduced for smoother zooming
+      zoomPerScroll: 1.1, // Very conservative for mobile pinch
+      zoomPerSecond: 1.5, // Limit zoom speed to prevent runaway zooming
       // Smooth animations
-      animationTime: 0.3,
-      springStiffness: 10,
+      animationTime: 0.5, // Slower animation for better control
+      springStiffness: 8, // Less stiff for smoother motion
+      // Constraints
+      minZoomImageRatio: 0.8, // Allow slight zoom out
+      maxZoomPixelRatio: 2.5, // Limit maximum zoom to prevent crashes
+      visibilityRatio: 1.0, // Keep image fully visible
+      constrainDuringPan: true,
       // Gesture settings
       gestureSettingsMouse: {
         clickToZoom: true,
@@ -140,8 +144,6 @@ export default function OpenSeadragonViewer({
       showHomeControl: false,
       showZoomControl: false,
       showFullPageControl: false,
-      constrainDuringPan: true,
-      visibilityRatio: 0.5,
       minPixelRatio: 1.0, // Maintain 1:1 pixel ratio for maximum sharpness
       // Performance
       imageLoaderLimit: 2,
@@ -158,49 +160,44 @@ export default function OpenSeadragonViewer({
       wrapVertical: false,
     });
 
-    // Combined zoom handler: update UI and enforce limits
+    // Zoom handler: update UI and enforce limits
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     viewer.addHandler("zoom", (event: any) => {
+      // Prevent recursive handling
+      if (isHandlingZoom) return;
+
       const currentZoom = event.zoom;
-      const now = Date.now();
-      const timeDelta = (now - lastZoomTime) / 1000; // seconds
-      const zoomDelta = Math.abs(currentZoom - lastZoom);
-
-      // Calculate zoom velocity (zoom units per second)
-      const zoomVelocity = timeDelta > 0 ? zoomDelta / timeDelta : 0;
-
-      // If zoom velocity is too high, clamp the zoom to prevent runaway zooming
-      // This is the key fix for mobile pinch-to-zoom going crazy
-      const maxZoomVelocity = 5.0; // Max zoom units per second
-      if (zoomVelocity > maxZoomVelocity) {
-        // Clamp to a reasonable zoom level based on direction
-        const clampedZoom =
-          currentZoom > lastZoom
-            ? lastZoom + maxZoomVelocity * timeDelta
-            : lastZoom - maxZoomVelocity * timeDelta;
-
-        viewer.viewport.zoomTo(
-          Math.max(minZoom, Math.min(maxZoom, clampedZoom)),
-        );
-        lastZoom = clampedZoom;
-        lastZoomTime = now;
-        debouncedZoomUpdate(clampedZoom);
-        return; // Exit early, don't process further
-      }
-
-      // Update tracking variables
-      lastZoom = currentZoom;
-      lastZoomTime = now;
 
       // Update zoom level display (debounced)
       debouncedZoomUpdate(currentZoom);
 
-      // Prevent black screen by clamping zoom (immediate, no animation)
+      // Check if we need to clamp the zoom
+      let needsClamp = false;
+      let clampedValue = currentZoom;
+
       if (currentZoom > maxZoom) {
-        viewer.viewport.zoomTo(maxZoom);
+        needsClamp = true;
+        clampedValue = maxZoom;
       } else if (currentZoom < minZoom) {
-        viewer.viewport.zoomTo(minZoom);
+        needsClamp = true;
+        clampedValue = minZoom;
       }
+
+      // If we need to clamp, do it carefully to avoid recursion
+      if (needsClamp) {
+        isHandlingZoom = true;
+        requestAnimationFrame(() => {
+          viewer.viewport.zoomTo(clampedValue, undefined, true);
+          isHandlingZoom = false;
+        });
+      }
+    });
+
+    // Add constraint handler to prevent viewport from going completely black
+    // This applies constraints during animation to keep content visible
+    viewer.addHandler("animation", () => {
+      if (isHandlingZoom) return;
+      viewer.viewport.applyConstraints();
     });
 
     osdRef.current = viewer;
