@@ -2,9 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.0] - 2025-12-05
+
+### Added
+
+- **Then vs Now Button in Fullscreen**: Added History button to fullscreen photo viewer
+  - Button appears in control panel when viewing photos in fullscreen mode
+  - Closes fullscreen and opens Then vs Now comparison modal with one click
+  - Improves accessibility to comparison feature from fullscreen view
+
+### Fixed
+
+- **Mobile Pinch-to-Zoom**: Fixed excessive zoom speed and black screen crashes in fullscreen photo viewer
+  - Reduced zoom sensitivity from 1.2 to 1.15 for smoother control
+  - Added zoom velocity limiting (max 5.0 units/second) to prevent runaway zooming
+  - Implemented intelligent zoom constraints based on image size
+  - Prevents black screen crashes caused by extreme zoom levels
+- **Image Refresh**: Fixed fullscreen viewer not updating when switching between different photos
+  - Viewer now properly destroys and recreates OpenSeadragon instance on image URL change
+  - Photo preview modal correctly displays new image when navigating between photos
+- **Mobile Location Button**: Implemented actual GPS geolocation for "My Location" button
+  - Button now uses device GPS to center map on user's current location
+  - Added loading state with pulsing animation while fetching location
+  - Graceful fallback to search center or Tasmania if location unavailable
+  - Proper error handling for denied permissions or unsupported browsers
+
+### Technical
+
+- Updated `frontend/src/components/OpenSeadragonViewer.tsx`:
+  - Added zoom velocity tracking and limiting algorithm
+  - Added `onThenNowClick` prop and History button in controls
+  - Fixed viewer re-initialization on imageUrl changes
+- Updated `frontend/src/components/PhotoPreviewModal.tsx`:
+  - Connected fullscreen viewer to ThenNowModal via `onThenNowClick` handler
+  - Cleaned up unused `useConvertedImage` references
+- Updated `frontend/src/components/MapZoomControls.tsx`:
+  - Implemented `navigator.geolocation.getCurrentPosition()` API
+  - Added `locatingUser` state with visual feedback
+  - Enhanced error handling and fallback logic
+
 ## [2.8.0] - 2025-11-29
 
 ### Fixed
+
 - **Mobile Welcome Screen**: Hidden welcome cards on mobile when no search is active
   - Map now displays immediately on mobile without welcome screen overlay
   - Welcome cards only show on desktop (md breakpoint and up)
@@ -13,6 +53,7 @@ All notable changes to this project will be documented in this file.
 ## [2.7.0] - 2025-11-29
 
 ### Added
+
 - **Pin-Drop Location Selection**: Click anywhere on the map to drop a pin, preview coordinates, then confirm to search
   - Visual red marker with pulsing circle animation shows selected location
   - Floating action buttons display coordinates and provide "Search Here" / "Cancel" options
@@ -24,6 +65,7 @@ All notable changes to this project will be documented in this file.
   - Better mobile user experience with immediate map interaction
 
 ### Changed
+
 - **Search Behavior**: Map clicks now show pending pin instead of immediate search
   - User must confirm with "Search Here" button to trigger API call
   - Provides visual feedback and confirmation step for location selection
@@ -32,11 +74,13 @@ All notable changes to this project will be documented in this file.
   - MapView always renders (no conditional rendering based on searchParams)
 
 ### Improved
+
 - **Search Control**: Two-step confirmation process prevents accidental searches from map exploration
 - **Mobile UX**: Removed welcome screen barrier, immediate access to map functionality
 - **Visual Feedback**: Clear coordinate display and action buttons for better user understanding
 
 ### Technical
+
 - Created `frontend/src/components/PendingPinMarker.tsx` - Red marker with pulsing animation
 - Created `frontend/src/components/PinActionButtons.tsx` - Floating action buttons with coordinates
 - Created `frontend/src/lib/formatCoordinates.ts` - Coordinate formatting utility
@@ -48,6 +92,7 @@ All notable changes to this project will be documented in this file.
 ## [2.6.0] - 2025-11-28
 
 ### Added
+
 - **Web Worker TIFF Conversion**: Client-side TIFF to PNG/WebP conversion in background thread
   - Off-main-thread processing prevents UI blocking
   - **PNG format (default)**: Truly lossless, zero compression artifacts, absolute maximum quality
@@ -67,6 +112,7 @@ All notable changes to this project will be documented in this file.
   - Client-side conversions now benefit all users
 
 ### Changed
+
 - Replaced react-zoom-pan-pinch with OpenSeadragon for better large image handling
 - TIFF conversion now uses client-side Web Worker instead of external service
 - **Switched to PNG format (default)** for truly lossless conversion (was WebP)
@@ -77,7 +123,7 @@ All notable changes to this project will be documented in this file.
   - 1-5MP: max 15x zoom
   - 5-15MP: max 10x zoom
   - 15-25MP: max 5x zoom
-  - >25MP: max 3x zoom
+  - > 25MP: max 3x zoom
 - OpenSeadragon quality settings optimized:
   - minPixelRatio 1.0 (1:1 pixel mapping)
   - blendTime 0 (instant sharpness, no blending)
@@ -86,6 +132,7 @@ All notable changes to this project will be documented in this file.
   - immediateRender false (waits for high-quality tiles)
 
 ### Improved
+
 - **Image Sharpness**: MAXIMUM quality with zero compromises
   - PNG format: Truly lossless, no compression artifacts whatsoever
   - Pixel-perfect rendering: imageSmoothingEnabled = false
@@ -97,6 +144,7 @@ All notable changes to this project will be documented in this file.
 - **Cache Efficiency**: Client-converted images shared via R2 cache
 
 ### Technical
+
 - Created `frontend/src/workers/tiffConversion.worker.ts` for background TIFF conversion
 - Created `frontend/src/hooks/useTiffConversion.ts` for worker lifecycle management
 - Created `frontend/src/components/OpenSeadragonViewer.tsx` with intelligent zoom
@@ -106,11 +154,13 @@ All notable changes to this project will be documented in this file.
 ## [2.5.0] - 2025-11-28
 
 ### Added
+
 - Intelligent search caching (5-minute cache for geocoding results)
 - Immediate loading feedback when typing in search bar
 - Better search result formatting (Google Maps style, removes duplicate Tasmania references)
 
 ### Changed
+
 - Reduced debounce time from 300ms to 150ms for faster search responsiveness
 - Optimized mobile UI with reduced padding across all components:
   - Sidebar padding reduced from 2/3 to 1.5/3 (mobile/desktop)
@@ -124,6 +174,7 @@ All notable changes to this project will be documented in this file.
 - Quick filter chips and buttons optimized for mobile touch targets
 
 ### Improved
+
 - Search now shows loading state immediately when typing (no delay)
 - Better error handling in geocoding service
 - More efficient use of screen space on mobile devices
@@ -133,6 +184,7 @@ All notable changes to this project will be documented in this file.
 ## [2.4.0] - 2025-11-25
 
 ### Added
+
 - Professional zoom/pan image viewer with react-zoom-pan-pinch library:
   - Smooth zoom transitions with proper easing animations
   - Mouse wheel zoom at cursor position (not center)
@@ -142,17 +194,20 @@ All notable changes to this project will be documented in this file.
   - Better touch gesture recognition on mobile
 
 ### Changed
+
 - Replaced manual zoom/pan implementation (~155 lines) with react-zoom-pan-pinch library
 - Improved PhotoPreviewModal zoom controls to use library functions
 - Enhanced zoom behavior: minScale 0.5, maxScale 5, smooth 0.1 step increments
 
 ### Improved
+
 - Significantly reduced component complexity in PhotoPreviewModal
 - Better mobile performance with native gesture handling
 - Easier maintenance with battle-tested library replacing custom code
 - Industry-standard interaction patterns matching native photo viewers
 
 ### Removed
+
 - Manual touch event handlers (getTouchDistance, getTouchCenter)
 - Complex state management (zoomLevel, panPosition, isDragging, dragStart, pinchStart, lastZoomLevel)
 - Refs for tracking stale closures (zoomLevelRef, panPositionRef)
@@ -161,6 +216,7 @@ All notable changes to this project will be documented in this file.
 ## [2.3.0] - 2025-01-27
 
 ### Added
+
 - Windows 7 Aero-style transparent search bar:
   - Enhanced transparency (35% opacity) with 40px blur for better map visibility
   - Improved backdrop-filter with 200% saturation for frosted glass effect
@@ -172,6 +228,7 @@ All notable changes to this project will be documented in this file.
   - Smooth drag experience similar to viewing large photos
 
 ### Changed
+
 - Comparison section styling:
   - More compact design with reduced vertical space
   - Frosted glass appearance with Apple Liquid Glass design tokens
@@ -183,6 +240,7 @@ All notable changes to this project will be documented in this file.
   - Better touch handling on iOS to prevent text selection
 
 ### Fixed
+
 - iOS text selection issue when trying to pan images:
   - Added user-select: none and WebkitUserSelect: none
   - Added WebkitTouchCallout: none to prevent iOS callout menu
@@ -192,6 +250,7 @@ All notable changes to this project will be documented in this file.
 ## [2.2.0] - 2024-11-24
 
 ### Added
+
 - TIFF to WEBP/PNG conversion service integration:
   - Automatic background conversion when opening photo preview modals
   - Silent conversion service that converts TIFF images to WEBP format for better web performance
@@ -205,11 +264,13 @@ All notable changes to this project will be documented in this file.
   - Zoom level indicator in both top-left corner and pan control center
 
 ### Changed
+
 - Conversion progress bar moved from top to bottom of image preview for better visibility
 - Photo preview now automatically displays converted WEBP images instead of thumbnails when available
 - Full-screen mode zoom controls reorganized with clearer button purposes
 
 ### Improved
+
 - Better image loading experience with thumbnail shown while conversion happens in background
 - Improved mobile image viewing with proper fallback handling
 - Enhanced desktop image viewing with automatic high-quality image conversion
@@ -218,6 +279,7 @@ All notable changes to this project will be documented in this file.
 ## [2.1.0] - 2024-11-19
 
 ### Added
+
 - Advanced alignment controls for Then vs Now modal:
   - Interactive position adjustment (X/Y offset)
   - Scale control (0.5x to 2x zoom)
@@ -232,12 +294,14 @@ All notable changes to this project will be documented in this file.
 - Landscape orientation support for Then vs Now modal on mobile
 
 ### Changed
+
 - Then vs Now modal now uses Esri World Imagery instead of LIST services for better reliability
 - Mobile view toggles consolidated into single unified control (removed duplicate Grid button)
 - Comparison tray buttons made more compact and reordered (Then vs Now first)
 - Image manipulation controls moved above images in desktop Then vs Now modal
 
 ### Improved
+
 - Better space efficiency on mobile with optimized toggle button layouts
 - Improved Then vs Now modal layout for desktop (no scrolling needed)
 - Fixed satellite imagery loading issues
@@ -247,18 +311,21 @@ All notable changes to this project will be documented in this file.
 ## [2.0.0] - 2024-11-19
 
 ### Added
+
 - Area selection feature - draw rectangles on map to search for photos covering that area
 - PhotoViewer component - unified photo viewing experience across all views
 - Mobile filter bottom sheet for better mobile UX
 - Changelog modal accessible by clicking version number
 
 ### Changed
+
 - Redesigned layout with collapsible sidebar (replaced resizable sidebar)
 - Replaced ComparisonTray with floating action button (FAB) menu
 - Redesigned FilterPanel with more compact design and better visual hierarchy
 - Consolidated PhotoPreviewModal and PhotoGallery into single PhotoViewer component
 
 ### Improved
+
 - Optimized PhotoMarkers - reduced max polygons from 200 to 100 with prioritization
 - Enhanced theme with better contrast, spacing, and consistent styling
 - Better mobile experience with improved touch targets and responsive design
@@ -268,4 +335,5 @@ All notable changes to this project will be documented in this file.
 ## [1.6.0] - Previous Version
 
 ### Added
+
 - Project foundation setup

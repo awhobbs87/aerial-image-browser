@@ -47,7 +47,11 @@ const LAYER_TYPE_LABELS: Record<string, string> = {
   digital: "DIGITAL",
 };
 
-export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreviewModalProps) {
+export default function PhotoPreviewModal({
+  photo,
+  open,
+  onClose,
+}: PhotoPreviewModalProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [fullScreenOpen, setFullScreenOpen] = useState(false);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
@@ -67,7 +71,9 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
     cleanup,
   } = useTiffConversion();
 
-  const thumbnailUrl = photo ? apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId) : "";
+  const thumbnailUrl = photo
+    ? apiClient.getThumbnailUrl(photo.IMAGE_NAME, photo.layerId)
+    : "";
   const displayImageUrl = convertedImageUrl || thumbnailUrl;
 
   // Reset state when modal closes
@@ -83,7 +89,10 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
     const loadImage = async () => {
       if (open && photo?.DOWNLOAD_LINK && !convertedImageUrl && !converting) {
         // First, check if WebP is already cached in R2
-        const isCached = await apiClient.isWebPCached(photo.IMAGE_NAME, photo.layerId);
+        const isCached = await apiClient.isWebPCached(
+          photo.IMAGE_NAME,
+          photo.layerId,
+        );
 
         if (isCached) {
           // Use the cached WebP from R2 (server-side)
@@ -93,14 +102,16 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
         }
 
         // Convert locally and upload to R2
-        console.log(`Converting TIFF locally for ${photo.IMAGE_NAME} (using PNG for maximum quality)`);
+        console.log(
+          `Converting TIFF locally for ${photo.IMAGE_NAME} (using PNG for maximum quality)`,
+        );
         const tiffUrl = apiClient.getTiffUrl(photo.IMAGE_NAME, photo.layerId);
         await convertTiff(tiffUrl, {
           quality: 100,
           imageName: photo.IMAGE_NAME,
           layerId: photo.layerId,
           uploadToR2: true,
-          format: 'png', // Use PNG for absolute maximum quality
+          format: "png", // Use PNG for absolute maximum quality
         });
       }
     };
@@ -145,7 +156,11 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <ImageIcon color="primary" sx={{ fontSize: 20 }} />
-          <Typography variant="h6" component="span" sx={{ fontSize: "1rem", fontWeight: 500 }}>
+          <Typography
+            variant="h6"
+            component="span"
+            sx={{ fontSize: "1rem", fontWeight: 500 }}
+          >
             Photo Preview
           </Typography>
         </Box>
@@ -193,13 +208,26 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                 boxShadow: 2,
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mb: 0.5 }}
+              >
                 <CircularProgress size={16} />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.75rem" }}
+                >
                   Converting to WEBP... {conversionProgress}%
                 </Typography>
               </Stack>
-              <LinearProgress variant="determinate" value={conversionProgress} sx={{ height: 4, borderRadius: 2 }} />
+              <LinearProgress
+                variant="determinate"
+                value={conversionProgress}
+                sx={{ height: 4, borderRadius: 2 }}
+              />
             </Box>
           )}
 
@@ -244,11 +272,8 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
             alt={photo.IMAGE_NAME}
             onLoad={() => setImageLoaded(true)}
             onError={() => {
-              // If converted image fails to load, fallback to thumbnail
-              if (useConvertedImage) {
-                setUseConvertedImage(false);
-                setImageLoaded(true);
-              }
+              console.error("Failed to load image:", displayImageUrl);
+              setImageLoaded(true);
             }}
             style={{
               maxWidth: "100%",
@@ -264,30 +289,36 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           <Stack spacing={1.5}>
             {/* Header with chips */}
             <Box>
-              <Box sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}>
+              <Box
+                sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}
+              >
                 <Chip
                   label={LAYER_TYPE_LABELS[photo.layerType]}
                   color={
                     photo.layerType === "aerial"
                       ? "info"
                       : photo.layerType === "ortho"
-                      ? "success"
-                      : "warning"
+                        ? "success"
+                        : "warning"
                   }
                   size="small"
                   sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
                 />
                 {photo.cached && (
-                  <Chip 
-                    label="Cached" 
-                    color="success" 
-                    size="small" 
+                  <Chip
+                    label="Cached"
+                    color="success"
+                    size="small"
                     variant="outlined"
                     sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
                   />
                 )}
               </Box>
-              <Typography variant="h6" gutterBottom sx={{ fontSize: "0.9375rem", fontWeight: 500 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontSize: "0.9375rem", fontWeight: 500 }}
+              >
                 {photo.dateFormatted || "Unknown Date"}
               </Typography>
             </Box>
@@ -307,7 +338,9 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PhotoSizeSelectActual sx={{ fontSize: 20, color: "text.secondary" }} />
+                <PhotoSizeSelectActual
+                  sx={{ fontSize: 20, color: "text.secondary" }}
+                />
                 <Typography variant="body2" color="text.secondary">
                   Scale:
                 </Typography>
@@ -346,26 +379,55 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
                 </Box>
               )}
             </Stack>
-
           </Stack>
         </Box>
       </DialogContent>
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          gap: 1,
+          justifyContent: "flex-end",
+          borderTop: 1,
+          borderColor: "divider",
+        }}
+      >
         {/* Error message (only show if conversion failed and we're using thumbnail) */}
         {conversionError && !convertedImageUrl && (
-          <Box sx={{ width: '100%', mb: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
-            <Typography variant="caption" color="warning.dark" sx={{ fontSize: '0.75rem' }}>
+          <Box
+            sx={{
+              width: "100%",
+              mb: 1,
+              p: 1,
+              bgcolor: "warning.light",
+              borderRadius: 1,
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="warning.dark"
+              sx={{ fontSize: "0.75rem" }}
+            >
               Using thumbnail (conversion failed: {conversionError})
             </Typography>
           </Box>
         )}
 
         {/* Action buttons */}
-        <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: '100%' }}>
-          <Button onClick={handleClose} color="inherit" size="medium" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="flex-end"
+          sx={{ width: "100%" }}
+        >
+          <Button
+            onClick={handleClose}
+            color="inherit"
+            size="medium"
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
+          >
             Close
           </Button>
           <Button
@@ -374,7 +436,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
             onClick={() => setThenNowModalOpen(true)}
             startIcon={<History />}
             size="medium"
-            sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
           >
             Then vs Now
           </Button>
@@ -387,7 +449,7 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
               rel="noopener noreferrer"
               startIcon={<Download />}
               size="medium"
-              sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+              sx={{ fontSize: "0.875rem", fontWeight: 500 }}
             >
               Download TIFF
             </Button>
@@ -402,6 +464,10 @@ export default function PhotoPreviewModal({ photo, open, onClose }: PhotoPreview
           imageWidth={imageWidth}
           imageHeight={imageHeight}
           onClose={() => setFullScreenOpen(false)}
+          onThenNowClick={() => {
+            setFullScreenOpen(false);
+            setThenNowModalOpen(true);
+          }}
         />
       )}
 

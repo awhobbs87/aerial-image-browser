@@ -1,4 +1,11 @@
-import { useState, useMemo, useCallback, lazy, Suspense, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  lazy,
+  Suspense,
+  useEffect,
+} from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -15,22 +22,26 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { 
-  GridView, 
-  Map as MapIcon, 
-  ExpandLess, 
-  Search as SearchIcon, 
-  Timeline, 
-  Menu, 
-  ChevronLeft, 
-  FilterList, 
+import {
+  GridView,
+  Map as MapIcon,
+  ExpandLess,
+  Search as SearchIcon,
+  Timeline,
+  Menu,
+  ChevronLeft,
+  FilterList,
   History,
   PhotoLibrary,
 } from "@mui/icons-material";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lightTheme, darkTheme } from "./theme";
-import { appleLiquidGlass, getThemeValue, createBackdropFilter } from "./theme/apple-liquid-glass";
+import {
+  appleLiquidGlass,
+  getThemeValue,
+  createBackdropFilter,
+} from "./theme/apple-liquid-glass";
 import AppBar from "./components/AppBar";
 import SearchBar from "./components/SearchBar";
 import PhotoGrid from "./components/PhotoGrid";
@@ -50,7 +61,7 @@ import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
 
-const APP_VERSION = "2.8.0";
+const APP_VERSION = "2.9.0";
 
 // Lazy load MapView component for better initial load performance
 const MapView = lazy(() => import("./components/MapView"));
@@ -72,7 +83,8 @@ const queryClient = new QueryClient({
 type ViewMode = "grid" | "map";
 type ResultsViewMode = "grid" | "timeline" | "gallery";
 type ThemeMode = "light" | "dark" | "system";
-const getPhotoKey = (photo: EnhancedPhoto) => `${photo.layerId}-${photo.OBJECTID}`;
+const getPhotoKey = (photo: EnhancedPhoto) =>
+  `${photo.layerId}-${photo.OBJECTID}`;
 
 // Helper function to get the initial theme preference
 const getInitialTheme = (): ThemeMode => {
@@ -84,7 +96,10 @@ const getInitialTheme = (): ThemeMode => {
 };
 
 // Helper function to determine if dark mode should be active
-const shouldUseDarkMode = (themeMode: ThemeMode, prefersDark: boolean): boolean => {
+const shouldUseDarkMode = (
+  themeMode: ThemeMode,
+  prefersDark: boolean,
+): boolean => {
   if (themeMode === "system") {
     return prefersDark;
   }
@@ -101,24 +116,35 @@ function AppContent() {
   // Calculate actual dark mode state based on preference and system
   const darkMode = useMemo(
     () => shouldUseDarkMode(themeMode, prefersDarkMode),
-    [themeMode, prefersDarkMode]
+    [themeMode, prefersDarkMode],
   );
 
-  const [searchParams, setSearchParams] = useState<LocationSearchParams | null>(null);
+  const [searchParams, setSearchParams] = useState<LocationSearchParams | null>(
+    null,
+  );
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [resultsViewMode, setResultsViewMode] = useState<ResultsViewMode>("grid");
-  const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(null);
+  const [resultsViewMode, setResultsViewMode] =
+    useState<ResultsViewMode>("grid");
+  const [selectedPhoto, setSelectedPhoto] = useState<EnhancedPhoto | null>(
+    null,
+  );
   const [hoveredPhoto, setHoveredPhoto] = useState<EnhancedPhoto | null>(null);
-  const [visibleGridPhotos, setVisibleGridPhotos] = useState<EnhancedPhoto[]>([]);
-  const [searchCenter, setSearchCenter] = useState<[number, number] | null>(null);
+  const [visibleGridPhotos, setVisibleGridPhotos] = useState<EnhancedPhoto[]>(
+    [],
+  );
+  const [searchCenter, setSearchCenter] = useState<[number, number] | null>(
+    null,
+  );
   const [searchBoxExpanded, setSearchBoxExpanded] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
-  const [comparisonSelection, setComparisonSelection] = useState<EnhancedPhoto[]>([]);
+  const [comparisonSelection, setComparisonSelection] = useState<
+    EnhancedPhoto[]
+  >([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [thenNowModalOpen, setThenNowModalOpen] = useState(false);
   const [pendingPin, setPendingPin] = useState<[number, number] | null>(null);
@@ -151,17 +177,13 @@ function AppContent() {
   }, [pendingPin]);
 
   // Use React Query hook for fetching photos
-  const {
-    data,
-    isLoading,
-    error,
-  } = useSearchLocation(searchParams);
+  const { data, isLoading, error } = useSearchLocation(searchParams);
 
   // Extract available scales from fetched photos
   const availableScales = useMemo(() => {
     if (!data?.photos) return [];
     const scalesSet = new Set<number>();
-    data.photos.forEach(photo => {
+    data.photos.forEach((photo) => {
       if (photo.SCALE && photo.SCALE > 0) {
         scalesSet.add(photo.SCALE);
       }
@@ -174,7 +196,9 @@ function AppContent() {
     if (!data?.photos || data.photos.length === 0) return null;
 
     const years = data.photos
-      .map(photo => photo.FLY_DATE ? new Date(photo.FLY_DATE).getFullYear() : null)
+      .map((photo) =>
+        photo.FLY_DATE ? new Date(photo.FLY_DATE).getFullYear() : null,
+      )
       .filter((year): year is number => year !== null);
 
     if (years.length === 0) return null;
@@ -205,7 +229,7 @@ function AppContent() {
 
     // Filter by date range if specified
     if (filters.startDate || filters.endDate) {
-      photos = photos.filter(photo => {
+      photos = photos.filter((photo) => {
         if (!photo.FLY_DATE) return false;
         const photoDate = new Date(photo.FLY_DATE);
         if (filters.startDate && photoDate < filters.startDate) return false;
@@ -216,8 +240,8 @@ function AppContent() {
 
     // Filter by scale if specified
     if (filters.selectedScales.length > 0) {
-      photos = photos.filter(photo =>
-        photo.SCALE && filters.selectedScales.includes(photo.SCALE)
+      photos = photos.filter(
+        (photo) => photo.SCALE && filters.selectedScales.includes(photo.SCALE),
       );
     }
 
@@ -232,13 +256,19 @@ function AppContent() {
     }
 
     return photos;
-  }, [data?.photos, filters.selectedScales, filters.startDate, filters.endDate, filters.layerTypes]);
+  }, [
+    data?.photos,
+    filters.selectedScales,
+    filters.startDate,
+    filters.endDate,
+    filters.layerTypes,
+  ]);
 
   // Get favorite photos for modal
   const favoritePhotos = useMemo(() => {
     if (!data?.photos) return [];
-    return data.photos.filter(photo =>
-      favorites.has(`${photo.layerId}-${photo.OBJECTID}`)
+    return data.photos.filter((photo) =>
+      favorites.has(`${photo.layerId}-${photo.OBJECTID}`),
     );
   }, [data?.photos, favorites]);
 
@@ -252,12 +282,12 @@ function AppContent() {
 
     // Create a set of visible photo IDs for quick lookup
     const visibleIds = new Set(
-      visibleGridPhotos.map(p => `${p.layerId}-${p.OBJECTID}`)
+      visibleGridPhotos.map((p) => `${p.layerId}-${p.OBJECTID}`),
     );
 
     // Put visible photos first, then fill with remaining filtered photos
     const remainingPhotos = filteredPhotos.filter(
-      p => !visibleIds.has(`${p.layerId}-${p.OBJECTID}`)
+      (p) => !visibleIds.has(`${p.layerId}-${p.OBJECTID}`),
     );
 
     return [...visibleGridPhotos, ...remainingPhotos];
@@ -266,7 +296,7 @@ function AppContent() {
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
   const comparisonSelectionKeys = useMemo(
     () => new Set(comparisonSelection.map((photo) => getPhotoKey(photo))),
-    [comparisonSelection]
+    [comparisonSelection],
   );
   const primaryComparisonPhoto = comparisonSelection[0] ?? null;
   const trayHidden = comparisonModalOpen || thenNowModalOpen;
@@ -290,8 +320,12 @@ function AppContent() {
 
       // Derive scale bounds for server-side filtering (exact selection enforced client-side)
       const hasScaleSelection = filters.selectedScales.length > 0;
-      const minScale = hasScaleSelection ? Math.min(...filters.selectedScales) : undefined;
-      const maxScale = hasScaleSelection ? Math.max(...filters.selectedScales) : undefined;
+      const minScale = hasScaleSelection
+        ? Math.min(...filters.selectedScales)
+        : undefined;
+      const maxScale = hasScaleSelection
+        ? Math.max(...filters.selectedScales)
+        : undefined;
 
       setSearchParams({
         lat,
@@ -299,7 +333,8 @@ function AppContent() {
         layers: [0, 1, 2],
         startDate: filters.startDate?.toISOString(),
         endDate: filters.endDate?.toISOString(),
-        imageTypes: activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
+        imageTypes:
+          activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
         minScale,
         maxScale,
       });
@@ -312,7 +347,7 @@ function AppContent() {
         console.log("Searching for:", locationName);
       }
     },
-    [filters]
+    [filters],
   );
 
   const handleViewFavorites = useCallback(() => {
@@ -333,7 +368,11 @@ function AppContent() {
   }, []);
 
   const handleClearAllFavorites = useCallback(() => {
-    if (window.confirm(`Are you sure you want to remove all ${favorites.size} favorites?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to remove all ${favorites.size} favorites?`,
+      )
+    ) {
       setFavorites(new Set());
     }
   }, [favorites.size]);
@@ -344,34 +383,41 @@ function AppContent() {
         setViewMode(newMode);
       }
     },
-    []
+    [],
   );
 
   const handleResultsViewModeChange = useCallback(
-    (_event: React.MouseEvent<HTMLElement>, newMode: ResultsViewMode | null) => {
+    (
+      _event: React.MouseEvent<HTMLElement>,
+      newMode: ResultsViewMode | null,
+    ) => {
       if (newMode) {
         setResultsViewMode(newMode);
       }
     },
-    []
+    [],
   );
 
   // Unified handler for mobile 4-button control (Grid, Map, Timeline, Gallery)
   const handleMobileViewChange = useCallback(
     (_event: React.MouseEvent<HTMLElement>, newValue: string | null) => {
       if (!newValue) return;
-      
+
       if (newValue === "map") {
         setViewMode("map");
       } else {
         // For grid, timeline, or gallery, set viewMode to grid and update resultsViewMode
         setViewMode("grid");
-        if (newValue === "grid" || newValue === "timeline" || newValue === "gallery") {
+        if (
+          newValue === "grid" ||
+          newValue === "timeline" ||
+          newValue === "gallery"
+        ) {
           setResultsViewMode(newValue as ResultsViewMode);
         }
       }
     },
-    []
+    [],
   );
 
   // Get the current value for the unified mobile control
@@ -421,7 +467,7 @@ function AppContent() {
         selectedScales,
       });
     },
-    [availableScales]
+    [availableScales],
   );
 
   useEffect(() => {
@@ -430,25 +476,32 @@ function AppContent() {
       return;
     }
     const available = new Set(data.photos.map((photo) => getPhotoKey(photo)));
-    setComparisonSelection((prev) => prev.filter((photo) => available.has(getPhotoKey(photo))));
+    setComparisonSelection((prev) =>
+      prev.filter((photo) => available.has(getPhotoKey(photo))),
+    );
   }, [data?.photos]);
 
-  const handleToggleComparisonSelection = useCallback((photo: EnhancedPhoto) => {
-    const key = getPhotoKey(photo);
-    setComparisonSelection((prev) => {
-      const exists = prev.find((p) => getPhotoKey(p) === key);
-      if (exists) {
-        return prev.filter((p) => getPhotoKey(p) !== key);
-      }
-      if (prev.length >= 2) {
-        return [prev[1], photo];
-      }
-      return [...prev, photo];
-    });
-  }, []);
+  const handleToggleComparisonSelection = useCallback(
+    (photo: EnhancedPhoto) => {
+      const key = getPhotoKey(photo);
+      setComparisonSelection((prev) => {
+        const exists = prev.find((p) => getPhotoKey(p) === key);
+        if (exists) {
+          return prev.filter((p) => getPhotoKey(p) !== key);
+        }
+        if (prev.length >= 2) {
+          return [prev[1], photo];
+        }
+        return [...prev, photo];
+      });
+    },
+    [],
+  );
 
   const handleRemoveComparisonPhoto = useCallback((photoKey: string) => {
-    setComparisonSelection((prev) => prev.filter((photo) => getPhotoKey(photo) !== photoKey));
+    setComparisonSelection((prev) =>
+      prev.filter((photo) => getPhotoKey(photo) !== photoKey),
+    );
   }, []);
 
   const handleOpenComparisonModal = useCallback(() => {
@@ -538,13 +591,13 @@ function AppContent() {
           {/* Left Sidebar - Search, Filters, Results */}
           <Box
             sx={{
-              width: { 
-                xs: "100%", 
-                md: sidebarOpen ? "480px" : 0 
+              width: {
+                xs: "100%",
+                md: sidebarOpen ? "480px" : 0,
               },
-              display: { 
-                xs: "block", 
-                md: sidebarOpen ? "flex" : "none" 
+              display: {
+                xs: "block",
+                md: sidebarOpen ? "flex" : "none",
               },
               flexDirection: "column",
               borderRight: { md: sidebarOpen ? 1 : 0 },
@@ -563,11 +616,16 @@ function AppContent() {
               const target = e.currentTarget;
               const isScrolling = target.scrollHeight > target.clientHeight;
               const isAtTop = target.scrollTop === 0;
-              const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 1;
-              
+              const isAtBottom =
+                target.scrollTop + target.clientHeight >=
+                target.scrollHeight - 1;
+
               if (isScrolling) {
                 // If we're scrolling within the sidebar, stop propagation
-                if (!(isAtTop && e.deltaY < 0) && !(isAtBottom && e.deltaY > 0)) {
+                if (
+                  !(isAtTop && e.deltaY < 0) &&
+                  !(isAtBottom && e.deltaY > 0)
+                ) {
                   e.stopPropagation();
                 }
               }
@@ -593,7 +651,12 @@ function AppContent() {
             >
               {/* Mobile Search Button - Show button after search, hide search bar */}
               {searchParams && (
-                <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
+                <Box
+                  sx={{
+                    mb: { xs: 1.5, md: 2 },
+                    display: { xs: "block", md: "none" },
+                  }}
+                >
                   <Button
                     variant="outlined"
                     fullWidth
@@ -610,10 +673,15 @@ function AppContent() {
                   </Button>
                 </Box>
               )}
-              
+
               {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
               {!searchParams && (
-                <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
+                <Box
+                  sx={{
+                    mb: { xs: 1.5, md: 2 },
+                    display: { xs: "block", md: "none" },
+                  }}
+                >
                   <SearchBar onSearch={handleSearch} loading={isLoading} />
                 </Box>
               )}
@@ -632,7 +700,12 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile Filter Button */}
-                  <Box sx={{ mb: { xs: 1.5, md: 2 }, display: { xs: "block", md: "none" } }}>
+                  <Box
+                    sx={{
+                      mb: { xs: 1.5, md: 2 },
+                      display: { xs: "block", md: "none" },
+                    }}
+                  >
                     <Button
                       variant="outlined"
                       fullWidth
@@ -663,19 +736,24 @@ function AppContent() {
                       mb: 2,
                       display: { xs: "none", md: "block" },
                       // Apple Liquid Glass: Frosted glass with subtle elevation
-                      bgcolor: (theme) => getThemeValue(appleLiquidGlass.backgrounds.frosted, theme.palette.mode === "dark"),
+                      bgcolor: (theme) =>
+                        getThemeValue(
+                          appleLiquidGlass.backgrounds.frosted,
+                          theme.palette.mode === "dark",
+                        ),
                       ...createBackdropFilter(appleLiquidGlass.backdrop.module),
                       borderRadius: appleLiquidGlass.radius.medium,
                       px: 1.5,
                       py: 1,
-                      border: (theme) => `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
+                      border: (theme) =>
+                        `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
                       boxShadow: (theme) => {
                         const shadows = getThemeValue(
                           {
                             light: appleLiquidGlass.shadows.light,
                             dark: appleLiquidGlass.shadows.dark,
                           },
-                          theme.palette.mode === "dark"
+                          theme.palette.mode === "dark",
                         );
                         return `${shadows.medium}, ${shadows.innerFrosted}`;
                       },
@@ -692,7 +770,11 @@ function AppContent() {
                         sx={{
                           fontSize: appleLiquidGlass.typography.hint.fontSize,
                           fontWeight: 500,
-                          color: (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
+                          color: (theme) =>
+                            getThemeValue(
+                              appleLiquidGlass.text.secondary,
+                              theme.palette.mode === "dark",
+                            ),
                           flex: 1,
                           minWidth: 0,
                         }}
@@ -700,12 +782,21 @@ function AppContent() {
                         {comparisonSelection.length === 0
                           ? "Select photos to compare"
                           : comparisonSelection.length === 1
-                          ? "Select another photo or use Then vs Now"
-                          : "Ready to compare"}
+                            ? "Select another photo or use Then vs Now"
+                            : "Ready to compare"}
                       </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ flexShrink: 0 }}
+                      >
                         <Button
-                          variant={comparisonSelection.length >= 2 ? "contained" : "outlined"}
+                          variant={
+                            comparisonSelection.length >= 2
+                              ? "contained"
+                              : "outlined"
+                          }
                           color="primary"
                           size="small"
                           startIcon={<CompareArrowsIcon fontSize="small" />}
@@ -714,38 +805,62 @@ function AppContent() {
                           sx={{
                             fontWeight: 600,
                             minWidth: 100,
-                            fontSize: appleLiquidGlass.typography.button.fontSize,
+                            fontSize:
+                              appleLiquidGlass.typography.button.fontSize,
                             textTransform: "none",
                             px: 1.5,
                             py: 0.625,
                             borderRadius: appleLiquidGlass.radius.small,
-                            bgcolor: comparisonSelection.length >= 2
-                              ? (theme) => theme.palette.primary.main
-                              : "transparent",
-                            color: comparisonSelection.length >= 2
-                              ? "#ffffff"
-                              : (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
-                            border: (theme) => `1px solid ${
+                            bgcolor:
                               comparisonSelection.length >= 2
-                                ? theme.palette.primary.main
-                                : getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")
-                            }`,
+                                ? (theme) => theme.palette.primary.main
+                                : "transparent",
+                            color:
+                              comparisonSelection.length >= 2
+                                ? "#ffffff"
+                                : (theme) =>
+                                    getThemeValue(
+                                      appleLiquidGlass.text.secondary,
+                                      theme.palette.mode === "dark",
+                                    ),
+                            border: (theme) =>
+                              `1px solid ${
+                                comparisonSelection.length >= 2
+                                  ? theme.palette.primary.main
+                                  : getThemeValue(
+                                      appleLiquidGlass.borders.subtle,
+                                      theme.palette.mode === "dark",
+                                    )
+                              }`,
                             "&.Mui-disabled": {
                               opacity: appleLiquidGlass.opacity.disabled,
-                              borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark"),
+                              borderColor: (theme) =>
+                                getThemeValue(
+                                  appleLiquidGlass.borders.subtle,
+                                  theme.palette.mode === "dark",
+                                ),
                             },
                             "&:hover:not(.Mui-disabled)": {
-                              bgcolor: comparisonSelection.length >= 2
-                                ? (theme) => theme.palette.primary.dark
-                                : (theme) => getThemeValue(appleLiquidGlass.backgrounds.button.hover, theme.palette.mode === "dark"),
-                              transform: appleLiquidGlass.transforms.hover.button,
-                              boxShadow: (theme) => getThemeValue(
-                                {
-                                  light: appleLiquidGlass.shadows.light.medium,
-                                  dark: appleLiquidGlass.shadows.dark.medium,
-                                },
-                                theme.palette.mode === "dark"
-                              ),
+                              bgcolor:
+                                comparisonSelection.length >= 2
+                                  ? (theme) => theme.palette.primary.dark
+                                  : (theme) =>
+                                      getThemeValue(
+                                        appleLiquidGlass.backgrounds.button
+                                          .hover,
+                                        theme.palette.mode === "dark",
+                                      ),
+                              transform:
+                                appleLiquidGlass.transforms.hover.button,
+                              boxShadow: (theme) =>
+                                getThemeValue(
+                                  {
+                                    light:
+                                      appleLiquidGlass.shadows.light.medium,
+                                    dark: appleLiquidGlass.shadows.dark.medium,
+                                  },
+                                  theme.palette.mode === "dark",
+                                ),
                             },
                             transition: appleLiquidGlass.transitions.standard,
                           }}
@@ -753,7 +868,11 @@ function AppContent() {
                           Compare ({comparisonSelection.length}/2)
                         </Button>
                         <Button
-                          variant={comparisonSelection.length === 1 ? "contained" : "outlined"}
+                          variant={
+                            comparisonSelection.length === 1
+                              ? "contained"
+                              : "outlined"
+                          }
                           color="secondary"
                           size="small"
                           disabled={comparisonSelection.length !== 1}
@@ -762,38 +881,62 @@ function AppContent() {
                           sx={{
                             fontWeight: 600,
                             minWidth: 100,
-                            fontSize: appleLiquidGlass.typography.button.fontSize,
+                            fontSize:
+                              appleLiquidGlass.typography.button.fontSize,
                             textTransform: "none",
                             px: 1.5,
                             py: 0.625,
                             borderRadius: appleLiquidGlass.radius.small,
-                            bgcolor: comparisonSelection.length === 1
-                              ? (theme) => theme.palette.secondary.main
-                              : "transparent",
-                            color: comparisonSelection.length === 1
-                              ? "#ffffff"
-                              : (theme) => getThemeValue(appleLiquidGlass.text.secondary, theme.palette.mode === "dark"),
-                            border: (theme) => `1px solid ${
+                            bgcolor:
                               comparisonSelection.length === 1
-                                ? theme.palette.secondary.main
-                                : getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")
-                            }`,
+                                ? (theme) => theme.palette.secondary.main
+                                : "transparent",
+                            color:
+                              comparisonSelection.length === 1
+                                ? "#ffffff"
+                                : (theme) =>
+                                    getThemeValue(
+                                      appleLiquidGlass.text.secondary,
+                                      theme.palette.mode === "dark",
+                                    ),
+                            border: (theme) =>
+                              `1px solid ${
+                                comparisonSelection.length === 1
+                                  ? theme.palette.secondary.main
+                                  : getThemeValue(
+                                      appleLiquidGlass.borders.subtle,
+                                      theme.palette.mode === "dark",
+                                    )
+                              }`,
                             "&.Mui-disabled": {
                               opacity: appleLiquidGlass.opacity.disabled,
-                              borderColor: (theme) => getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark"),
+                              borderColor: (theme) =>
+                                getThemeValue(
+                                  appleLiquidGlass.borders.subtle,
+                                  theme.palette.mode === "dark",
+                                ),
                             },
                             "&:hover:not(.Mui-disabled)": {
-                              bgcolor: comparisonSelection.length === 1
-                                ? (theme) => theme.palette.secondary.dark
-                                : (theme) => getThemeValue(appleLiquidGlass.backgrounds.button.hover, theme.palette.mode === "dark"),
-                              transform: appleLiquidGlass.transforms.hover.button,
-                              boxShadow: (theme) => getThemeValue(
-                                {
-                                  light: appleLiquidGlass.shadows.light.medium,
-                                  dark: appleLiquidGlass.shadows.dark.medium,
-                                },
-                                theme.palette.mode === "dark"
-                              ),
+                              bgcolor:
+                                comparisonSelection.length === 1
+                                  ? (theme) => theme.palette.secondary.dark
+                                  : (theme) =>
+                                      getThemeValue(
+                                        appleLiquidGlass.backgrounds.button
+                                          .hover,
+                                        theme.palette.mode === "dark",
+                                      ),
+                              transform:
+                                appleLiquidGlass.transforms.hover.button,
+                              boxShadow: (theme) =>
+                                getThemeValue(
+                                  {
+                                    light:
+                                      appleLiquidGlass.shadows.light.medium,
+                                    dark: appleLiquidGlass.shadows.dark.medium,
+                                  },
+                                  theme.palette.mode === "dark",
+                                ),
                             },
                             transition: appleLiquidGlass.transitions.standard,
                           }}
@@ -805,8 +948,20 @@ function AppContent() {
                   </Box>
 
                   {/* Mobile-only Unified 4-Button View Toggle */}
-                  <Box sx={{ display: { xs: "block", md: "none" }, mb: { xs: 1.5, md: 2 } }}>
-                    <Paper elevation={0} sx={{ bgcolor: "transparent", display: "flex", justifyContent: "center" }}>
+                  <Box
+                    sx={{
+                      display: { xs: "block", md: "none" },
+                      mb: { xs: 1.5, md: 2 },
+                    }}
+                  >
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        bgcolor: "transparent",
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
                       <ToggleButtonGroup
                         value={mobileViewValue}
                         exclusive
@@ -820,7 +975,8 @@ function AppContent() {
                             fontSize: "0.75rem",
                             fontWeight: 500,
                             textTransform: "none",
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                            border: (theme) =>
+                              `1px solid ${theme.palette.divider}`,
                           },
                         }}
                       >
@@ -832,7 +988,10 @@ function AppContent() {
                           <MapIcon sx={{ mr: 0.5, fontSize: 16 }} />
                           Map
                         </ToggleButton>
-                        <ToggleButton value="timeline" aria-label="timeline view">
+                        <ToggleButton
+                          value="timeline"
+                          aria-label="timeline view"
+                        >
                           <Timeline sx={{ mr: 0.5, fontSize: 16 }} />
                           Timeline
                         </ToggleButton>
@@ -872,7 +1031,11 @@ function AppContent() {
                         onChange={(e, value) => {
                           if (value === "map") {
                             handleViewModeChange(e, "map");
-                          } else if (value === "grid" || value === "timeline" || value === "gallery") {
+                          } else if (
+                            value === "grid" ||
+                            value === "timeline" ||
+                            value === "gallery"
+                          ) {
                             handleViewModeChange(e, "grid");
                             handleResultsViewModeChange(e, value);
                           }
@@ -890,7 +1053,9 @@ function AppContent() {
                             border: "none",
                             borderRadius: 1,
                             color: (theme) =>
-                              theme.palette.mode === "dark" ? "#B4B4B4" : "#6B7280",
+                              theme.palette.mode === "dark"
+                                ? "#B4B4B4"
+                                : "#6B7280",
                             bgcolor: "transparent",
                             "&:hover": {
                               bgcolor: (theme) =>
@@ -904,7 +1069,9 @@ function AppContent() {
                                   ? "rgba(16, 185, 129, 0.2)"
                                   : "rgba(5, 150, 105, 0.1)",
                               color: (theme) =>
-                                theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                theme.palette.mode === "dark"
+                                  ? "#10B981"
+                                  : "#059669",
                               fontWeight: 600,
                               "&:hover": {
                                 bgcolor: (theme) =>
@@ -924,7 +1091,10 @@ function AppContent() {
                           <MapIcon sx={{ mr: 0.75, fontSize: 16 }} />
                           Map
                         </ToggleButton>
-                        <ToggleButton value="timeline" aria-label="timeline view">
+                        <ToggleButton
+                          value="timeline"
+                          aria-label="timeline view"
+                        >
                           <Timeline sx={{ mr: 0.75, fontSize: 16 }} />
                           Timeline
                         </ToggleButton>
@@ -937,10 +1107,16 @@ function AppContent() {
                   </Box>
 
                   {/* Results Grid (always visible on desktop, conditional on mobile) */}
-                  <Box sx={{ display: { xs: viewMode === "grid" ? "block" : "none", md: "block" } }}>
+                  <Box
+                    sx={{
+                      display: {
+                        xs: viewMode === "grid" ? "block" : "none",
+                        md: "block",
+                      },
+                    }}
+                  >
                     {filteredPhotos.length > 0 && (
                       <>
-
                         <Box sx={{ mb: { xs: 1.5, md: 2 } }}>
                           <Typography
                             variant="caption"
@@ -956,31 +1132,59 @@ function AppContent() {
                           >
                             Quick Filters
                           </Typography>
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            flexWrap="wrap"
+                            useFlexGap
+                          >
                             {FILTER_PRESETS.map((preset) => {
                               const Icon = preset.icon;
                               // Determine if this preset is "active" based on current filters
                               const isActivePreset = (() => {
                                 if (preset.id === "historical") {
-                                  return filters.endDate && new Date(filters.endDate).getFullYear() <= 1980;
+                                  return (
+                                    filters.endDate &&
+                                    new Date(filters.endDate).getFullYear() <=
+                                      1980
+                                  );
                                 } else if (preset.id === "modern") {
-                                  return filters.startDate && new Date(filters.startDate).getFullYear() >= 2000;
+                                  return (
+                                    filters.startDate &&
+                                    new Date(filters.startDate).getFullYear() >=
+                                      2000
+                                  );
                                 } else if (preset.id === "high-detail") {
-                                  return filters.selectedScales.length > 0 &&
-                                         filters.selectedScales.every(s => s <= 5000);
+                                  return (
+                                    filters.selectedScales.length > 0 &&
+                                    filters.selectedScales.every(
+                                      (s) => s <= 5000,
+                                    )
+                                  );
                                 }
                                 return false;
                               })();
 
                               return (
-                                <Tooltip key={preset.id} title={preset.description} arrow placement="top">
+                                <Tooltip
+                                  key={preset.id}
+                                  title={preset.description}
+                                  arrow
+                                  placement="top"
+                                >
                                   <Chip
                                     icon={<Icon sx={{ fontSize: 14 }} />}
                                     label={preset.label}
-                                    onClick={() => handleQuickFilterPreset(preset.id)}
+                                    onClick={() =>
+                                      handleQuickFilterPreset(preset.id)
+                                    }
                                     size="small"
-                                    variant={isActivePreset ? "filled" : "outlined"}
-                                    color={isActivePreset ? "primary" : "default"}
+                                    variant={
+                                      isActivePreset ? "filled" : "outlined"
+                                    }
+                                    color={
+                                      isActivePreset ? "primary" : "default"
+                                    }
                                     sx={{
                                       height: 26,
                                       fontSize: "0.7rem",
@@ -993,13 +1197,19 @@ function AppContent() {
                                             ? "rgba(16, 185, 129, 0.3)"
                                             : "rgba(5, 150, 105, 0.2)",
                                         borderColor: (theme) =>
-                                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                          theme.palette.mode === "dark"
+                                            ? "#10B981"
+                                            : "#059669",
                                         color: (theme) =>
-                                          theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                          theme.palette.mode === "dark"
+                                            ? "#10B981"
+                                            : "#059669",
                                         fontWeight: 700,
                                         "& .MuiChip-icon": {
                                           color: (theme) =>
-                                            theme.palette.mode === "dark" ? "#10B981" : "#059669",
+                                            theme.palette.mode === "dark"
+                                              ? "#10B981"
+                                              : "#059669",
                                         },
                                       }),
                                       "&:hover": {
@@ -1021,12 +1231,19 @@ function AppContent() {
                     )}
 
                     {comparisonSelection.length > 0 && (
-                      <Stack direction="row" spacing={1} flexWrap="wrap" mb={{ xs: 1.5, md: 2 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        mb={{ xs: 1.5, md: 2 }}
+                      >
                         {comparisonSelection.map((photo) => (
                           <Chip
                             key={`compare-chip-${getPhotoKey(photo)}`}
                             label={`${photo.dateFormatted || "Unknown"} • ${photo.IMAGE_NAME}`}
-                            onDelete={() => handleRemoveComparisonPhoto(getPhotoKey(photo))}
+                            onDelete={() =>
+                              handleRemoveComparisonPhoto(getPhotoKey(photo))
+                            }
                             size="small"
                             sx={{ maxWidth: 260 }}
                           />
@@ -1034,19 +1251,23 @@ function AppContent() {
                         <Chip
                           label="Clear"
                           onClick={handleClearComparisonSelection}
-                          onDelete={comparisonSelection.length ? handleClearComparisonSelection : undefined}
+                          onDelete={
+                            comparisonSelection.length
+                              ? handleClearComparisonSelection
+                              : undefined
+                          }
                           size="small"
                           variant="outlined"
                         />
                       </Stack>
                     )}
 
-                    {resultsViewMode === 'gallery' ? (
+                    {resultsViewMode === "gallery" ? (
                       <PhotoViewer
                         photo={filteredPhotos[0] || null}
                         photos={filteredPhotos}
                         open
-                        onClose={() => setResultsViewMode('grid')} // Go back to grid when closing
+                        onClose={() => setResultsViewMode("grid")} // Go back to grid when closing
                         initialIndex={0}
                       />
                     ) : resultsViewMode === "grid" ? (
@@ -1107,10 +1328,17 @@ function AppContent() {
                       alignItems: "center",
                       justifyContent: "center",
                       border: (theme) =>
-                        theme.palette.mode === "dark" ? "2px solid rgba(0, 77, 64, 0.3)" : "2px solid rgba(0, 77, 64, 0.2)",
+                        theme.palette.mode === "dark"
+                          ? "2px solid rgba(0, 77, 64, 0.3)"
+                          : "2px solid rgba(0, 77, 64, 0.2)",
                     }}
                   >
-                    <SearchIcon sx={{ fontSize: { xs: 50, md: 40 }, color: "primary.main" }} />
+                    <SearchIcon
+                      sx={{
+                        fontSize: { xs: 50, md: 40 },
+                        color: "primary.main",
+                      }}
+                    />
                   </Box>
 
                   {/* Welcome Text */}
@@ -1137,15 +1365,16 @@ function AppContent() {
                   <Typography
                     variant="body2"
                     color="text.secondary"
-                    sx={{ 
+                    sx={{
                       mb: 3,
                       lineHeight: 1.6,
                       px: 1,
                       fontSize: { xs: "0.9375rem", md: "0.875rem" },
                     }}
                   >
-                    Discover decades of aerial photography from across Tasmania. Search by location, filter by
-                    date and scale, and explore the landscape through time.
+                    Discover decades of aerial photography from across Tasmania.
+                    Search by location, filter by date and scale, and explore
+                    the landscape through time.
                   </Typography>
 
                   {/* Quick Start Cards */}
@@ -1160,19 +1389,26 @@ function AppContent() {
                   >
                     {[
                       {
-                        icon: <SearchIcon sx={{ fontSize: { xs: 28, md: 24 } }} />,
+                        icon: (
+                          <SearchIcon sx={{ fontSize: { xs: 28, md: 24 } }} />
+                        ),
                         title: "Search Any Location",
-                        description: "Enter coordinates or search by place name",
+                        description:
+                          "Enter coordinates or search by place name",
                       },
                       {
                         icon: <MapIcon sx={{ fontSize: { xs: 28, md: 24 } }} />,
                         title: "Explore on Map",
-                        description: "Click anywhere on the map to discover photos",
+                        description:
+                          "Click anywhere on the map to discover photos",
                       },
                       {
-                        icon: <GridView sx={{ fontSize: { xs: 28, md: 24 } }} />,
+                        icon: (
+                          <GridView sx={{ fontSize: { xs: 28, md: 24 } }} />
+                        ),
                         title: "Filter & Sort",
-                        description: "Refine results by date, scale, and image type",
+                        description:
+                          "Refine results by date, scale, and image type",
                       },
                     ].map((feature, index) => (
                       <Paper
@@ -1211,18 +1447,24 @@ function AppContent() {
                         >
                           {feature.icon}
                         </Box>
-                        <Typography 
-                          variant="subtitle2" 
-                          gutterBottom 
-                          fontWeight={600} 
-                          sx={{ fontSize: { xs: "0.9rem", md: "0.85rem" }, mb: 0.5 }}
+                        <Typography
+                          variant="subtitle2"
+                          gutterBottom
+                          fontWeight={600}
+                          sx={{
+                            fontSize: { xs: "0.9rem", md: "0.85rem" },
+                            mb: 0.5,
+                          }}
                         >
                           {feature.title}
                         </Typography>
-                        <Typography 
-                          variant="caption" 
-                          color="text.secondary" 
-                          sx={{ fontSize: { xs: "0.8rem", md: "0.75rem" }, lineHeight: 1.4 }}
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: { xs: "0.8rem", md: "0.75rem" },
+                            lineHeight: 1.4,
+                          }}
                         >
                           {feature.description}
                         </Typography>
@@ -1232,40 +1474,51 @@ function AppContent() {
 
                   {/* Popular locations hint */}
                   <Box sx={{ mt: { xs: 4, md: 3 }, width: "100%" }}>
-                    <Typography 
-                      variant="caption" 
-                      color="text.secondary" 
-                      display="block" 
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
                       mb={1.5}
                       sx={{ fontSize: { xs: "0.75rem", md: "0.7rem" } }}
                     >
                       Popular locations to start:
                     </Typography>
-                    <Box sx={{ display: "flex", gap: 0.75, justifyContent: "center", flexWrap: "wrap" }}>
-                      {["Hobart", "Launceston", "Devonport", "Burnie"].map((city) => (
-                        <Chip
-                          key={city}
-                          label={city}
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            // Quick location search - you can implement this later
-                            console.log("Search for:", city);
-                          }}
-                          sx={{
-                            fontSize: { xs: "0.7rem", md: "0.65rem" },
-                            height: { xs: 28, md: 24 },
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            "&:hover": {
-                              borderColor: "primary.main",
-                              bgcolor: (theme) =>
-                                theme.palette.mode === "dark" ? "rgba(0, 77, 64, 0.15)" : "rgba(0, 77, 64, 0.08)",
-                              transform: "scale(1.05)",
-                            },
-                          }}
-                        />
-                      ))}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 0.75,
+                        justifyContent: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {["Hobart", "Launceston", "Devonport", "Burnie"].map(
+                        (city) => (
+                          <Chip
+                            key={city}
+                            label={city}
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              // Quick location search - you can implement this later
+                              console.log("Search for:", city);
+                            }}
+                            sx={{
+                              fontSize: { xs: "0.7rem", md: "0.65rem" },
+                              height: { xs: 28, md: 24 },
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(0, 77, 64, 0.15)"
+                                    : "rgba(0, 77, 64, 0.08)",
+                                transform: "scale(1.05)",
+                              },
+                            }}
+                          />
+                        ),
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -1276,7 +1529,10 @@ function AppContent() {
           {/* Right Side - Persistent Map (desktop always, mobile when no searchParams or when map mode active) */}
           <Box
             sx={{
-              width: { xs: "100%", md: sidebarOpen ? "calc(100% - 480px)" : "100%" },
+              width: {
+                xs: "100%",
+                md: sidebarOpen ? "calc(100% - 480px)" : "100%",
+              },
               transition: "width 0.3s ease-in-out",
               display: {
                 xs: !searchParams || viewMode === "map" ? "block" : "none",
@@ -1301,20 +1557,33 @@ function AppContent() {
               <Box
                 sx={{
                   transition: "all 0.3s ease-in-out",
-                  transform: searchBoxExpanded ? "translateY(0)" : "translateY(-100%)",
+                  transform: searchBoxExpanded
+                    ? "translateY(0)"
+                    : "translateY(-100%)",
                   opacity: searchBoxExpanded ? 1 : 0,
                   pointerEvents: searchBoxExpanded ? "auto" : "none",
                 }}
               >
                 <SearchBar onSearch={handleSearch} loading={isLoading} />
               </Box>
-              <Stack direction="row" spacing={1} sx={{ position: "absolute", bottom: -48, right: 8 }}>
-                <Tooltip title={searchBoxExpanded ? "Hide search" : "Show search"} placement="left">
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ position: "absolute", bottom: -48, right: 8 }}
+              >
+                <Tooltip
+                  title={searchBoxExpanded ? "Hide search" : "Show search"}
+                  placement="left"
+                >
                   <IconButton
                     onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
                     sx={{
-                      bgcolor: searchBoxExpanded ? "background.paper" : "primary.main",
-                      color: searchBoxExpanded ? "text.primary" : "primary.contrastText",
+                      bgcolor: searchBoxExpanded
+                        ? "background.paper"
+                        : "primary.main",
+                      color: searchBoxExpanded
+                        ? "text.primary"
+                        : "primary.contrastText",
                       boxShadow: 3,
                       border: (theme) => `1px solid ${theme.palette.divider}`,
                       "&:hover": {
@@ -1326,7 +1595,9 @@ function AppContent() {
                       transition: "all 0.2s ease-in-out",
                     }}
                     size="medium"
-                    aria-label={searchBoxExpanded ? "Hide search" : "Show search"}
+                    aria-label={
+                      searchBoxExpanded ? "Hide search" : "Show search"
+                    }
                   >
                     {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
                   </IconButton>
@@ -1350,7 +1621,10 @@ function AppContent() {
                 >
                   <Box sx={{ textAlign: "center" }}>
                     <CircularProgress size={60} />
-                    <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mt: 2, color: "text.secondary" }}
+                    >
                       Loading map...
                     </Typography>
                   </Box>
@@ -1465,7 +1739,10 @@ function AppContent() {
       />
 
       {/* Changelog Modal */}
-      <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
+      <ChangelogModal
+        open={changelogOpen}
+        onClose={() => setChangelogOpen(false)}
+      />
     </ThemeProvider>
   );
 }

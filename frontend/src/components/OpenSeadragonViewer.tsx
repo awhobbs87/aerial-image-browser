@@ -1,20 +1,27 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import OpenSeadragon from 'openseadragon';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { Close, ZoomIn, ZoomOut, FitScreen } from '@mui/icons-material';
+import { useEffect, useRef, useState, useCallback } from "react";
+import OpenSeadragon from "openseadragon";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import {
+  Close,
+  ZoomIn,
+  ZoomOut,
+  FitScreen,
+  History,
+} from "@mui/icons-material";
 
 interface OpenSeadragonViewerProps {
   imageUrl: string;
   imageWidth?: number;
   imageHeight?: number;
   onClose: () => void;
+  onThenNowClick?: () => void;
 }
 
 // Debounce utility
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
   return (...args: Parameters<T>) => {
@@ -28,6 +35,7 @@ export default function OpenSeadragonViewer({
   imageWidth,
   imageHeight,
   onClose,
+  onThenNowClick,
 }: OpenSeadragonViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -64,7 +72,9 @@ export default function OpenSeadragonViewer({
       maxZoom = 3;
     }
 
-    console.log(`[OpenSeadragon] Image: ${imageWidth}x${imageHeight} (${megapixels.toFixed(1)}MP), maxZoom: ${maxZoom}`);
+    console.log(
+      `[OpenSeadragon] Image: ${imageWidth}x${imageHeight} (${megapixels.toFixed(1)}MP), maxZoom: ${maxZoom}`,
+    );
 
     return { minZoom, maxZoom, defaultZoom: 1 };
   }, [imageWidth, imageHeight]);
@@ -73,29 +83,38 @@ export default function OpenSeadragonViewer({
   const debouncedZoomUpdate = useRef(
     debounce((zoom: number) => {
       setZoomLevel(Math.round(zoom * 100));
-    }, 100) // 100ms debounce
+    }, 100), // 100ms debounce
   ).current;
 
   useEffect(() => {
-    if (!viewerRef.current || osdRef.current) return;
+    if (!viewerRef.current) return;
+
+    // Clean up existing viewer if it exists
+    if (osdRef.current) {
+      osdRef.current.destroy();
+      osdRef.current = null;
+    }
 
     const { minZoom, maxZoom, defaultZoom } = calculateZoomLimits();
+    let lastZoom = defaultZoom;
+    let lastZoomTime = Date.now();
 
     // Initialize OpenSeadragon
     const viewer = OpenSeadragon({
       element: viewerRef.current,
-      prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/',
+      prefixUrl:
+        "https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/",
       tileSources: {
-        type: 'image',
+        type: "image",
         url: imageUrl,
-        buildPyramid: false, // Don't build tiles for single image
       },
       // Zoom settings
       minZoomLevel: minZoom,
       maxZoomLevel: maxZoom,
       defaultZoomLevel: defaultZoom,
       zoomPerClick: 1.4,
-      zoomPerScroll: 1.2,
+      zoomPerScroll: 1.15, // Reduced from 1.2 for smoother scroll/pinch zoom
+      zoomPerSecond: 2.0, // Limit zoom speed to prevent runaway zooming
       // Smooth animations
       animationTime: 0.3,
       springStiffness: 10,
@@ -130,7 +149,7 @@ export default function OpenSeadragonViewer({
       // Prevent over-zooming past image quality
       maxImageCacheCount: 100,
       // Quality settings for maximum sharpness
-      compositeOperation: 'source-over', // Default, but explicit
+      compositeOperation: "source-over", // Default, but explicit
       smoothTileEdgesMinZoom: Infinity, // Disable tile edge smoothing (keep sharp)
       immediateRender: false, // Wait for high-quality tiles
       blendTime: 0, // No blending animation for instant sharpness
@@ -139,20 +158,48 @@ export default function OpenSeadragonViewer({
       wrapVertical: false,
     });
 
-    // Listen to zoom changes (debounced)
+    // Combined zoom handler: update UI and enforce limits
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    viewer.addHandler('zoom', (event: any) => {
-      debouncedZoomUpdate(event.zoom);
-    });
-
-    // Prevent black screen by clamping zoom
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    viewer.addHandler('zoom', (event: any) => {
+    viewer.addHandler("zoom", (event: any) => {
       const currentZoom = event.zoom;
+      const now = Date.now();
+      const timeDelta = (now - lastZoomTime) / 1000; // seconds
+      const zoomDelta = Math.abs(currentZoom - lastZoom);
+
+      // Calculate zoom velocity (zoom units per second)
+      const zoomVelocity = timeDelta > 0 ? zoomDelta / timeDelta : 0;
+
+      // If zoom velocity is too high, clamp the zoom to prevent runaway zooming
+      // This is the key fix for mobile pinch-to-zoom going crazy
+      const maxZoomVelocity = 5.0; // Max zoom units per second
+      if (zoomVelocity > maxZoomVelocity) {
+        // Clamp to a reasonable zoom level based on direction
+        const clampedZoom =
+          currentZoom > lastZoom
+            ? lastZoom + maxZoomVelocity * timeDelta
+            : lastZoom - maxZoomVelocity * timeDelta;
+
+        viewer.viewport.zoomTo(
+          Math.max(minZoom, Math.min(maxZoom, clampedZoom)),
+        );
+        lastZoom = clampedZoom;
+        lastZoomTime = now;
+        debouncedZoomUpdate(clampedZoom);
+        return; // Exit early, don't process further
+      }
+
+      // Update tracking variables
+      lastZoom = currentZoom;
+      lastZoomTime = now;
+
+      // Update zoom level display (debounced)
+      debouncedZoomUpdate(currentZoom);
+
+      // Prevent black screen by clamping zoom (immediate, no animation)
       if (currentZoom > maxZoom) {
-        viewer.viewport.zoomTo(maxZoom, null, true);
+        viewer.viewport.zoomTo(maxZoom);
       } else if (currentZoom < minZoom) {
-        viewer.viewport.zoomTo(minZoom, null, true);
+        viewer.viewport.zoomTo(minZoom);
       }
     });
 
@@ -187,24 +234,24 @@ export default function OpenSeadragonViewer({
   return (
     <Box
       sx={{
-        position: 'fixed',
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        bgcolor: 'rgba(0, 0, 0, 0.95)',
+        bgcolor: "rgba(0, 0, 0, 0.95)",
         zIndex: 9999,
       }}
     >
       {/* Zoom controls */}
       <Box
         sx={{
-          position: 'absolute',
+          position: "absolute",
           top: 16,
           right: 16,
           zIndex: 10000,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 1,
         }}
       >
@@ -212,9 +259,9 @@ export default function OpenSeadragonViewer({
           <IconButton
             onClick={handleZoomIn}
             sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              color: "white",
+              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
             }}
           >
             <ZoomIn />
@@ -224,9 +271,9 @@ export default function OpenSeadragonViewer({
           <IconButton
             onClick={handleZoomOut}
             sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              color: "white",
+              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
             }}
           >
             <ZoomOut />
@@ -236,21 +283,35 @@ export default function OpenSeadragonViewer({
           <IconButton
             onClick={handleResetZoom}
             sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              color: "white",
+              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
             }}
           >
             <FitScreen />
           </IconButton>
         </Tooltip>
+        {onThenNowClick && (
+          <Tooltip title="Then vs Now">
+            <IconButton
+              onClick={onThenNowClick}
+              sx={{
+                bgcolor: "rgba(255, 255, 255, 0.1)",
+                color: "white",
+                "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
+              }}
+            >
+              <History />
+            </IconButton>
+          </Tooltip>
+        )}
         <Tooltip title="Close">
           <IconButton
             onClick={onClose}
             sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              color: "white",
+              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
             }}
           >
             <Close />
@@ -261,12 +322,12 @@ export default function OpenSeadragonViewer({
       {/* Zoom level indicator */}
       <Box
         sx={{
-          position: 'absolute',
+          position: "absolute",
           top: 16,
           left: 16,
           zIndex: 10000,
-          bgcolor: 'rgba(0, 0, 0, 0.5)',
-          color: 'white',
+          bgcolor: "rgba(0, 0, 0, 0.5)",
+          color: "white",
           px: 2,
           py: 1,
           borderRadius: 1,
@@ -279,9 +340,9 @@ export default function OpenSeadragonViewer({
       <div
         ref={viewerRef}
         style={{
-          width: '100%',
-          height: '100%',
-          position: 'absolute',
+          width: "100%",
+          height: "100%",
+          position: "absolute",
           top: 0,
           left: 0,
         }}

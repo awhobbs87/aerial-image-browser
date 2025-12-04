@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useMap } from 'react-leaflet';
-import { Box, IconButton, Tooltip, Zoom } from '@mui/material';
-import { Add, Remove, MyLocation } from '@mui/icons-material';
+import { useState, useEffect } from "react";
+import { useMap } from "react-leaflet";
+import { Box, IconButton, Tooltip, Zoom } from "@mui/material";
+import { Add, Remove, MyLocation } from "@mui/icons-material";
 
 interface MapZoomControlsProps {
   searchCenter?: [number, number] | null;
 }
 
-export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) {
+export default function MapZoomControls({
+  searchCenter,
+}: MapZoomControlsProps) {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   const [maxZoom] = useState(map.getMaxZoom());
   const [minZoom] = useState(map.getMinZoom());
   const [showControls, setShowControls] = useState(false);
+  const [locatingUser, setLocatingUser] = useState(false);
 
   // Track zoom changes
   useEffect(() => {
@@ -20,9 +23,9 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
       setCurrentZoom(map.getZoom());
     };
 
-    map.on('zoomend', handleZoom);
+    map.on("zoomend", handleZoom);
     return () => {
-      map.off('zoomend', handleZoom);
+      map.off("zoomend", handleZoom);
     };
   }, [map]);
 
@@ -33,8 +36,8 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleZoomIn = () => {
@@ -46,11 +49,40 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
   };
 
   const handleRecenter = () => {
-    if (searchCenter) {
-      map.setView(searchCenter, 13, { animate: true });
+    setLocatingUser(true);
+
+    // Try to get user's current location
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          map.setView([latitude, longitude], 13, { animate: true });
+          setLocatingUser(false);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Fallback to search center or Tasmania
+          if (searchCenter) {
+            map.setView(searchCenter, 13, { animate: true });
+          } else {
+            map.setView([-42.0, 147.0], 8, { animate: true });
+          }
+          setLocatingUser(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
     } else {
-      // Recenter on Tasmania if no search center
-      map.setView([-42.0, 147.0], 8, { animate: true });
+      // Geolocation not supported - fallback
+      if (searchCenter) {
+        map.setView(searchCenter, 13, { animate: true });
+      } else {
+        map.setView([-42.0, 147.0], 8, { animate: true });
+      }
+      setLocatingUser(false);
     }
   };
 
@@ -61,12 +93,12 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
   return (
     <Box
       sx={{
-        position: 'absolute',
+        position: "absolute",
         top: 16,
         right: 16,
         zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         gap: 1,
       }}
     >
@@ -79,23 +111,23 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
             size="small"
             sx={{
               bgcolor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(0, 0, 0, 0.8)'
-                  : 'rgba(255, 255, 255, 0.95)',
+                theme.palette.mode === "dark"
+                  ? "rgba(0, 0, 0, 0.8)"
+                  : "rgba(255, 255, 255, 0.95)",
               boxShadow: 2,
               width: 42,
               height: 42,
-              '&:hover': {
+              "&:hover": {
                 bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.9)'
-                    : 'rgba(255, 255, 255, 1)',
-                transform: 'scale(1.05)',
+                  theme.palette.mode === "dark"
+                    ? "rgba(0, 0, 0, 0.9)"
+                    : "rgba(255, 255, 255, 1)",
+                transform: "scale(1.05)",
               },
-              '&:active': {
-                transform: 'scale(0.95)',
+              "&:active": {
+                transform: "scale(0.95)",
               },
-              transition: 'all 0.2s ease',
+              transition: "all 0.2s ease",
             }}
           >
             <Add />
@@ -104,7 +136,7 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
       </Zoom>
 
       {/* Zoom Out */}
-      <Zoom in={showControls} style={{ transitionDelay: '50ms' }}>
+      <Zoom in={showControls} style={{ transitionDelay: "50ms" }}>
         <Tooltip title="Zoom out" placement="left">
           <IconButton
             onClick={handleZoomOut}
@@ -112,23 +144,23 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
             size="small"
             sx={{
               bgcolor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(0, 0, 0, 0.8)'
-                  : 'rgba(255, 255, 255, 0.95)',
+                theme.palette.mode === "dark"
+                  ? "rgba(0, 0, 0, 0.8)"
+                  : "rgba(255, 255, 255, 0.95)",
               boxShadow: 2,
               width: 42,
               height: 42,
-              '&:hover': {
+              "&:hover": {
                 bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.9)'
-                    : 'rgba(255, 255, 255, 1)',
-                transform: 'scale(1.05)',
+                  theme.palette.mode === "dark"
+                    ? "rgba(0, 0, 0, 0.9)"
+                    : "rgba(255, 255, 255, 1)",
+                transform: "scale(1.05)",
               },
-              '&:active': {
-                transform: 'scale(0.95)',
+              "&:active": {
+                transform: "scale(0.95)",
               },
-              transition: 'all 0.2s ease',
+              transition: "all 0.2s ease",
             }}
           >
             <Remove />
@@ -136,32 +168,46 @@ export default function MapZoomControls({ searchCenter }: MapZoomControlsProps) 
         </Tooltip>
       </Zoom>
 
-      {/* Recenter */}
-      <Zoom in={showControls} style={{ transitionDelay: '100ms' }}>
-        <Tooltip title="Recenter map" placement="left">
+      {/* Current Location */}
+      <Zoom in={showControls} style={{ transitionDelay: "100ms" }}>
+        <Tooltip title="Go to my location" placement="left">
           <IconButton
             onClick={handleRecenter}
+            disabled={locatingUser}
             size="small"
             sx={{
               bgcolor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(0, 0, 0, 0.8)'
-                  : 'rgba(255, 255, 255, 0.95)',
+                theme.palette.mode === "dark"
+                  ? "rgba(0, 0, 0, 0.8)"
+                  : "rgba(255, 255, 255, 0.95)",
               boxShadow: 2,
               width: 42,
               height: 42,
-              color: 'primary.main',
-              '&:hover': {
+              color: locatingUser ? "action.disabled" : "primary.main",
+              "&:hover": {
                 bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.9)'
-                    : 'rgba(255, 255, 255, 1)',
-                transform: 'scale(1.05)',
+                  theme.palette.mode === "dark"
+                    ? "rgba(0, 0, 0, 0.9)"
+                    : "rgba(255, 255, 255, 1)",
+                transform: "scale(1.05)",
               },
-              '&:active': {
-                transform: 'scale(0.95)',
+              "&:active": {
+                transform: "scale(0.95)",
               },
-              transition: 'all 0.2s ease',
+              transition: "all 0.2s ease",
+              "& .MuiSvgIcon-root": {
+                animation: locatingUser
+                  ? "pulse 1s ease-in-out infinite"
+                  : "none",
+              },
+              "@keyframes pulse": {
+                "0%, 100%": {
+                  opacity: 1,
+                },
+                "50%": {
+                  opacity: 0.5,
+                },
+              },
             }}
           >
             <MyLocation />
