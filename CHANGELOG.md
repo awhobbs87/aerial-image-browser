@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.2] - 2025-12-05
+
+### Fixed
+
+- **Then vs Now Button Visibility**: Fixed "Then vs Now" button not appearing on mobile in photo preview modal
+  - Changed button layout from Stack to flex Box with wrapping enabled
+  - Buttons now wrap properly on mobile screens ensuring all are visible
+- **Removed Redundant Location Text**: Removed "Location: Available on map" text from photo metadata
+  - Cleaner metadata display in photo preview modal
+  - Location information is already evident from the map view
+
+### Technical
+
+- Updated `frontend/src/components/PhotoPreviewModal.tsx`:
+  - Changed DialogActions button container from Stack to Box with `flexWrap: 'wrap'`
+  - Removed geometry-based location display section
+  - Removed unused `Place` icon import
+
 ## [2.9.1] - 2025-12-05
 
 ### Fixed

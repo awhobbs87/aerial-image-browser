@@ -18,7 +18,6 @@ import {
 } from "@mui/material";
 import {
   Close,
-  Place,
   CalendarToday,
   PhotoSizeSelectActual,
   Image as ImageIcon,
@@ -366,18 +365,6 @@ export default function PhotoPreviewModal({
                   {photo.IMAGE_NAME}
                 </Typography>
               </Box>
-
-              {photo.geometry && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Place sx={{ fontSize: 20, color: "text.secondary" }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Location:
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    Available on map
-                  </Typography>
-                </Box>
-              )}
             </Stack>
           </Stack>
         </Box>
@@ -416,11 +403,14 @@ export default function PhotoPreviewModal({
         )}
 
         {/* Action buttons */}
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="flex-end"
-          sx={{ width: "100%" }}
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            justifyContent: "flex-end",
+          }}
         >
           <Button
             onClick={handleClose}
@@ -454,7 +444,7 @@ export default function PhotoPreviewModal({
               Download TIFF
             </Button>
           )}
-        </Stack>
+        </Box>
       </DialogActions>
 
       {/* Full Screen Zoom with OpenSeadragon */}
