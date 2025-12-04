@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2025-12-05
+
+### Changed
+
+- **PhotoViewer Gallery Redesign**: Completely redesigned gallery modal for vertical compactness (50%+ vertical space saved!)
+  - Combined date header and chips into single compact row with Then vs Now icon button
+  - Removed redundant "Date:" field (date already shown in header)
+  - Condensed Scale and File info into single compact row
+  - Moved download link inline within metadata section
+  - Reduced padding from 3/2 to 2/1.5 units
+  - Chip heights reduced from 22px to 18px with smaller font
+  - Then vs Now button converted to bordered icon button (saves massive vertical space)
+  - Footer simplified to just Close icon button
+  - Much cleaner, more efficient use of mobile screen space
+
+### Removed
+
+- **PhotoGallery Component**: Deleted completely unused PhotoGallery.tsx (382 lines)
+  - Component was never imported or used anywhere in codebase
+  - PhotoViewer handles both gallery and preview modes
+  - Eliminates confusion between PhotoGallery vs PhotoViewer vs PhotoPreviewModal
+  - Codebase now has clear single component for photo viewing: PhotoViewer
+
+### Technical
+
+- Updated `frontend/src/components/PhotoViewer.tsx`:
+  - Redesigned metadata section with flex/grid layouts for compactness
+  - Removed redundant date display (Date: field)
+  - Added Tooltip-wrapped IconButton for Then vs Now
+  - Removed Button import (using only IconButton)
+  - Removed CalendarToday icon import (no longer needed)
+  - Simplified footer to single Close IconButton
+  - Reduced all spacing values and font sizes
+  - Download link now inline compact design with hover states
+- Deleted `frontend/src/components/PhotoGallery.tsx` (382 lines)
+
+### Notes
+
+- R2 caching for converted images: PhotoViewer currently uses Worker API for conversions. For client-side R2 caching, consider migrating to useTiffConversion hook (future improvement)
+
 ## [2.9.5] - 2025-12-05
 
 ### Changed

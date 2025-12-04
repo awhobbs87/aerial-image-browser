@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
-  Button,
   Box,
   Typography,
   Chip,
@@ -20,7 +19,6 @@ import {
   Close,
   ChevronLeft,
   ChevronRight,
-  CalendarToday,
   PhotoSizeSelectActual,
   Image as ImageIcon,
   Download,
@@ -768,80 +766,118 @@ export default function PhotoViewer({
           )}
         </Box>
 
-        {/* Photo metadata */}
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Stack spacing={1.5}>
-            {/* Header with chips */}
-            <Box>
+        {/* Photo metadata - compact design */}
+        <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+          <Stack spacing={1}>
+            {/* Compact header: chips, date, and Then vs Now icon button */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 1,
+              }}
+            >
               <Box
-                sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
+                  flex: 1,
+                  minWidth: 0,
+                }}
               >
-                <Chip
-                  label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
-                  color={
-                    currentPhoto.layerType === "aerial"
-                      ? "info"
-                      : currentPhoto.layerType === "ortho"
-                        ? "success"
-                        : "warning"
-                  }
-                  size="small"
-                  sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
-                />
-                {currentPhoto.cached && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 0.5,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
                   <Chip
-                    label="Cached"
-                    color="success"
+                    label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
+                    color={
+                      currentPhoto.layerType === "aerial"
+                        ? "info"
+                        : currentPhoto.layerType === "ortho"
+                          ? "success"
+                          : "warning"
+                    }
                     size="small"
-                    variant="outlined"
-                    sx={{ fontSize: "0.7rem", height: 22, fontWeight: 500 }}
+                    sx={{ fontSize: "0.65rem", height: 18, fontWeight: 500 }}
                   />
-                )}
+                  {currentPhoto.cached && (
+                    <Chip
+                      label="Cached"
+                      color="success"
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: "0.65rem", height: 18, fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  sx={{ fontSize: "0.95rem", lineHeight: 1.2 }}
+                >
+                  {currentPhoto.dateFormatted || "Unknown Date"}
+                </Typography>
               </Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ fontSize: "0.9375rem", fontWeight: 500 }}
-              >
-                {currentPhoto.dateFormatted || "Unknown Date"}
-              </Typography>
+              <Tooltip title="Then vs Now">
+                <IconButton
+                  onClick={() => setThenNowModalOpen(true)}
+                  color="secondary"
+                  size="small"
+                  sx={{
+                    border: 1,
+                    borderColor: "secondary.main",
+                    width: 32,
+                    height: 32,
+                    "&:hover": { bgcolor: "secondary.light" },
+                  }}
+                >
+                  <History fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
 
-            <Divider />
-
-            {/* Details grid */}
-            <Stack spacing={1.5}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CalendarToday sx={{ fontSize: 20, color: "text.secondary" }} />
-                <Typography variant="body2" color="text.secondary">
-                  Date:
-                </Typography>
-                <Typography variant="body2" fontWeight={500}>
-                  {currentPhoto.dateFormatted || "Unknown"}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* Compact details in single row */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                flexWrap: "wrap",
+                fontSize: "0.75rem",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <PhotoSizeSelectActual
-                  sx={{ fontSize: 20, color: "text.secondary" }}
+                  sx={{ fontSize: 14, color: "text.secondary" }}
                 />
-                <Typography variant="body2" color="text.secondary">
-                  Scale:
-                </Typography>
-                <Typography variant="body2" fontWeight={500}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.75rem" }}
+                >
                   {currentPhoto.scaleFormatted || "N/A"}
                 </Typography>
               </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <ImageIcon sx={{ fontSize: 20, color: "text.secondary" }} />
-                <Typography variant="body2" color="text.secondary">
-                  File:
-                </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <ImageIcon sx={{ fontSize: 14, color: "text.secondary" }} />
                 <Typography
-                  variant="body2"
-                  fontWeight={500}
+                  variant="caption"
                   sx={{
+                    fontSize: "0.75rem",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -850,7 +886,38 @@ export default function PhotoViewer({
                   {currentPhoto.IMAGE_NAME}
                 </Typography>
               </Box>
-            </Stack>
+            </Box>
+
+            {/* Compact download link */}
+            {currentPhoto.DOWNLOAD_LINK && (
+              <Box
+                component="a"
+                href={currentPhoto.DOWNLOAD_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  alignSelf: "flex-start",
+                  gap: 0.5,
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "primary.main",
+                  textDecoration: "none",
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 0.5,
+                  bgcolor: "action.hover",
+                  "&:hover": {
+                    bgcolor: "action.selected",
+                    textDecoration: "underline",
+                  },
+                }}
+              >
+                <Download sx={{ fontSize: 14 }} />
+                Download TIFF
+              </Box>
+            )}
           </Stack>
         </Box>
       </DialogContent>
@@ -897,38 +964,9 @@ export default function PhotoViewer({
             justifyContent: "flex-end",
           }}
         >
-          <Button
-            onClick={handleClose}
-            color="inherit"
-            size="medium"
-            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-          >
-            Close
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={() => setThenNowModalOpen(true)}
-            startIcon={<History />}
-            size="medium"
-            sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-          >
-            Then vs Now
-          </Button>
-          {currentPhoto.DOWNLOAD_LINK && (
-            <Button
-              variant="contained"
-              component="a"
-              href={currentPhoto.DOWNLOAD_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              startIcon={<Download />}
-              size="medium"
-              sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-            >
-              Download TIFF
-            </Button>
-          )}
+          <IconButton onClick={handleClose} size="small" color="inherit">
+            <Close />
+          </IconButton>
         </Box>
       </DialogActions>
 
