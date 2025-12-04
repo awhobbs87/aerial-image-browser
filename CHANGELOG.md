@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.5] - 2025-12-05
+
+### Changed
+
+- **Mobile Header Improved**: Optimized AppBar header for mobile devices
+  - Changed title from "Tasmania Aerial Photos" to "Tas Aerial Photos" on mobile
+  - Reduced font size from 1.25rem to 0.95rem on mobile
+  - Reduced map icon size from 28px to 24px on mobile
+  - Reduced icon margin for better spacing on small screens
+  - Desktop view remains unchanged with full title
+
+- **Then vs Now Button Repositioned**: Moved button from footer to metadata header
+  - Button now appears to the right of AERIAL chip and cached badge
+  - Reduced button size to "small" for better visual balance
+  - Saves vertical space in footer area
+  - More intuitive placement near photo information
+  - Footer now simplified to just Close icon button
+
+### Removed
+
+- **PhotoPreviewModal Component**: Deleted unused PhotoPreviewModal component
+  - Component was replaced by PhotoGallery in previous versions
+  - No longer referenced anywhere in the codebase except historical changelog notes
+  - Reduces codebase complexity and bundle size
+
+### Technical
+
+- Updated `frontend/src/components/AppBar.tsx`:
+  - Added `Box` import from @mui/material
+  - Added responsive Typography with separate mobile/desktop titles
+  - Added responsive sizing for map icon and margins
+- Updated `frontend/src/components/PhotoGallery.tsx`:
+  - Moved "Then vs Now" button from footer actions to metadata header
+  - Added flex container with space-between layout for chips and button
+  - Changed button size from "medium" to "small"
+  - Simplified footer from multi-button layout to single Close IconButton
+- Deleted `frontend/src/components/PhotoPreviewModal.tsx`
+
 ## [2.9.4] - 2025-12-05
 
 ### Fixed

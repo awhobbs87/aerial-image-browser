@@ -1,4 +1,12 @@
-import { AppBar as MuiAppBar, Toolbar, Typography, IconButton, Tooltip, Badge } from "@mui/material";
+import {
+  AppBar as MuiAppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Tooltip,
+  Badge,
+  Box,
+} from "@mui/material";
 import {
   Brightness4,
   Brightness7,
@@ -17,7 +25,14 @@ interface AppBarProps {
   onVersionClick?: () => void;
 }
 
-export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0, onViewFavorites, version, onVersionClick }: AppBarProps) {
+export default function AppBar({
+  themeMode,
+  onToggleDarkMode,
+  favoritesCount = 0,
+  onViewFavorites,
+  version,
+  onVersionClick,
+}: AppBarProps) {
   const getThemeIcon = () => {
     if (themeMode === "system") return <BrightnessAuto />;
     if (themeMode === "dark") return <Brightness4 />;
@@ -31,11 +46,41 @@ export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0
   };
 
   return (
-    <MuiAppBar position="static" elevation={1} sx={{ bgcolor: "background.paper", color: "text.primary", borderBottom: 1, borderColor: "divider" }}>
+    <MuiAppBar
+      position="static"
+      elevation={1}
+      sx={{
+        bgcolor: "background.paper",
+        color: "text.primary",
+        borderBottom: 1,
+        borderColor: "divider",
+      }}
+    >
       <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
-        <Map sx={{ mr: 2, fontSize: 28, color: "primary.main" }} />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, color: "text.primary" }}>
-          Tasmania Aerial Photos
+        <Map
+          sx={{
+            mr: { xs: 1, sm: 2 },
+            fontSize: { xs: 24, sm: 28 },
+            color: "primary.main",
+          }}
+        />
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            flexGrow: 1,
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "0.95rem", sm: "1.25rem" },
+          }}
+        >
+          {/* Show shorter title on mobile */}
+          <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+            Tas Aerial Photos
+          </Box>
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+            Tasmania Aerial Photos
+          </Box>
         </Typography>
         {version && onVersionClick && (
           <Typography
@@ -61,7 +106,9 @@ export default function AppBar({ themeMode, onToggleDarkMode, favoritesCount = 0
           </Typography>
         )}
         {onViewFavorites && (
-          <Tooltip title={`View ${favoritesCount} favorite${favoritesCount !== 1 ? 's' : ''}`}>
+          <Tooltip
+            title={`View ${favoritesCount} favorite${favoritesCount !== 1 ? "s" : ""}`}
+          >
             <IconButton
               color="inherit"
               onClick={onViewFavorites}

@@ -235,28 +235,54 @@ export default function PhotoGallery({
         {/* Photo metadata */}
         <Box sx={{ p: 3 }}>
           <Stack spacing={2}>
-            {/* Header with chips */}
+            {/* Header with chips and Then vs Now button */}
             <Box>
-              <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-                <Chip
-                  label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
-                  color={
-                    currentPhoto.layerType === "aerial"
-                      ? "info"
-                      : currentPhoto.layerType === "ortho"
-                        ? "success"
-                        : "warning"
-                  }
-                  size="small"
-                />
-                {currentPhoto.cached && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
                   <Chip
-                    label="Cached"
-                    color="success"
+                    label={LAYER_TYPE_LABELS[currentPhoto.layerType]}
+                    color={
+                      currentPhoto.layerType === "aerial"
+                        ? "info"
+                        : currentPhoto.layerType === "ortho"
+                          ? "success"
+                          : "warning"
+                    }
                     size="small"
-                    variant="outlined"
                   />
-                )}
+                  {currentPhoto.cached && (
+                    <Chip
+                      label="Cached"
+                      color="success"
+                      size="small"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => setThenNowModalOpen(true)}
+                  startIcon={<History />}
+                  size="small"
+                  sx={{ fontSize: "0.75rem", fontWeight: 500, flexShrink: 0 }}
+                >
+                  Then vs Now
+                </Button>
               </Box>
               <Typography variant="h5" gutterBottom fontWeight={600}>
                 {currentPhoto.dateFormatted || "Unknown Date"}
@@ -383,30 +409,13 @@ export default function PhotoGallery({
         sx={{
           p: 2,
           display: "flex",
-          flexWrap: "wrap",
-          gap: 1,
-          justifyContent: "flex-end",
+          justifyContent: "flex-start",
           alignItems: "center",
         }}
       >
-        <Button
-          onClick={onClose}
-          color="inherit"
-          size="medium"
-          sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-        >
-          Close
-        </Button>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={() => setThenNowModalOpen(true)}
-          startIcon={<History />}
-          size="medium"
-          sx={{ fontSize: "0.875rem", fontWeight: 500 }}
-        >
-          Then vs Now
-        </Button>
+        <IconButton onClick={onClose} size="small" color="inherit">
+          <Close />
+        </IconButton>
       </Box>
 
       {/* Then vs Now Modal */}
