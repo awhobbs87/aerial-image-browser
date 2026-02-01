@@ -2,7 +2,15 @@ import { Hono } from "hono";
 import { ArcGISClient } from "../lib/arcgis";
 import { CacheManager } from "../lib/cache";
 import { R2Manager } from "../lib/r2";
-import { convertTiffToWebP, estimateSizeReduction } from "../lib/imageConversion";
+import {
+  convertTiffToWebP,
+  estimateSizeReduction,
+} from "../lib/imageConversion";
+import {
+  AIService,
+  type GeocodingResult,
+  type ParsedSearchQuery,
+} from "../lib/ai";
 import type { Bindings, EnhancedPhoto } from "../types";
 
 export const api = new Hono<{ Bindings: Bindings }>();
@@ -18,7 +26,7 @@ function formatDate(timestamp?: number): string | null {
 
 function enhancePhoto(
   feature: any,
-  layerId: number
+  layerId: number,
 ): Omit<EnhancedPhoto, "cached" | "thumbnailCached"> {
   const attrs = feature.attributes;
   const layerType =
@@ -42,7 +50,7 @@ function applyFilters(
     minScale?: number;
     maxScale?: number;
     imageTypes?: string[];
-  }
+  },
 ): EnhancedPhoto[] {
   return photos.filter((photo) => {
     // Date filtering
@@ -99,8 +107,12 @@ api.get("/search/location", async (c) => {
   const filters = {
     startDate: c.req.query("startDate"),
     endDate: c.req.query("endDate"),
-    minScale: c.req.query("minScale") ? parseFloat(c.req.query("minScale")!) : undefined,
-    maxScale: c.req.query("maxScale") ? parseFloat(c.req.query("maxScale")!) : undefined,
+    minScale: c.req.query("minScale")
+      ? parseFloat(c.req.query("minScale")!)
+      : undefined,
+    maxScale: c.req.query("maxScale")
+      ? parseFloat(c.req.query("maxScale")!)
+      : undefined,
     imageTypes: c.req.query("imageTypes")?.split(","),
   };
 
@@ -111,7 +123,7 @@ api.get("/search/location", async (c) => {
     layers.map(async (layerId) => {
       const features = await client.queryByPoint(layerId, lon, lat);
       return features.map((f: any) => enhancePhoto(f, layerId));
-    })
+    }),
   );
 
   let photos = results.flat() as EnhancedPhoto[];
@@ -147,8 +159,12 @@ api.get("/search/bounds", async (c) => {
   const filters = {
     startDate: c.req.query("startDate"),
     endDate: c.req.query("endDate"),
-    minScale: c.req.query("minScale") ? parseFloat(c.req.query("minScale")!) : undefined,
-    maxScale: c.req.query("maxScale") ? parseFloat(c.req.query("maxScale")!) : undefined,
+    minScale: c.req.query("minScale")
+      ? parseFloat(c.req.query("minScale")!)
+      : undefined,
+    maxScale: c.req.query("maxScale")
+      ? parseFloat(c.req.query("maxScale")!)
+      : undefined,
     imageTypes: c.req.query("imageTypes")?.split(","),
   };
 
@@ -162,10 +178,10 @@ api.get("/search/bounds", async (c) => {
         west,
         south,
         east,
-        north
+        north,
       );
       return features.map((f: any) => enhancePhoto(f, layerId));
-    })
+    }),
   );
 
   let photos = results.flat() as EnhancedPhoto[];
@@ -220,23 +236,19 @@ api.get("/tiff/:layerId/:imageName", async (c) => {
   });
 
   const searchResponse = await fetch(
-    `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+    `${c.env.API_BASE_URL}/${layerId}/query?${params}`,
   );
-  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }> };
+  const searchData = (await searchResponse.json()) as {
+    features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }>;
+  };
 
   if (!searchData.features || searchData.features.length === 0) {
-    return c.json(
-      { success: false, error: "Image not found in ArcGIS" },
-      404
-    );
+    return c.json({ success: false, error: "Image not found in ArcGIS" }, 404);
   }
 
   const downloadLink = searchData.features[0].attributes.DOWNLOAD_LINK;
   if (!downloadLink) {
-    return c.json(
-      { success: false, error: "No download link available" },
-      404
-    );
+    return c.json({ success: false, error: "No download link available" }, 404);
   }
 
   // Download from ArcGIS
@@ -244,7 +256,7 @@ api.get("/tiff/:layerId/:imageName", async (c) => {
   if (!tiffResponse.ok) {
     return c.json(
       { success: false, error: "Failed to download from ArcGIS" },
-      502
+      502,
     );
   }
 
@@ -289,7 +301,9 @@ api.put("/webp/:layerId/:imageName", async (c) => {
     // Store in R2 cache
     await r2.putWebP(cleanImageName, layerId, webpBuffer);
 
-    console.log(`Cached client-converted WebP for ${cleanImageName}: ${(webpBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+    console.log(
+      `Cached client-converted WebP for ${cleanImageName}: ${(webpBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`,
+    );
 
     return c.json({
       success: true,
@@ -304,7 +318,7 @@ api.put("/webp/:layerId/:imageName", async (c) => {
         error: "Failed to cache WebP",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      500
+      500,
     );
   }
 });
@@ -358,14 +372,16 @@ api.get("/webp/:layerId/:imageName", async (c) => {
     });
 
     const searchResponse = await fetch(
-      `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+      `${c.env.API_BASE_URL}/${layerId}/query?${params}`,
     );
-    const searchData = await searchResponse.json() as { features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }> };
+    const searchData = (await searchResponse.json()) as {
+      features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }>;
+    };
 
     if (!searchData.features || searchData.features.length === 0) {
       return c.json(
         { success: false, error: "Image not found in ArcGIS" },
-        404
+        404,
       );
     }
 
@@ -373,7 +389,7 @@ api.get("/webp/:layerId/:imageName", async (c) => {
     if (!downloadLink) {
       return c.json(
         { success: false, error: "No download link available" },
-        404
+        404,
       );
     }
 
@@ -382,7 +398,7 @@ api.get("/webp/:layerId/:imageName", async (c) => {
     if (!tiffResponse.ok) {
       return c.json(
         { success: false, error: "Failed to download TIFF from ArcGIS" },
-        502
+        502,
       );
     }
 
@@ -407,7 +423,7 @@ api.get("/webp/:layerId/:imageName", async (c) => {
     const reduction = ((1 - webpSize / originalSize) * 100).toFixed(1);
 
     console.log(
-      `Converted ${cleanImageName}: ${(originalSize / 1024 / 1024).toFixed(2)}MB TIFF → ${(webpSize / 1024 / 1024).toFixed(2)}MB WebP (${reduction}% reduction)`
+      `Converted ${cleanImageName}: ${(originalSize / 1024 / 1024).toFixed(2)}MB TIFF → ${(webpSize / 1024 / 1024).toFixed(2)}MB WebP (${reduction}% reduction)`,
     );
 
     // Return WebP to user
@@ -423,14 +439,17 @@ api.get("/webp/:layerId/:imageName", async (c) => {
       },
     });
   } catch (error) {
-    console.error(`Error converting TIFF to WebP for ${cleanImageName}:`, error);
+    console.error(
+      `Error converting TIFF to WebP for ${cleanImageName}:`,
+      error,
+    );
     return c.json(
       {
         success: false,
         error: "Failed to convert image to WebP",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      500
+      500,
     );
   }
 });
@@ -470,22 +489,21 @@ api.get("/thumbnail/:layerId/:imageName", async (c) => {
   });
 
   const searchResponse = await fetch(
-    `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+    `${c.env.API_BASE_URL}/${layerId}/query?${params}`,
   );
-  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }> };
+  const searchData = (await searchResponse.json()) as {
+    features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }>;
+  };
 
   if (!searchData.features || searchData.features.length === 0) {
-    return c.json(
-      { success: false, error: "Image not found in ArcGIS" },
-      404
-    );
+    return c.json({ success: false, error: "Image not found in ArcGIS" }, 404);
   }
 
   const thumbnailLink = searchData.features[0].attributes.THUMBNAIL_LINK;
   if (!thumbnailLink) {
     return c.json(
       { success: false, error: "No thumbnail link available" },
-      404
+      404,
     );
   }
 
@@ -494,7 +512,7 @@ api.get("/thumbnail/:layerId/:imageName", async (c) => {
   if (!thumbResponse.ok) {
     return c.json(
       { success: false, error: "Failed to download thumbnail from ArcGIS" },
-      502
+      502,
     );
   }
 
@@ -521,9 +539,15 @@ api.get("/image/:layerId/:imageName", async (c) => {
   const imageName = c.req.param("imageName");
 
   // Get optional transformation parameters
-  const width = c.req.query("width") ? parseInt(c.req.query("width")!) : undefined;
-  const height = c.req.query("height") ? parseInt(c.req.query("height")!) : undefined;
-  const quality = c.req.query("quality") ? parseInt(c.req.query("quality")!) : 100; // Default to maximum quality
+  const width = c.req.query("width")
+    ? parseInt(c.req.query("width")!)
+    : undefined;
+  const height = c.req.query("height")
+    ? parseInt(c.req.query("height")!)
+    : undefined;
+  const quality = c.req.query("quality")
+    ? parseInt(c.req.query("quality")!)
+    : 100; // Default to maximum quality
   const format = c.req.query("format") || "auto"; // auto, webp, jpeg, png
 
   if (isNaN(layerId) || !imageName) {
@@ -542,15 +566,14 @@ api.get("/image/:layerId/:imageName", async (c) => {
   });
 
   const searchResponse = await fetch(
-    `${c.env.API_BASE_URL}/${layerId}/query?${params}`
+    `${c.env.API_BASE_URL}/${layerId}/query?${params}`,
   );
-  const searchData = await searchResponse.json() as { features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }> };
+  const searchData = (await searchResponse.json()) as {
+    features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }>;
+  };
 
   if (!searchData.features || searchData.features.length === 0) {
-    return c.json(
-      { success: false, error: "Image not found in ArcGIS" },
-      404
-    );
+    return c.json({ success: false, error: "Image not found in ArcGIS" }, 404);
   }
 
   // Use THUMBNAIL_LINK for Image Resizing (JPEG format works with Cloudflare Image Resizing)
@@ -560,7 +583,7 @@ api.get("/image/:layerId/:imageName", async (c) => {
   if (!sourceLink) {
     return c.json(
       { success: false, error: "No thumbnail link available" },
-      404
+      404,
     );
   }
 
@@ -584,16 +607,14 @@ api.get("/image/:layerId/:imageName", async (c) => {
   });
 
   if (!optimizedResponse.ok) {
-    return c.json(
-      { success: false, error: "Failed to optimize image" },
-      502
-    );
+    return c.json({ success: false, error: "Failed to optimize image" }, 502);
   }
 
   // Return optimized image
   return new Response(optimizedResponse.body, {
     headers: {
-      "Content-Type": optimizedResponse.headers.get("Content-Type") || "image/jpeg",
+      "Content-Type":
+        optimizedResponse.headers.get("Content-Type") || "image/jpeg",
       "Content-Disposition": "inline", // Display inline, not as download
       "Cache-Control": "public, max-age=31536000",
       "X-Optimized": "true",
@@ -604,13 +625,13 @@ api.get("/image/:layerId/:imageName", async (c) => {
 // Temporary TIF proxy endpoint - serves files from R2 for ConvertHub
 api.get("/temp-tiff/:key", async (c) => {
   const key = c.req.param("key");
-  
+
   try {
     const file = await c.env.TIFF_STORAGE.get(`temp/${key}`);
     if (!file) {
       return c.json({ success: false, error: "File not found" }, 404);
     }
-    
+
     return new Response(file.body, {
       headers: {
         "Content-Type": "image/tiff",
@@ -618,24 +639,23 @@ api.get("/temp-tiff/:key", async (c) => {
       },
     });
   } catch (error) {
-    return c.json(
-      { success: false, error: "Failed to serve file" },
-      500
-    );
+    return c.json({ success: false, error: "Failed to serve file" }, 500);
   }
 });
 
 // ConvertHub proxy endpoint - converts TIFF to WEBP using ConvertHub API v2
 api.post("/convert/webp", async (c) => {
   try {
-    const body = await c.req.json() as { tiffUrl?: string };
+    const body = (await c.req.json()) as { tiffUrl?: string };
     const { tiffUrl } = body;
 
     if (!tiffUrl) {
       return c.json({ success: false, error: "Missing tiffUrl" }, 400);
     }
 
-    const CONVERTHUB_API_KEY = c.env.CONVERTHUB_API_KEY || "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
+    const CONVERTHUB_API_KEY =
+      c.env.CONVERTHUB_API_KEY ||
+      "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
     const CONVERTHUB_API_BASE = "https://api.converthub.com/v2";
     const WORKER_BASE_URL = "https://tas-aerial-browser.awhobbs.workers.dev";
 
@@ -649,14 +669,19 @@ api.post("/convert/webp", async (c) => {
 
     if (!tiffResponse.ok) {
       return c.json(
-        { success: false, error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}` },
-        502
+        {
+          success: false,
+          error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}`,
+        },
+        502,
       );
     }
 
     // Read the TIF file
     const tiffBuffer = await tiffResponse.arrayBuffer();
-    console.log(`Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
+    console.log(
+      `Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`,
+    );
 
     // Upload to R2 temporarily
     const tempKey = `temp/${Date.now()}-${Math.random().toString(36).substring(7)}.tif`;
@@ -668,7 +693,7 @@ api.post("/convert/webp", async (c) => {
     console.log(`Uploaded TIF to R2: ${tempKey}`);
 
     // Create proxy URL that ConvertHub can access
-    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split('/').pop()}`;
+    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split("/").pop()}`;
 
     // 1. Start ConvertHub Job using proxy URL
     console.log(`Starting conversion: ${proxyUrl} → webp`);
@@ -688,7 +713,9 @@ api.post("/convert/webp", async (c) => {
     if (!startResponse.ok) {
       let errorText = "";
       try {
-        const errorJson = (await startResponse.json()) as { message?: string; error?: string } | unknown;
+        const errorJson = (await startResponse.json()) as
+          | { message?: string; error?: string }
+          | unknown;
         if (typeof errorJson === "object" && errorJson !== null) {
           const err = errorJson as { message?: string; error?: string };
           errorText = err.message || err.error || JSON.stringify(errorJson);
@@ -699,8 +726,11 @@ api.post("/convert/webp", async (c) => {
         errorText = await startResponse.text();
       }
       return c.json(
-        { success: false, error: `Failed to start conversion: ${startResponse.status} - ${errorText}` },
-        500
+        {
+          success: false,
+          error: `Failed to start conversion: ${startResponse.status} - ${errorText}`,
+        },
+        500,
       );
     }
 
@@ -712,8 +742,11 @@ api.post("/convert/webp", async (c) => {
 
     if (!startJson.success || !startJson.job_id) {
       return c.json(
-        { success: false, error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}` },
-        500
+        {
+          success: false,
+          error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}`,
+        },
+        500,
       );
     }
 
@@ -746,14 +779,19 @@ api.post("/convert/webp", async (c) => {
 
       if (!pollResponse.ok) {
         return c.json(
-          { success: false, error: `Failed to check job status: ${pollResponse.status}` },
-          500
+          {
+            success: false,
+            error: `Failed to check job status: ${pollResponse.status}`,
+          },
+          500,
         );
       }
 
       const pollJson = (await pollResponse.json()) as { status?: string };
       status = pollJson.status || "unknown";
-      console.log(`Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`);
+      console.log(
+        `Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`,
+      );
 
       if (status === "completed") {
         break;
@@ -765,23 +803,32 @@ api.post("/convert/webp", async (c) => {
 
     if (status !== "completed") {
       return c.json(
-        { success: false, error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}` },
-        500
+        {
+          success: false,
+          error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}`,
+        },
+        500,
       );
     }
 
     // 3. Get download URL
     console.log(`Job ${jobId} completed, fetching download URL`);
-    const downloadResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}/download`, {
-      headers: {
-        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+    const downloadResponse = await fetch(
+      `${CONVERTHUB_API_BASE}/jobs/${jobId}/download`,
+      {
+        headers: {
+          Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        },
       },
-    });
+    );
 
     if (!downloadResponse.ok) {
       return c.json(
-        { success: false, error: `Failed to get download URL: ${downloadResponse.status}` },
-        500
+        {
+          success: false,
+          error: `Failed to get download URL: ${downloadResponse.status}`,
+        },
+        500,
       );
     }
 
@@ -793,8 +840,11 @@ api.post("/convert/webp", async (c) => {
 
     if (!downloadJson.success || !downloadJson.download_url) {
       return c.json(
-        { success: false, error: `Invalid download response: ${JSON.stringify(downloadJson)}` },
-        500
+        {
+          success: false,
+          error: `Invalid download response: ${JSON.stringify(downloadJson)}`,
+        },
+        500,
       );
     }
 
@@ -819,7 +869,7 @@ api.post("/convert/webp", async (c) => {
         error: "Failed to convert image",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      500
+      500,
     );
   }
 });
@@ -827,14 +877,16 @@ api.post("/convert/webp", async (c) => {
 // ConvertHub proxy endpoint - converts TIFF to PNG using ConvertHub API v2
 api.post("/convert/png", async (c) => {
   try {
-    const body = await c.req.json() as { tiffUrl?: string };
+    const body = (await c.req.json()) as { tiffUrl?: string };
     const { tiffUrl } = body;
 
     if (!tiffUrl) {
       return c.json({ success: false, error: "Missing tiffUrl" }, 400);
     }
 
-    const CONVERTHUB_API_KEY = c.env.CONVERTHUB_API_KEY || "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
+    const CONVERTHUB_API_KEY =
+      c.env.CONVERTHUB_API_KEY ||
+      "105|JtAffUYt5zBXC6JpXLL2lxn4nrLvJQbTLMAwScCd1bd830cb";
     const CONVERTHUB_API_BASE = "https://api.converthub.com/v2";
     const WORKER_BASE_URL = "https://tas-aerial-browser.awhobbs.workers.dev";
 
@@ -848,14 +900,19 @@ api.post("/convert/png", async (c) => {
 
     if (!tiffResponse.ok) {
       return c.json(
-        { success: false, error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}` },
-        502
+        {
+          success: false,
+          error: `Failed to fetch TIF: ${tiffResponse.status} ${tiffResponse.statusText}`,
+        },
+        502,
       );
     }
 
     // Read the TIF file
     const tiffBuffer = await tiffResponse.arrayBuffer();
-    console.log(`Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
+    console.log(
+      `Fetched TIF: ${(tiffBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`,
+    );
 
     // Upload to R2 temporarily
     const tempKey = `temp/${Date.now()}-${Math.random().toString(36).substring(7)}.tif`;
@@ -867,7 +924,7 @@ api.post("/convert/png", async (c) => {
     console.log(`Uploaded TIF to R2: ${tempKey}`);
 
     // Create proxy URL that ConvertHub can access
-    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split('/').pop()}`;
+    const proxyUrl = `${WORKER_BASE_URL}/api/temp-tiff/${tempKey.split("/").pop()}`;
 
     // 1. Start ConvertHub Job using proxy URL
     console.log(`Starting conversion: ${proxyUrl} → png`);
@@ -887,7 +944,9 @@ api.post("/convert/png", async (c) => {
     if (!startResponse.ok) {
       let errorText = "";
       try {
-        const errorJson = (await startResponse.json()) as { message?: string; error?: string } | unknown;
+        const errorJson = (await startResponse.json()) as
+          | { message?: string; error?: string }
+          | unknown;
         if (typeof errorJson === "object" && errorJson !== null) {
           const err = errorJson as { message?: string; error?: string };
           errorText = err.message || err.error || JSON.stringify(errorJson);
@@ -898,8 +957,11 @@ api.post("/convert/png", async (c) => {
         errorText = await startResponse.text();
       }
       return c.json(
-        { success: false, error: `Failed to start conversion: ${startResponse.status} - ${errorText}` },
-        500
+        {
+          success: false,
+          error: `Failed to start conversion: ${startResponse.status} - ${errorText}`,
+        },
+        500,
       );
     }
 
@@ -911,8 +973,11 @@ api.post("/convert/png", async (c) => {
 
     if (!startJson.success || !startJson.job_id) {
       return c.json(
-        { success: false, error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}` },
-        500
+        {
+          success: false,
+          error: `Invalid response from ConvertHub: ${JSON.stringify(startJson)}`,
+        },
+        500,
       );
     }
 
@@ -945,14 +1010,19 @@ api.post("/convert/png", async (c) => {
 
       if (!pollResponse.ok) {
         return c.json(
-          { success: false, error: `Failed to check job status: ${pollResponse.status}` },
-          500
+          {
+            success: false,
+            error: `Failed to check job status: ${pollResponse.status}`,
+          },
+          500,
         );
       }
 
       const pollJson = (await pollResponse.json()) as { status?: string };
       status = pollJson.status || "unknown";
-      console.log(`Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`);
+      console.log(
+        `Job ${jobId} status: ${status} (attempt ${attempt + 1}/${maxPollAttempts})`,
+      );
 
       if (status === "completed") {
         break;
@@ -964,23 +1034,32 @@ api.post("/convert/png", async (c) => {
 
     if (status !== "completed") {
       return c.json(
-        { success: false, error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}` },
-        500
+        {
+          success: false,
+          error: `Conversion timed out after ${maxPollAttempts} attempts. Last status: ${status}`,
+        },
+        500,
       );
     }
 
     // 3. Get download URL
     console.log(`Job ${jobId} completed, fetching download URL`);
-    const downloadResponse = await fetch(`${CONVERTHUB_API_BASE}/jobs/${jobId}/download`, {
-      headers: {
-        Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+    const downloadResponse = await fetch(
+      `${CONVERTHUB_API_BASE}/jobs/${jobId}/download`,
+      {
+        headers: {
+          Authorization: `Bearer ${CONVERTHUB_API_KEY}`,
+        },
       },
-    });
+    );
 
     if (!downloadResponse.ok) {
       return c.json(
-        { success: false, error: `Failed to get download URL: ${downloadResponse.status}` },
-        500
+        {
+          success: false,
+          error: `Failed to get download URL: ${downloadResponse.status}`,
+        },
+        500,
       );
     }
 
@@ -992,8 +1071,11 @@ api.post("/convert/png", async (c) => {
 
     if (!downloadJson.success || !downloadJson.download_url) {
       return c.json(
-        { success: false, error: `Invalid download response: ${JSON.stringify(downloadJson)}` },
-        500
+        {
+          success: false,
+          error: `Invalid download response: ${JSON.stringify(downloadJson)}`,
+        },
+        500,
       );
     }
 
@@ -1018,7 +1100,7 @@ api.post("/convert/png", async (c) => {
         error: "Failed to convert image",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      500
+      500,
     );
   }
 });
@@ -1027,13 +1109,16 @@ api.post("/convert/png", async (c) => {
 api.get("/convert-tiff-health", async (c) => {
   try {
     const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
-    
+
     if (!CONVERSION_SERVICE_URL) {
-      return c.json({ 
-        success: false, 
-        error: "TIFF conversion service URL not configured",
-        available: false 
-      }, 503);
+      return c.json(
+        {
+          success: false,
+          error: "TIFF conversion service URL not configured",
+          available: false,
+        },
+        503,
+      );
     }
 
     const response = await fetch(`${CONVERSION_SERVICE_URL}/health`, {
@@ -1042,27 +1127,36 @@ api.get("/convert-tiff-health", async (c) => {
     });
 
     if (!response.ok) {
-      return c.json({ 
-        success: false, 
-        error: `Service returned ${response.status}`,
-        available: false 
-      }, 502);
+      return c.json(
+        {
+          success: false,
+          error: `Service returned ${response.status}`,
+          available: false,
+        },
+        502,
+      );
     }
 
-    const data = await response.json() as { status?: string; timestamp?: string };
-    return c.json({ 
-      success: true, 
+    const data = (await response.json()) as {
+      status?: string;
+      timestamp?: string;
+    };
+    return c.json({
+      success: true,
       status: data.status,
       timestamp: data.timestamp,
-      available: true 
+      available: true,
     });
   } catch (error) {
     console.error("TIFF conversion service health check error:", error);
-    return c.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : "Service unavailable",
-      available: false 
-    }, 503);
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Service unavailable",
+        available: false,
+      },
+      503,
+    );
   }
 });
 
@@ -1070,15 +1164,18 @@ api.get("/convert-tiff-health", async (c) => {
 api.post("/convert-tiff-url", async (c) => {
   try {
     const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
-    
+
     if (!CONVERSION_SERVICE_URL) {
-      return c.json({ 
-        success: false, 
-        error: "TIFF conversion service URL not configured" 
-      }, 503);
+      return c.json(
+        {
+          success: false,
+          error: "TIFF conversion service URL not configured",
+        },
+        503,
+      );
     }
 
-    const body = await c.req.json() as { url?: string };
+    const body = (await c.req.json()) as { url?: string };
     const { url } = body;
 
     if (!url) {
@@ -1086,7 +1183,9 @@ api.post("/convert-tiff-url", async (c) => {
     }
 
     // Forward request to conversion service
-    console.log(`Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-url`);
+    console.log(
+      `Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-url`,
+    );
     let response: Response;
     try {
       response = await fetch(`${CONVERSION_SERVICE_URL}/convert-url`, {
@@ -1099,25 +1198,31 @@ api.post("/convert-tiff-url", async (c) => {
       });
     } catch (fetchError) {
       console.error("Fetch error details:", fetchError);
-      throw new Error(`Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`);
+      throw new Error(
+        `Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+      );
     }
 
     if (!response.ok) {
       let errorText = "";
       try {
-        const errorJson = await response.json() as { error?: string };
+        const errorJson = (await response.json()) as { error?: string };
         errorText = errorJson.error || `HTTP ${response.status}`;
       } catch {
-        errorText = await response.text() || `HTTP ${response.status}`;
+        errorText = (await response.text()) || `HTTP ${response.status}`;
       }
-      const statusCode = response.status >= 500 ? 502 : (response.status >= 400 ? 400 : 500);
-      return c.json({ 
-        success: false, 
-        error: errorText 
-      }, statusCode);
+      const statusCode =
+        response.status >= 500 ? 502 : response.status >= 400 ? 400 : 500;
+      return c.json(
+        {
+          success: false,
+          error: errorText,
+        },
+        statusCode,
+      );
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       success?: boolean;
       url?: string;
       format?: string;
@@ -1129,7 +1234,7 @@ api.post("/convert-tiff-url", async (c) => {
 
     if (data.success) {
       // Return a proxy URL instead of the direct R2 URL to avoid CORS issues
-      const baseUrl = c.req.url.split('/api')[0];
+      const baseUrl = c.req.url.split("/api")[0];
       const proxyUrl = `${baseUrl}/api/convert-tiff-proxy?url=${encodeURIComponent(data.url || "")}`;
       return c.json({
         success: true,
@@ -1140,34 +1245,45 @@ api.post("/convert-tiff-url", async (c) => {
         duration: data.duration,
       });
     } else {
-      return c.json({ 
-        success: false, 
-        error: data.error || "Conversion failed" 
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: data.error || "Conversion failed",
+        },
+        500,
+      );
     }
   } catch (error) {
     console.error("TIFF conversion service error:", error);
-    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
+    const CONVERSION_SERVICE_URL =
+      c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
     if (error instanceof Error && error.name === "AbortError") {
-      return c.json({ 
-        success: false, 
-        error: "Conversion timed out (10 minutes)" 
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: "Conversion timed out (10 minutes)",
+        },
+        500,
+      );
     }
     // Provide more detailed error information
-    const errorMessage = error instanceof Error ? error.message : "Conversion failed";
-    const isNetworkError = error instanceof Error && (
-      error.message.includes("fetch") || 
-      error.message.includes("network") ||
-      error.name === "TypeError"
+    const errorMessage =
+      error instanceof Error ? error.message : "Conversion failed";
+    const isNetworkError =
+      error instanceof Error &&
+      (error.message.includes("fetch") ||
+        error.message.includes("network") ||
+        error.name === "TypeError");
+
+    return c.json(
+      {
+        success: false,
+        error: isNetworkError
+          ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
+          : errorMessage,
+      },
+      500,
     );
-    
-    return c.json({ 
-      success: false, 
-      error: isNetworkError 
-        ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
-        : errorMessage
-    }, 500);
   }
 });
 
@@ -1175,12 +1291,15 @@ api.post("/convert-tiff-url", async (c) => {
 api.post("/convert-tiff-upload", async (c) => {
   try {
     const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL;
-    
+
     if (!CONVERSION_SERVICE_URL) {
-      return c.json({ 
-        success: false, 
-        error: "TIFF conversion service URL not configured" 
-      }, 503);
+      return c.json(
+        {
+          success: false,
+          error: "TIFF conversion service URL not configured",
+        },
+        503,
+      );
     }
 
     const formData = await c.req.formData();
@@ -1193,18 +1312,24 @@ api.post("/convert-tiff-upload", async (c) => {
     // Validate file type
     const fileName = file.name.toLowerCase();
     if (!fileName.match(/\.(tif|tiff)$/)) {
-      return c.json({ 
-        success: false, 
-        error: "Only TIFF files are allowed" 
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: "Only TIFF files are allowed",
+        },
+        400,
+      );
     }
 
     // Validate file size (1GB limit)
     if (file.size > 1024 * 1024 * 1024) {
-      return c.json({ 
-        success: false, 
-        error: "File size exceeds 1GB limit" 
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: "File size exceeds 1GB limit",
+        },
+        400,
+      );
     }
 
     // Create new FormData to forward to conversion service
@@ -1212,7 +1337,9 @@ api.post("/convert-tiff-upload", async (c) => {
     forwardFormData.append("file", file);
 
     // Forward request to conversion service
-    console.log(`Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-upload`);
+    console.log(
+      `Calling conversion service: ${CONVERSION_SERVICE_URL}/convert-upload`,
+    );
     let response: Response;
     try {
       response = await fetch(`${CONVERSION_SERVICE_URL}/convert-upload`, {
@@ -1222,25 +1349,31 @@ api.post("/convert-tiff-upload", async (c) => {
       });
     } catch (fetchError) {
       console.error("Fetch error details:", fetchError);
-      throw new Error(`Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`);
+      throw new Error(
+        `Failed to connect to conversion service at ${CONVERSION_SERVICE_URL}: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+      );
     }
 
     if (!response.ok) {
       let errorText = "";
       try {
-        const errorJson = await response.json() as { error?: string };
+        const errorJson = (await response.json()) as { error?: string };
         errorText = errorJson.error || `HTTP ${response.status}`;
       } catch {
-        errorText = await response.text() || `HTTP ${response.status}`;
+        errorText = (await response.text()) || `HTTP ${response.status}`;
       }
-      const statusCode = response.status >= 500 ? 502 : (response.status >= 400 ? 400 : 500);
-      return c.json({ 
-        success: false, 
-        error: errorText 
-      }, statusCode);
+      const statusCode =
+        response.status >= 500 ? 502 : response.status >= 400 ? 400 : 500;
+      return c.json(
+        {
+          success: false,
+          error: errorText,
+        },
+        statusCode,
+      );
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       success?: boolean;
       url?: string;
       format?: string;
@@ -1252,7 +1385,7 @@ api.post("/convert-tiff-upload", async (c) => {
 
     if (data.success) {
       // Return a proxy URL instead of the direct R2 URL to avoid CORS issues
-      const baseUrl = c.req.url.split('/api')[0];
+      const baseUrl = c.req.url.split("/api")[0];
       const proxyUrl = `${baseUrl}/api/convert-tiff-proxy?url=${encodeURIComponent(data.url || "")}`;
       return c.json({
         success: true,
@@ -1263,34 +1396,45 @@ api.post("/convert-tiff-upload", async (c) => {
         duration: data.duration,
       });
     } else {
-      return c.json({ 
-        success: false, 
-        error: data.error || "Conversion failed" 
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: data.error || "Conversion failed",
+        },
+        500,
+      );
     }
   } catch (error) {
     console.error("TIFF conversion service error:", error);
-    const CONVERSION_SERVICE_URL = c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
+    const CONVERSION_SERVICE_URL =
+      c.env.TIFF_CONVERSION_SERVICE_URL || "https://tiff.awhq.uk";
     if (error instanceof Error && error.name === "AbortError") {
-      return c.json({ 
-        success: false, 
-        error: "Conversion timed out (10 minutes)" 
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: "Conversion timed out (10 minutes)",
+        },
+        500,
+      );
     }
     // Provide more detailed error information
-    const errorMessage = error instanceof Error ? error.message : "Conversion failed";
-    const isNetworkError = error instanceof Error && (
-      error.message.includes("fetch") || 
-      error.message.includes("network") ||
-      error.name === "TypeError"
+    const errorMessage =
+      error instanceof Error ? error.message : "Conversion failed";
+    const isNetworkError =
+      error instanceof Error &&
+      (error.message.includes("fetch") ||
+        error.message.includes("network") ||
+        error.name === "TypeError");
+
+    return c.json(
+      {
+        success: false,
+        error: isNetworkError
+          ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
+          : errorMessage,
+      },
+      500,
     );
-    
-    return c.json({ 
-      success: false, 
-      error: isNetworkError 
-        ? `Network error connecting to conversion service: ${errorMessage}. Please check if the service is running at ${CONVERSION_SERVICE_URL}`
-        : errorMessage
-    }, 500);
   }
 });
 
@@ -1298,7 +1442,7 @@ api.post("/convert-tiff-upload", async (c) => {
 api.get("/convert-tiff-proxy", async (c) => {
   try {
     const imageUrl = c.req.query("url");
-    
+
     if (!imageUrl) {
       return c.json({ success: false, error: "Missing url parameter" }, 400);
     }
@@ -1312,15 +1456,19 @@ api.get("/convert-tiff-proxy", async (c) => {
 
     if (!imageResponse.ok) {
       return c.json(
-        { success: false, error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}` },
-        502
+        {
+          success: false,
+          error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
+        },
+        502,
       );
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
 
     // Determine content type from response
-    const contentType = imageResponse.headers.get("Content-Type") || "image/webp";
+    const contentType =
+      imageResponse.headers.get("Content-Type") || "image/webp";
 
     // Return the image with CORS headers
     return new Response(imageBuffer, {
@@ -1339,7 +1487,145 @@ api.get("/convert-tiff-proxy", async (c) => {
         success: false,
         error: error instanceof Error ? error.message : "Failed to proxy image",
       },
-      500
+      500,
+    );
+  }
+});
+
+// ============================================================================
+// AI-Enhanced Search Endpoints
+// ============================================================================
+
+/**
+ * AI-enhanced geocoding results
+ * Takes raw Nominatim results and improves formatting/ranking using AI
+ */
+api.post("/ai/enhance-search", async (c) => {
+  try {
+    const body = (await c.req.json()) as {
+      query: string;
+      results: GeocodingResult[];
+    };
+
+    const { query, results } = body;
+
+    if (!query || !results || !Array.isArray(results)) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing query or results",
+        },
+        400,
+      );
+    }
+
+    const aiService = new AIService(c.env.AI);
+    const enhanced = await aiService.enhanceSearchResults(query, results);
+
+    return c.json({
+      success: true,
+      data: enhanced,
+    });
+  } catch (error) {
+    console.error("AI enhance search error:", error);
+    return c.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to enhance search results",
+      },
+      500,
+    );
+  }
+});
+
+/**
+ * AI natural language search parser
+ * Parses queries like "Find images of 78 New Town Rd between 1920-1950 in high resolution"
+ */
+api.post("/ai/parse-search", async (c) => {
+  try {
+    const body = (await c.req.json()) as { query: string };
+    const { query } = body;
+
+    if (!query) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing query",
+        },
+        400,
+      );
+    }
+
+    const aiService = new AIService(c.env.AI);
+    const parsed = await aiService.parseNaturalLanguageSearch(query);
+
+    return c.json({
+      success: true,
+      data: parsed,
+    });
+  } catch (error) {
+    console.error("AI parse search error:", error);
+    return c.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to parse search query",
+      },
+      500,
+    );
+  }
+});
+
+/**
+ * AI search summary generator
+ * Generates helpful context about search results
+ */
+api.post("/ai/search-summary", async (c) => {
+  try {
+    const body = (await c.req.json()) as {
+      query: string;
+      resultCount: number;
+      dateRange?: { earliest?: string; latest?: string };
+    };
+
+    const { query, resultCount, dateRange } = body;
+
+    if (!query || resultCount === undefined) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing query or resultCount",
+        },
+        400,
+      );
+    }
+
+    const aiService = new AIService(c.env.AI);
+    const summary = await aiService.generateSearchSummary(
+      query,
+      resultCount,
+      dateRange,
+    );
+
+    return c.json({
+      success: true,
+      data: { summary },
+    });
+  } catch (error) {
+    console.error("AI search summary error:", error);
+    return c.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to generate summary",
+      },
+      500,
     );
   }
 });

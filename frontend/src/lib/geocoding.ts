@@ -1,7 +1,10 @@
 /**
  * Geocoding service using Nominatim (OpenStreetMap)
  * Free geocoding API with no API key required
+ * Enhanced with AI for better result formatting and ranking
  */
+
+import { apiClient } from "./apiClient";
 
 export interface GeocodingResult {
   lat: number;
@@ -25,6 +28,11 @@ export interface SearchSuggestion {
   lon: number;
   type: string;
   importance: number;
+  // AI-enhanced fields (optional, present when AI enhancement succeeds)
+  formattedName?: string;
+  shortName?: string;
+  confidence?: number;
+  category?: string;
 }
 
 interface NominatimResult {
@@ -39,13 +47,19 @@ interface NominatimResult {
 class GeocodingService {
   private baseUrl = "https://nominatim.openstreetmap.org";
   private userAgent = "TasmaniaAerialPhotoBrowser/1.0";
-  private cache = new Map<string, { results: SearchSuggestion[]; timestamp: number }>();
+  private cache = new Map<
+    string,
+    { results: SearchSuggestion[]; timestamp: number }
+  >();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   /**
    * Search for locations by query string (address, place name, etc.)
    */
-  async searchLocations(query: string, limit: number = 5): Promise<SearchSuggestion[]> {
+  async searchLocations(
+    query: string,
+    limit: number = 5,
+  ): Promise<SearchSuggestion[]> {
     if (!query || query.length < 2) {
       return [];
     }
@@ -60,12 +74,13 @@ class GeocodingService {
 
     try {
       // If query doesn't mention Tasmania or TAS, append it for better results
-      const enhancedQuery = query.toLowerCase().includes('tasmania') ||
-                           query.toLowerCase().includes('tas') ||
-                           query.toLowerCase().includes('hobart') ||
-                           query.toLowerCase().includes('launceston')
-        ? query
-        : `${query}, Tasmania, Australia`;
+      const enhancedQuery =
+        query.toLowerCase().includes("tasmania") ||
+        query.toLowerCase().includes("tas") ||
+        query.toLowerCase().includes("hobart") ||
+        query.toLowerCase().includes("launceston")
+          ? query
+          : `${query}, Tasmania, Australia`;
 
       const params = new URLSearchParams({
         q: enhancedQuery,
@@ -90,7 +105,9 @@ class GeocodingService {
 
       const data: NominatimResult[] = await response.json();
 
-      console.log(`Geocoding search for "${query}": found ${data.length} results`);
+      console.log(
+        `Geocoding search for "${query}": found ${data.length} results`,
+      );
 
       // Filter and prioritize Tasmania results
       // Use slightly wider bounds to catch edge cases
@@ -99,7 +116,8 @@ class GeocodingService {
           const lat = parseFloat(item.lat);
           const lon = parseFloat(item.lon);
           // Wider bounds to catch more results (Tasmania + buffer)
-          const inBounds = lat >= -44.0 && lat <= -39.2 && lon >= 143.5 && lon <= 148.8;
+          const inBounds =
+            lat >= -44.0 && lat <= -39.2 && lon >= 143.5 && lon <= 148.8;
           if (!inBounds) {
             console.log(`Filtered out: ${item.display_name} (${lat}, ${lon})`);
           }
@@ -109,7 +127,7 @@ class GeocodingService {
 
       console.log(`After filtering: ${filtered.length} results in Tasmania`);
 
-      const results = filtered.map((item) => ({
+      const rawResults = filtered.map((item) => ({
         placeId: item.place_id,
         displayName: item.display_name,
         lat: parseFloat(item.lat),
@@ -117,6 +135,31 @@ class GeocodingService {
         type: item.type,
         importance: item.importance,
       }));
+
+      // Silently enhance results with AI (non-blocking)
+      let results: SearchSuggestion[];
+      try {
+        const enhanced = await apiClient.enhanceSearchResults(
+          query,
+          rawResults,
+        );
+        results = enhanced.map((e) => ({
+          placeId: e.placeId,
+          displayName: e.displayName,
+          lat: e.lat,
+          lon: e.lon,
+          type: e.type,
+          importance: e.importance,
+          formattedName: e.formattedName,
+          shortName: e.shortName,
+          confidence: e.confidence,
+          category: e.category,
+        }));
+        console.log(`AI enhanced ${results.length} results`);
+      } catch (aiError) {
+        console.warn("AI enhancement failed, using raw results:", aiError);
+        results = rawResults;
+      }
 
       // Cache the results
       this.cache.set(cacheKey, { results, timestamp: Date.now() });
@@ -131,7 +174,10 @@ class GeocodingService {
   /**
    * Reverse geocode coordinates to get location name
    */
-  async reverseGeocode(lat: number, lon: number): Promise<GeocodingResult | null> {
+  async reverseGeocode(
+    lat: number,
+    lon: number,
+  ): Promise<GeocodingResult | null> {
     try {
       const params = new URLSearchParams({
         lat: lat.toString(),
@@ -202,16 +248,21 @@ class GeocodingService {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0,
-        }
+        },
       );
     });
   }
 
   /**
    * Format a location name from geocoding result
-   * Provides clean, readable formatting similar to Google Maps
+   * Uses AI-enhanced formatting when available, falls back to manual formatting
    */
   formatLocationName(result: GeocodingResult | SearchSuggestion): string {
+    // If AI-enhanced formatted name is available, use it
+    if ("formattedName" in result && result.formattedName) {
+      return result.formattedName;
+    }
+
     if ("displayName" in result) {
       const parts = result.displayName.split(", ");
 
@@ -220,9 +271,13 @@ class GeocodingService {
         const lowerPart = part.toLowerCase();
         if (lowerPart.includes("tasmania") || lowerPart === "tas") {
           // Keep only the first occurrence
-          return arr.findIndex(p =>
-            p.toLowerCase().includes("tasmania") || p.toLowerCase() === "tas"
-          ) === index;
+          return (
+            arr.findIndex(
+              (p) =>
+                p.toLowerCase().includes("tasmania") ||
+                p.toLowerCase() === "tas",
+            ) === index
+          );
         }
         return true;
       });

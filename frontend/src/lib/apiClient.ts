@@ -6,6 +6,32 @@ import type {
   LocationSearchParams,
 } from "../types/api";
 
+// AI-related types
+export interface GeocodingResult {
+  placeId: string;
+  displayName: string;
+  lat: number;
+  lon: number;
+  type: string;
+  importance: number;
+}
+
+export interface EnhancedGeocodingResult extends GeocodingResult {
+  formattedName: string;
+  shortName: string;
+  confidence: number;
+  category: string;
+}
+
+export interface ParsedSearchQuery {
+  location: string;
+  startYear?: number;
+  endYear?: number;
+  resolution?: "high" | "medium" | "low";
+  imageType?: "aerial" | "ortho" | "digital";
+  additionalContext?: string;
+}
+
 class ApiClient {
   private client: ReturnType<typeof axios.create>;
 
@@ -26,7 +52,7 @@ class ApiClient {
           // Server responded with error status
           console.error("API Error:", error.response.data);
           throw new Error(
-            error.response.data?.error || "An error occurred with the API"
+            error.response.data?.error || "An error occurred with the API",
           );
         } else if (error.request) {
           // Request made but no response
@@ -37,7 +63,7 @@ class ApiClient {
           console.error("Error:", error.message);
           throw error;
         }
-      }
+      },
     );
   }
 
@@ -45,7 +71,7 @@ class ApiClient {
    * Search for photos by location (lat/lon point)
    */
   async searchByLocation(
-    params: LocationSearchParams
+    params: LocationSearchParams,
   ): Promise<SearchLocationResponse> {
     const { lat, lon, layers = [0, 1, 2], ...filters } = params;
     const queryParams: Record<string, string> = {
@@ -59,11 +85,12 @@ class ApiClient {
     if (filters.endDate) queryParams.endDate = filters.endDate;
     if (filters.minScale) queryParams.minScale = filters.minScale.toString();
     if (filters.maxScale) queryParams.maxScale = filters.maxScale.toString();
-    if (filters.imageTypes?.length) queryParams.imageTypes = filters.imageTypes.join(",");
+    if (filters.imageTypes?.length)
+      queryParams.imageTypes = filters.imageTypes.join(",");
 
     const response = await this.client.get<ApiResponse<SearchLocationResponse>>(
       "/api/search/location",
-      { params: queryParams }
+      { params: queryParams },
     );
 
     if (!response.data.success || !response.data.data) {
@@ -77,9 +104,8 @@ class ApiClient {
    * Get available layers metadata
    */
   async getLayers(): Promise<LayersResponse> {
-    const response = await this.client.get<ApiResponse<LayersResponse>>(
-      "/api/layers"
-    );
+    const response =
+      await this.client.get<ApiResponse<LayersResponse>>("/api/layers");
 
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error || "Failed to fetch layers");
@@ -125,7 +151,7 @@ class ApiClient {
       const cleanName = imageName.replace(/\.tif$/i, "");
       const response = await fetch(
         `${this.client.defaults.baseURL}/api/webp/${layerId}/${cleanName}`,
-        { method: "HEAD" }
+        { method: "HEAD" },
       );
       return response.ok && response.headers.get("X-Cache") === "HIT";
     } catch {
@@ -140,7 +166,7 @@ class ApiClient {
   async uploadWebPToCache(
     imageName: string,
     layerId: number,
-    webpBuffer: ArrayBuffer
+    webpBuffer: ArrayBuffer,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const cleanName = imageName.replace(/\.tif$/i, "");
@@ -152,11 +178,11 @@ class ApiClient {
             "Content-Type": "image/webp",
           },
           body: webpBuffer,
-        }
+        },
       );
 
       if (!response.ok) {
-        const errorData = await response.json() as { error?: string };
+        const errorData = (await response.json()) as { error?: string };
         return { success: false, error: errorData.error || "Upload failed" };
       }
 
@@ -182,7 +208,7 @@ class ApiClient {
       height?: number;
       quality?: number;
       format?: "auto" | "webp" | "jpeg" | "png";
-    }
+    },
   ): string {
     // Remove .tif extension if present
     const cleanName = imageName.replace(/\.tif$/i, "");
@@ -202,13 +228,23 @@ class ApiClient {
   /**
    * Check if TIFF conversion service is available
    */
-  async checkConversionServiceHealth(): Promise<{ available: boolean; status?: string }> {
+  async checkConversionServiceHealth(): Promise<{
+    available: boolean;
+    status?: string;
+  }> {
     try {
-      const response = await fetch(`${this.client.defaults.baseURL}/api/convert-tiff-health`, {
-        method: "GET",
-        signal: AbortSignal.timeout(5000),
-      });
-      const data = await response.json() as { success: boolean; available: boolean; status?: string };
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/convert-tiff-health`,
+        {
+          method: "GET",
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+      const data = (await response.json()) as {
+        success: boolean;
+        available: boolean;
+        status?: string;
+      };
       return { available: data.available || false, status: data.status };
     } catch {
       return { available: false };
@@ -221,7 +257,7 @@ class ApiClient {
    */
   async convertTiffFromUrl(
     tiffUrl: string,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<{
     url: string;
     format: string;
@@ -230,7 +266,7 @@ class ApiClient {
     duration?: number;
   }> {
     const baseUrl = this.client.defaults.baseURL;
-    
+
     // Simulate progress for URL conversion (we can't track server-side progress)
     if (onProgress) {
       onProgress(10);
@@ -251,15 +287,15 @@ class ApiClient {
     if (!response.ok) {
       let errorText = "";
       try {
-        const errorJson = await response.json() as { error?: string };
+        const errorJson = (await response.json()) as { error?: string };
         errorText = errorJson.error || `HTTP ${response.status}`;
       } catch {
-        errorText = await response.text() || `HTTP ${response.status}`;
+        errorText = (await response.text()) || `HTTP ${response.status}`;
       }
       throw new Error(errorText);
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       success: boolean;
       url?: string;
       format?: string;
@@ -292,7 +328,7 @@ class ApiClient {
    */
   async convertTiffFromFile(
     file: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<{
     url: string;
     format: string;
@@ -301,7 +337,7 @@ class ApiClient {
     duration?: number;
   }> {
     const baseUrl = this.client.defaults.baseURL;
-    
+
     // Validate file type
     if (!file.name.toLowerCase().match(/\.(tif|tiff)$/)) {
       throw new Error("Only TIFF files are allowed");
@@ -360,7 +396,9 @@ class ApiClient {
           }
         } else {
           try {
-            const errorData = JSON.parse(xhr.responseText) as { error?: string };
+            const errorData = JSON.parse(xhr.responseText) as {
+              error?: string;
+            };
             reject(new Error(errorData.error || `HTTP ${xhr.status}`));
           } catch {
             reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
@@ -380,6 +418,156 @@ class ApiClient {
       xhr.open("POST", `${baseUrl}/api/convert-tiff-upload`);
       xhr.send(formData);
     });
+  }
+
+  // ============================================================================
+  // AI-Enhanced Search Methods
+  // ============================================================================
+
+  /**
+   * Enhance geocoding search results with AI
+   * Silently improves formatting and ranking of search suggestions
+   */
+  async enhanceSearchResults(
+    query: string,
+    results: GeocodingResult[],
+  ): Promise<EnhancedGeocodingResult[]> {
+    try {
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/ai/enhance-search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, results }),
+          signal: AbortSignal.timeout(5000), // 5 second timeout for responsiveness
+        },
+      );
+
+      if (!response.ok) {
+        console.warn("AI enhancement failed, using fallback");
+        return this.fallbackEnhancement(results);
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        data?: EnhancedGeocodingResult[];
+        error?: string;
+      };
+
+      if (!data.success || !data.data) {
+        return this.fallbackEnhancement(results);
+      }
+
+      return data.data;
+    } catch (error) {
+      console.warn("AI enhancement error:", error);
+      return this.fallbackEnhancement(results);
+    }
+  }
+
+  /**
+   * Fallback enhancement when AI is unavailable
+   */
+  private fallbackEnhancement(
+    results: GeocodingResult[],
+  ): EnhancedGeocodingResult[] {
+    return results.slice(0, 5).map((result) => {
+      const parts = result.displayName.split(", ");
+      const filteredParts = parts.filter(
+        (p) =>
+          !p.toLowerCase().includes("tasmania") &&
+          !p.toLowerCase().includes("australia"),
+      );
+      const formattedName =
+        filteredParts.slice(0, 3).join(", ") || result.displayName;
+
+      return {
+        ...result,
+        formattedName,
+        shortName: parts[0],
+        confidence: result.importance,
+        category: result.type,
+      };
+    });
+  }
+
+  /**
+   * Parse a natural language search query using AI
+   * E.g., "Find images of 78 New Town Rd between 1920-1950 in high resolution"
+   */
+  async parseNaturalLanguageSearch(query: string): Promise<ParsedSearchQuery> {
+    try {
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/ai/parse-search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        },
+      );
+
+      if (!response.ok) {
+        console.warn("AI parsing failed, using query as-is");
+        return { location: query };
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        data?: ParsedSearchQuery;
+        error?: string;
+      };
+
+      if (!data.success || !data.data) {
+        return { location: query };
+      }
+
+      return data.data;
+    } catch (error) {
+      console.warn("AI parsing error:", error);
+      return { location: query };
+    }
+  }
+
+  /**
+   * Generate an AI summary of search results
+   */
+  async generateSearchSummary(
+    query: string,
+    resultCount: number,
+    dateRange?: { earliest?: string; latest?: string },
+  ): Promise<string> {
+    try {
+      const response = await fetch(
+        `${this.client.defaults.baseURL}/api/ai/search-summary`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, resultCount, dateRange }),
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (!response.ok) {
+        return `Found ${resultCount} aerial photos`;
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        data?: { summary: string };
+        error?: string;
+      };
+
+      return data.data?.summary || `Found ${resultCount} aerial photos`;
+    } catch {
+      return `Found ${resultCount} aerial photos`;
+    }
   }
 }
 
