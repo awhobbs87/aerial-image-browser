@@ -116,7 +116,7 @@ export default function ResultsPanel({
       <Box
         sx={{
           position: "fixed",
-          left: isOpen ? 64 : -panelWidth + 64,
+          left: isOpen ? 64 : -panelWidth - 20, // Fully hide when closed
           top: 56,
           bottom: 16,
           width: panelWidth,
@@ -562,43 +562,38 @@ export default function ResultsPanel({
           </Box>
         </Box>
 
-        {/* Toggle Button */}
-        <Tooltip
-          title={isOpen ? "Collapse panel" : "Expand results"}
-          placement="right"
-        >
-          <IconButton
-            onClick={() => setIsOpen(!isOpen)}
-            sx={{
-              position: "absolute",
-              right: -16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 32,
-              height: 48,
-              borderRadius: "0 8px 8px 0",
-              bgcolor: "rgba(18, 18, 18, 0.9)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(148, 163, 184, 0.15)",
-              borderLeft: "none",
-              color: "#94A3B8",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "rgba(30, 41, 59, 0.95)",
-                color: "#10B981",
-              },
-            }}
-          >
-            {isOpen ? (
+        {/* Collapse Button (only when panel is open) */}
+        {isOpen && (
+          <Tooltip title="Collapse panel" placement="right">
+            <IconButton
+              onClick={() => setIsOpen(false)}
+              sx={{
+                position: "absolute",
+                right: -16,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 32,
+                height: 48,
+                borderRadius: "0 8px 8px 0",
+                bgcolor: "rgba(18, 18, 18, 0.9)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(148, 163, 184, 0.15)",
+                borderLeft: "none",
+                color: "#94A3B8",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  bgcolor: "rgba(30, 41, 59, 0.95)",
+                  color: "#10B981",
+                },
+              }}
+            >
               <ChevronLeft sx={{ fontSize: 18 }} />
-            ) : (
-              <ChevronRight sx={{ fontSize: 18 }} />
-            )}
-          </IconButton>
-        </Tooltip>
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
-      {/* Open Button (when panel is closed) */}
+      {/* Expand Button (only when panel is closed) */}
       {!isOpen && (
         <Tooltip title="Show results" placement="right">
           <IconButton

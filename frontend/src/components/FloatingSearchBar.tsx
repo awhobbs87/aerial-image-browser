@@ -113,73 +113,80 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
         }}
       >
         {/* Search Input */}
-        <TextField
-          fullWidth
-          placeholder="Search Tasmania..."
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search
-                  sx={{ color: "rgba(148, 163, 184, 0.8)", fontSize: 20 }}
-                />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                {isSearching ? (
-                  <CircularProgress size={18} sx={{ color: "#A855F7" }} />
-                ) : (
-                  <IconButton
-                    onClick={onAISearchClick}
-                    disabled={loading}
-                    size="small"
-                    sx={{
-                      color: "#A855F7",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(168, 85, 247, 0.15)",
-                        boxShadow: "0 0 12px rgba(168, 85, 247, 0.4)",
-                      },
-                    }}
-                  >
-                    <AutoAwesome sx={{ fontSize: 18 }} />
-                  </IconButton>
-                )}
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "12px",
-              fontSize: "0.875rem",
-              color: "#F1F5F9",
-              transition: "all 0.2s ease",
-              "& fieldset": {
-                borderColor: "rgba(148, 163, 184, 0.2)",
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <TextField
+            fullWidth
+            placeholder="Search Tasmania..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search
+                    sx={{ color: "rgba(148, 163, 184, 0.8)", fontSize: 20 }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: isSearching ? (
+                <InputAdornment position="end">
+                  <CircularProgress size={18} sx={{ color: "#10B981" }} />
+                </InputAdornment>
+              ) : null,
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                borderRadius: "12px",
+                fontSize: "0.875rem",
+                color: "#F1F5F9",
                 transition: "all 0.2s ease",
+                "& fieldset": {
+                  borderColor: "rgba(148, 163, 184, 0.2)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover fieldset": {
+                  borderColor: "rgba(148, 163, 184, 0.35)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#10B981",
+                  borderWidth: "1px",
+                },
               },
-              "&:hover fieldset": {
-                borderColor: "rgba(148, 163, 184, 0.35)",
+              "& .MuiOutlinedInput-input": {
+                "&::placeholder": {
+                  color: "rgba(148, 163, 184, 0.6)",
+                  opacity: 1,
+                },
               },
-              "&.Mui-focused fieldset": {
-                borderColor: "#10B981",
-                borderWidth: "1px",
+            }}
+          />
+          {/* Search Button */}
+          <IconButton
+            onClick={handleSearch}
+            disabled={isLoading || !searchValue.trim()}
+            sx={{
+              bgcolor: "#10B981",
+              color: "#fff",
+              borderRadius: "12px",
+              width: 42,
+              height: 42,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: "#059669",
+                boxShadow: "0 0 16px rgba(16, 185, 129, 0.4)",
               },
-            },
-            "& .MuiOutlinedInput-input": {
-              "&::placeholder": {
-                color: "rgba(148, 163, 184, 0.6)",
-                opacity: 1,
+              "&.Mui-disabled": {
+                bgcolor: "rgba(148, 163, 184, 0.2)",
+                color: "rgba(148, 163, 184, 0.5)",
               },
-            },
-          }}
-        />
+            }}
+          >
+            <Search sx={{ fontSize: 22 }} />
+          </IconButton>
+        </Box>
 
         {/* Quick Jump Chips */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
