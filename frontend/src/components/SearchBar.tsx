@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -65,6 +65,7 @@ export default function SearchBar({
   const [isSearching, setIsSearching] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Load search history on mount
   useEffect(() => {
@@ -73,22 +74,37 @@ export default function SearchBar({
 
   // Fetch suggestions as user types
   useEffect(() => {
+    // Track the current query to avoid stale updates
+    let isCurrent = true;
+
     const fetchSuggestions = async () => {
       if (searchQuery.length < 2) {
-        setSuggestions([]);
-        setIsSearching(false);
+        if (isCurrent) {
+          setSuggestions([]);
+          setIsSearching(false);
+        }
         return;
       }
 
-      setIsSearching(true);
+      if (isCurrent) {
+        setIsSearching(true);
+      }
+
       try {
         const results = await geocodingService.searchLocations(searchQuery, 10);
-        setSuggestions(results);
+        // Only update if this is still the current query
+        if (isCurrent) {
+          setSuggestions(results);
+        }
       } catch (error) {
         console.error("Search error:", error);
-        setSuggestions([]);
+        if (isCurrent) {
+          setSuggestions([]);
+        }
       } finally {
-        setIsSearching(false);
+        if (isCurrent) {
+          setIsSearching(false);
+        }
       }
     };
 
@@ -97,8 +113,11 @@ export default function SearchBar({
       setIsSearching(true);
     }
 
-    const debounceTimer = setTimeout(fetchSuggestions, 150); // Slightly faster
-    return () => clearTimeout(debounceTimer);
+    const debounceTimer = setTimeout(fetchSuggestions, 300); // Slightly longer debounce for stability
+    return () => {
+      isCurrent = false;
+      clearTimeout(debounceTimer);
+    };
   }, [searchQuery]);
 
   const handleOptionSelect = async (option: SearchOption | null) => {
@@ -164,33 +183,31 @@ export default function SearchBar({
     setHistory(searchHistory.getHistory());
   };
 
-  // Combine all options
-  const getAllOptions = (): SearchOption[] => {
-    const options: SearchOption[] = [];
+  // Memoize options to prevent unnecessary re-renders that close the dropdown
+  const options = useMemo((): SearchOption[] => {
+    const opts: SearchOption[] = [];
 
     // Add suggestions if searching
     if (searchQuery.length >= 2) {
-      options.push(
+      opts.push(
         ...suggestions.map((s) => ({ type: "suggestion" as const, data: s })),
       );
     }
 
     // Add history if not searching
     if (searchQuery.length === 0 && history.length > 0) {
-      options.push(
-        ...history.map((h) => ({ type: "history" as const, data: h })),
-      );
+      opts.push(...history.map((h) => ({ type: "history" as const, data: h })));
     }
 
     // Add presets if not searching and no history
     if (searchQuery.length === 0 && history.length === 0) {
-      options.push(
+      opts.push(
         ...LOCATION_PRESETS.map((p) => ({ type: "preset" as const, data: p })),
       );
     }
 
-    return options;
-  };
+    return opts;
+  }, [searchQuery, suggestions, history]);
 
   return (
     <Paper
@@ -231,7 +248,17 @@ export default function SearchBar({
           <Autocomplete
             freeSolo
             fullWidth
-            options={getAllOptions()}
+            open={dropdownOpen}
+            onOpen={() => setDropdownOpen(true)}
+            onClose={(_event, reason) => {
+              // Only close on select or escape, not on blur during loading
+              if (reason === "selectOption" || reason === "escape") {
+                setDropdownOpen(false);
+              } else if (reason === "blur" && !isSearching) {
+                setDropdownOpen(false);
+              }
+            }}
+            options={options}
             getOptionLabel={(option) => {
               if (typeof option === "string") return option;
               if (option.type === "suggestion") return option.data.displayName;
@@ -239,12 +266,17 @@ export default function SearchBar({
               return option.data.name;
             }}
             inputValue={searchQuery}
-            onInputChange={(_event, newValue) => {
+            onInputChange={(_event, newValue, reason) => {
               setSearchQuery(newValue);
+              // Keep dropdown open while typing
+              if (reason === "input" && newValue.length >= 2) {
+                setDropdownOpen(true);
+              }
             }}
             onChange={(_event, value) => {
               if (typeof value !== "string" && value !== null) {
                 handleOptionSelect(value);
+                setDropdownOpen(false);
               }
             }}
             loading={isSearching}
