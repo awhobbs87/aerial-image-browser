@@ -62,6 +62,8 @@ interface ResultsPanelProps {
   dateRange: { min: number; max: number } | null;
   hasActiveFilters: boolean;
   onQuickFilterPreset: (presetId: string) => void;
+  // Location info
+  searchedLocation?: string | null;
 }
 
 const getPhotoKey = (photo: EnhancedPhoto) =>
@@ -83,6 +85,7 @@ export default function ResultsPanel({
   onOpenThenNow,
   onClearComparison,
   filters,
+  searchedLocation,
   onFiltersChange,
   availableScales,
   dateRange,
@@ -143,73 +146,106 @@ export default function ResultsPanel({
             sx={{
               p: 2,
               borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* Location Name */}
+            {searchedLocation && (
               <Typography
-                variant="subtitle1"
+                variant="body2"
                 sx={{
-                  fontWeight: 600,
-                  color: "#F1F5F9",
-                  fontSize: "0.95rem",
+                  color: "#94A3B8",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
                 }}
               >
-                Results
+                <Box
+                  component="span"
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: "#10B981",
+                    display: "inline-block",
+                  }}
+                />
+                {searchedLocation}
               </Typography>
-              <Chip
-                label={`${photos.length}`}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.7rem",
-                  fontWeight: 600,
-                  bgcolor: "rgba(16, 185, 129, 0.2)",
-                  color: "#10B981",
-                  border: "1px solid rgba(16, 185, 129, 0.3)",
-                }}
-              />
-            </Box>
+            )}
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              {/* Filter Toggle */}
-              <Tooltip title={showFilters ? "Hide filters" : "Show filters"}>
-                <IconButton
-                  onClick={() => setShowFilters(!showFilters)}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#F1F5F9",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Results
+                </Typography>
+                <Chip
+                  label={`${photos.length}`}
                   size="small"
                   sx={{
-                    color: hasActiveFilters ? "#10B981" : "#94A3B8",
-                    bgcolor: hasActiveFilters
-                      ? "rgba(16, 185, 129, 0.15)"
-                      : "transparent",
+                    height: 20,
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    bgcolor: "rgba(16, 185, 129, 0.2)",
+                    color: "#10B981",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                {/* Filter Toggle */}
+                <Tooltip title={showFilters ? "Hide filters" : "Show filters"}>
+                  <IconButton
+                    onClick={() => setShowFilters(!showFilters)}
+                    size="small"
+                    sx={{
+                      color: hasActiveFilters ? "#10B981" : "#94A3B8",
+                      bgcolor: hasActiveFilters
+                        ? "rgba(16, 185, 129, 0.15)"
+                        : "transparent",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(16, 185, 129, 0.15)",
+                        color: "#10B981",
+                      },
+                    }}
+                  >
+                    <FilterList sx={{ fontSize: 20 }} />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Close Panel */}
+                <IconButton
+                  onClick={() => setIsOpen(false)}
+                  size="small"
+                  sx={{
+                    color: "#94A3B8",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      bgcolor: "rgba(16, 185, 129, 0.15)",
-                      color: "#10B981",
+                      bgcolor: "rgba(148, 163, 184, 0.15)",
+                      color: "#F1F5F9",
                     },
                   }}
                 >
-                  <FilterList sx={{ fontSize: 20 }} />
+                  <ChevronLeft sx={{ fontSize: 20 }} />
                 </IconButton>
-              </Tooltip>
-
-              {/* Close Panel */}
-              <IconButton
-                onClick={() => setIsOpen(false)}
-                size="small"
-                sx={{
-                  color: "#94A3B8",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    bgcolor: "rgba(148, 163, 184, 0.15)",
-                    color: "#F1F5F9",
-                  },
-                }}
-              >
-                <ChevronLeft sx={{ fontSize: 20 }} />
-              </IconButton>
+              </Box>
             </Box>
           </Box>
 

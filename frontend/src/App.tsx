@@ -65,6 +65,7 @@ import GlassNavigation from "./components/GlassNavigation";
 import DiscoveryTray from "./components/DiscoveryTray";
 import FloatingSearchBar from "./components/FloatingSearchBar";
 import ResultsPanel from "./components/ResultsPanel";
+import AISearchModal from "./components/AISearchModal";
 
 const APP_VERSION = "3.0.0";
 
@@ -171,6 +172,10 @@ function AppContent() {
   const [discoveryPanel, setDiscoveryPanel] = useState<DiscoveryPanel>(null);
   const [discoveryTrayExpanded, setDiscoveryTrayExpanded] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [searchedLocationName, setSearchedLocationName] = useState<
+    string | null
+  >(null);
 
   // Persist theme preference to localStorage
   useEffect(() => {
@@ -575,14 +580,33 @@ function AppContent() {
 
   // Handle AI search modal from floating search bar
   const handleAISearchClick = useCallback(() => {
-    // Open the AI search modal - for now we'll trigger the discovery panel
-    setDiscoveryPanel("search");
+    setAiModalOpen(true);
   }, []);
 
   // Handler for floating search bar
   const handleFloatingSearch = useCallback(
     (lat: number, lon: number, name: string) => {
+      setSearchedLocationName(name);
       handleSearch(lat, lon, name);
+    },
+    [handleSearch],
+  );
+
+  // Handler for AI search from modal
+  const handleAISearch = useCallback(
+    (
+      lat: number,
+      lon: number,
+      locationName?: string,
+      filters?: {
+        startDate?: string;
+        endDate?: string;
+        imageTypes?: string[];
+      },
+    ) => {
+      setAiModalOpen(false);
+      setSearchedLocationName(locationName || "AI Search Result");
+      handleSearch(lat, lon, locationName, filters);
     },
     [handleSearch],
   );
@@ -688,6 +712,7 @@ function AppContent() {
               dateRange={dateRange}
               hasActiveFilters={hasActiveFilters}
               onQuickFilterPreset={handleQuickFilterPreset}
+              searchedLocation={searchedLocationName}
             />
           )}
 
@@ -751,6 +776,13 @@ function AppContent() {
           >
             v{APP_VERSION}
           </Typography>
+
+          {/* AI Search Modal */}
+          <AISearchModal
+            open={aiModalOpen}
+            onClose={() => setAiModalOpen(false)}
+            onSearch={handleAISearch}
+          />
         </Box>
       ) : (
         /* CLASSIC LAYOUT - Original two-column design */
