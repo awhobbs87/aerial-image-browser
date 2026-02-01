@@ -50,9 +50,13 @@ export class AIService {
       return [];
     }
 
+    // Check if the user's query looks like a street address
+    const queryLooksLikeAddress = /^\d+\s/.test(query.trim());
+
     const prompt = `You are a location formatting assistant. Format these Nominatim geocoding results like Google Maps does.
 
 User searched for: "${query}"
+${queryLooksLikeAddress ? "NOTE: User is searching for a STREET ADDRESS - preserve the street number and name!" : ""}
 
 Raw Nominatim results:
 ${JSON.stringify(
@@ -62,22 +66,25 @@ ${JSON.stringify(
 )}
 
 Format each result with Google Maps style:
-- formattedName: Clean display name like "Battery Point, Hobart TAS" or "123 Collins Street, Hobart TAS 7000"
-- shortName: Just the primary name (1-3 words) like "Battery Point" or "123 Collins St"
+- formattedName: Clean display name like "Battery Point, Hobart TAS" or "78 New Town Road, New Town TAS"
+- shortName: Just the primary name like "Battery Point" or "78 New Town Rd"
 - confidence: How well it matches the query (0.9+ exact, 0.7-0.9 partial, <0.7 weak)
 - category: Type like "Suburb", "Street Address", "Town", "City", "Landmark", "Region"
 
 Google Maps formatting rules:
-1. For suburbs/towns: "Name, Nearest City TAS" (e.g., "Sandy Bay, Hobart TAS")
-2. For addresses: "Number Street, Suburb TAS Postcode" (e.g., "42 Davey St, Hobart TAS 7000")
+1. For STREET ADDRESSES: "Number Street Name, Suburb TAS" (e.g., "78 New Town Road, New Town TAS")
+   - ALWAYS include the street number if the user searched for one
+   - If result is just a suburb but user searched for an address, format as "Number Street, Suburb TAS"
+2. For suburbs/towns: "Name, Nearest City TAS" (e.g., "Sandy Bay, Hobart TAS")
 3. For landmarks: "Landmark Name, Suburb TAS" (e.g., "MONA, Berriedale TAS")
 4. NEVER include "Australia" - it's implied
-5. NEVER repeat "Tasmania" - use "TAS" once at the end
-6. Keep postcodes only for specific addresses
-7. Remove redundant parent regions (don't say "Hobart, Greater Hobart, TAS")
+5. Use "TAS" not "Tasmania"
+6. Remove redundant parent regions
+
+IMPORTANT: If user searched for "${query}" and results don't include that exact address, use the user's search query to construct the formatted name with the best matching suburb.
 
 Respond with ONLY a JSON array:
-[{"index": 0, "formattedName": "...", "shortName": "...", "confidence": 0.95, "category": "Suburb"}]`;
+[{"index": 0, "formattedName": "...", "shortName": "...", "confidence": 0.95, "category": "Street Address"}]`;
 
     try {
       const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {

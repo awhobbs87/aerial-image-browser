@@ -1,6 +1,21 @@
 import { createTheme } from "@mui/material/styles";
 import { shadows, shadowsDark } from "./theme/tokens";
 
+/**
+ * Tasmania Aerial Photos - Premium Dark GIS Theme
+ *
+ * Color Palette:
+ * - Deep Charcoal: #121212 (primary background)
+ * - Emerald Green: #10B981 (accent color)
+ * - Slate Grays: #1E293B, #334155, #475569, #64748B
+ *
+ * Design Philosophy:
+ * - Modern dark mode with glassmorphism
+ * - Premium, technical, immersive atmosphere
+ * - Thin line weights, generous whitespace
+ * - Map as hero, UI as assistant
+ */
+
 // Common theme options with enhanced visual polish
 const commonTheme = {
   typography: {
@@ -16,25 +31,27 @@ const commonTheme = {
     ].join(","),
     h1: {
       fontWeight: 600,
-      letterSpacing: "-0.02em",
+      letterSpacing: "-0.025em",
       lineHeight: 1.2,
     },
     h2: {
       fontWeight: 500,
-      letterSpacing: "-0.01em",
+      letterSpacing: "-0.02em",
       lineHeight: 1.3,
     },
     h3: {
       fontWeight: 500,
-      letterSpacing: "-0.01em",
+      letterSpacing: "-0.015em",
       lineHeight: 1.3,
     },
     h4: {
       fontWeight: 500,
+      letterSpacing: "-0.01em",
       lineHeight: 1.4,
     },
     h5: {
       fontWeight: 500,
+      letterSpacing: "-0.005em",
       lineHeight: 1.4,
     },
     h6: {
@@ -44,14 +61,17 @@ const commonTheme = {
     body1: {
       fontSize: "1rem",
       lineHeight: 1.6,
+      letterSpacing: "0.01em",
     },
     body2: {
-      fontSize: "0.9375rem",
+      fontSize: "0.875rem",
       lineHeight: 1.5,
+      letterSpacing: "0.01em",
     },
     caption: {
+      fontSize: "0.75rem",
       lineHeight: 1.4,
-      letterSpacing: "0.025em",
+      letterSpacing: "0.02em",
     },
     button: {
       fontWeight: 500,
@@ -63,13 +83,13 @@ const commonTheme = {
   },
   transitions: {
     duration: {
-      shortest: 150,
-      shorter: 200,
-      short: 250,
-      standard: 300,
-      complex: 375,
-      enteringScreen: 225,
-      leavingScreen: 195,
+      shortest: 100,
+      shorter: 150,
+      short: 200,
+      standard: 250,
+      complex: 350,
+      enteringScreen: 200,
+      leavingScreen: 150,
     },
     easing: {
       easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -79,12 +99,52 @@ const commonTheme = {
     },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          // Smooth scrolling for the entire page
+          scrollBehavior: "smooth",
+        },
+        body: {
+          // Premium scrollbar styling
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(148, 163, 184, 0.3) transparent",
+          "&::-webkit-scrollbar": {
+            width: "6px",
+            height: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "rgba(148, 163, 184, 0.25)",
+            borderRadius: "3px",
+            "&:hover": {
+              background: "rgba(148, 163, 184, 0.4)",
+            },
+          },
+          // Prevent overscroll bounce
+          overscrollBehavior: "none",
+        },
+        // Thin focus rings
+        "*:focus-visible": {
+          outline: "2px solid #10B981",
+          outlineOffset: "2px",
+        },
+        // Selection color
+        "::selection": {
+          backgroundColor: "rgba(16, 185, 129, 0.3)",
+          color: "inherit",
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
-          transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition:
+            "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
-            transform: "translateY(-4px)",
+            transform: "translateY(-2px)",
           },
         },
       },
@@ -92,17 +152,30 @@ const commonTheme = {
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: "none",
+          textTransform: "none" as const,
           fontWeight: 500,
-          borderRadius: 8,
+          borderRadius: 20, // Pill-shaped buttons
           padding: "8px 20px",
           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
             transform: "translateY(-1px)",
           },
           "&:focus-visible": {
-            outline: "3px solid #004d40",
+            outline: "2px solid #10B981",
             outlineOffset: "2px",
+          },
+        },
+        // Pill button variants
+        contained: {
+          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)",
+          "&:hover": {
+            boxShadow: "0 4px 16px rgba(16, 185, 129, 0.35)",
+          },
+        },
+        outlined: {
+          borderWidth: "1px",
+          "&:hover": {
+            borderWidth: "1px",
           },
         },
       },
@@ -111,13 +184,13 @@ const commonTheme = {
       styleOverrides: {
         root: {
           fontWeight: 500,
-          borderRadius: 8,
+          borderRadius: 16, // Pill-shaped chips
           transition: "all 0.2s ease-in-out",
           "&:hover": {
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
           },
           "&:focus-visible": {
-            outline: "2px solid #004d40",
+            outline: "2px solid #10B981",
             outlineOffset: "2px",
           },
         },
@@ -128,7 +201,7 @@ const commonTheme = {
         root: {
           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:focus-visible": {
-            outline: "2px solid #004d40",
+            outline: "2px solid #10B981",
             outlineOffset: "2px",
           },
         },
@@ -157,15 +230,15 @@ const commonTheme = {
     MuiToggleButton: {
       styleOverrides: {
         root: {
-          textTransform: "none",
+          textTransform: "none" as const,
           fontWeight: 500,
           borderRadius: 10,
           transition: "all 0.2s ease-in-out",
           "&.Mui-selected": {
-            transform: "scale(1.02)",
+            transform: "scale(1.01)",
           },
           "&:focus-visible": {
-            outline: "2px solid #004d40",
+            outline: "2px solid #10B981",
             outlineOffset: "2px",
           },
         },
@@ -175,9 +248,21 @@ const commonTheme = {
       styleOverrides: {
         root: {
           "&:focus-visible": {
-            outline: "2px solid #004d40",
+            outline: "2px solid #10B981",
             outlineOffset: "2px",
           },
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          backgroundColor: "rgba(30, 41, 59, 0.95)",
+          backdropFilter: "blur(8px)",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          padding: "6px 12px",
+          borderRadius: 8,
         },
       },
     },
@@ -257,24 +342,23 @@ export const lightTheme = createTheme({
     shadows.xl,
     shadows.xl,
     shadows.xl,
-  // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any,
 });
 
-// Dark theme with enhanced color palette and softer shadows
+// Dark theme - Premium GIS aesthetic with Deep Charcoal and Emerald accents
 export const darkTheme = createTheme({
   ...commonTheme,
   palette: {
     mode: "dark",
     primary: {
-      main: "#10B981", // Brighter emerald for dark mode visibility
+      main: "#10B981", // Emerald Green - primary accent
       light: "#34D399",
       dark: "#059669",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#22d3ee", // Lighter cyan for dark mode
+      main: "#22d3ee", // Cyan for secondary actions
       light: "#67e8f9",
       dark: "#0891b2",
       contrastText: "#ffffff",
@@ -290,7 +374,7 @@ export const darkTheme = createTheme({
       dark: "#ef4444",
     },
     warning: {
-      main: "#fbbf24", // Same yellow for dark mode
+      main: "#fbbf24",
       light: "#fcd34d",
       dark: "#f59e0b",
     },
@@ -300,14 +384,14 @@ export const darkTheme = createTheme({
       dark: "#3b82f6",
     },
     background: {
-      default: "#0A0A0A", // Rich neutral, not pure black
-      paper: "#1A1A1A",
+      default: "#121212", // Deep Charcoal - primary background
+      paper: "#1E293B", // Slate Gray 800 - elevated surfaces
     },
     text: {
-      primary: "#EAEAEA", // Higher contrast for accessibility
-      secondary: "#B4B4B4", // Better contrast
+      primary: "#F1F5F9", // Slate 100 - high contrast
+      secondary: "#94A3B8", // Slate 400 - secondary text
     },
-    divider: "rgba(255, 255, 255, 0.1)",
+    divider: "rgba(148, 163, 184, 0.12)", // Slate-based divider
   },
   shadows: [
     "none",
@@ -335,7 +419,6 @@ export const darkTheme = createTheme({
     shadowsDark.xl,
     shadowsDark.xl,
     shadowsDark.xl,
-  // @ts-expect-error MUI's type for shadows is a tuple of 25 strings, but we are using a custom shadows array.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any,
 });

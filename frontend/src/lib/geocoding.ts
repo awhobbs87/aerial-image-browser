@@ -73,6 +73,9 @@ class GeocodingService {
     }
 
     try {
+      // Check if query looks like a street address (starts with number)
+      const looksLikeAddress = /^\d+\s/.test(query.trim());
+
       // If query doesn't mention Tasmania or TAS, append it for better results
       const enhancedQuery =
         query.toLowerCase().includes("tasmania") ||
@@ -92,6 +95,14 @@ class GeocodingService {
         viewbox: "143.8,-43.7,148.5,-39.5",
         bounded: "0", // Don't strictly bound - filter in code instead for better results
       });
+
+      // For street addresses, use structured query for better results
+      if (looksLikeAddress) {
+        params.set("street", query.trim());
+        params.set("state", "Tasmania");
+        params.set("country", "Australia");
+        params.delete("q"); // Use structured params instead
+      }
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
         headers: {

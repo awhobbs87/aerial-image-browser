@@ -60,6 +60,11 @@ import ChangelogModal from "./components/ChangelogModal";
 import { useSearchLocation } from "./hooks/usePhotos";
 import type { LocationSearchParams, EnhancedPhoto } from "./types/api";
 import PhotoViewer from "./components/PhotoViewer";
+// New redesigned components
+import GlassNavigation from "./components/GlassNavigation";
+import DiscoveryTray from "./components/DiscoveryTray";
+import FloatingSearchBar from "./components/FloatingSearchBar";
+import ResultsPanel from "./components/ResultsPanel";
 
 const APP_VERSION = "3.0.0";
 
@@ -83,6 +88,8 @@ const queryClient = new QueryClient({
 type ViewMode = "grid" | "map";
 type ResultsViewMode = "grid" | "timeline" | "gallery";
 type ThemeMode = "light" | "dark" | "system";
+type LayoutMode = "classic" | "immersive";
+type DiscoveryPanel = "search" | "layers" | "history" | null;
 const getPhotoKey = (photo: EnhancedPhoto) =>
   `${photo.layerId}-${photo.OBJECTID}`;
 
@@ -158,6 +165,12 @@ function AppContent() {
       digital: true,
     },
   });
+
+  // Immersive layout mode (new glassmorphic design)
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("immersive");
+  const [discoveryPanel, setDiscoveryPanel] = useState<DiscoveryPanel>(null);
+  const [discoveryTrayExpanded, setDiscoveryTrayExpanded] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Persist theme preference to localStorage
   useEffect(() => {
@@ -560,6 +573,20 @@ function AppContent() {
     });
   }, []);
 
+  // Handle AI search modal from floating search bar
+  const handleAISearchClick = useCallback(() => {
+    // Open the AI search modal - for now we'll trigger the discovery panel
+    setDiscoveryPanel("search");
+  }, []);
+
+  // Handler for floating search bar
+  const handleFloatingSearch = useCallback(
+    (lat: number, lon: number, name: string) => {
+      handleSearch(lat, lon, name);
+    },
+    [handleSearch],
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -567,1075 +594,25 @@ function AppContent() {
       {/* Loading Progress Bar */}
       <LoadingBar loading={isLoading} />
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-      >
-        <AppBar
-          darkMode={darkMode}
-          themeMode={themeMode}
-          onToggleDarkMode={handleToggleDarkMode}
-          favoritesCount={favorites.size}
-          onViewFavorites={handleViewFavorites}
-          version={APP_VERSION}
-          onVersionClick={() => setChangelogOpen(true)}
-        />
-
-        {/* Desktop: Two-column layout, Mobile: Single column */}
+      {/* IMMERSIVE LAYOUT - Full-screen map with floating UI */}
+      {layoutMode === "immersive" ? (
         <Box
           sx={{
-            flexGrow: 1,
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            minHeight: 0, // Important for flexbox scrolling
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+            overflow: "hidden",
+            bgcolor: "#121212",
           }}
         >
-          {/* Toggle button - Desktop only, always visible */}
-          <IconButton
-            onClick={handleToggleSidebar}
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          {/* Full-Screen Map Background */}
+          <Box
             sx={{
-              display: { xs: "none", md: "flex" },
               position: "absolute",
-              left: sidebarOpen ? 460 : 8,
-              top: sidebarOpen ? 80 : 120, // Move down when collapsed to avoid zoom controls
-              zIndex: 1001,
-              bgcolor: "background.paper",
-              border: 1,
-              borderColor: "divider",
-              boxShadow: 2,
-              transition: "all 0.3s ease-in-out",
-              "&:hover": {
-                bgcolor: "background.paper",
-                opacity: 0.9,
-                transform: "scale(1.05)",
-              },
-            }}
-            size="small"
-          >
-            {sidebarOpen ? <ChevronLeft /> : <Menu />}
-          </IconButton>
-
-          {/* Left Sidebar - Search, Filters, Results */}
-          <Box
-            sx={{
-              width: {
-                xs: "100%",
-                md: sidebarOpen ? "480px" : 0,
-              },
-              display: {
-                xs: "block",
-                md: sidebarOpen ? "flex" : "none",
-              },
-              flexDirection: "column",
-              borderRight: { md: sidebarOpen ? 1 : 0 },
-              borderColor: { md: "divider" },
-              overflowY: "auto",
-              overflowX: "hidden",
-              maxHeight: { xs: "none", md: "calc(100vh - 64px)" },
-              position: "relative",
-              transition: "width 0.3s ease-in-out",
-              flexShrink: 0,
-              overscrollBehavior: "contain", // Prevent scroll chaining
-              WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
-            }}
-            onWheel={(e) => {
-              // Prevent page scroll when scrolling sidebar
-              const target = e.currentTarget;
-              const isScrolling = target.scrollHeight > target.clientHeight;
-              const isAtTop = target.scrollTop === 0;
-              const isAtBottom =
-                target.scrollTop + target.clientHeight >=
-                target.scrollHeight - 1;
-
-              if (isScrolling) {
-                // If we're scrolling within the sidebar, stop propagation
-                if (
-                  !(isAtTop && e.deltaY < 0) &&
-                  !(isAtBottom && e.deltaY > 0)
-                ) {
-                  e.stopPropagation();
-                }
-              }
-            }}
-            onTouchMove={(e) => {
-              // Prevent body scroll on touch devices when scrolling sidebar
-              const target = e.currentTarget;
-              if (target.scrollHeight > target.clientHeight) {
-                e.stopPropagation();
-              }
+              inset: 0,
+              zIndex: 1,
             }}
           >
-            <Box
-              sx={{
-                py: { xs: 1.5, md: 2 },
-                px: { xs: 1.5, md: 3 },
-                maxWidth: "100%",
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              {/* Mobile Search Button - Show button after search, hide search bar */}
-              {searchParams && (
-                <Box
-                  sx={{
-                    mb: { xs: 1.5, md: 2 },
-                    display: { xs: "block", md: "none" },
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={() => setMobileSearchOpen(true)}
-                    startIcon={<SearchIcon />}
-                    sx={{
-                      py: { xs: 1, md: 1.5 },
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      minHeight: { xs: 40, md: 48 },
-                    }}
-                  >
-                    Search Location
-                  </Button>
-                </Box>
-              )}
-
-              {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
-              {!searchParams && (
-                <Box
-                  sx={{
-                    mb: { xs: 1.5, md: 2 },
-                    display: { xs: "block", md: "none" },
-                  }}
-                >
-                  <SearchBar onSearch={handleSearch} loading={isLoading} />
-                </Box>
-              )}
-
-              {searchParams && (
-                <>
-                  {/* Desktop Filter Panel */}
-                  <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
-                    <FilterPanel
-                      filters={filters}
-                      onFiltersChange={setFilters}
-                      availableScales={availableScales}
-                      dateRange={dateRange}
-                      showQuickFilters={false}
-                    />
-                  </Box>
-
-                  {/* Mobile Filter Button */}
-                  <Box
-                    sx={{
-                      mb: { xs: 1.5, md: 2 },
-                      display: { xs: "block", md: "none" },
-                    }}
-                  >
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      onClick={() => setMobileFilterOpen(true)}
-                      startIcon={<FilterList />}
-                      sx={{
-                        py: { xs: 1, md: 1.5 },
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
-                        minHeight: { xs: 40, md: 48 },
-                      }}
-                    >
-                      Filters
-                      {hasActiveFilters && (
-                        <Chip
-                          label="Active"
-                          size="small"
-                          color="primary"
-                          sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
-                        />
-                      )}
-                    </Button>
-                  </Box>
-
-                  {/* Comparison Tools - Compact, Active Design */}
-                  <Box
-                    sx={{
-                      mb: 2,
-                      display: { xs: "none", md: "block" },
-                      // Apple Liquid Glass: Frosted glass with subtle elevation
-                      bgcolor: (theme) =>
-                        getThemeValue(
-                          appleLiquidGlass.backgrounds.frosted,
-                          theme.palette.mode === "dark",
-                        ),
-                      ...createBackdropFilter(appleLiquidGlass.backdrop.module),
-                      borderRadius: appleLiquidGlass.radius.medium,
-                      px: 1.5,
-                      py: 1,
-                      border: (theme) =>
-                        `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
-                      boxShadow: (theme) => {
-                        const shadows = getThemeValue(
-                          {
-                            light: appleLiquidGlass.shadows.light,
-                            dark: appleLiquidGlass.shadows.dark,
-                          },
-                          theme.palette.mode === "dark",
-                        );
-                        return `${shadows.medium}, ${shadows.innerFrosted}`;
-                      },
-                    }}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={1.5}
-                      alignItems="center"
-                      justifyContent="space-between"
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontSize: appleLiquidGlass.typography.hint.fontSize,
-                          fontWeight: 500,
-                          color: (theme) =>
-                            getThemeValue(
-                              appleLiquidGlass.text.secondary,
-                              theme.palette.mode === "dark",
-                            ),
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        {comparisonSelection.length === 0
-                          ? "Select photos to compare"
-                          : comparisonSelection.length === 1
-                            ? "Select another photo or use Then vs Now"
-                            : "Ready to compare"}
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        sx={{ flexShrink: 0 }}
-                      >
-                        <Button
-                          variant={
-                            comparisonSelection.length >= 2
-                              ? "contained"
-                              : "outlined"
-                          }
-                          color="primary"
-                          size="small"
-                          startIcon={<CompareArrowsIcon fontSize="small" />}
-                          disabled={comparisonSelection.length < 2}
-                          onClick={handleOpenComparisonModal}
-                          sx={{
-                            fontWeight: 600,
-                            minWidth: 100,
-                            fontSize:
-                              appleLiquidGlass.typography.button.fontSize,
-                            textTransform: "none",
-                            px: 1.5,
-                            py: 0.625,
-                            borderRadius: appleLiquidGlass.radius.small,
-                            bgcolor:
-                              comparisonSelection.length >= 2
-                                ? (theme) => theme.palette.primary.main
-                                : "transparent",
-                            color:
-                              comparisonSelection.length >= 2
-                                ? "#ffffff"
-                                : (theme) =>
-                                    getThemeValue(
-                                      appleLiquidGlass.text.secondary,
-                                      theme.palette.mode === "dark",
-                                    ),
-                            border: (theme) =>
-                              `1px solid ${
-                                comparisonSelection.length >= 2
-                                  ? theme.palette.primary.main
-                                  : getThemeValue(
-                                      appleLiquidGlass.borders.subtle,
-                                      theme.palette.mode === "dark",
-                                    )
-                              }`,
-                            "&.Mui-disabled": {
-                              opacity: appleLiquidGlass.opacity.disabled,
-                              borderColor: (theme) =>
-                                getThemeValue(
-                                  appleLiquidGlass.borders.subtle,
-                                  theme.palette.mode === "dark",
-                                ),
-                            },
-                            "&:hover:not(.Mui-disabled)": {
-                              bgcolor:
-                                comparisonSelection.length >= 2
-                                  ? (theme) => theme.palette.primary.dark
-                                  : (theme) =>
-                                      getThemeValue(
-                                        appleLiquidGlass.backgrounds.button
-                                          .hover,
-                                        theme.palette.mode === "dark",
-                                      ),
-                              transform:
-                                appleLiquidGlass.transforms.hover.button,
-                              boxShadow: (theme) =>
-                                getThemeValue(
-                                  {
-                                    light:
-                                      appleLiquidGlass.shadows.light.medium,
-                                    dark: appleLiquidGlass.shadows.dark.medium,
-                                  },
-                                  theme.palette.mode === "dark",
-                                ),
-                            },
-                            transition: appleLiquidGlass.transitions.standard,
-                          }}
-                        >
-                          Compare ({comparisonSelection.length}/2)
-                        </Button>
-                        <Button
-                          variant={
-                            comparisonSelection.length === 1
-                              ? "contained"
-                              : "outlined"
-                          }
-                          color="secondary"
-                          size="small"
-                          disabled={comparisonSelection.length !== 1}
-                          onClick={handleOpenThenNowModal}
-                          startIcon={<History fontSize="small" />}
-                          sx={{
-                            fontWeight: 600,
-                            minWidth: 100,
-                            fontSize:
-                              appleLiquidGlass.typography.button.fontSize,
-                            textTransform: "none",
-                            px: 1.5,
-                            py: 0.625,
-                            borderRadius: appleLiquidGlass.radius.small,
-                            bgcolor:
-                              comparisonSelection.length === 1
-                                ? (theme) => theme.palette.secondary.main
-                                : "transparent",
-                            color:
-                              comparisonSelection.length === 1
-                                ? "#ffffff"
-                                : (theme) =>
-                                    getThemeValue(
-                                      appleLiquidGlass.text.secondary,
-                                      theme.palette.mode === "dark",
-                                    ),
-                            border: (theme) =>
-                              `1px solid ${
-                                comparisonSelection.length === 1
-                                  ? theme.palette.secondary.main
-                                  : getThemeValue(
-                                      appleLiquidGlass.borders.subtle,
-                                      theme.palette.mode === "dark",
-                                    )
-                              }`,
-                            "&.Mui-disabled": {
-                              opacity: appleLiquidGlass.opacity.disabled,
-                              borderColor: (theme) =>
-                                getThemeValue(
-                                  appleLiquidGlass.borders.subtle,
-                                  theme.palette.mode === "dark",
-                                ),
-                            },
-                            "&:hover:not(.Mui-disabled)": {
-                              bgcolor:
-                                comparisonSelection.length === 1
-                                  ? (theme) => theme.palette.secondary.dark
-                                  : (theme) =>
-                                      getThemeValue(
-                                        appleLiquidGlass.backgrounds.button
-                                          .hover,
-                                        theme.palette.mode === "dark",
-                                      ),
-                              transform:
-                                appleLiquidGlass.transforms.hover.button,
-                              boxShadow: (theme) =>
-                                getThemeValue(
-                                  {
-                                    light:
-                                      appleLiquidGlass.shadows.light.medium,
-                                    dark: appleLiquidGlass.shadows.dark.medium,
-                                  },
-                                  theme.palette.mode === "dark",
-                                ),
-                            },
-                            transition: appleLiquidGlass.transitions.standard,
-                          }}
-                        >
-                          Then vs Now
-                        </Button>
-                      </Stack>
-                    </Stack>
-                  </Box>
-
-                  {/* Mobile-only Unified 4-Button View Toggle */}
-                  <Box
-                    sx={{
-                      display: { xs: "block", md: "none" },
-                      mb: { xs: 1.5, md: 2 },
-                    }}
-                  >
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        bgcolor: "transparent",
-                        display: "flex",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <ToggleButtonGroup
-                        value={mobileViewValue}
-                        exclusive
-                        onChange={handleMobileViewChange}
-                        aria-label="view mode"
-                        size="small"
-                        sx={{
-                          "& .MuiToggleButton-root": {
-                            px: { xs: 1, md: 1.25 },
-                            py: { xs: 0.375, md: 0.5 },
-                            fontSize: "0.75rem",
-                            fontWeight: 500,
-                            textTransform: "none",
-                            border: (theme) =>
-                              `1px solid ${theme.palette.divider}`,
-                          },
-                        }}
-                      >
-                        <ToggleButton value="grid" aria-label="grid view">
-                          <GridView sx={{ mr: 0.5, fontSize: 16 }} />
-                          Grid
-                        </ToggleButton>
-                        <ToggleButton value="map" aria-label="map view">
-                          <MapIcon sx={{ mr: 0.5, fontSize: 16 }} />
-                          Map
-                        </ToggleButton>
-                        <ToggleButton
-                          value="timeline"
-                          aria-label="timeline view"
-                        >
-                          <Timeline sx={{ mr: 0.5, fontSize: 16 }} />
-                          Timeline
-                        </ToggleButton>
-                        <ToggleButton value="gallery" aria-label="gallery view">
-                          <PhotoLibrary sx={{ mr: 0.5, fontSize: 16 }} />
-                          Gallery
-                        </ToggleButton>
-                      </ToggleButtonGroup>
-                    </Paper>
-                  </Box>
-
-                  {/* Desktop 4-Button View Controls - Unified styling */}
-                  <Box sx={{ display: { xs: "none", md: "block" }, mb: 2 }}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(42, 42, 42, 0.6)"
-                            : "rgba(249, 250, 251, 0.8)",
-                        display: "inline-block",
-                        borderRadius: 1.5,
-                        p: 0.5,
-                        border: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "1px solid rgba(255, 255, 255, 0.1)"
-                            : "1px solid rgba(0, 0, 0, 0.08)",
-                        boxShadow: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "0 1px 3px rgba(0, 0, 0, 0.3)"
-                            : "0 1px 3px rgba(0, 0, 0, 0.06)",
-                      }}
-                    >
-                      <ToggleButtonGroup
-                        value={viewMode === "map" ? "map" : resultsViewMode}
-                        exclusive
-                        onChange={(e, value) => {
-                          if (value === "map") {
-                            handleViewModeChange(e, "map");
-                          } else if (
-                            value === "grid" ||
-                            value === "timeline" ||
-                            value === "gallery"
-                          ) {
-                            handleViewModeChange(e, "grid");
-                            handleResultsViewModeChange(e, value);
-                          }
-                        }}
-                        aria-label="view mode"
-                        size="small"
-                        sx={{
-                          gap: 0.5,
-                          "& .MuiToggleButton-root": {
-                            px: 1.5,
-                            py: 0.625,
-                            fontSize: "0.8125rem",
-                            fontWeight: 500,
-                            textTransform: "none",
-                            border: "none",
-                            borderRadius: 1,
-                            color: (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "#B4B4B4"
-                                : "#6B7280",
-                            bgcolor: "transparent",
-                            "&:hover": {
-                              bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                  ? "rgba(255, 255, 255, 0.08)"
-                                  : "rgba(0, 0, 0, 0.04)",
-                            },
-                            "&.Mui-selected": {
-                              bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                  ? "rgba(16, 185, 129, 0.2)"
-                                  : "rgba(5, 150, 105, 0.1)",
-                              color: (theme) =>
-                                theme.palette.mode === "dark"
-                                  ? "#10B981"
-                                  : "#059669",
-                              fontWeight: 600,
-                              "&:hover": {
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === "dark"
-                                    ? "rgba(16, 185, 129, 0.25)"
-                                    : "rgba(5, 150, 105, 0.15)",
-                              },
-                            },
-                          },
-                        }}
-                      >
-                        <ToggleButton value="grid" aria-label="grid view">
-                          <GridView sx={{ mr: 0.75, fontSize: 16 }} />
-                          Grid
-                        </ToggleButton>
-                        <ToggleButton value="map" aria-label="map view">
-                          <MapIcon sx={{ mr: 0.75, fontSize: 16 }} />
-                          Map
-                        </ToggleButton>
-                        <ToggleButton
-                          value="timeline"
-                          aria-label="timeline view"
-                        >
-                          <Timeline sx={{ mr: 0.75, fontSize: 16 }} />
-                          Timeline
-                        </ToggleButton>
-                        <ToggleButton value="gallery" aria-label="gallery view">
-                          <PhotoLibrary sx={{ mr: 0.75, fontSize: 16 }} />
-                          Gallery
-                        </ToggleButton>
-                      </ToggleButtonGroup>
-                    </Paper>
-                  </Box>
-
-                  {/* Results Grid (always visible on desktop, conditional on mobile) */}
-                  <Box
-                    sx={{
-                      display: {
-                        xs: viewMode === "grid" ? "block" : "none",
-                        md: "block",
-                      },
-                    }}
-                  >
-                    {filteredPhotos.length > 0 && (
-                      <>
-                        <Box sx={{ mb: { xs: 1.5, md: 2 } }}>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 600,
-                              mb: { xs: 0.5, md: 0.75 },
-                              display: "block",
-                              fontSize: "0.7rem",
-                              color: "text.secondary",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            Quick Filters
-                          </Typography>
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            flexWrap="wrap"
-                            useFlexGap
-                          >
-                            {FILTER_PRESETS.map((preset) => {
-                              const Icon = preset.icon;
-                              // Determine if this preset is "active" based on current filters
-                              const isActivePreset = (() => {
-                                if (preset.id === "historical") {
-                                  return (
-                                    filters.endDate &&
-                                    new Date(filters.endDate).getFullYear() <=
-                                      1980
-                                  );
-                                } else if (preset.id === "modern") {
-                                  return (
-                                    filters.startDate &&
-                                    new Date(filters.startDate).getFullYear() >=
-                                      2000
-                                  );
-                                } else if (preset.id === "high-detail") {
-                                  return (
-                                    filters.selectedScales.length > 0 &&
-                                    filters.selectedScales.every(
-                                      (s) => s <= 5000,
-                                    )
-                                  );
-                                }
-                                return false;
-                              })();
-
-                              return (
-                                <Tooltip
-                                  key={preset.id}
-                                  title={preset.description}
-                                  arrow
-                                  placement="top"
-                                >
-                                  <Chip
-                                    icon={<Icon sx={{ fontSize: 14 }} />}
-                                    label={preset.label}
-                                    onClick={() =>
-                                      handleQuickFilterPreset(preset.id)
-                                    }
-                                    size="small"
-                                    variant={
-                                      isActivePreset ? "filled" : "outlined"
-                                    }
-                                    color={
-                                      isActivePreset ? "primary" : "default"
-                                    }
-                                    sx={{
-                                      height: 26,
-                                      fontSize: "0.7rem",
-                                      fontWeight: 600,
-                                      cursor: "pointer",
-                                      transition: "all 0.2s ease-in-out",
-                                      ...(isActivePreset && {
-                                        bgcolor: (theme) =>
-                                          theme.palette.mode === "dark"
-                                            ? "rgba(16, 185, 129, 0.3)"
-                                            : "rgba(5, 150, 105, 0.2)",
-                                        borderColor: (theme) =>
-                                          theme.palette.mode === "dark"
-                                            ? "#10B981"
-                                            : "#059669",
-                                        color: (theme) =>
-                                          theme.palette.mode === "dark"
-                                            ? "#10B981"
-                                            : "#059669",
-                                        fontWeight: 700,
-                                        "& .MuiChip-icon": {
-                                          color: (theme) =>
-                                            theme.palette.mode === "dark"
-                                              ? "#10B981"
-                                              : "#059669",
-                                        },
-                                      }),
-                                      "&:hover": {
-                                        borderColor: "primary.main",
-                                        bgcolor: (theme) =>
-                                          theme.palette.mode === "dark"
-                                            ? "rgba(16, 185, 129, 0.2)"
-                                            : "rgba(5, 150, 105, 0.15)",
-                                        transform: "translateY(-1px)",
-                                      },
-                                    }}
-                                  />
-                                </Tooltip>
-                              );
-                            })}
-                          </Stack>
-                        </Box>
-                      </>
-                    )}
-
-                    {comparisonSelection.length > 0 && (
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        flexWrap="wrap"
-                        mb={{ xs: 1.5, md: 2 }}
-                      >
-                        {comparisonSelection.map((photo) => (
-                          <Chip
-                            key={`compare-chip-${getPhotoKey(photo)}`}
-                            label={`${photo.dateFormatted || "Unknown"} • ${photo.IMAGE_NAME}`}
-                            onDelete={() =>
-                              handleRemoveComparisonPhoto(getPhotoKey(photo))
-                            }
-                            size="small"
-                            sx={{ maxWidth: 260 }}
-                          />
-                        ))}
-                        <Chip
-                          label="Clear"
-                          onClick={handleClearComparisonSelection}
-                          onDelete={
-                            comparisonSelection.length
-                              ? handleClearComparisonSelection
-                              : undefined
-                          }
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Stack>
-                    )}
-
-                    {resultsViewMode === "gallery" ? (
-                      <PhotoViewer
-                        photo={filteredPhotos[0] || null}
-                        photos={filteredPhotos}
-                        open
-                        onClose={() => setResultsViewMode("grid")} // Go back to grid when closing
-                        initialIndex={0}
-                      />
-                    ) : resultsViewMode === "grid" ? (
-                      <PhotoGrid
-                        photos={filteredPhotos}
-                        loading={isLoading}
-                        error={error as Error}
-                        onFavorite={handleFavorite}
-                        favorites={favorites}
-                        onShowOnMap={handlePhotoSelect}
-                        onPhotoHover={setHoveredPhoto}
-                        onVisiblePhotosChange={setVisibleGridPhotos}
-                        selection={comparisonSelectionKeys}
-                        onToggleSelect={handleToggleComparisonSelection}
-                      />
-                    ) : (
-                      <PhotoTimeline
-                        photos={filteredPhotos}
-                        loading={isLoading}
-                        error={error as Error}
-                        onFavorite={handleFavorite}
-                        favorites={favorites}
-                        onShowOnMap={handlePhotoSelect}
-                        onPhotoHover={setHoveredPhoto}
-                        selection={comparisonSelectionKeys}
-                        onToggleSelect={handleToggleComparisonSelection}
-                      />
-                    )}
-                  </Box>
-                </>
-              )}
-
-              {!searchParams && (
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    py: { xs: 3, md: 5 },
-                    px: { xs: 1.5, md: 2.5 },
-                    width: "100%",
-                    display: { xs: "none", md: "flex" }, // Hide on mobile, show on desktop
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  {/* Hero Icon */}
-                  <Box
-                    sx={{
-                      width: { xs: 100, md: 80 },
-                      height: { xs: 100, md: 80 },
-                      mx: "auto",
-                      mb: { xs: 2.5, md: 2 },
-                      borderRadius: "50%",
-                      background: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, rgba(0, 77, 64, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)"
-                          : "linear-gradient(135deg, rgba(0, 77, 64, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "2px solid rgba(0, 77, 64, 0.3)"
-                          : "2px solid rgba(0, 77, 64, 0.2)",
-                    }}
-                  >
-                    <SearchIcon
-                      sx={{
-                        fontSize: { xs: 50, md: 40 },
-                        color: "primary.main",
-                      }}
-                    />
-                  </Box>
-
-                  {/* Welcome Text */}
-                  <Typography
-                    variant="h5"
-                    gutterBottom
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: { xs: "1.5rem", md: "1.25rem" },
-                      background: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, #39796b 0%, #10b981 100%)"
-                          : "linear-gradient(135deg, #004d40 0%, #10b981 100%)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                      mb: 1.5,
-                      px: 1,
-                    }}
-                  >
-                    Explore Tasmania's Aerial History
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      mb: 3,
-                      lineHeight: 1.6,
-                      px: 1,
-                      fontSize: { xs: "0.9375rem", md: "0.875rem" },
-                    }}
-                  >
-                    Discover decades of aerial photography from across Tasmania.
-                    Search by location, filter by date and scale, and explore
-                    the landscape through time.
-                  </Typography>
-
-                  {/* Quick Start Cards */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1.5,
-                      width: "100%",
-                      mt: 2,
-                    }}
-                  >
-                    {[
-                      {
-                        icon: (
-                          <SearchIcon sx={{ fontSize: { xs: 28, md: 24 } }} />
-                        ),
-                        title: "Search Any Location",
-                        description:
-                          "Enter coordinates or search by place name",
-                      },
-                      {
-                        icon: <MapIcon sx={{ fontSize: { xs: 28, md: 24 } }} />,
-                        title: "Explore on Map",
-                        description:
-                          "Click anywhere on the map to discover photos",
-                      },
-                      {
-                        icon: (
-                          <GridView sx={{ fontSize: { xs: 28, md: 24 } }} />
-                        ),
-                        title: "Filter & Sort",
-                        description:
-                          "Refine results by date, scale, and image type",
-                      },
-                    ].map((feature, index) => (
-                      <Paper
-                        key={index}
-                        elevation={1}
-                        sx={{
-                          p: { xs: 2.5, md: 2 },
-                          textAlign: "center",
-                          transition: "all 0.2s ease",
-                          cursor: "default",
-                          borderRadius: 2,
-                          border: (theme) =>
-                            theme.palette.mode === "dark"
-                              ? "1px solid rgba(255, 255, 255, 0.08)"
-                              : "1px solid rgba(0, 0, 0, 0.06)",
-                          bgcolor: (theme) =>
-                            theme.palette.mode === "dark"
-                              ? "rgba(255, 255, 255, 0.03)"
-                              : "rgba(0, 0, 0, 0.02)",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "0 4px 12px rgba(0, 0, 0, 0.3)"
-                                : "0 4px 12px rgba(0, 77, 64, 0.1)",
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            color: "primary.main",
-                            mb: 1,
-                            display: "flex",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {feature.icon}
-                        </Box>
-                        <Typography
-                          variant="subtitle2"
-                          gutterBottom
-                          fontWeight={600}
-                          sx={{
-                            fontSize: { xs: "0.9rem", md: "0.85rem" },
-                            mb: 0.5,
-                          }}
-                        >
-                          {feature.title}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{
-                            fontSize: { xs: "0.8rem", md: "0.75rem" },
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {feature.description}
-                        </Typography>
-                      </Paper>
-                    ))}
-                  </Box>
-
-                  {/* Popular locations hint */}
-                  <Box sx={{ mt: { xs: 4, md: 3 }, width: "100%" }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                      mb={1.5}
-                      sx={{ fontSize: { xs: "0.75rem", md: "0.7rem" } }}
-                    >
-                      Popular locations to start:
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        gap: 0.75,
-                        justifyContent: "center",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      {["Hobart", "Launceston", "Devonport", "Burnie"].map(
-                        (city) => (
-                          <Chip
-                            key={city}
-                            label={city}
-                            size="small"
-                            variant="outlined"
-                            onClick={() => {
-                              // Quick location search - you can implement this later
-                              console.log("Search for:", city);
-                            }}
-                            sx={{
-                              fontSize: { xs: "0.7rem", md: "0.65rem" },
-                              height: { xs: 28, md: 24 },
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                borderColor: "primary.main",
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === "dark"
-                                    ? "rgba(0, 77, 64, 0.15)"
-                                    : "rgba(0, 77, 64, 0.08)",
-                                transform: "scale(1.05)",
-                              },
-                            }}
-                          />
-                        ),
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          </Box>
-
-          {/* Right Side - Persistent Map (desktop always, mobile when no searchParams or when map mode active) */}
-          <Box
-            sx={{
-              width: {
-                xs: "100%",
-                md: sidebarOpen ? "calc(100% - 480px)" : "100%",
-              },
-              transition: "width 0.3s ease-in-out",
-              display: {
-                xs: !searchParams || viewMode === "map" ? "block" : "none",
-                md: "block", // Always show on desktop to contain floating search
-              },
-              position: "relative",
-              minHeight: { xs: "500px", md: "auto" },
-            }}
-          >
-            {/* Floating Search Box - Desktop only */}
-            <Box
-              sx={{
-                display: { xs: "none", md: "block" },
-                position: "absolute",
-                top: 16,
-                right: 16,
-                zIndex: 1000,
-                maxWidth: 400,
-                width: "auto",
-              }}
-            >
-              <Box
-                sx={{
-                  transition: "all 0.3s ease-in-out",
-                  transform: searchBoxExpanded
-                    ? "translateY(0)"
-                    : "translateY(-100%)",
-                  opacity: searchBoxExpanded ? 1 : 0,
-                  pointerEvents: searchBoxExpanded ? "auto" : "none",
-                }}
-              >
-                <SearchBar onSearch={handleSearch} loading={isLoading} />
-              </Box>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ position: "absolute", bottom: -48, right: 8 }}
-              >
-                <Tooltip
-                  title={searchBoxExpanded ? "Hide search" : "Show search"}
-                  placement="left"
-                >
-                  <IconButton
-                    onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
-                    sx={{
-                      bgcolor: searchBoxExpanded
-                        ? "background.paper"
-                        : "primary.main",
-                      color: searchBoxExpanded
-                        ? "text.primary"
-                        : "primary.contrastText",
-                      boxShadow: 3,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      "&:hover": {
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                        boxShadow: 6,
-                        transform: "scale(1.05)",
-                      },
-                      transition: "all 0.2s ease-in-out",
-                    }}
-                    size="medium"
-                    aria-label={
-                      searchBoxExpanded ? "Hide search" : "Show search"
-                    }
-                  >
-                    {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Box>
-
             <Suspense
               fallback={
                 <Box
@@ -1643,22 +620,11 @@ function AppContent() {
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    minHeight: "100%",
-                    width: "100%",
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
+                    height: "100%",
+                    bgcolor: "#121212",
                   }}
                 >
-                  <Box sx={{ textAlign: "center" }}>
-                    <CircularProgress size={60} />
-                    <Typography
-                      variant="h6"
-                      sx={{ mt: 2, color: "text.secondary" }}
-                    >
-                      Loading map...
-                    </Typography>
-                  </Box>
+                  <CircularProgress sx={{ color: "#10B981" }} />
                 </Box>
               }
             >
@@ -1676,39 +642,1276 @@ function AppContent() {
               />
             </Suspense>
           </Box>
-        </Box>
 
-        {/* Version Display - Clickable to show changelog (Desktop only) */}
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 8,
-            right: 8,
-            zIndex: 1,
-            display: { xs: "none", md: "block" },
-          }}
-        >
+          {/* Glass Navigation Bar */}
+          <GlassNavigation
+            onSavedClick={handleViewFavorites}
+            onSettingsClick={() => setSettingsOpen(!settingsOpen)}
+            savedCount={favorites.size}
+          />
+
+          {/* Discovery Tray (Left sidebar icons) */}
+          <DiscoveryTray
+            activePanel={discoveryPanel}
+            onPanelChange={setDiscoveryPanel}
+            expanded={discoveryTrayExpanded}
+            onExpandedChange={setDiscoveryTrayExpanded}
+          />
+
+          {/* Floating Search Bar (centered at top) */}
+          <FloatingSearchBar
+            onSearch={handleFloatingSearch}
+            onAISearchClick={handleAISearchClick}
+            loading={isLoading}
+          />
+
+          {/* Results Panel (slides in from left when we have results) */}
+          {searchParams && filteredPhotos.length > 0 && (
+            <ResultsPanel
+              photos={filteredPhotos}
+              loading={isLoading}
+              error={error as Error | null}
+              favorites={favorites}
+              onFavorite={handleFavorite}
+              onShowOnMap={handlePhotoSelect}
+              onPhotoHover={setHoveredPhoto}
+              onVisiblePhotosChange={setVisibleGridPhotos}
+              comparisonSelection={comparisonSelectionKeys}
+              onToggleComparisonSelection={handleToggleComparisonSelection}
+              comparisonPhotos={comparisonSelection}
+              onOpenComparison={handleOpenComparisonModal}
+              onOpenThenNow={handleOpenThenNowModal}
+              onClearComparison={handleClearComparisonSelection}
+              filters={filters}
+              onFiltersChange={setFilters}
+              availableScales={availableScales}
+              dateRange={dateRange}
+              hasActiveFilters={hasActiveFilters}
+              onQuickFilterPreset={handleQuickFilterPreset}
+            />
+          )}
+
+          {/* Welcome overlay when no search */}
+          {!searchParams && (
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 32,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 100,
+                textAlign: "center",
+                maxWidth: 480,
+                px: 3,
+              }}
+            >
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 600,
+                  color: "#F1F5F9",
+                  textShadow: "0 2px 12px rgba(0, 0, 0, 0.5)",
+                  mb: 1,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Tasmania Aerial Photos
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "rgba(241, 245, 249, 0.75)",
+                  textShadow: "0 1px 8px rgba(0, 0, 0, 0.5)",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Explore decades of aerial photography. Search a location or
+                click anywhere on the map to discover historical imagery.
+              </Typography>
+            </Box>
+          )}
+
+          {/* Version badge */}
           <Typography
             variant="caption"
             onClick={() => setChangelogOpen(true)}
             sx={{
+              position: "absolute",
+              bottom: 8,
+              right: 8,
+              zIndex: 100,
               fontSize: "0.65rem",
-              color: "text.disabled",
-              opacity: 0.5,
-              fontWeight: 500,
-              userSelect: "none",
+              color: "rgba(148, 163, 184, 0.5)",
               cursor: "pointer",
-              transition: "opacity 0.2s ease-in-out",
+              transition: "color 0.2s ease",
               "&:hover": {
-                opacity: 1,
-                color: "primary.main",
+                color: "#10B981",
               },
             }}
           >
             v{APP_VERSION}
           </Typography>
         </Box>
-      </Box>
+      ) : (
+        /* CLASSIC LAYOUT - Original two-column design */
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+          }}
+        >
+          <AppBar
+            darkMode={darkMode}
+            themeMode={themeMode}
+            onToggleDarkMode={handleToggleDarkMode}
+            favoritesCount={favorites.size}
+            onViewFavorites={handleViewFavorites}
+            version={APP_VERSION}
+            onVersionClick={() => setChangelogOpen(true)}
+          />
+
+          {/* Desktop: Two-column layout, Mobile: Single column */}
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              minHeight: 0, // Important for flexbox scrolling
+            }}
+          >
+            {/* Toggle button - Desktop only, always visible */}
+            <IconButton
+              onClick={handleToggleSidebar}
+              aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              sx={{
+                display: { xs: "none", md: "flex" },
+                position: "absolute",
+                left: sidebarOpen ? 460 : 8,
+                top: sidebarOpen ? 80 : 120, // Move down when collapsed to avoid zoom controls
+                zIndex: 1001,
+                bgcolor: "background.paper",
+                border: 1,
+                borderColor: "divider",
+                boxShadow: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  bgcolor: "background.paper",
+                  opacity: 0.9,
+                  transform: "scale(1.05)",
+                },
+              }}
+              size="small"
+            >
+              {sidebarOpen ? <ChevronLeft /> : <Menu />}
+            </IconButton>
+
+            {/* Left Sidebar - Search, Filters, Results */}
+            <Box
+              sx={{
+                width: {
+                  xs: "100%",
+                  md: sidebarOpen ? "480px" : 0,
+                },
+                display: {
+                  xs: "block",
+                  md: sidebarOpen ? "flex" : "none",
+                },
+                flexDirection: "column",
+                borderRight: { md: sidebarOpen ? 1 : 0 },
+                borderColor: { md: "divider" },
+                overflowY: "auto",
+                overflowX: "hidden",
+                maxHeight: { xs: "none", md: "calc(100vh - 64px)" },
+                position: "relative",
+                transition: "width 0.3s ease-in-out",
+                flexShrink: 0,
+                overscrollBehavior: "contain", // Prevent scroll chaining
+                WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+              }}
+              onWheel={(e) => {
+                // Prevent page scroll when scrolling sidebar
+                const target = e.currentTarget;
+                const isScrolling = target.scrollHeight > target.clientHeight;
+                const isAtTop = target.scrollTop === 0;
+                const isAtBottom =
+                  target.scrollTop + target.clientHeight >=
+                  target.scrollHeight - 1;
+
+                if (isScrolling) {
+                  // If we're scrolling within the sidebar, stop propagation
+                  if (
+                    !(isAtTop && e.deltaY < 0) &&
+                    !(isAtBottom && e.deltaY > 0)
+                  ) {
+                    e.stopPropagation();
+                  }
+                }
+              }}
+              onTouchMove={(e) => {
+                // Prevent body scroll on touch devices when scrolling sidebar
+                const target = e.currentTarget;
+                if (target.scrollHeight > target.clientHeight) {
+                  e.stopPropagation();
+                }
+              }}
+            >
+              <Box
+                sx={{
+                  py: { xs: 1.5, md: 2 },
+                  px: { xs: 1.5, md: 3 },
+                  maxWidth: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
+                }}
+              >
+                {/* Mobile Search Button - Show button after search, hide search bar */}
+                {searchParams && (
+                  <Box
+                    sx={{
+                      mb: { xs: 1.5, md: 2 },
+                      display: { xs: "block", md: "none" },
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setMobileSearchOpen(true)}
+                      startIcon={<SearchIcon />}
+                      sx={{
+                        py: { xs: 1, md: 1.5 },
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        minHeight: { xs: 40, md: 48 },
+                      }}
+                    >
+                      Search Location
+                    </Button>
+                  </Box>
+                )}
+
+                {/* Search Bar - Mobile only when no search yet, Desktop in floating box on map */}
+                {!searchParams && (
+                  <Box
+                    sx={{
+                      mb: { xs: 1.5, md: 2 },
+                      display: { xs: "block", md: "none" },
+                    }}
+                  >
+                    <SearchBar onSearch={handleSearch} loading={isLoading} />
+                  </Box>
+                )}
+
+                {searchParams && (
+                  <>
+                    {/* Desktop Filter Panel */}
+                    <Box sx={{ mb: 2, display: { xs: "none", md: "block" } }}>
+                      <FilterPanel
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        availableScales={availableScales}
+                        dateRange={dateRange}
+                        showQuickFilters={false}
+                      />
+                    </Box>
+
+                    {/* Mobile Filter Button */}
+                    <Box
+                      sx={{
+                        mb: { xs: 1.5, md: 2 },
+                        display: { xs: "block", md: "none" },
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        onClick={() => setMobileFilterOpen(true)}
+                        startIcon={<FilterList />}
+                        sx={{
+                          py: { xs: 1, md: 1.5 },
+                          fontSize: "0.875rem",
+                          fontWeight: 600,
+                          minHeight: { xs: 40, md: 48 },
+                        }}
+                      >
+                        Filters
+                        {hasActiveFilters && (
+                          <Chip
+                            label="Active"
+                            size="small"
+                            color="primary"
+                            sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+                          />
+                        )}
+                      </Button>
+                    </Box>
+
+                    {/* Comparison Tools - Compact, Active Design */}
+                    <Box
+                      sx={{
+                        mb: 2,
+                        display: { xs: "none", md: "block" },
+                        // Apple Liquid Glass: Frosted glass with subtle elevation
+                        bgcolor: (theme) =>
+                          getThemeValue(
+                            appleLiquidGlass.backgrounds.frosted,
+                            theme.palette.mode === "dark",
+                          ),
+                        ...createBackdropFilter(
+                          appleLiquidGlass.backdrop.module,
+                        ),
+                        borderRadius: appleLiquidGlass.radius.medium,
+                        px: 1.5,
+                        py: 1,
+                        border: (theme) =>
+                          `1px solid ${getThemeValue(appleLiquidGlass.borders.subtle, theme.palette.mode === "dark")}`,
+                        boxShadow: (theme) => {
+                          const shadows = getThemeValue(
+                            {
+                              light: appleLiquidGlass.shadows.light,
+                              dark: appleLiquidGlass.shadows.dark,
+                            },
+                            theme.palette.mode === "dark",
+                          );
+                          return `${shadows.medium}, ${shadows.innerFrosted}`;
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: appleLiquidGlass.typography.hint.fontSize,
+                            fontWeight: 500,
+                            color: (theme) =>
+                              getThemeValue(
+                                appleLiquidGlass.text.secondary,
+                                theme.palette.mode === "dark",
+                              ),
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          {comparisonSelection.length === 0
+                            ? "Select photos to compare"
+                            : comparisonSelection.length === 1
+                              ? "Select another photo or use Then vs Now"
+                              : "Ready to compare"}
+                        </Typography>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{ flexShrink: 0 }}
+                        >
+                          <Button
+                            variant={
+                              comparisonSelection.length >= 2
+                                ? "contained"
+                                : "outlined"
+                            }
+                            color="primary"
+                            size="small"
+                            startIcon={<CompareArrowsIcon fontSize="small" />}
+                            disabled={comparisonSelection.length < 2}
+                            onClick={handleOpenComparisonModal}
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 100,
+                              fontSize:
+                                appleLiquidGlass.typography.button.fontSize,
+                              textTransform: "none",
+                              px: 1.5,
+                              py: 0.625,
+                              borderRadius: appleLiquidGlass.radius.small,
+                              bgcolor:
+                                comparisonSelection.length >= 2
+                                  ? (theme) => theme.palette.primary.main
+                                  : "transparent",
+                              color:
+                                comparisonSelection.length >= 2
+                                  ? "#ffffff"
+                                  : (theme) =>
+                                      getThemeValue(
+                                        appleLiquidGlass.text.secondary,
+                                        theme.palette.mode === "dark",
+                                      ),
+                              border: (theme) =>
+                                `1px solid ${
+                                  comparisonSelection.length >= 2
+                                    ? theme.palette.primary.main
+                                    : getThemeValue(
+                                        appleLiquidGlass.borders.subtle,
+                                        theme.palette.mode === "dark",
+                                      )
+                                }`,
+                              "&.Mui-disabled": {
+                                opacity: appleLiquidGlass.opacity.disabled,
+                                borderColor: (theme) =>
+                                  getThemeValue(
+                                    appleLiquidGlass.borders.subtle,
+                                    theme.palette.mode === "dark",
+                                  ),
+                              },
+                              "&:hover:not(.Mui-disabled)": {
+                                bgcolor:
+                                  comparisonSelection.length >= 2
+                                    ? (theme) => theme.palette.primary.dark
+                                    : (theme) =>
+                                        getThemeValue(
+                                          appleLiquidGlass.backgrounds.button
+                                            .hover,
+                                          theme.palette.mode === "dark",
+                                        ),
+                                transform:
+                                  appleLiquidGlass.transforms.hover.button,
+                                boxShadow: (theme) =>
+                                  getThemeValue(
+                                    {
+                                      light:
+                                        appleLiquidGlass.shadows.light.medium,
+                                      dark: appleLiquidGlass.shadows.dark
+                                        .medium,
+                                    },
+                                    theme.palette.mode === "dark",
+                                  ),
+                              },
+                              transition: appleLiquidGlass.transitions.standard,
+                            }}
+                          >
+                            Compare ({comparisonSelection.length}/2)
+                          </Button>
+                          <Button
+                            variant={
+                              comparisonSelection.length === 1
+                                ? "contained"
+                                : "outlined"
+                            }
+                            color="secondary"
+                            size="small"
+                            disabled={comparisonSelection.length !== 1}
+                            onClick={handleOpenThenNowModal}
+                            startIcon={<History fontSize="small" />}
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 100,
+                              fontSize:
+                                appleLiquidGlass.typography.button.fontSize,
+                              textTransform: "none",
+                              px: 1.5,
+                              py: 0.625,
+                              borderRadius: appleLiquidGlass.radius.small,
+                              bgcolor:
+                                comparisonSelection.length === 1
+                                  ? (theme) => theme.palette.secondary.main
+                                  : "transparent",
+                              color:
+                                comparisonSelection.length === 1
+                                  ? "#ffffff"
+                                  : (theme) =>
+                                      getThemeValue(
+                                        appleLiquidGlass.text.secondary,
+                                        theme.palette.mode === "dark",
+                                      ),
+                              border: (theme) =>
+                                `1px solid ${
+                                  comparisonSelection.length === 1
+                                    ? theme.palette.secondary.main
+                                    : getThemeValue(
+                                        appleLiquidGlass.borders.subtle,
+                                        theme.palette.mode === "dark",
+                                      )
+                                }`,
+                              "&.Mui-disabled": {
+                                opacity: appleLiquidGlass.opacity.disabled,
+                                borderColor: (theme) =>
+                                  getThemeValue(
+                                    appleLiquidGlass.borders.subtle,
+                                    theme.palette.mode === "dark",
+                                  ),
+                              },
+                              "&:hover:not(.Mui-disabled)": {
+                                bgcolor:
+                                  comparisonSelection.length === 1
+                                    ? (theme) => theme.palette.secondary.dark
+                                    : (theme) =>
+                                        getThemeValue(
+                                          appleLiquidGlass.backgrounds.button
+                                            .hover,
+                                          theme.palette.mode === "dark",
+                                        ),
+                                transform:
+                                  appleLiquidGlass.transforms.hover.button,
+                                boxShadow: (theme) =>
+                                  getThemeValue(
+                                    {
+                                      light:
+                                        appleLiquidGlass.shadows.light.medium,
+                                      dark: appleLiquidGlass.shadows.dark
+                                        .medium,
+                                    },
+                                    theme.palette.mode === "dark",
+                                  ),
+                              },
+                              transition: appleLiquidGlass.transitions.standard,
+                            }}
+                          >
+                            Then vs Now
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Box>
+
+                    {/* Mobile-only Unified 4-Button View Toggle */}
+                    <Box
+                      sx={{
+                        display: { xs: "block", md: "none" },
+                        mb: { xs: 1.5, md: 2 },
+                      }}
+                    >
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          bgcolor: "transparent",
+                          display: "flex",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <ToggleButtonGroup
+                          value={mobileViewValue}
+                          exclusive
+                          onChange={handleMobileViewChange}
+                          aria-label="view mode"
+                          size="small"
+                          sx={{
+                            "& .MuiToggleButton-root": {
+                              px: { xs: 1, md: 1.25 },
+                              py: { xs: 0.375, md: 0.5 },
+                              fontSize: "0.75rem",
+                              fontWeight: 500,
+                              textTransform: "none",
+                              border: (theme) =>
+                                `1px solid ${theme.palette.divider}`,
+                            },
+                          }}
+                        >
+                          <ToggleButton value="grid" aria-label="grid view">
+                            <GridView sx={{ mr: 0.5, fontSize: 16 }} />
+                            Grid
+                          </ToggleButton>
+                          <ToggleButton value="map" aria-label="map view">
+                            <MapIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                            Map
+                          </ToggleButton>
+                          <ToggleButton
+                            value="timeline"
+                            aria-label="timeline view"
+                          >
+                            <Timeline sx={{ mr: 0.5, fontSize: 16 }} />
+                            Timeline
+                          </ToggleButton>
+                          <ToggleButton
+                            value="gallery"
+                            aria-label="gallery view"
+                          >
+                            <PhotoLibrary sx={{ mr: 0.5, fontSize: 16 }} />
+                            Gallery
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Paper>
+                    </Box>
+
+                    {/* Desktop 4-Button View Controls - Unified styling */}
+                    <Box sx={{ display: { xs: "none", md: "block" }, mb: 2 }}>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(42, 42, 42, 0.6)"
+                              : "rgba(249, 250, 251, 0.8)",
+                          display: "inline-block",
+                          borderRadius: 1.5,
+                          p: 0.5,
+                          border: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "1px solid rgba(255, 255, 255, 0.1)"
+                              : "1px solid rgba(0, 0, 0, 0.08)",
+                          boxShadow: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "0 1px 3px rgba(0, 0, 0, 0.3)"
+                              : "0 1px 3px rgba(0, 0, 0, 0.06)",
+                        }}
+                      >
+                        <ToggleButtonGroup
+                          value={viewMode === "map" ? "map" : resultsViewMode}
+                          exclusive
+                          onChange={(e, value) => {
+                            if (value === "map") {
+                              handleViewModeChange(e, "map");
+                            } else if (
+                              value === "grid" ||
+                              value === "timeline" ||
+                              value === "gallery"
+                            ) {
+                              handleViewModeChange(e, "grid");
+                              handleResultsViewModeChange(e, value);
+                            }
+                          }}
+                          aria-label="view mode"
+                          size="small"
+                          sx={{
+                            gap: 0.5,
+                            "& .MuiToggleButton-root": {
+                              px: 1.5,
+                              py: 0.625,
+                              fontSize: "0.8125rem",
+                              fontWeight: 500,
+                              textTransform: "none",
+                              border: "none",
+                              borderRadius: 1,
+                              color: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "#B4B4B4"
+                                  : "#6B7280",
+                              bgcolor: "transparent",
+                              "&:hover": {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.08)"
+                                    : "rgba(0, 0, 0, 0.04)",
+                              },
+                              "&.Mui-selected": {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(16, 185, 129, 0.2)"
+                                    : "rgba(5, 150, 105, 0.1)",
+                                color: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "#10B981"
+                                    : "#059669",
+                                fontWeight: 600,
+                                "&:hover": {
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                      ? "rgba(16, 185, 129, 0.25)"
+                                      : "rgba(5, 150, 105, 0.15)",
+                                },
+                              },
+                            },
+                          }}
+                        >
+                          <ToggleButton value="grid" aria-label="grid view">
+                            <GridView sx={{ mr: 0.75, fontSize: 16 }} />
+                            Grid
+                          </ToggleButton>
+                          <ToggleButton value="map" aria-label="map view">
+                            <MapIcon sx={{ mr: 0.75, fontSize: 16 }} />
+                            Map
+                          </ToggleButton>
+                          <ToggleButton
+                            value="timeline"
+                            aria-label="timeline view"
+                          >
+                            <Timeline sx={{ mr: 0.75, fontSize: 16 }} />
+                            Timeline
+                          </ToggleButton>
+                          <ToggleButton
+                            value="gallery"
+                            aria-label="gallery view"
+                          >
+                            <PhotoLibrary sx={{ mr: 0.75, fontSize: 16 }} />
+                            Gallery
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Paper>
+                    </Box>
+
+                    {/* Results Grid (always visible on desktop, conditional on mobile) */}
+                    <Box
+                      sx={{
+                        display: {
+                          xs: viewMode === "grid" ? "block" : "none",
+                          md: "block",
+                        },
+                      }}
+                    >
+                      {filteredPhotos.length > 0 && (
+                        <>
+                          <Box sx={{ mb: { xs: 1.5, md: 2 } }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 600,
+                                mb: { xs: 0.5, md: 0.75 },
+                                display: "block",
+                                fontSize: "0.7rem",
+                                color: "text.secondary",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              Quick Filters
+                            </Typography>
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              flexWrap="wrap"
+                              useFlexGap
+                            >
+                              {FILTER_PRESETS.map((preset) => {
+                                const Icon = preset.icon;
+                                // Determine if this preset is "active" based on current filters
+                                const isActivePreset = (() => {
+                                  if (preset.id === "historical") {
+                                    return (
+                                      filters.endDate &&
+                                      new Date(filters.endDate).getFullYear() <=
+                                        1980
+                                    );
+                                  } else if (preset.id === "modern") {
+                                    return (
+                                      filters.startDate &&
+                                      new Date(
+                                        filters.startDate,
+                                      ).getFullYear() >= 2000
+                                    );
+                                  } else if (preset.id === "high-detail") {
+                                    return (
+                                      filters.selectedScales.length > 0 &&
+                                      filters.selectedScales.every(
+                                        (s) => s <= 5000,
+                                      )
+                                    );
+                                  }
+                                  return false;
+                                })();
+
+                                return (
+                                  <Tooltip
+                                    key={preset.id}
+                                    title={preset.description}
+                                    arrow
+                                    placement="top"
+                                  >
+                                    <Chip
+                                      icon={<Icon sx={{ fontSize: 14 }} />}
+                                      label={preset.label}
+                                      onClick={() =>
+                                        handleQuickFilterPreset(preset.id)
+                                      }
+                                      size="small"
+                                      variant={
+                                        isActivePreset ? "filled" : "outlined"
+                                      }
+                                      color={
+                                        isActivePreset ? "primary" : "default"
+                                      }
+                                      sx={{
+                                        height: 26,
+                                        fontSize: "0.7rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        transition: "all 0.2s ease-in-out",
+                                        ...(isActivePreset && {
+                                          bgcolor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                              ? "rgba(16, 185, 129, 0.3)"
+                                              : "rgba(5, 150, 105, 0.2)",
+                                          borderColor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                              ? "#10B981"
+                                              : "#059669",
+                                          color: (theme) =>
+                                            theme.palette.mode === "dark"
+                                              ? "#10B981"
+                                              : "#059669",
+                                          fontWeight: 700,
+                                          "& .MuiChip-icon": {
+                                            color: (theme) =>
+                                              theme.palette.mode === "dark"
+                                                ? "#10B981"
+                                                : "#059669",
+                                          },
+                                        }),
+                                        "&:hover": {
+                                          borderColor: "primary.main",
+                                          bgcolor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                              ? "rgba(16, 185, 129, 0.2)"
+                                              : "rgba(5, 150, 105, 0.15)",
+                                          transform: "translateY(-1px)",
+                                        },
+                                      }}
+                                    />
+                                  </Tooltip>
+                                );
+                              })}
+                            </Stack>
+                          </Box>
+                        </>
+                      )}
+
+                      {comparisonSelection.length > 0 && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          flexWrap="wrap"
+                          mb={{ xs: 1.5, md: 2 }}
+                        >
+                          {comparisonSelection.map((photo) => (
+                            <Chip
+                              key={`compare-chip-${getPhotoKey(photo)}`}
+                              label={`${photo.dateFormatted || "Unknown"} • ${photo.IMAGE_NAME}`}
+                              onDelete={() =>
+                                handleRemoveComparisonPhoto(getPhotoKey(photo))
+                              }
+                              size="small"
+                              sx={{ maxWidth: 260 }}
+                            />
+                          ))}
+                          <Chip
+                            label="Clear"
+                            onClick={handleClearComparisonSelection}
+                            onDelete={
+                              comparisonSelection.length
+                                ? handleClearComparisonSelection
+                                : undefined
+                            }
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Stack>
+                      )}
+
+                      {resultsViewMode === "gallery" ? (
+                        <PhotoViewer
+                          photo={filteredPhotos[0] || null}
+                          photos={filteredPhotos}
+                          open
+                          onClose={() => setResultsViewMode("grid")} // Go back to grid when closing
+                          initialIndex={0}
+                        />
+                      ) : resultsViewMode === "grid" ? (
+                        <PhotoGrid
+                          photos={filteredPhotos}
+                          loading={isLoading}
+                          error={error as Error}
+                          onFavorite={handleFavorite}
+                          favorites={favorites}
+                          onShowOnMap={handlePhotoSelect}
+                          onPhotoHover={setHoveredPhoto}
+                          onVisiblePhotosChange={setVisibleGridPhotos}
+                          selection={comparisonSelectionKeys}
+                          onToggleSelect={handleToggleComparisonSelection}
+                        />
+                      ) : (
+                        <PhotoTimeline
+                          photos={filteredPhotos}
+                          loading={isLoading}
+                          error={error as Error}
+                          onFavorite={handleFavorite}
+                          favorites={favorites}
+                          onShowOnMap={handlePhotoSelect}
+                          onPhotoHover={setHoveredPhoto}
+                          selection={comparisonSelectionKeys}
+                          onToggleSelect={handleToggleComparisonSelection}
+                        />
+                      )}
+                    </Box>
+                  </>
+                )}
+
+                {!searchParams && (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: { xs: 3, md: 5 },
+                      px: { xs: 1.5, md: 2.5 },
+                      width: "100%",
+                      display: { xs: "none", md: "flex" }, // Hide on mobile, show on desktop
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    {/* Hero Icon */}
+                    <Box
+                      sx={{
+                        width: { xs: 100, md: 80 },
+                        height: { xs: 100, md: 80 },
+                        mx: "auto",
+                        mb: { xs: 2.5, md: 2 },
+                        borderRadius: "50%",
+                        background: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(135deg, rgba(0, 77, 64, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)"
+                            : "linear-gradient(135deg, rgba(0, 77, 64, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "2px solid rgba(0, 77, 64, 0.3)"
+                            : "2px solid rgba(0, 77, 64, 0.2)",
+                      }}
+                    >
+                      <SearchIcon
+                        sx={{
+                          fontSize: { xs: 50, md: 40 },
+                          color: "primary.main",
+                        }}
+                      />
+                    </Box>
+
+                    {/* Welcome Text */}
+                    <Typography
+                      variant="h5"
+                      gutterBottom
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: { xs: "1.5rem", md: "1.25rem" },
+                        background: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(135deg, #39796b 0%, #10b981 100%)"
+                            : "linear-gradient(135deg, #004d40 0%, #10b981 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                        mb: 1.5,
+                        px: 1,
+                      }}
+                    >
+                      Explore Tasmania's Aerial History
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        mb: 3,
+                        lineHeight: 1.6,
+                        px: 1,
+                        fontSize: { xs: "0.9375rem", md: "0.875rem" },
+                      }}
+                    >
+                      Discover decades of aerial photography from across
+                      Tasmania. Search by location, filter by date and scale,
+                      and explore the landscape through time.
+                    </Typography>
+
+                    {/* Quick Start Cards */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.5,
+                        width: "100%",
+                        mt: 2,
+                      }}
+                    >
+                      {[
+                        {
+                          icon: (
+                            <SearchIcon sx={{ fontSize: { xs: 28, md: 24 } }} />
+                          ),
+                          title: "Search Any Location",
+                          description:
+                            "Enter coordinates or search by place name",
+                        },
+                        {
+                          icon: (
+                            <MapIcon sx={{ fontSize: { xs: 28, md: 24 } }} />
+                          ),
+                          title: "Explore on Map",
+                          description:
+                            "Click anywhere on the map to discover photos",
+                        },
+                        {
+                          icon: (
+                            <GridView sx={{ fontSize: { xs: 28, md: 24 } }} />
+                          ),
+                          title: "Filter & Sort",
+                          description:
+                            "Refine results by date, scale, and image type",
+                        },
+                      ].map((feature, index) => (
+                        <Paper
+                          key={index}
+                          elevation={1}
+                          sx={{
+                            p: { xs: 2.5, md: 2 },
+                            textAlign: "center",
+                            transition: "all 0.2s ease",
+                            cursor: "default",
+                            borderRadius: 2,
+                            border: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "1px solid rgba(255, 255, 255, 0.08)"
+                                : "1px solid rgba(0, 0, 0, 0.06)",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.03)"
+                                : "rgba(0, 0, 0, 0.02)",
+                            "&:hover": {
+                              transform: "translateY(-2px)",
+                              boxShadow: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+                                  : "0 4px 12px rgba(0, 77, 64, 0.1)",
+                            },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              color: "primary.main",
+                              mb: 1,
+                              display: "flex",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {feature.icon}
+                          </Box>
+                          <Typography
+                            variant="subtitle2"
+                            gutterBottom
+                            fontWeight={600}
+                            sx={{
+                              fontSize: { xs: "0.9rem", md: "0.85rem" },
+                              mb: 0.5,
+                            }}
+                          >
+                            {feature.title}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.8rem", md: "0.75rem" },
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {feature.description}
+                          </Typography>
+                        </Paper>
+                      ))}
+                    </Box>
+
+                    {/* Popular locations hint */}
+                    <Box sx={{ mt: { xs: 4, md: 3 }, width: "100%" }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        mb={1.5}
+                        sx={{ fontSize: { xs: "0.75rem", md: "0.7rem" } }}
+                      >
+                        Popular locations to start:
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 0.75,
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {["Hobart", "Launceston", "Devonport", "Burnie"].map(
+                          (city) => (
+                            <Chip
+                              key={city}
+                              label={city}
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                // Quick location search - you can implement this later
+                                console.log("Search for:", city);
+                              }}
+                              sx={{
+                                fontSize: { xs: "0.7rem", md: "0.65rem" },
+                                height: { xs: 28, md: 24 },
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  borderColor: "primary.main",
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                      ? "rgba(0, 77, 64, 0.15)"
+                                      : "rgba(0, 77, 64, 0.08)",
+                                  transform: "scale(1.05)",
+                                },
+                              }}
+                            />
+                          ),
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* Right Side - Persistent Map (desktop always, mobile when no searchParams or when map mode active) */}
+            <Box
+              sx={{
+                width: {
+                  xs: "100%",
+                  md: sidebarOpen ? "calc(100% - 480px)" : "100%",
+                },
+                transition: "width 0.3s ease-in-out",
+                display: {
+                  xs: !searchParams || viewMode === "map" ? "block" : "none",
+                  md: "block", // Always show on desktop to contain floating search
+                },
+                position: "relative",
+                minHeight: { xs: "500px", md: "auto" },
+              }}
+            >
+              {/* Floating Search Box - Desktop only */}
+              <Box
+                sx={{
+                  display: { xs: "none", md: "block" },
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  zIndex: 1000,
+                  maxWidth: 400,
+                  width: "auto",
+                }}
+              >
+                <Box
+                  sx={{
+                    transition: "all 0.3s ease-in-out",
+                    transform: searchBoxExpanded
+                      ? "translateY(0)"
+                      : "translateY(-100%)",
+                    opacity: searchBoxExpanded ? 1 : 0,
+                    pointerEvents: searchBoxExpanded ? "auto" : "none",
+                  }}
+                >
+                  <SearchBar onSearch={handleSearch} loading={isLoading} />
+                </Box>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ position: "absolute", bottom: -48, right: 8 }}
+                >
+                  <Tooltip
+                    title={searchBoxExpanded ? "Hide search" : "Show search"}
+                    placement="left"
+                  >
+                    <IconButton
+                      onClick={() => setSearchBoxExpanded(!searchBoxExpanded)}
+                      sx={{
+                        bgcolor: searchBoxExpanded
+                          ? "background.paper"
+                          : "primary.main",
+                        color: searchBoxExpanded
+                          ? "text.primary"
+                          : "primary.contrastText",
+                        boxShadow: 3,
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        "&:hover": {
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                          boxShadow: 6,
+                          transform: "scale(1.05)",
+                        },
+                        transition: "all 0.2s ease-in-out",
+                      }}
+                      size="medium"
+                      aria-label={
+                        searchBoxExpanded ? "Hide search" : "Show search"
+                      }
+                    >
+                      {searchBoxExpanded ? <ExpandLess /> : <SearchIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </Box>
+
+              <Suspense
+                fallback={
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: "100%",
+                      width: "100%",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                    }}
+                  >
+                    <Box sx={{ textAlign: "center" }}>
+                      <CircularProgress size={60} />
+                      <Typography
+                        variant="h6"
+                        sx={{ mt: 2, color: "text.secondary" }}
+                      >
+                        Loading map...
+                      </Typography>
+                    </Box>
+                  </Box>
+                }
+              >
+                <MapView
+                  photos={mapPhotos}
+                  selectedPhoto={selectedPhoto}
+                  hoveredPhoto={hoveredPhoto}
+                  onPhotoClick={setSelectedPhoto}
+                  onMapClick={handleMapClick}
+                  searchCenter={searchCenter}
+                  autoZoom={true}
+                  pendingPin={pendingPin}
+                  onConfirmPin={handleConfirmPin}
+                  onCancelPin={handleCancelPin}
+                />
+              </Suspense>
+            </Box>
+          </Box>
+
+          {/* Version Display - Clickable to show changelog (Desktop only) */}
+          <Box
+            sx={{
+              position: "fixed",
+              bottom: 8,
+              right: 8,
+              zIndex: 1,
+              display: { xs: "none", md: "block" },
+            }}
+          >
+            <Typography
+              variant="caption"
+              onClick={() => setChangelogOpen(true)}
+              sx={{
+                fontSize: "0.65rem",
+                color: "text.disabled",
+                opacity: 0.5,
+                fontWeight: 500,
+                userSelect: "none",
+                cursor: "pointer",
+                transition: "opacity 0.2s ease-in-out",
+                "&:hover": {
+                  opacity: 1,
+                  color: "primary.main",
+                },
+              }}
+            >
+              v{APP_VERSION}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
+      {/* Modals - shared between both layouts */}
 
       {/* Favorites Modal */}
       <FavoritesModal
