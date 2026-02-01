@@ -40,7 +40,7 @@ export class AIService {
 
   /**
    * Enhance geocoding search results with AI
-   * Improves formatting, removes duplicates, and ranks by relevance
+   * Formats results like Google Maps - clean, hierarchical location names
    */
   async enhanceSearchResults(
     query: string,
@@ -50,37 +50,34 @@ export class AIService {
       return [];
     }
 
-    const prompt = `You are a location search assistant for Tasmania, Australia. Given the user's search query and a list of geocoding results, improve each result by:
-1. Creating a clean, human-readable formatted name (remove redundant "Tasmania, Australia" suffixes, clean up formatting)
-2. Creating a short name (just the main place name, 1-3 words)
-3. Assigning a confidence score (0-1) based on how well it matches the query
-4. Categorizing the location (suburb, town, city, street, landmark, region, etc.)
+    const prompt = `You are a location formatting assistant. Format these Nominatim geocoding results like Google Maps does.
 
-User Query: "${query}"
+User searched for: "${query}"
 
-Raw Results (JSON):
+Raw Nominatim results:
 ${JSON.stringify(
-  results.map((r) => ({ displayName: r.displayName, type: r.type })),
+  results.map((r, i) => ({ index: i, raw: r.displayName, type: r.type })),
   null,
   2,
 )}
 
-Respond with ONLY valid JSON array in this exact format:
-[
-  {
-    "index": 0,
-    "formattedName": "Clean formatted name",
-    "shortName": "Short name",
-    "confidence": 0.95,
-    "category": "suburb"
-  }
-]
+Format each result with Google Maps style:
+- formattedName: Clean display name like "Battery Point, Hobart TAS" or "123 Collins Street, Hobart TAS 7000"
+- shortName: Just the primary name (1-3 words) like "Battery Point" or "123 Collins St"
+- confidence: How well it matches the query (0.9+ exact, 0.7-0.9 partial, <0.7 weak)
+- category: Type like "Suburb", "Street Address", "Town", "City", "Landmark", "Region"
 
-Rules:
-- Keep results in Tasmania-relevant order (prioritize exact matches)
-- Confidence should be 0.9+ for exact matches, 0.7-0.9 for partial, below 0.7 for weak
-- Remove results that are clearly not in Tasmania
-- Maximum 5 results`;
+Google Maps formatting rules:
+1. For suburbs/towns: "Name, Nearest City TAS" (e.g., "Sandy Bay, Hobart TAS")
+2. For addresses: "Number Street, Suburb TAS Postcode" (e.g., "42 Davey St, Hobart TAS 7000")
+3. For landmarks: "Landmark Name, Suburb TAS" (e.g., "MONA, Berriedale TAS")
+4. NEVER include "Australia" - it's implied
+5. NEVER repeat "Tasmania" - use "TAS" once at the end
+6. Keep postcodes only for specific addresses
+7. Remove redundant parent regions (don't say "Hobart, Greater Hobart, TAS")
+
+Respond with ONLY a JSON array:
+[{"index": 0, "formattedName": "...", "shortName": "...", "confidence": 0.95, "category": "Suburb"}]`;
 
     try {
       const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {
@@ -135,28 +132,76 @@ Rules:
   }
 
   /**
-   * Fallback enhancement when AI fails
+   * Fallback enhancement when AI fails - formats like Google Maps
    */
   private fallbackEnhancement(
     results: GeocodingResult[],
   ): EnhancedGeocodingResult[] {
     return results.slice(0, 5).map((result) => {
-      // Simple formatting: remove trailing "Tasmania, Australia"
       const parts = result.displayName.split(", ");
-      const filteredParts = parts.filter(
-        (p) =>
-          !p.toLowerCase().includes("tasmania") &&
-          !p.toLowerCase().includes("australia"),
-      );
-      const formattedName =
-        filteredParts.slice(0, 3).join(", ") || result.displayName;
+
+      // Extract key components
+      const shortName = parts[0];
+
+      // Build Google Maps style formatted name
+      // Filter out redundant parts
+      const cleanParts = parts.filter((p) => {
+        const lower = p.toLowerCase();
+        return (
+          !lower.includes("australia") &&
+          lower !== "tasmania" &&
+          lower !== "tas" &&
+          !lower.includes("local government area") &&
+          !lower.includes("council")
+        );
+      });
+
+      // Find suburb/city (usually 2nd or 3rd part)
+      let formattedName = shortName;
+
+      if (cleanParts.length >= 2) {
+        // Check if first part looks like a street address
+        const isAddress =
+          /^\d+/.test(shortName) ||
+          result.type === "house" ||
+          result.type === "building";
+
+        if (isAddress && cleanParts.length >= 3) {
+          // Address format: "123 Street, Suburb TAS Postcode"
+          const postcode = parts.find((p) => /^\d{4}$/.test(p.trim()));
+          formattedName = `${cleanParts[0]}, ${cleanParts[1]} TAS${postcode ? ` ${postcode}` : ""}`;
+        } else {
+          // Place format: "Place, City TAS"
+          formattedName = `${cleanParts[0]}, ${cleanParts[1]} TAS`;
+        }
+      } else {
+        formattedName = `${shortName} TAS`;
+      }
+
+      // Determine category from type
+      const categoryMap: Record<string, string> = {
+        suburb: "Suburb",
+        city: "City",
+        town: "Town",
+        village: "Town",
+        house: "Street Address",
+        building: "Building",
+        residential: "Street Address",
+        street: "Street",
+        road: "Road",
+        peak: "Landmark",
+        water: "Landmark",
+        park: "Park",
+        administrative: "Region",
+      };
+      const category = categoryMap[result.type] || "Location";
 
       return {
         ...result,
         formattedName,
-        shortName: parts[0],
+        shortName,
         confidence: result.importance,
-        category: result.type,
+        category,
       };
     });
   }

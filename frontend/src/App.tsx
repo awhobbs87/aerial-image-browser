@@ -311,30 +311,61 @@ function AppContent() {
   }, []);
 
   const handleSearch = useCallback(
-    (lat: number, lon: number, locationName?: string) => {
-      // Convert filters to API format
-      const activeLayerTypes = [];
-      if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
-      if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
-      if (filters.layerTypes.digital) activeLayerTypes.push("digital");
+    (
+      lat: number,
+      lon: number,
+      locationName?: string,
+      aiFilters?: {
+        startDate?: string;
+        endDate?: string;
+        imageTypes?: string[];
+      },
+    ) => {
+      // If AI provided filters, use those; otherwise use panel filters
+      let startDate: string | undefined;
+      let endDate: string | undefined;
+      let imageTypes: string[] | undefined;
+      let minScale: number | undefined;
+      let maxScale: number | undefined;
 
-      // Derive scale bounds for server-side filtering (exact selection enforced client-side)
-      const hasScaleSelection = filters.selectedScales.length > 0;
-      const minScale = hasScaleSelection
-        ? Math.min(...filters.selectedScales)
-        : undefined;
-      const maxScale = hasScaleSelection
-        ? Math.max(...filters.selectedScales)
-        : undefined;
+      if (
+        aiFilters &&
+        (aiFilters.startDate || aiFilters.endDate || aiFilters.imageTypes)
+      ) {
+        // Use AI-provided filters
+        startDate = aiFilters.startDate;
+        endDate = aiFilters.endDate;
+        imageTypes = aiFilters.imageTypes;
+        console.log("Using AI filters:", aiFilters);
+      } else {
+        // Use panel filters
+        const activeLayerTypes = [];
+        if (filters.layerTypes.aerial) activeLayerTypes.push("aerial");
+        if (filters.layerTypes.ortho) activeLayerTypes.push("ortho");
+        if (filters.layerTypes.digital) activeLayerTypes.push("digital");
+
+        startDate = filters.startDate?.toISOString();
+        endDate = filters.endDate?.toISOString();
+        imageTypes =
+          activeLayerTypes.length === 3 ? undefined : activeLayerTypes;
+
+        // Derive scale bounds for server-side filtering (exact selection enforced client-side)
+        const hasScaleSelection = filters.selectedScales.length > 0;
+        minScale = hasScaleSelection
+          ? Math.min(...filters.selectedScales)
+          : undefined;
+        maxScale = hasScaleSelection
+          ? Math.max(...filters.selectedScales)
+          : undefined;
+      }
 
       setSearchParams({
         lat,
         lon,
         layers: [0, 1, 2],
-        startDate: filters.startDate?.toISOString(),
-        endDate: filters.endDate?.toISOString(),
-        imageTypes:
-          activeLayerTypes.length === 3 ? undefined : activeLayerTypes,
+        startDate,
+        endDate,
+        imageTypes,
         minScale,
         maxScale,
       });
