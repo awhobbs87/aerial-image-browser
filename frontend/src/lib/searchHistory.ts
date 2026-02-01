@@ -13,14 +13,6 @@ export interface SearchHistoryItem {
 const STORAGE_KEY = "tas-aerial-search-history";
 const MAX_HISTORY_ITEMS = 10;
 
-// Get the Worker API base URL
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  return "https://tas-aerial-browser.awhobbs.workers.dev";
-};
-
 class SearchHistoryManager {
   /**
    * Get all search history items
@@ -126,14 +118,18 @@ class SearchHistoryManager {
 
   /**
    * Fetch search history from server (Workers KV)
-   * Falls back to localStorage if server request fails
+   * Falls back to localStorage if server request fails or user is not authenticated
+   * Uses relative URL - Pages Function proxies to Worker preserving auth cookie
    */
   async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
     try {
-      const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/api/search-history`, {
-        credentials: "include", // Include cookies for Cloudflare Access auth
+      const response = await fetch("/api/search-history", {
+        credentials: "same-origin",
       });
+      // 401 is expected when not authenticated - silently fall back
+      if (response.status === 401) {
+        return this.getHistory();
+      }
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -147,7 +143,8 @@ class SearchHistoryManager {
         return result.data;
       }
     } catch (error) {
-      console.warn("Failed to fetch search history from server:", error);
+      // Only log non-auth errors
+      console.debug("Using local search history:", error);
     }
     // Fallback to localStorage
     return this.getHistory();
@@ -166,12 +163,11 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      const baseUrl = getApiBaseUrl();
-      await fetch(`${baseUrl}/api/search-history`, {
+      await fetch("/api/search-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, lat, lon }),
-        credentials: "include",
+        credentials: "same-origin",
       });
     } catch (error) {
       console.warn("Failed to save search to server:", error);
@@ -188,10 +184,9 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      const baseUrl = getApiBaseUrl();
-      await fetch(`${baseUrl}/api/search-history/${id}`, {
+      await fetch(`/api/search-history/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        credentials: "same-origin",
       });
     } catch (error) {
       console.warn("Failed to remove search from server:", error);

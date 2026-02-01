@@ -197,12 +197,9 @@ function AppContent() {
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        // Use the Worker API URL (same as apiClient)
-        const baseUrl =
-          import.meta.env.VITE_API_BASE_URL ||
-          "https://tas-aerial-browser.awhobbs.workers.dev";
-        const response = await fetch(`${baseUrl}/api/me`, {
-          credentials: "include", // Include cookies for Cloudflare Access auth
+        // Use relative URL - Pages Function will proxy to Worker
+        const response = await fetch("/api/me", {
+          credentials: "same-origin",
         });
         if (response.ok) {
           const data = (await response.json()) as {
