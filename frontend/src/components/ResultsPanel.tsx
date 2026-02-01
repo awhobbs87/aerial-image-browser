@@ -28,6 +28,8 @@ import {
   FilterList,
   CompareArrows,
   History,
+  AutoAwesome,
+  Close,
 } from "@mui/icons-material";
 import type { EnhancedPhoto } from "../types/api";
 import type { Filters } from "./filterPanelConfig";
@@ -64,6 +66,13 @@ interface ResultsPanelProps {
   onQuickFilterPreset: (presetId: string) => void;
   // Location info
   searchedLocation?: string | null;
+  // AI Filters
+  appliedAIFilters?: {
+    dateRange?: { start?: string; end?: string };
+    resolution?: string;
+    imageTypes?: string[];
+  } | null;
+  onClearAIFilters?: () => void;
 }
 
 const getPhotoKey = (photo: EnhancedPhoto) =>
@@ -91,6 +100,8 @@ export default function ResultsPanel({
   dateRange,
   hasActiveFilters,
   onQuickFilterPreset,
+  appliedAIFilters,
+  onClearAIFilters,
 }: ResultsPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ResultsViewMode>("grid");
@@ -248,6 +259,108 @@ export default function ResultsPanel({
               </Box>
             </Box>
           </Box>
+
+          {/* AI Filters Banner */}
+          {appliedAIFilters && (
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                borderBottom: "1px solid rgba(168, 85, 247, 0.2)",
+                bgcolor: "rgba(168, 85, 247, 0.08)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 0.5,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <AutoAwesome sx={{ fontSize: 14, color: "#A855F7" }} />
+                  <Typography
+                    sx={{
+                      fontSize: "0.7rem",
+                      color: "#A855F7",
+                      fontWeight: 600,
+                    }}
+                  >
+                    AI Filters
+                  </Typography>
+                  {appliedAIFilters.dateRange && (
+                    <Chip
+                      label={`${appliedAIFilters.dateRange.start?.slice(0, 4) || "any"} - ${appliedAIFilters.dateRange.end?.slice(0, 4) || "any"}`}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: "0.65rem",
+                        bgcolor: "rgba(168, 85, 247, 0.15)",
+                        color: "#C4B5FD",
+                        border: "none",
+                      }}
+                    />
+                  )}
+                  {appliedAIFilters.resolution && (
+                    <Chip
+                      label={`${appliedAIFilters.resolution} detail`}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: "0.65rem",
+                        bgcolor: "rgba(168, 85, 247, 0.15)",
+                        color: "#C4B5FD",
+                        border: "none",
+                      }}
+                    />
+                  )}
+                  {appliedAIFilters.imageTypes?.map((type) => (
+                    <Chip
+                      key={type}
+                      label={type}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: "0.65rem",
+                        bgcolor: "rgba(168, 85, 247, 0.15)",
+                        color: "#C4B5FD",
+                        border: "none",
+                      }}
+                    />
+                  ))}
+                </Box>
+                <Tooltip title="Clear AI filters and search again with defaults">
+                  <IconButton
+                    onClick={onClearAIFilters}
+                    size="small"
+                    sx={{
+                      color: "#A855F7",
+                      "&:hover": { bgcolor: "rgba(168, 85, 247, 0.15)" },
+                    }}
+                  >
+                    <Close sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: "0.6rem",
+                  color: "rgba(168, 85, 247, 0.6)",
+                  fontStyle: "italic",
+                }}
+              >
+                Clearing will re-search with default filters
+              </Typography>
+            </Box>
+          )}
 
           {/* Filters Section (Collapsible) */}
           {showFilters && (

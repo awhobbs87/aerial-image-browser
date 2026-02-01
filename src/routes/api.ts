@@ -11,9 +11,29 @@ import {
   type GeocodingResult,
   type ParsedSearchQuery,
 } from "../lib/ai";
+import { getAccessIdentity } from "../lib/auth";
+import { searchHistoryRoutes } from "./searchHistory";
 import type { Bindings, EnhancedPhoto } from "../types";
 
 export const api = new Hono<{ Bindings: Bindings }>();
+
+// Mount search history routes
+api.route("/search-history", searchHistoryRoutes);
+
+// Get current user info from Cloudflare Access
+api.get("/me", (c) => {
+  const identity = getAccessIdentity(c.req.raw);
+  if (!identity?.email) {
+    return c.json({ success: false, error: "Not authenticated" }, 401);
+  }
+  return c.json({
+    success: true,
+    data: {
+      email: identity.email,
+      sub: identity.sub,
+    },
+  });
+});
 
 function formatDate(timestamp?: number): string | null {
   if (!timestamp) return null;

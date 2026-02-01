@@ -1,6 +1,6 @@
 import React from "react";
-import { Box, IconButton, Typography, Badge } from "@mui/material";
-import { Room, BookmarkBorder, Settings } from "@mui/icons-material";
+import { Box, IconButton, Typography, Badge, Tooltip } from "@mui/material";
+import { Room, BookmarkBorder } from "@mui/icons-material";
 import {
   appleLiquidGlass,
   createBackdropFilter,
@@ -8,14 +8,14 @@ import {
 
 interface GlassNavigationProps {
   onSavedClick: () => void;
-  onSettingsClick: () => void;
   savedCount?: number;
+  userEmail?: string;
 }
 
 const GlassNavigation: React.FC<GlassNavigationProps> = ({
   onSavedClick,
-  onSettingsClick,
   savedCount,
+  userEmail,
 }) => {
   const iconColor = "#94A3B8";
   const accentColor = "#10B981";
@@ -73,6 +73,27 @@ const GlassNavigation: React.FC<GlassNavigationProps> = ({
           gap: 0.5,
         }}
       >
+        {userEmail && (
+          <Tooltip title={userEmail}>
+            <Typography
+              sx={{
+                fontSize: "0.7rem",
+                color: "#64748B",
+                maxWidth: 150,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                mr: 1,
+                cursor: "default",
+                "&:hover": {
+                  color: "#94A3B8",
+                },
+              }}
+            >
+              {userEmail}
+            </Typography>
+          </Tooltip>
+        )}
         <IconButton
           onClick={onSavedClick}
           aria-label="Saved locations"
@@ -101,22 +122,6 @@ const GlassNavigation: React.FC<GlassNavigationProps> = ({
           >
             <BookmarkBorder sx={{ fontSize: 22 }} />
           </Badge>
-        </IconButton>
-
-        <IconButton
-          onClick={onSettingsClick}
-          aria-label="Settings"
-          sx={{
-            color: iconColor,
-            transition: appleLiquidGlass.transitions.standard,
-            "&:hover": {
-              color: accentColor,
-              boxShadow: `0 0 12px ${accentColor}40`,
-              backgroundColor: "rgba(16, 185, 129, 0.1)",
-            },
-          }}
-        >
-          <Settings sx={{ fontSize: 22 }} />
         </IconButton>
       </Box>
     </Box>

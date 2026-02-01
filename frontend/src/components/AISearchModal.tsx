@@ -39,6 +39,9 @@ interface AISearchModalProps {
       startDate?: string;
       endDate?: string;
       imageTypes?: string[];
+      minScale?: number;
+      maxScale?: number;
+      resolution?: string; // For display in AI filters banner
     },
   ) => void;
 }
@@ -99,6 +102,9 @@ export default function AISearchModal({
         startDate?: string;
         endDate?: string;
         imageTypes?: string[];
+        minScale?: number;
+        maxScale?: number;
+        resolution?: string;
       } = {};
 
       if (parsed.startYear) {
@@ -109,6 +115,22 @@ export default function AISearchModal({
       }
       if (parsed.imageType) {
         filters.imageTypes = [parsed.imageType];
+      }
+
+      // Map resolution to scale filters
+      // "high" = Very Detailed (≤5,000) + Detailed (5,001-15,000)
+      // "medium" = Standard (15,001-40,000)
+      // "low" = Overview (>40,000)
+      if (parsed.resolution === "high") {
+        filters.maxScale = 15000;
+        filters.resolution = parsed.resolution;
+      } else if (parsed.resolution === "medium") {
+        filters.minScale = 15001;
+        filters.maxScale = 40000;
+        filters.resolution = parsed.resolution;
+      } else if (parsed.resolution === "low") {
+        filters.minScale = 40001;
+        filters.resolution = parsed.resolution;
       }
 
       // Trigger the search

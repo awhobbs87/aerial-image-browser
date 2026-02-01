@@ -168,19 +168,49 @@ function AppContent() {
   });
 
   // Immersive layout mode (new glassmorphic design)
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("immersive");
+  const [layoutMode, _setLayoutMode] = useState<LayoutMode>("immersive");
   const [discoveryPanel, setDiscoveryPanel] = useState<DiscoveryPanel>(null);
   const [discoveryTrayExpanded, setDiscoveryTrayExpanded] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [searchedLocationName, setSearchedLocationName] = useState<
     string | null
   >(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [appliedAIFilters, setAppliedAIFilters] = useState<{
+    dateRange?: { start?: string; end?: string };
+    resolution?: string;
+    imageTypes?: string[];
+  } | null>(null);
+  // Store location coords for re-searching when clearing AI filters
+  const [lastSearchCoords, setLastSearchCoords] = useState<{
+    lat: number;
+    lon: number;
+    name?: string;
+  } | null>(null);
 
   // Persist theme preference to localStorage
   useEffect(() => {
     localStorage.setItem("themeMode", themeMode);
   }, [themeMode]);
+
+  // Fetch user email from Cloudflare Access on mount
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.email) {
+            setUserEmail(data.data.email);
+          }
+        }
+      } catch (err) {
+        // Silently fail - user might not be authenticated via Cloudflare Access
+        console.debug("Could not fetch user info:", err);
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   // Keyboard shortcut: Escape to cancel pending pin
   useEffect(() => {
@@ -602,14 +632,65 @@ function AppContent() {
         startDate?: string;
         endDate?: string;
         imageTypes?: string[];
+        minScale?: number;
+        maxScale?: number;
+        resolution?: string;
       },
     ) => {
       setAiModalOpen(false);
       setSearchedLocationName(locationName || "AI Search Result");
+
+      // Store AI filters for display in banner
+      if (filters) {
+        const aiFilters: {
+          dateRange?: { start?: string; end?: string };
+          resolution?: string;
+          imageTypes?: string[];
+        } = {};
+
+        if (filters.startDate || filters.endDate) {
+          aiFilters.dateRange = {
+            start: filters.startDate,
+            end: filters.endDate,
+          };
+        }
+        if (filters.resolution) {
+          aiFilters.resolution = filters.resolution;
+        }
+        if (filters.imageTypes && filters.imageTypes.length > 0) {
+          aiFilters.imageTypes = filters.imageTypes;
+        }
+
+        // Only set if we have any filters
+        if (Object.keys(aiFilters).length > 0) {
+          setAppliedAIFilters(aiFilters);
+        } else {
+          setAppliedAIFilters(null);
+        }
+      } else {
+        setAppliedAIFilters(null);
+      }
+
+      // Store coords for potential re-search when clearing AI filters
+      setLastSearchCoords({ lat, lon, name: locationName });
+
       handleSearch(lat, lon, locationName, filters);
     },
     [handleSearch],
   );
+
+  // Handler to clear AI filters and re-search with defaults
+  const handleClearAIFilters = useCallback(() => {
+    setAppliedAIFilters(null);
+    if (lastSearchCoords) {
+      // Re-search the same location without AI filters
+      handleSearch(
+        lastSearchCoords.lat,
+        lastSearchCoords.lon,
+        lastSearchCoords.name,
+      );
+    }
+  }, [lastSearchCoords, handleSearch]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -670,8 +751,8 @@ function AppContent() {
           {/* Glass Navigation Bar */}
           <GlassNavigation
             onSavedClick={handleViewFavorites}
-            onSettingsClick={() => setSettingsOpen(!settingsOpen)}
             savedCount={favorites.size}
+            userEmail={userEmail || undefined}
           />
 
           {/* Discovery Tray (Left sidebar icons) */}
@@ -713,6 +794,8 @@ function AppContent() {
               hasActiveFilters={hasActiveFilters}
               onQuickFilterPreset={handleQuickFilterPreset}
               searchedLocation={searchedLocationName}
+              appliedAIFilters={appliedAIFilters}
+              onClearAIFilters={handleClearAIFilters}
             />
           )}
 

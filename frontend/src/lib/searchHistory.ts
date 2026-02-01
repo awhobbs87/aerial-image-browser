@@ -41,7 +41,7 @@ class SearchHistoryManager {
       // Check if this location already exists (within 0.001 degrees ~100m)
       const existingIndex = history.findIndex(
         (item) =>
-          Math.abs(item.lat - lat) < 0.001 && Math.abs(item.lon - lon) < 0.001
+          Math.abs(item.lat - lat) < 0.001 && Math.abs(item.lon - lon) < 0.001,
       );
 
       if (existingIndex !== -1) {
@@ -113,6 +113,70 @@ class SearchHistoryManager {
       return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
     } else {
       return "Just now";
+    }
+  }
+
+  /**
+   * Fetch search history from server (Workers KV)
+   * Falls back to localStorage if server request fails
+   */
+  async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
+    try {
+      const response = await fetch("/api/search-history");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        // Update localStorage cache with server data
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
+        return result.data;
+      }
+    } catch (error) {
+      console.warn("Failed to fetch search history from server:", error);
+    }
+    // Fallback to localStorage
+    return this.getHistory();
+  }
+
+  /**
+   * Add search to history - saves to both localStorage (immediate) and server (background)
+   */
+  async addSearchToServer(
+    query: string,
+    lat: number,
+    lon: number,
+  ): Promise<void> {
+    // Immediate local update for fast UI
+    this.addSearch(query, lat, lon);
+
+    // Background sync to server
+    try {
+      await fetch("/api/search-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, lat, lon }),
+      });
+    } catch (error) {
+      console.warn("Failed to save search to server:", error);
+      // Local storage already has it, so user won't lose data
+    }
+  }
+
+  /**
+   * Remove search from history - removes from both localStorage and server
+   */
+  async removeSearchFromServer(id: string): Promise<void> {
+    // Immediate local removal
+    this.removeSearch(id);
+
+    // Background sync to server
+    try {
+      await fetch(`/api/search-history/${id}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.warn("Failed to remove search from server:", error);
     }
   }
 }
