@@ -127,12 +127,24 @@ export default function ResultsPanel({
       <Box
         sx={{
           position: "fixed",
-          left: isOpen ? 64 : -panelWidth - 20, // Fully hide when closed
-          top: 56,
-          bottom: 16,
-          width: panelWidth,
+          // Desktop: slide from left side
+          // Mobile: slide up from bottom as a sheet
+          left: {
+            xs: 0,
+            md: isOpen ? 64 : -panelWidth - 20,
+          },
+          right: { xs: 0, md: "auto" },
+          top: {
+            xs: isOpen ? "35%" : "100%", // Mobile: bottom sheet covers 65% of screen
+            md: 56,
+          },
+          bottom: { xs: 0, md: 16 },
+          width: { xs: "100%", md: panelWidth },
           zIndex: 1050,
-          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition: {
+            xs: "top 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            md: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          },
           display: "flex",
           flexDirection: "column",
         }}
@@ -143,19 +155,47 @@ export default function ResultsPanel({
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            background: "rgba(18, 18, 18, 0.88)",
+            background: "rgba(18, 18, 18, 0.95)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            borderRadius: "16px",
+            borderRadius: { xs: "20px 20px 0 0", md: "16px" },
             border: "1px solid rgba(148, 163, 184, 0.1)",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+            borderBottom: {
+              xs: "none",
+              md: "1px solid rgba(148, 163, 184, 0.1)",
+            },
+            boxShadow: {
+              xs: "0 -8px 32px rgba(0, 0, 0, 0.5)",
+              md: "0 8px 32px rgba(0, 0, 0, 0.4)",
+            },
             overflow: "hidden",
           }}
         >
+          {/* Mobile drag handle */}
+          <Box
+            onClick={() => setIsOpen(!isOpen)}
+            sx={{
+              display: { xs: "flex", md: "none" },
+              justifyContent: "center",
+              py: 1.5,
+              cursor: "pointer",
+            }}
+          >
+            <Box
+              sx={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                bgcolor: "rgba(148, 163, 184, 0.4)",
+              }}
+            />
+          </Box>
+
           {/* Header */}
           <Box
             sx={{
-              p: 2,
+              p: { xs: 1.5, md: 2 },
+              pt: { xs: 0, md: 2 },
               borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
             }}
           >
@@ -675,7 +715,7 @@ export default function ResultsPanel({
           </Box>
         </Box>
 
-        {/* Collapse Button (only when panel is open) */}
+        {/* Collapse Button - Desktop only (mobile uses drag handle) */}
         {isOpen && (
           <Tooltip title="Collapse panel" placement="right">
             <IconButton
@@ -694,6 +734,8 @@ export default function ResultsPanel({
                 borderLeft: "none",
                 color: "#94A3B8",
                 transition: "all 0.2s ease",
+                // Hide on mobile - use drag handle instead
+                display: { xs: "none", md: "flex" },
                 "&:hover": {
                   bgcolor: "rgba(30, 41, 59, 0.95)",
                   color: "#10B981",
@@ -706,36 +748,82 @@ export default function ResultsPanel({
         )}
       </Box>
 
-      {/* Expand Button (only when panel is closed) */}
+      {/* Expand Button - Desktop: side button, Mobile: bottom tab */}
       {!isOpen && (
-        <Tooltip title="Show results" placement="right">
-          <IconButton
+        <>
+          {/* Desktop expand button */}
+          <Tooltip title="Show results" placement="right">
+            <IconButton
+              onClick={() => setIsOpen(true)}
+              sx={{
+                position: "fixed",
+                left: 64,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 1050,
+                width: 40,
+                height: 64,
+                borderRadius: "0 12px 12px 0",
+                bgcolor: "rgba(18, 18, 18, 0.9)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(148, 163, 184, 0.15)",
+                borderLeft: "none",
+                color: "#10B981",
+                boxShadow: "4px 0 16px rgba(0, 0, 0, 0.3)",
+                transition: "all 0.2s ease",
+                // Hide on mobile
+                display: { xs: "none", md: "flex" },
+                "&:hover": {
+                  bgcolor: "rgba(30, 41, 59, 0.95)",
+                  boxShadow: "4px 0 24px rgba(16, 185, 129, 0.2)",
+                },
+              }}
+            >
+              <ChevronRight sx={{ fontSize: 24 }} />
+            </IconButton>
+          </Tooltip>
+
+          {/* Mobile expand tab at bottom */}
+          <Box
             onClick={() => setIsOpen(true)}
             sx={{
               position: "fixed",
-              left: 64,
-              top: "50%",
-              transform: "translateY(-50%)",
+              bottom: 0,
+              left: 0,
+              right: 0,
               zIndex: 1050,
-              width: 40,
-              height: 64,
-              borderRadius: "0 12px 12px 0",
-              bgcolor: "rgba(18, 18, 18, 0.9)",
+              display: { xs: "flex", md: "none" },
+              flexDirection: "column",
+              alignItems: "center",
+              py: 1.5,
+              bgcolor: "rgba(18, 18, 18, 0.95)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(148, 163, 184, 0.15)",
-              borderLeft: "none",
-              color: "#10B981",
-              boxShadow: "4px 0 16px rgba(0, 0, 0, 0.3)",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "rgba(30, 41, 59, 0.95)",
-                boxShadow: "4px 0 24px rgba(16, 185, 129, 0.2)",
-              },
+              borderTop: "1px solid rgba(148, 163, 184, 0.15)",
+              borderRadius: "20px 20px 0 0",
+              boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.3)",
+              cursor: "pointer",
             }}
           >
-            <ChevronRight sx={{ fontSize: 24 }} />
-          </IconButton>
-        </Tooltip>
+            <Box
+              sx={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                bgcolor: "rgba(148, 163, 184, 0.4)",
+                mb: 1,
+              }}
+            />
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "#10B981",
+              }}
+            >
+              {photos.length} Results
+            </Typography>
+          </Box>
+        </>
       )}
     </>
   );

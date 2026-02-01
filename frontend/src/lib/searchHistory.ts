@@ -13,6 +13,14 @@ export interface SearchHistoryItem {
 const STORAGE_KEY = "tas-aerial-search-history";
 const MAX_HISTORY_ITEMS = 10;
 
+// Get the Worker API base URL
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  return "https://tas-aerial-browser.awhobbs.workers.dev";
+};
+
 class SearchHistoryManager {
   /**
    * Get all search history items
@@ -122,11 +130,17 @@ class SearchHistoryManager {
    */
   async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
     try {
-      const response = await fetch("/api/search-history");
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/search-history`, {
+        credentials: "include", // Include cookies for Cloudflare Access auth
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success: boolean;
+        data?: SearchHistoryItem[];
+      };
       if (result.success && Array.isArray(result.data)) {
         // Update localStorage cache with server data
         localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
@@ -152,10 +166,12 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch("/api/search-history", {
+      const baseUrl = getApiBaseUrl();
+      await fetch(`${baseUrl}/api/search-history`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, lat, lon }),
+        credentials: "include",
       });
     } catch (error) {
       console.warn("Failed to save search to server:", error);
@@ -172,8 +188,10 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch(`/api/search-history/${id}`, {
+      const baseUrl = getApiBaseUrl();
+      await fetch(`${baseUrl}/api/search-history/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
     } catch (error) {
       console.warn("Failed to remove search from server:", error);

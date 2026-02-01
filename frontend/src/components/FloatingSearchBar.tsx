@@ -257,12 +257,12 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
     <Box
       sx={{
         position: "absolute",
-        top: 64,
+        top: { xs: 56, md: 64 },
         left: "50%",
         transform: "translateX(-50%)",
         width: "100%",
-        maxWidth: 420,
-        px: 2,
+        maxWidth: { xs: "100%", sm: 420 },
+        px: { xs: 1, sm: 2 },
         zIndex: 1000,
       }}
     >
@@ -272,12 +272,12 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
           WebkitBackdropFilter: "blur(12px) saturate(180%)",
           background: "rgba(30, 41, 59, 0.85)",
           border: "1px solid rgba(148, 163, 184, 0.15)",
-          borderRadius: "16px",
+          borderRadius: { xs: "12px", sm: "16px" },
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           display: "flex",
           flexDirection: "column",
-          gap: 1.5,
+          gap: { xs: 1, sm: 1.5 },
         }}
       >
         {/* Search Input with Autocomplete */}
@@ -517,8 +517,14 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
           </IconButton>
         </Box>
 
-        {/* Quick Jump Chips */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* Quick Jump Chips - Hide on mobile to save space */}
+        <Box
+          sx={{
+            display: { xs: "none", sm: "flex" },
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
           <Box
             component="span"
             sx={{
@@ -567,7 +573,7 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
         </Box>
 
         {/* Action Buttons */}
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: { xs: 0.75, sm: 1 } }}>
           {/* Near Me Button */}
           <Button
             variant="contained"
@@ -577,16 +583,16 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
               geolocating ? (
                 <CircularProgress size={16} sx={{ color: "#fff" }} />
               ) : (
-                <MyLocation sx={{ fontSize: 18 }} />
+                <MyLocation sx={{ fontSize: { xs: 16, sm: 18 } }} />
               )
             }
             sx={{
               flex: 1,
-              height: 36,
+              height: { xs: 34, sm: 36 },
               borderRadius: "18px",
               textTransform: "none",
               fontWeight: 600,
-              fontSize: "0.8rem",
+              fontSize: { xs: "0.75rem", sm: "0.8rem" },
               background: "linear-gradient(135deg, #0891b2 0%, #10b981 100%)",
               boxShadow: "0 4px 14px rgba(16, 185, 129, 0.25)",
               transition: "all 0.2s ease",
@@ -612,14 +618,14 @@ const FloatingSearchBar: React.FC<FloatingSearchBarProps> = ({
             variant="outlined"
             onClick={onAISearchClick}
             disabled={loading}
-            startIcon={<AutoAwesome sx={{ fontSize: 18 }} />}
+            startIcon={<AutoAwesome sx={{ fontSize: { xs: 16, sm: 18 } }} />}
             sx={{
               flex: 1,
-              height: 36,
+              height: { xs: 34, sm: 36 },
               borderRadius: "18px",
               textTransform: "none",
               fontWeight: 600,
-              fontSize: "0.8rem",
+              fontSize: { xs: "0.75rem", sm: "0.8rem" },
               color: "#A855F7",
               borderColor: "rgba(168, 85, 247, 0.5)",
               borderWidth: "1px",

@@ -52,7 +52,8 @@ export default function DiscoveryTray({
         transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
         zIndex: 1200,
-        display: "flex",
+        // Hide on mobile - takes up too much space
+        display: { xs: "none", md: "flex" },
         flexDirection: "column",
         py: 2,
         px: 1,

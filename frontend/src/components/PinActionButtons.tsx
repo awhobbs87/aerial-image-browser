@@ -26,13 +26,14 @@ export default function PinActionButtons({
       sx={{
         position: "absolute",
         // Position higher on the screen to avoid overlap with welcome text
-        bottom: { xs: 140, md: 160 },
+        // Mobile: lower since we have less UI at bottom
+        bottom: { xs: 80, sm: 120, md: 160 },
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 1100, // Higher than welcome text (z-index: 100)
-        maxWidth: { xs: "calc(100% - 32px)", sm: 380 },
-        width: "auto",
-        borderRadius: 3,
+        maxWidth: { xs: "calc(100% - 16px)", sm: 380 },
+        width: { xs: "calc(100% - 16px)", sm: "auto" },
+        borderRadius: { xs: 2, sm: 3 },
         bgcolor: "rgba(18, 18, 18, 0.92)",
         backdropFilter: "blur(16px) saturate(180%)",
         WebkitBackdropFilter: "blur(16px) saturate(180%)",
@@ -51,32 +52,33 @@ export default function PinActionButtons({
         },
       }}
     >
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
         <Typography
           variant="body2"
           sx={{
-            mb: 1.5,
+            mb: { xs: 1, sm: 1.5 },
             fontWeight: 500,
             textAlign: "center",
             fontFamily: "monospace",
-            fontSize: "0.8rem",
+            fontSize: { xs: "0.7rem", sm: "0.8rem" },
             color: "#94A3B8",
           }}
         >
           {formatCoordinates(lat, lon)}
         </Typography>
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }}>
           <Button
             variant="outlined"
-            startIcon={<CloseIcon sx={{ fontSize: 18 }} />}
+            startIcon={<CloseIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
             onClick={onCancel}
             sx={{
+              flex: 1,
               borderRadius: 2,
               textTransform: "none",
               fontWeight: 600,
-              fontSize: "0.875rem",
-              px: 2.5,
-              py: 1,
+              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              px: { xs: 1.5, sm: 2.5 },
+              py: { xs: 0.75, sm: 1 },
               color: "#94A3B8",
               borderColor: "rgba(148, 163, 184, 0.3)",
               "&:hover": {
@@ -89,15 +91,16 @@ export default function PinActionButtons({
           </Button>
           <Button
             variant="contained"
-            startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
+            startIcon={<SearchIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
             onClick={onConfirm}
             sx={{
+              flex: 1,
               borderRadius: 2,
               textTransform: "none",
               fontWeight: 600,
-              fontSize: "0.875rem",
-              px: 2.5,
-              py: 1,
+              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              px: { xs: 1.5, sm: 2.5 },
+              py: { xs: 0.75, sm: 1 },
               bgcolor: "#10B981",
               color: "#FFFFFF",
               boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",

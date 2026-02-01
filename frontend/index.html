@@ -2,48 +2,65 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📸</text></svg>" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📸</text></svg>"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Explore historical and recent aerial photography from across Tasmania" />
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
-    
+    <meta
+      name="description"
+      content="Explore historical and recent aerial photography from across Tasmania"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+
     <script>
       // Block Cloudflare Insights BEFORE any other scripts run
-      (function() {
+      (function () {
         // Block script injection methods
         const blockScript = (script) => {
-          if (!script || script.tagName !== 'SCRIPT') return false;
-          const src = script.src || script.getAttribute('src') || '';
-          const hasBeacon = script.getAttribute('data-cf-beacon');
-          return hasBeacon || src.includes('cloudflareinsights.com') || src.includes('beacon.min.js');
+          if (!script || script.tagName !== "SCRIPT") return false;
+          const src = script.src || script.getAttribute("src") || "";
+          const hasBeacon = script.getAttribute("data-cf-beacon");
+          return (
+            hasBeacon ||
+            src.includes("cloudflareinsights.com") ||
+            src.includes("beacon.min.js")
+          );
         };
-        
+
         // Override appendChild
         const originalAppendChild = Node.prototype.appendChild;
-        Node.prototype.appendChild = function(child) {
+        Node.prototype.appendChild = function (child) {
           if (blockScript(child)) return child;
           return originalAppendChild.call(this, child);
         };
-        
+
         // Override insertBefore
         const originalInsertBefore = Node.prototype.insertBefore;
-        Node.prototype.insertBefore = function(newNode, referenceNode) {
+        Node.prototype.insertBefore = function (newNode, referenceNode) {
           if (blockScript(newNode)) return newNode;
           return originalInsertBefore.call(this, newNode, referenceNode);
         };
-        
+
         // Remove existing scripts
         const removeScripts = () => {
-          document.querySelectorAll('script[data-cf-beacon], script[src*="cloudflareinsights.com"], script[src*="beacon.min.js"]').forEach(s => s.remove());
+          document
+            .querySelectorAll(
+              'script[data-cf-beacon], script[src*="cloudflareinsights.com"], script[src*="beacon.min.js"]',
+            )
+            .forEach((s) => s.remove());
         };
-        
+
         // Run immediately
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', removeScripts);
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", removeScripts);
         } else {
           removeScripts();
         }
-        
+
         // Watch for new scripts
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
@@ -55,15 +72,21 @@
           });
           removeScripts();
         });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        observer.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
       })();
     </script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1976d2" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#121212" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="TAS Aerial" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
 
@@ -95,17 +118,20 @@
     <!-- Additional Pinterest blocking script -->
     <script>
       // Block Pinterest browser extension from injecting content
-      (function() {
-        const observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutation) {
-            mutation.addedNodes.forEach(function(node) {
+      (function () {
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
               if (node.nodeType === 1) {
                 // Remove Pinterest injected elements
-                if (node.getAttribute && (
-                  node.getAttribute('data-pin-href') ||
-                  node.getAttribute('data-pin-do') ||
-                  (node.className && typeof node.className === 'string' && node.className.includes('PIN_'))
-                )) {
+                if (
+                  node.getAttribute &&
+                  (node.getAttribute("data-pin-href") ||
+                    node.getAttribute("data-pin-do") ||
+                    (node.className &&
+                      typeof node.className === "string" &&
+                      node.className.includes("PIN_")))
+                ) {
                   node.remove();
                 }
               }
@@ -115,7 +141,7 @@
 
         observer.observe(document.documentElement, {
           childList: true,
-          subtree: true
+          subtree: true,
         });
       })();
     </script>
@@ -126,33 +152,40 @@
       (function removeCfBeacon() {
         const removeScripts = () => {
           // Remove Cloudflare Insights beacon scripts
-          document.querySelectorAll('script[data-cf-beacon], script[src*="cloudflareinsights.com"], script[src*="beacon.min.js"]').forEach((script) => {
-            script.remove();
-          });
-          // Also remove any script tags with integrity attributes pointing to Cloudflare
-          document.querySelectorAll('script[integrity*="cloudflare"], script[integrity*="sha512"]').forEach((script) => {
-            if (script.src && script.src.includes('cloudflareinsights.com')) {
+          document
+            .querySelectorAll(
+              'script[data-cf-beacon], script[src*="cloudflareinsights.com"], script[src*="beacon.min.js"]',
+            )
+            .forEach((script) => {
               script.remove();
-            }
-          });
+            });
+          // Also remove any script tags with integrity attributes pointing to Cloudflare
+          document
+            .querySelectorAll(
+              'script[integrity*="cloudflare"], script[integrity*="sha512"]',
+            )
+            .forEach((script) => {
+              if (script.src && script.src.includes("cloudflareinsights.com")) {
+                script.remove();
+              }
+            });
         };
         // Remove any existing script immediately
         removeScripts();
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', removeScripts);
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", removeScripts);
         }
         // Observe future injections with high priority
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === 1 && node.tagName === 'SCRIPT') {
+              if (node.nodeType === 1 && node.tagName === "SCRIPT") {
                 const script = node;
                 if (
-                  script.getAttribute('data-cf-beacon') ||
-                  (script.src && (
-                    script.src.includes('cloudflareinsights.com') ||
-                    script.src.includes('beacon.min.js')
-                  ))
+                  script.getAttribute("data-cf-beacon") ||
+                  (script.src &&
+                    (script.src.includes("cloudflareinsights.com") ||
+                      script.src.includes("beacon.min.js")))
                 ) {
                   script.remove();
                 }
@@ -161,22 +194,21 @@
           });
           removeScripts();
         });
-        observer.observe(document.documentElement, { 
-          childList: true, 
+        observer.observe(document.documentElement, {
+          childList: true,
           subtree: true,
           attributes: true,
-          attributeFilter: ['src', 'data-cf-beacon']
+          attributeFilter: ["src", "data-cf-beacon"],
         });
         // Block before script execution
         const originalAppendChild = Node.prototype.appendChild;
-        Node.prototype.appendChild = function(child) {
-          if (child && child.tagName === 'SCRIPT') {
+        Node.prototype.appendChild = function (child) {
+          if (child && child.tagName === "SCRIPT") {
             if (
-              child.getAttribute('data-cf-beacon') ||
-              (child.src && (
-                child.src.includes('cloudflareinsights.com') ||
-                child.src.includes('beacon.min.js')
-              ))
+              child.getAttribute("data-cf-beacon") ||
+              (child.src &&
+                (child.src.includes("cloudflareinsights.com") ||
+                  child.src.includes("beacon.min.js")))
             ) {
               return child; // Don't append
             }
@@ -185,14 +217,13 @@
         };
         // Also block insertBefore
         const originalInsertBefore = Node.prototype.insertBefore;
-        Node.prototype.insertBefore = function(newNode, referenceNode) {
-          if (newNode && newNode.tagName === 'SCRIPT') {
+        Node.prototype.insertBefore = function (newNode, referenceNode) {
+          if (newNode && newNode.tagName === "SCRIPT") {
             if (
-              newNode.getAttribute('data-cf-beacon') ||
-              (newNode.src && (
-                newNode.src.includes('cloudflareinsights.com') ||
-                newNode.src.includes('beacon.min.js')
-              ))
+              newNode.getAttribute("data-cf-beacon") ||
+              (newNode.src &&
+                (newNode.src.includes("cloudflareinsights.com") ||
+                  newNode.src.includes("beacon.min.js")))
             ) {
               return newNode; // Don't insert
             }

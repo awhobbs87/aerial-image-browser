@@ -85,6 +85,8 @@ const GlassNavigation: React.FC<GlassNavigationProps> = ({
                 whiteSpace: "nowrap",
                 mr: 1,
                 cursor: "default",
+                // Hide on mobile to save space
+                display: { xs: "none", sm: "block" },
                 "&:hover": {
                   color: "#94A3B8",
                 },

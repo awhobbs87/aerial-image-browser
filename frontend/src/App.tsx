@@ -197,9 +197,18 @@ function AppContent() {
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        const response = await fetch("/api/me");
+        // Use the Worker API URL (same as apiClient)
+        const baseUrl =
+          import.meta.env.VITE_API_BASE_URL ||
+          "https://tas-aerial-browser.awhobbs.workers.dev";
+        const response = await fetch(`${baseUrl}/api/me`, {
+          credentials: "include", // Include cookies for Cloudflare Access auth
+        });
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as {
+            success: boolean;
+            data?: { email: string };
+          };
           if (data.success && data.data?.email) {
             setUserEmail(data.data.email);
           }
@@ -367,6 +376,8 @@ function AppContent() {
         startDate?: string;
         endDate?: string;
         imageTypes?: string[];
+        minScale?: number;
+        maxScale?: number;
       },
     ) => {
       // If AI provided filters, use those; otherwise use panel filters
@@ -378,12 +389,18 @@ function AppContent() {
 
       if (
         aiFilters &&
-        (aiFilters.startDate || aiFilters.endDate || aiFilters.imageTypes)
+        (aiFilters.startDate ||
+          aiFilters.endDate ||
+          aiFilters.imageTypes ||
+          aiFilters.minScale ||
+          aiFilters.maxScale)
       ) {
         // Use AI-provided filters
         startDate = aiFilters.startDate;
         endDate = aiFilters.endDate;
         imageTypes = aiFilters.imageTypes;
+        minScale = aiFilters.minScale;
+        maxScale = aiFilters.maxScale;
         console.log("Using AI filters:", aiFilters);
       } else {
         // Use panel filters
@@ -804,13 +821,14 @@ function AppContent() {
             <Box
               sx={{
                 position: "absolute",
-                bottom: 32,
+                bottom: { xs: 16, sm: 32 },
                 left: "50%",
                 transform: "translateX(-50%)",
                 zIndex: 100,
                 textAlign: "center",
-                maxWidth: 480,
-                px: 3,
+                maxWidth: { xs: "100%", sm: 480 },
+                px: { xs: 2, sm: 3 },
+                width: "100%",
               }}
             >
               <Typography
@@ -819,8 +837,9 @@ function AppContent() {
                   fontWeight: 600,
                   color: "#F1F5F9",
                   textShadow: "0 2px 12px rgba(0, 0, 0, 0.5)",
-                  mb: 1,
+                  mb: { xs: 0.5, sm: 1 },
                   letterSpacing: "-0.02em",
+                  fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
                 }}
               >
                 Tasmania Aerial Photos
@@ -830,11 +849,26 @@ function AppContent() {
                 sx={{
                   color: "rgba(241, 245, 249, 0.75)",
                   textShadow: "0 1px 8px rgba(0, 0, 0, 0.5)",
-                  fontSize: "0.9rem",
+                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                  lineHeight: 1.5,
+                  // Shorter text on mobile
+                  display: { xs: "none", sm: "block" },
                 }}
               >
                 Explore decades of aerial photography. Search a location or
                 click anywhere on the map to discover historical imagery.
+              </Typography>
+              {/* Mobile-only shorter text */}
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "rgba(241, 245, 249, 0.7)",
+                  textShadow: "0 1px 8px rgba(0, 0, 0, 0.5)",
+                  fontSize: "0.75rem",
+                  display: { xs: "block", sm: "none" },
+                }}
+              >
+                Search or tap the map to explore
               </Typography>
             </Box>
           )}
