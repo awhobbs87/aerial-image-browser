@@ -119,19 +119,20 @@ class SearchHistoryManager {
   /**
    * Fetch search history from server (Workers KV)
    * Falls back to localStorage if server request fails or user is not authenticated
-   * Uses relative URL - Pages Function proxies to Worker preserving auth cookie
+   * Worker is now in the same Access application, so cookies are shared
    */
   async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
     try {
-      const response = await fetch("/api/search-history", {
-        credentials: "same-origin",
-      });
+      const response = await fetch(
+        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
+        { credentials: "include" },
+      );
       // 401 is expected when not authenticated - silently fall back
       if (response.status === 401) {
         return this.getHistory();
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        return this.getHistory();
       }
       const result = (await response.json()) as {
         success: boolean;
@@ -142,11 +143,9 @@ class SearchHistoryManager {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
         return result.data;
       }
-    } catch (error) {
-      // Only log non-auth errors
-      console.debug("Using local search history:", error);
+    } catch {
+      // Silently fall back to localStorage
     }
-    // Fallback to localStorage
     return this.getHistory();
   }
 
@@ -163,14 +162,16 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch("/api/search-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, lat, lon }),
-        credentials: "same-origin",
-      });
-    } catch (error) {
-      console.warn("Failed to save search to server:", error);
+      await fetch(
+        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, lat, lon }),
+          credentials: "include",
+        },
+      );
+    } catch {
       // Local storage already has it, so user won't lose data
     }
   }
@@ -184,12 +185,15 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch(`/api/search-history/${id}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-      });
-    } catch (error) {
-      console.warn("Failed to remove search from server:", error);
+      await fetch(
+        `https://tas-aerial-browser.awhobbs.workers.dev/api/search-history/${id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+    } catch {
+      // Already removed locally
     }
   }
 }
