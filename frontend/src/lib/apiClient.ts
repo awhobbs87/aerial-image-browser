@@ -649,15 +649,18 @@ class ApiClient {
 }
 
 // Create a singleton instance
-// Use environment variable for base URL, or detect from current domain
+// Use relative URLs so requests go through the Pages Function proxy (production)
+// or the Vite dev proxy (development) - avoiding cross-origin CORS issues entirely.
 const getApiBaseUrl = () => {
-  // If environment variable is set, use it
+  // If environment variable is explicitly set, use it
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  // Always use the worker URL (it has CORS configured to allow requests)
-  return "https://tas-aerial-browser.awhobbs.workers.dev";
+  // Use relative URL (same-origin) - requests will be proxied:
+  // - In dev: Vite proxy forwards /api/* to the Worker
+  // - In prod: Pages Function (functions/api/[[path]].ts) proxies to the Worker
+  return "";
 };
 
 const API_BASE_URL = getApiBaseUrl();

@@ -116,19 +116,25 @@ class SearchHistoryManager {
     }
   }
 
+  /** Track whether server sync has already failed (avoid repeated failed requests) */
+  private serverSyncDisabled = false;
+
   /**
    * Fetch search history from server (Workers KV)
-   * Falls back to localStorage if server request fails or user is not authenticated
-   * Worker is now in the same Access application, so cookies are shared
+   * Uses relative URL to go through Pages Function proxy (avoids cross-origin CORS issues).
+   * Falls back to localStorage if server request fails or user is not authenticated.
    */
   async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
+    if (this.serverSyncDisabled) {
+      return this.getHistory();
+    }
     try {
-      const response = await fetch(
-        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
-        { credentials: "include" },
-      );
+      const response = await fetch("/api/search-history", {
+        credentials: "include",
+      });
       // 401 is expected when not authenticated - silently fall back
       if (response.status === 401) {
+        this.serverSyncDisabled = true;
         return this.getHistory();
       }
       if (!response.ok) {
@@ -144,7 +150,7 @@ class SearchHistoryManager {
         return result.data;
       }
     } catch {
-      // Silently fall back to localStorage
+      // Silently fall back to localStorage (network error, CORS, etc.)
     }
     return this.getHistory();
   }
@@ -160,17 +166,19 @@ class SearchHistoryManager {
     // Immediate local update for fast UI
     this.addSearch(query, lat, lon);
 
+    if (this.serverSyncDisabled) return;
+
     // Background sync to server
     try {
-      await fetch(
-        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, lat, lon }),
-          credentials: "include",
-        },
-      );
+      const response = await fetch("/api/search-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, lat, lon }),
+        credentials: "include",
+      });
+      if (response.status === 401) {
+        this.serverSyncDisabled = true;
+      }
     } catch {
       // Local storage already has it, so user won't lose data
     }
@@ -183,15 +191,17 @@ class SearchHistoryManager {
     // Immediate local removal
     this.removeSearch(id);
 
+    if (this.serverSyncDisabled) return;
+
     // Background sync to server
     try {
-      await fetch(
-        `https://tas-aerial-browser.awhobbs.workers.dev/api/search-history/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
-      );
+      const response = await fetch(`/api/search-history/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (response.status === 401) {
+        this.serverSyncDisabled = true;
+      }
     } catch {
       // Already removed locally
     }
