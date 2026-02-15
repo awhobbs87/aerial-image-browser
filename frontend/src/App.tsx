@@ -195,15 +195,13 @@ function AppContent() {
   }, [themeMode]);
 
   // Fetch user email from Cloudflare Access on mount
-  // Worker is now in the same Access application, so the cookie will be sent
+  // Uses relative URL - Pages Function proxies to Worker with Access cookie
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        // Use Worker URL directly with credentials to send Access cookie
-        const response = await fetch(
-          "https://tas-aerial-browser.awhobbs.workers.dev/api/me",
-          { credentials: "include" },
-        );
+        const response = await fetch("/api/me", {
+          credentials: "same-origin",
+        });
         if (response.ok) {
           const data = (await response.json()) as {
             success: boolean;

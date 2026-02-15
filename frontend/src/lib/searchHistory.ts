@@ -118,15 +118,14 @@ class SearchHistoryManager {
 
   /**
    * Fetch search history from server (Workers KV)
+   * Uses relative URL - Pages Function proxies to Worker with the Access cookie
    * Falls back to localStorage if server request fails or user is not authenticated
-   * Worker is now in the same Access application, so cookies are shared
    */
   async getHistoryFromServer(): Promise<SearchHistoryItem[]> {
     try {
-      const response = await fetch(
-        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
-        { credentials: "include" },
-      );
+      const response = await fetch("/api/search-history", {
+        credentials: "same-origin",
+      });
       // 401 is expected when not authenticated - silently fall back
       if (response.status === 401) {
         return this.getHistory();
@@ -162,15 +161,12 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch(
-        "https://tas-aerial-browser.awhobbs.workers.dev/api/search-history",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, lat, lon }),
-          credentials: "include",
-        },
-      );
+      await fetch("/api/search-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, lat, lon }),
+        credentials: "same-origin",
+      });
     } catch {
       // Local storage already has it, so user won't lose data
     }
@@ -185,13 +181,10 @@ class SearchHistoryManager {
 
     // Background sync to server
     try {
-      await fetch(
-        `https://tas-aerial-browser.awhobbs.workers.dev/api/search-history/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
-      );
+      await fetch(`/api/search-history/${id}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
     } catch {
       // Already removed locally
     }
