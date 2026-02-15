@@ -194,13 +194,30 @@ function AppContent() {
     localStorage.setItem("themeMode", themeMode);
   }, [themeMode]);
 
-  // User email from Cloudflare Access - disabled for now
-  // Cross-origin Access SSO requires browser redirect which breaks fetch requests
-  // TODO: Re-enable when frontend and API are on the same domain (e.g., api.aerial-explorer.awhq.uk)
+  // Fetch user email from Cloudflare Access on mount
+  // Worker is now in the same Access application, so the cookie will be sent
   useEffect(() => {
-    // Disabled - cross-origin Access SSO doesn't work with fetch
-    // The user would need to visit the Worker URL directly first to get the cookie
-    void setUserEmail; // Suppress unused warning
+    const fetchUserEmail = async () => {
+      try {
+        // Use Worker URL directly with credentials to send Access cookie
+        const response = await fetch(
+          "https://tas-aerial-browser.awhobbs.workers.dev/api/me",
+          { credentials: "include" },
+        );
+        if (response.ok) {
+          const data = (await response.json()) as {
+            success: boolean;
+            data?: { email: string };
+          };
+          if (data.success && data.data?.email) {
+            setUserEmail(data.data.email);
+          }
+        }
+      } catch {
+        // Silently fail - user might not be authenticated
+      }
+    };
+    fetchUserEmail();
   }, []);
 
   // Keyboard shortcut: Escape to cancel pending pin
