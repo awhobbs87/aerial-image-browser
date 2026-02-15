@@ -512,8 +512,8 @@ class ApiClient {
       );
 
       if (!response.ok) {
-        console.warn("AI parsing failed, using query as-is");
-        return { location: query };
+        console.warn("AI parsing failed, using client-side fallback");
+        return this.fallbackParseQuery(query);
       }
 
       const data = (await response.json()) as {
@@ -523,14 +523,91 @@ class ApiClient {
       };
 
       if (!data.success || !data.data) {
-        return { location: query };
+        return this.fallbackParseQuery(query);
       }
 
-      return data.data;
+      // Validate the AI returned a clean location (not the full sentence)
+      const parsed = data.data;
+      if (parsed.location && parsed.location.length > query.length * 0.8) {
+        // AI likely returned the full query - try to clean it up
+        const cleaned = this.stripNonLocationWords(parsed.location);
+        if (cleaned.length >= 2) {
+          parsed.location = cleaned;
+        }
+      }
+
+      return parsed;
     } catch (error) {
       console.warn("AI parsing error:", error);
-      return { location: query };
+      return this.fallbackParseQuery(query);
     }
+  }
+
+  /**
+   * Client-side fallback parser when the AI backend is unavailable
+   */
+  private fallbackParseQuery(query: string): ParsedSearchQuery {
+    let cleanedLocation = query;
+    let startYear: number | undefined;
+    let endYear: number | undefined;
+
+    // Extract year ranges: "1940-1960", "between 1940 and 1960"
+    const yearRangeMatch = cleanedLocation.match(
+      /(?:between\s+)?(\d{4})\s*[-–—to]+\s*(\d{4})/i,
+    );
+    if (yearRangeMatch) {
+      startYear = parseInt(yearRangeMatch[1]);
+      endYear = parseInt(yearRangeMatch[2]);
+      cleanedLocation = cleanedLocation.replace(yearRangeMatch[0], "");
+    }
+
+    // Match "the 1930s"
+    const decadeMatch = cleanedLocation.match(/(?:the\s+)?(\d{4})s/i);
+    if (decadeMatch && !startYear) {
+      startYear = parseInt(decadeMatch[1]);
+      endYear = startYear + 9;
+      cleanedLocation = cleanedLocation.replace(decadeMatch[0], "");
+    }
+
+    // Match "around 1950"
+    const aroundMatch = cleanedLocation.match(
+      /(?:around|circa|about)\s+(\d{4})/i,
+    );
+    if (aroundMatch && !startYear) {
+      const year = parseInt(aroundMatch[1]);
+      startYear = year - 5;
+      endYear = year + 5;
+      cleanedLocation = cleanedLocation.replace(aroundMatch[0], "");
+    }
+
+    // Strip non-location words
+    cleanedLocation = this.stripNonLocationWords(cleanedLocation);
+
+    return {
+      location: cleanedLocation || query,
+      startYear:
+        startYear && startYear >= 1900 && startYear <= 2024
+          ? startYear
+          : undefined,
+      endYear:
+        endYear && endYear >= 1900 && endYear <= 2024 ? endYear : undefined,
+    };
+  }
+
+  /**
+   * Strip common non-location words from a query string
+   */
+  private stripNonLocationWords(text: string): string {
+    return text
+      .replace(
+        /\b(find|show|show\s+me|get|search|look\s+for|looking\s+for|display|view|views|aerial|photos?|images?|pictures?|photography|historical|old|vintage|recent|modern|new|high\s+resolution|high\s+res|detailed|clear|overview|of|the|in|at|near|from|around|circa|about|between|and|to|with|for|me|my|some|any|what\s+did|look\s+like)\b/gi,
+        " ",
+      )
+      .replace(/\d{4}/g, "") // Remove standalone years
+      .replace(/\s+/g, " ")
+      .replace(/^[\s,]+|[\s,]+$/g, "")
+      .replace(/,\s*,/g, ",")
+      .trim();
   }
 
   /**

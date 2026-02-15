@@ -223,12 +223,21 @@ Respond with ONLY a JSON array:
 User Query: "${query}"
 
 Extract:
-1. location: The address or place name to search (required)
+1. location: The CLEAN address or place name ONLY - no extra words like "aerial", "photos", "images", "of", "find", "show me", etc. Just the geocodable place name or street address.
 2. startYear: Start year for date filter (optional, 1900-2024)
 3. endYear: End year for date filter (optional, 1900-2024)
 4. resolution: Image quality preference (optional: "high", "medium", or "low")
 5. imageType: Type of imagery (optional: "aerial" for historical aerial photos, "ortho" for orthophotos, "digital" for digital imagery)
 6. additionalContext: Any other relevant context from the query
+
+EXAMPLES:
+- "Find aerial photos of Sandy Bay between 1940-1960" -> {"location": "Sandy Bay", "startYear": 1940, "endYear": 1960, "imageType": "aerial"}
+- "High resolution images of Hobart CBD from the 1930s" -> {"location": "Hobart CBD", "startYear": 1930, "endYear": 1939, "resolution": "high"}
+- "Show me old photos of 78 New Town Rd, New Town" -> {"location": "78 New Town Rd, New Town", "imageType": "aerial"}
+- "Aerial views of Launceston around 1950" -> {"location": "Launceston", "startYear": 1945, "endYear": 1955, "imageType": "aerial"}
+- "Battery Point historical photos" -> {"location": "Battery Point", "imageType": "aerial"}
+- "photos near 42 Davey St Hobart" -> {"location": "42 Davey St, Hobart"}
+- "what did Sandy Bay look like in the 1960s" -> {"location": "Sandy Bay", "startYear": 1960, "endYear": 1969}
 
 Respond with ONLY valid JSON in this exact format:
 {
@@ -240,12 +249,16 @@ Respond with ONLY valid JSON in this exact format:
   "additionalContext": "any other context"
 }
 
-Notes:
+CRITICAL RULES:
+- The "location" field must contain ONLY the place name or street address. Never include words like "aerial", "photos", "images", "views", "old", "find", "show", "between", year numbers, or any non-location text.
+- For street addresses, include the street number, street name, and suburb (e.g., "78 New Town Rd, New Town")
+- For suburbs/towns, just use the name (e.g., "Sandy Bay", "Hobart CBD", "Launceston")
 - If no year range specified, omit startYear and endYear
 - "high resolution", "detailed", "clear" = "high"
 - "historical", "old", "vintage" photos typically mean aerial type and older years
-- Default to Tasmania, Australia context
-- For addresses, include street number and name`;
+- "around YEAR" means startYear = YEAR-5, endYear = YEAR+5
+- "the 1930s" means startYear = 1930, endYear = 1939
+- Default to Tasmania, Australia context`;
 
     try {
       const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {
@@ -267,7 +280,7 @@ Notes:
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error("AI response did not contain valid JSON:", text);
-        return { location: query };
+        return this.fallbackParseQuery(query);
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as ParsedSearchQuery;
@@ -297,9 +310,99 @@ Notes:
       };
     } catch (error) {
       console.error("AI parsing failed:", error);
-      // Fallback: just use the query as location
-      return { location: query };
+      // Fallback: extract location using regex heuristics
+      return this.fallbackParseQuery(query);
     }
+  }
+
+  /**
+   * Fallback parser when AI is unavailable - uses regex heuristics
+   * to strip non-location words from a natural language query
+   */
+  private fallbackParseQuery(query: string): ParsedSearchQuery {
+    let cleanedLocation = query;
+
+    // Extract year ranges first
+    let startYear: number | undefined;
+    let endYear: number | undefined;
+
+    // Match patterns like "1940-1960", "between 1940 and 1960", "from 1940 to 1960"
+    const yearRangeMatch = cleanedLocation.match(
+      /(?:between\s+)?(\d{4})\s*[-–—to]+\s*(\d{4})/i,
+    );
+    if (yearRangeMatch) {
+      startYear = parseInt(yearRangeMatch[1]);
+      endYear = parseInt(yearRangeMatch[2]);
+      cleanedLocation = cleanedLocation
+        .replace(yearRangeMatch[0], "")
+        .replace(/\b(between|from|and)\b/gi, "");
+    }
+
+    // Match "the 1930s", "in the 1950s"
+    const decadeMatch = cleanedLocation.match(/(?:the\s+)?(\d{4})s/i);
+    if (decadeMatch && !startYear) {
+      const decade = parseInt(decadeMatch[1]);
+      startYear = decade;
+      endYear = decade + 9;
+      cleanedLocation = cleanedLocation.replace(decadeMatch[0], "");
+    }
+
+    // Match "around 1950", "circa 1950"
+    const aroundYearMatch = cleanedLocation.match(
+      /(?:around|circa|about|near)\s+(\d{4})/i,
+    );
+    if (aroundYearMatch && !startYear) {
+      const year = parseInt(aroundYearMatch[1]);
+      startYear = year - 5;
+      endYear = year + 5;
+      cleanedLocation = cleanedLocation.replace(aroundYearMatch[0], "");
+    }
+
+    // Detect resolution
+    let resolution: "high" | "medium" | "low" | undefined;
+    if (
+      /\b(high\s+res|high\s+resolution|detailed|clear)\b/i.test(cleanedLocation)
+    ) {
+      resolution = "high";
+    } else if (
+      /\b(low\s+res|low\s+resolution|overview)\b/i.test(cleanedLocation)
+    ) {
+      resolution = "low";
+    }
+
+    // Strip common non-location words
+    cleanedLocation = cleanedLocation
+      .replace(
+        /\b(find|show|show\s+me|get|search|search\s+for|look\s+for|looking\s+for|display|view|views|aerial|photos?|images?|pictures?|photography|historical|old|vintage|recent|modern|new|high\s+resolution|high\s+res|low\s+res|detailed|clear|overview|of|the|in|at|near|from|around|circa|about|between|and|to|with|for|me|my|some|any|what\s+did|look\s+like)\b/gi,
+        " ",
+      )
+      .replace(/\d{4}/g, "") // Remove standalone years
+      .replace(/\s+/g, " ")
+      .replace(/^[\s,]+|[\s,]+$/g, "") // Trim leading/trailing commas and spaces
+      .replace(/,\s*,/g, ",") // Clean double commas
+      .trim();
+
+    // If we stripped everything, fall back to the original query
+    if (!cleanedLocation || cleanedLocation.length < 2) {
+      cleanedLocation = query
+        .replace(
+          /\b(find|show|show\s+me|get|search|aerial|photos?|images?|historical|old|of|the)\b/gi,
+          " ",
+        )
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    return {
+      location: cleanedLocation || query,
+      startYear:
+        startYear && startYear >= 1900 && startYear <= 2024
+          ? startYear
+          : undefined,
+      endYear:
+        endYear && endYear >= 1900 && endYear <= 2024 ? endYear : undefined,
+      resolution,
+    };
   }
 
   /**

@@ -18,6 +18,7 @@ import {
   Chip,
   Stack,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import {
   ChevronLeft,
@@ -73,6 +74,9 @@ interface ResultsPanelProps {
     imageTypes?: string[];
   } | null;
   onClearAIFilters?: () => void;
+  // Panel open state (controlled from parent to re-open on new search)
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const getPhotoKey = (photo: EnhancedPhoto) =>
@@ -102,8 +106,23 @@ export default function ResultsPanel({
   onQuickFilterPreset,
   appliedAIFilters,
   onClearAIFilters,
+  isOpen: controlledIsOpen,
+  onOpenChange,
 }: ResultsPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  // Use controlled state if provided, otherwise fall back to internal state
+  const [internalIsOpen, setInternalIsOpen] = useState(true);
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = useCallback(
+    (open: boolean) => {
+      if (onOpenChange) {
+        onOpenChange(open);
+      } else {
+        setInternalIsOpen(open);
+      }
+    },
+    [onOpenChange],
+  );
   const [viewMode, setViewMode] = useState<ResultsViewMode>("grid");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -678,7 +697,51 @@ export default function ResultsPanel({
               },
             }}
           >
-            {viewMode === "gallery" ? (
+            {/* Loading state */}
+            {loading && photos.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  py: 6,
+                  gap: 2,
+                }}
+              >
+                <CircularProgress size={32} sx={{ color: "#10B981" }} />
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#94A3B8", fontSize: "0.85rem" }}
+                >
+                  Searching for aerial photos...
+                </Typography>
+              </Box>
+            ) : photos.length === 0 && !loading ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  py: 6,
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#94A3B8", fontSize: "0.85rem" }}
+                >
+                  No photos found for this location.
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#64748B", fontSize: "0.75rem" }}
+                >
+                  Try a different location or adjust your filters.
+                </Typography>
+              </Box>
+            ) : viewMode === "gallery" ? (
               <PhotoViewer
                 photo={photos[0] || null}
                 photos={photos}

@@ -73,17 +73,23 @@ class GeocodingService {
     }
 
     try {
-      // Check if query looks like a street address (starts with number)
-      const looksLikeAddress = /^\d+\s/.test(query.trim());
+      // Check if query looks like a street address (starts with number, or contains Rd/St/Ave/etc.)
+      const trimmedQuery = query.trim();
+      const looksLikeNumberedAddress = /^\d+\s/.test(trimmedQuery);
+      const looksLikeStreetAddress =
+        looksLikeNumberedAddress ||
+        /\b(Rd|Road|St|Street|Ave|Avenue|Dr|Drive|Hwy|Highway|Ln|Lane|Ct|Court|Pl|Place|Cres|Crescent|Tce|Terrace)\b/i.test(
+          trimmedQuery,
+        );
 
       // If query doesn't mention Tasmania or TAS, append it for better results
       const enhancedQuery =
-        query.toLowerCase().includes("tasmania") ||
-        query.toLowerCase().includes("tas") ||
-        query.toLowerCase().includes("hobart") ||
-        query.toLowerCase().includes("launceston")
-          ? query
-          : `${query}, Tasmania, Australia`;
+        trimmedQuery.toLowerCase().includes("tasmania") ||
+        trimmedQuery.toLowerCase().includes("tas") ||
+        trimmedQuery.toLowerCase().includes("hobart") ||
+        trimmedQuery.toLowerCase().includes("launceston")
+          ? trimmedQuery
+          : `${trimmedQuery}, Tasmania, Australia`;
 
       const params = new URLSearchParams({
         q: enhancedQuery,
@@ -96,12 +102,25 @@ class GeocodingService {
         bounded: "0", // Don't strictly bound - filter in code instead for better results
       });
 
-      // For street addresses, use structured query for better results
-      if (looksLikeAddress) {
-        params.set("street", query.trim());
+      // For street addresses with a number, use structured query for better results
+      if (looksLikeNumberedAddress) {
+        params.set("street", trimmedQuery);
         params.set("state", "Tasmania");
         params.set("country", "Australia");
         params.delete("q"); // Use structured params instead
+      } else if (looksLikeStreetAddress) {
+        // For street names without a number, also try structured search
+        // but keep the free-text query as a fallback
+        params.set(
+          "street",
+          trimmedQuery
+            .replace(/,\s*Tasmania.*$/i, "")
+            .replace(/,\s*TAS.*$/i, "")
+            .trim(),
+        );
+        params.set("state", "Tasmania");
+        params.set("country", "Australia");
+        params.delete("q");
       }
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
@@ -114,11 +133,40 @@ class GeocodingService {
         throw new Error("Geocoding request failed");
       }
 
-      const data: NominatimResult[] = await response.json();
+      let data: NominatimResult[] = await response.json();
 
       console.log(
         `Geocoding search for "${query}": found ${data.length} results`,
       );
+
+      // If structured search returned no results, retry with free-text search
+      if (
+        data.length === 0 &&
+        (looksLikeStreetAddress || looksLikeNumberedAddress)
+      ) {
+        console.log(
+          "Structured search returned no results, retrying with free-text",
+        );
+        const retryParams = new URLSearchParams({
+          q: enhancedQuery,
+          format: "json",
+          addressdetails: "1",
+          limit: (limit * 3).toString(),
+          countrycodes: "au",
+          viewbox: "143.8,-43.7,148.5,-39.5",
+          bounded: "0",
+        });
+
+        const retryResponse = await fetch(
+          `${this.baseUrl}/search?${retryParams}`,
+          { headers: { "User-Agent": this.userAgent } },
+        );
+
+        if (retryResponse.ok) {
+          data = await retryResponse.json();
+          console.log(`Free-text retry found ${data.length} results`);
+        }
+      }
 
       // Filter and prioritize Tasmania results
       // Use slightly wider bounds to catch edge cases

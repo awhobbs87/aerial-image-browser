@@ -7,6 +7,18 @@
    Glassmorphism + Full-screen immersive map layout
    ============================================ */
 
+/* Prevent over-scroll / white space on mobile */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Custom Leaflet controls styling for dark theme */
 .leaflet-control-zoom {
   border: 1px solid rgba(148, 163, 184, 0.15) !important;
