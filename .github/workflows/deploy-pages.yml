@@ -39,4 +39,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
-        run: npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer --functions-directory=frontend/functions
+        working-directory: frontend
+        run: npx wrangler pages deploy dist --project-name=tas-aerial-explorer
