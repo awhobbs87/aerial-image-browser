@@ -5,11 +5,13 @@ This repository has automated deployments configured for both Cloudflare Workers
 ## Current Setup
 
 ### Cloudflare Workers (Backend)
+
 - **Auto-deploy**: Enabled via Cloudflare Dashboard Git integration
 - **Trigger**: Pushes to `main` branch
 - **Status**: ✅ Configured and working
 
 ### Cloudflare Pages (Frontend)
+
 - **Auto-deploy**: GitHub Actions workflow
 - **Trigger**: Pushes to `main` branch (frontend changes only)
 - **Status**: ⚠️ Requires GitHub secrets setup
@@ -46,17 +48,20 @@ To enable Pages auto-deployment, add these secrets in your GitHub repository:
    - **Environment variables**: None required
 
 **OR** disable auto-build entirely:
+
 - In Pages settings, disable "Auto-build from Git"
 - All deployments will come from GitHub Actions only
 
 ## How It Works
 
 ### Worker Auto-Deploy
+
 - Configured in Cloudflare Dashboard
 - Automatically deploys when you push to `main`
 - No additional setup needed
 
 ### Pages Auto-Deploy
+
 - GitHub Actions workflow (`.github/workflows/deploy-pages.yml`)
 - Triggers on pushes to `main` that affect `frontend/` directory
 - Builds the frontend and deploys to Cloudflare Pages
@@ -73,7 +78,7 @@ npm run deploy
 
 # Deploy Pages
 npm run build:frontend
-CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer
+CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer --functions-directory=frontend/functions
 ```
 
 ## Testing Auto-Deploy
@@ -91,6 +96,7 @@ To test the auto-deploy setup:
 ### Build Errors in Cloudflare Pages
 
 If you see build errors like "Cannot find package '@vitejs/plugin-react'":
+
 - This means Cloudflare Pages is trying to auto-build
 - Solution: Configure Pages settings as described above, or disable auto-build
 - The GitHub Actions workflow handles all building and deployment

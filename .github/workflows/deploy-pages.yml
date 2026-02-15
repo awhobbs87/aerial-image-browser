@@ -5,9 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-pages.yml'
+      - "frontend/**"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
 
 jobs:
   deploy:
@@ -20,8 +24,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: |
@@ -38,5 +42,5 @@ jobs:
           accountId: 7330403de4c2446fd5f3cc58548a9cd4
           projectName: tas-aerial-explorer
           directory: frontend/dist
+          functionsDirectory: frontend/functions
           gitHubToken: ${{ secrets.DEPLOY_TOKEN }}
-
