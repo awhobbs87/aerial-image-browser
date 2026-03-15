@@ -1,0 +1,60 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
+---
+
+<AppLayout title="Timeline - Tasmania Aerial Photo Explorer">
+  <!-- Desktop sidebar navigation -->
+  <NavigationIsland client:only="react" />
+
+  <div class="timeline-page">
+    <div class="timeline-header">
+      <h1>Photo Timeline</h1>
+      <p>Browse aerial photos organized chronologically</p>
+    </div>
+    <div class="timeline-content" id="timeline-island">
+      <p class="placeholder">Search for a location to see the timeline</p>
+    </div>
+  </div>
+
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
+</AppLayout>
+
+<style>
+  .timeline-page {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  @media (min-width: 48em) {
+    .timeline-page {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+  }
+
+  .timeline-header {
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+  }
+
+  .timeline-header h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-header p {
+    opacity: 0.6;
+  }
+
+  .placeholder {
+    text-align: center;
+    opacity: 0.5;
+    padding: 3rem 1rem;
+  }
+</style>

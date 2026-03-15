@@ -1,0 +1,39 @@
+.nav {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 64px;
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--mantine-spacing-sm) 0;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  background: light-dark(
+    rgba(255, 255, 255, 0.8),
+    rgba(15, 23, 42, 0.8)
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid light-dark(
+    rgba(0, 0, 0, 0.06),
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+@media (min-width: 48em) {
+  .nav {
+    display: flex;
+  }
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.5px;
+  color: var(--mantine-color-emerald-6);
+  padding: var(--mantine-spacing-xs) 0;
+  margin-bottom: var(--mantine-spacing-xs);
+}

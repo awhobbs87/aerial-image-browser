@@ -1,0 +1,17 @@
+{
+  "name": "Tasmania Aerial Photo Explorer",
+  "short_name": "TAS Aerial",
+  "description": "Browse historical, orthophoto, and digital aerial imagery of Tasmania",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2ac56a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

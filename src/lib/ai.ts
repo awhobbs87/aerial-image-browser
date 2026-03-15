@@ -361,7 +361,9 @@ CRITICAL RULES:
     // Detect resolution
     let resolution: "high" | "medium" | "low" | undefined;
     if (
-      /\b(high\s+res|high\s+resolution|detailed|clear)\b/i.test(cleanedLocation)
+      /\b(high\s+res|high\s+resolution|detailed|clear)\b/i.test(
+        cleanedLocation,
+      )
     ) {
       resolution = "high";
     } else if (

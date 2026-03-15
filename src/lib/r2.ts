@@ -1,18 +1,18 @@
+/**
+ * R2 storage manager for TIFF files, WebP conversions, and thumbnails.
+ * Uses two buckets: tiffBucket for TIFFs + WebPs, thumbnailBucket for thumbnails.
+ * Key pattern: {type}/{layerId}/{imageName}.{ext}
+ */
+
 export class R2Manager {
   constructor(
     private tiffBucket: R2Bucket,
-    private thumbnailBucket: R2Bucket
+    private thumbnailBucket: R2Bucket,
   ) {}
 
   async hasTiff(imageName: string, layerId: number): Promise<boolean> {
     const key = `tiff/${layerId}/${imageName}.tif`;
     const obj = await this.tiffBucket.head(key);
-    return obj !== null;
-  }
-
-  async hasThumbnail(imageName: string, layerId: number): Promise<boolean> {
-    const key = `thumbnail/${layerId}/${imageName}.jpg`;
-    const obj = await this.thumbnailBucket.head(key);
     return obj !== null;
   }
 
@@ -25,9 +25,15 @@ export class R2Manager {
     const key = `tiff/${layerId}/${imageName}.tif`;
     await this.tiffBucket.put(key, data, {
       httpMetadata: {
-        contentType: "image/tiff",
+        contentType: 'image/tiff',
       },
     });
+  }
+
+  async hasThumbnail(imageName: string, layerId: number): Promise<boolean> {
+    const key = `thumbnail/${layerId}/${imageName}.jpg`;
+    const obj = await this.thumbnailBucket.head(key);
+    return obj !== null;
   }
 
   async getThumbnail(imageName: string, layerId: number): Promise<R2ObjectBody | null> {
@@ -39,9 +45,15 @@ export class R2Manager {
     const key = `thumbnail/${layerId}/${imageName}.jpg`;
     await this.thumbnailBucket.put(key, data, {
       httpMetadata: {
-        contentType: "image/jpeg",
+        contentType: 'image/jpeg',
       },
     });
+  }
+
+  async hasWebP(imageName: string, layerId: number): Promise<boolean> {
+    const key = `webp/${layerId}/${imageName}.webp`;
+    const obj = await this.tiffBucket.head(key);
+    return obj !== null;
   }
 
   async getWebP(imageName: string, layerId: number): Promise<R2ObjectBody | null> {
@@ -53,18 +65,12 @@ export class R2Manager {
     const key = `webp/${layerId}/${imageName}.webp`;
     await this.tiffBucket.put(key, data, {
       httpMetadata: {
-        contentType: "image/webp",
+        contentType: 'image/webp',
       },
       customMetadata: {
-        "converted-from": "tiff",
-        "conversion-quality": "95",
+        'converted-from': 'tiff',
+        'conversion-quality': '95',
       },
     });
-  }
-
-  async hasWebP(imageName: string, layerId: number): Promise<boolean> {
-    const key = `webp/${layerId}/${imageName}.webp`;
-    const obj = await this.tiffBucket.head(key);
-    return obj !== null;
   }
 }

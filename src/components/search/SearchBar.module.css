@@ -1,0 +1,56 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  font-size: var(--mantine-font-size-sm);
+  border: none;
+  background: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.06));
+  color: inherit;
+  border-radius: 10px;
+  height: 40px;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.input::placeholder {
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-2));
+}
+
+.input:focus {
+  background: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.1));
+  box-shadow: 0 0 0 1px light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1));
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: var(--mantine-radius-md);
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  min-height: 44px;
+}
+
+.result:hover,
+.active {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}

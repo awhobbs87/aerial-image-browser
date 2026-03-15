@@ -1,0 +1,44 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { NavigationIsland } from '../../../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../../../components/islands/MobileNavIsland';
+import { ImageViewerIsland } from '../../../components/islands/ImageViewerIsland';
+
+const { layerId, imageName } = Astro.params;
+const cleanName = imageName?.replace(/\.\w+$/, '') || '';
+const layerIdNum = parseInt(layerId || '0');
+const thumbnailUrl = `/api/images/thumbnail/${layerId}/${cleanName}`;
+const tiffUrl = `/api/images/tiff/${layerId}/${cleanName}`;
+---
+
+<AppLayout title={`${cleanName} - Tasmania Aerial Photo Explorer`}>
+  <!-- Desktop sidebar navigation -->
+  <NavigationIsland client:only="react" />
+
+  <div class="viewer-page">
+    <div class="viewer-container">
+      <ImageViewerIsland
+        client:only="react"
+        imageUrl={thumbnailUrl}
+        layerId={layerIdNum}
+        imageName={cleanName}
+        tiffUrl={tiffUrl}
+      />
+    </div>
+  </div>
+
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
+</AppLayout>
+
+<style>
+  .viewer-page {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .viewer-container {
+    width: 100%;
+    height: 100%;
+  }
+</style>

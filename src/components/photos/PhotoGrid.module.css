@@ -1,0 +1,63 @@
+/* ---------- Header ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.count {
+  font-size: 11px;
+  font-weight: 500;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-2));
+  white-space: nowrap;
+}
+
+/* ---------- Sort dropdown ---------- */
+.sortSelect {
+  font-size: 11px;
+  min-height: 28px;
+  height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 26px;
+  padding-right: 24px;
+  border: none;
+  background: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.06));
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sortSelect:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12));
+}
+
+/* ---------- Decade groups ---------- */
+.group {
+  margin-bottom: 4px;
+}
+
+.decadeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  margin-bottom: 6px;
+}
+
+.decadeLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+}
+
+.decadeCount {
+  font-size: 11px;
+  font-weight: 500;
+  color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
+}

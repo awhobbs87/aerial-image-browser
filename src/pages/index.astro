@@ -1,0 +1,108 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
+import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
+---
+
+<AppLayout title="Tasmania Aerial Photo Explorer">
+  <!-- Desktop sidebar navigation -->
+  <NavigationIsland client:only="react" />
+
+  <div class="landing">
+    <div class="hero">
+      <h1 class="title">Tasmania Aerial<br />Photo Explorer</h1>
+      <p class="subtitle">
+        Browse historical, orthophoto, and digital aerial imagery of Tasmania from the LIST ArcGIS
+        services.
+      </p>
+      <div class="search-container">
+        <LandingSearchIsland client:only="react" />
+      </div>
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">&#x1F4F7;</span>
+          <span class="feature-text">Historical aerial photos from 1946</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#x1F5FA;</span>
+          <span class="feature-text">Interactive map with photo footprints</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#x1F50D;</span>
+          <span class="feature-text">AI-powered natural language search</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
+</AppLayout>
+
+<style>
+  .landing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 1rem;
+  }
+
+  /* Desktop sidebar offset handled by AppLayout --sidebar-width */
+
+  .hero {
+    text-align: center;
+    max-width: 640px;
+    width: 100%;
+  }
+
+  .title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+
+  .subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    opacity: 0.6;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .search-container {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  @media (min-width: 48em) {
+    .features {
+      flex-direction: row;
+      gap: 2rem;
+    }
+  }
+
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.5;
+    font-size: 0.875rem;
+  }
+
+  .feature-icon {
+    font-size: 1.25rem;
+  }
+</style>
