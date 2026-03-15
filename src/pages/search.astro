@@ -1,9 +1,119 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
+import { MantineWrapper } from '../components/common/MantineWrapper';
+import { SearchBar } from '../components/search/SearchBar';
+import { Navigation } from '../components/layout/Navigation';
+import { MobileNav } from '../components/layout/MobileNav';
+import { MapView } from '../components/map/MapView';
 ---
 
-<AppLayout title="Search -- Tasmania Aerial Photo Explorer">
-  <main>
-    <p>Search page -- coming soon</p>
-  </main>
+<AppLayout title="Search - Tasmania Aerial Photo Explorer">
+  <!-- Desktop sidebar navigation -->
+  <MantineWrapper client:load>
+    <Navigation />
+  </MantineWrapper>
+
+  <div class="search-page">
+    <!-- Map section: client:only="react" because MapLibre uses browser APIs (no SSR) -->
+    <div class="map-section">
+      <MantineWrapper client:only="react">
+        <MapView className="map-full" />
+      </MantineWrapper>
+    </div>
+
+    <!-- Results panel with glassmorphic backdrop on desktop -->
+    <div class="results-section">
+      <div class="results-header">
+        <!-- Search bar: client:load for immediate interactivity -->
+        <MantineWrapper client:load>
+          <SearchBar size="md" />
+        </MantineWrapper>
+      </div>
+      <div class="results-content">
+        <p class="placeholder-text">Search for a location to see aerial photos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile bottom tab bar: client:visible for lazy hydration -->
+  <MantineWrapper client:visible>
+    <MobileNav />
+  </MantineWrapper>
 </AppLayout>
+
+<style>
+  .search-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  @media (min-width: 48em) {
+    .search-page {
+      flex-direction: row;
+      padding-left: 64px; /* Desktop nav sidebar */
+    }
+  }
+
+  .map-section {
+    position: relative;
+    height: 40vh;
+    min-height: 250px;
+  }
+
+  @media (min-width: 48em) {
+    .map-section {
+      position: fixed;
+      top: 0;
+      left: 64px;
+      right: 0;
+      bottom: 0;
+      height: auto;
+      z-index: 0;
+    }
+  }
+
+  :global(.map-full) {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .results-section {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    padding: 1rem;
+  }
+
+  @media (min-width: 48em) {
+    .results-section {
+      position: relative;
+      width: 420px;
+      max-height: 100vh;
+      max-height: 100dvh;
+      overflow-y: auto;
+      background: light-dark(
+        rgba(255, 255, 255, 0.85),
+        rgba(15, 23, 42, 0.85)
+      );
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid light-dark(
+        rgba(0, 0, 0, 0.06),
+        rgba(255, 255, 255, 0.06)
+      );
+    }
+  }
+
+  .results-header {
+    margin-bottom: 1rem;
+  }
+
+  .placeholder-text {
+    text-align: center;
+    opacity: 0.5;
+    padding: 2rem 1rem;
+  }
+</style>

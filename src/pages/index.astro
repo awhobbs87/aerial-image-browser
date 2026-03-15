@@ -1,18 +1,55 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
+import { MantineWrapper } from '../components/common/MantineWrapper';
+import { LandingSearchBar } from '../components/search/LandingSearchBar';
+import { Navigation } from '../components/layout/Navigation';
+import { MobileNav } from '../components/layout/MobileNav';
 ---
 
 <AppLayout title="Tasmania Aerial Photo Explorer">
-  <main>
+  <!-- Desktop sidebar navigation -->
+  <MantineWrapper client:load>
+    <Navigation />
+  </MantineWrapper>
+
+  <div class="landing">
     <div class="hero">
-      <h1>Tasmania Aerial Photo Explorer</h1>
-      <p>Browse historical, orthophoto, and digital aerial imagery of Tasmania.</p>
+      <h1 class="title">Tasmania Aerial<br />Photo Explorer</h1>
+      <p class="subtitle">
+        Browse historical, orthophoto, and digital aerial imagery of Tasmania
+        from the LIST ArcGIS services.
+      </p>
+      <div class="search-container">
+        <!-- Search bar island: client:load for immediate interactivity -->
+        <MantineWrapper client:load>
+          <LandingSearchBar />
+        </MantineWrapper>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">&#x1F4F7;</span>
+          <span class="feature-text">Historical aerial photos from 1946</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#x1F5FA;</span>
+          <span class="feature-text">Interactive map with photo footprints</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#x1F50D;</span>
+          <span class="feature-text">AI-powered natural language search</span>
+        </div>
+      </div>
     </div>
-  </main>
+  </div>
+
+  <!-- Mobile bottom tab bar: client:visible for lazy hydration -->
+  <MantineWrapper client:visible>
+    <MobileNav />
+  </MantineWrapper>
 </AppLayout>
 
 <style>
-  main {
+  .landing {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,19 +59,62 @@ import AppLayout from '../layouts/AppLayout.astro';
     padding: 1rem;
   }
 
+  @media (min-width: 48em) {
+    .landing {
+      padding-left: 80px; /* Account for desktop nav sidebar */
+    }
+  }
+
   .hero {
     text-align: center;
-    max-width: 600px;
+    max-width: 640px;
+    width: 100%;
   }
 
-  .hero h1 {
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+  .title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
   }
 
-  .hero p {
+  .subtitle {
     font-size: clamp(1rem, 2vw, 1.25rem);
-    opacity: 0.7;
+    opacity: 0.6;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .search-container {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  @media (min-width: 48em) {
+    .features {
+      flex-direction: row;
+      gap: 2rem;
+    }
+  }
+
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.5;
+    font-size: 0.875rem;
+  }
+
+  .feature-icon {
+    font-size: 1.25rem;
   }
 </style>

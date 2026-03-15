@@ -335,61 +335,67 @@ const r2 = env.TIFF_STORAGE;
 - [x] Create `.dev.vars` template (`.dev.vars.example`) -- 2026-03-15
 - [x] Create PWA manifest -- 2026-03-15
 - [x] Verify `astro build` completes successfully -- 2026-03-15
-- [ ] Set up Vitest config
-- [ ] Set up Playwright config
-- [ ] Set up ESLint + Prettier + Husky + lint-staged
+- [x] Set up Vitest config -- 2026-03-15
+- [x] Set up Playwright config -- 2026-03-15
+- [x] Set up ESLint + Prettier (flat config) -- 2026-03-15
+- [ ] Set up Husky + lint-staged
 - [ ] Verify `npm run dev` starts and `workerd` serves a page
 
 ### Phase 1: Backend Port (API Routes)
 
-- [ ] Port `src/lib/arcgis.ts` to `src/lib/arcgis.ts`
-- [ ] Port `src/lib/cache.ts` to `src/lib/cache.ts`
-- [ ] Port `src/lib/r2.ts` to `src/lib/r2.ts`
-- [ ] Port `src/lib/image-conversion.ts`
-- [ ] Port `src/lib/ai.ts`
-- [ ] Port `src/lib/auth.ts`
-- [ ] Create `src/types/photo.ts` (PhotoAttributes, EnhancedPhoto)
-- [ ] Create `src/types/api.ts` (request/response types)
-- [ ] Create `src/types/env.d.ts` (Cloudflare bindings augmentation)
-- [ ] Create API route: `GET /api/health`
-- [ ] Create API route: `GET /api/layers`
-- [ ] Create API route: `GET /api/me`
-- [ ] Create API route: `GET /api/search/location`
-- [ ] Create API route: `GET /api/search/bounds`
-- [ ] Create API route: `GET /api/images/tiff/[layerId]/[imageName]`
-- [ ] Create API route: `GET /api/images/webp/[layerId]/[imageName]`
-- [ ] Create API route: `PUT /api/images/webp/[layerId]/[imageName]`
-- [ ] Create API route: `GET /api/images/thumbnail/[layerId]/[imageName]`
-- [ ] Create API route: `GET /api/images/image/[layerId]/[imageName]`
-- [ ] Create API routes: TIFF conversion (`tiff-url`, `tiff-upload`, `tiff-health`, `tiff-proxy`)
-- [ ] Create API routes: AI endpoints (`enhance-search`, `parse-search`, `search-summary`)
-- [ ] Create API routes: Favorites CRUD (D1-backed)
-- [ ] Create API routes: Search history CRUD
-- [ ] Add CORS middleware (Astro middleware in `src/middleware.ts`)
+- [x] Port `src/lib/arcgis.ts` -- 2026-03-15
+- [x] Port `src/lib/cache.ts` -- 2026-03-15
+- [x] Port `src/lib/r2.ts` -- 2026-03-15
+- [x] Port `src/lib/image-conversion.ts` -- 2026-03-15
+- [x] Port `src/lib/ai.ts` -- 2026-03-15
+- [x] Port `src/lib/auth.ts` -- 2026-03-15
+- [x] Create `src/lib/format.ts` (date/scale/coordinate formatters) -- 2026-03-15
+- [x] Create `src/lib/search-helpers.ts` (shared enhancePhoto/applyFilters) -- 2026-03-15
+- [x] Create `src/types/photo.ts` (PhotoAttributes, EnhancedPhoto) -- 2026-03-15 (Phase 0)
+- [x] Create `src/types/api.ts` (request/response types) -- 2026-03-15 (Phase 0)
+- [x] Create `src/types/env.d.ts` (Cloudflare bindings augmentation) -- 2026-03-15 (Phase 0)
+- [x] Create API route: `GET /api/health` -- 2026-03-15 (Phase 0)
+- [x] Create API route: `GET /api/layers` -- 2026-03-15
+- [x] Create API route: `GET /api/me` -- 2026-03-15
+- [x] Create API route: `GET /api/search/location` -- 2026-03-15
+- [x] Create API route: `GET /api/search/bounds` -- 2026-03-15
+- [x] Create API route: `GET /api/images/tiff/[layerId]/[imageName]` -- 2026-03-15
+- [x] Create API route: `GET /api/images/webp/[layerId]/[imageName]` -- 2026-03-15
+- [x] Create API route: `PUT /api/images/webp/[layerId]/[imageName]` -- 2026-03-15
+- [x] Create API route: `GET /api/images/thumbnail/[layerId]/[imageName]` -- 2026-03-15
+- [x] Create API route: `GET /api/images/image/[layerId]/[imageName]` -- 2026-03-15
+- [x] Create API routes: TIFF conversion (`tiff-url`, `tiff-upload`, `tiff-health`, `tiff-proxy`) -- 2026-03-15
+- [x] Create API routes: AI endpoints (`enhance-search`, `parse-search`, `search-summary`) -- 2026-03-15
+- [x] Create API routes: Favorites CRUD (D1-backed) -- 2026-03-15
+- [x] Create API routes: Search history CRUD (KV-backed) -- 2026-03-15
+- [x] Add CORS middleware (Astro middleware in `src/middleware.ts`) -- 2026-03-15
 - [ ] Write unit tests for lib modules
 - [ ] Verify all API routes work with `npm run dev` (workerd)
 
 ### Phase 2: Core Frontend -- Search & Map
 
-- [ ] Create fetch-based API client (`src/lib/api-client.ts`)
-- [ ] Port geocoding service (`src/lib/geocoding.ts`)
-- [ ] Port search history manager (`src/lib/search-history.ts`)
-- [ ] Create Zustand stores: `searchStore`, `filterStore`, `uiStore`
-- [ ] Create `usePhotos` hook (TanStack Query)
-- [ ] Create `useSearchState` hook (URL param sync)
-- [ ] Build `SearchBar.tsx` (Mantine Spotlight-style, geocoding, history, presets)
-- [ ] Build `Navigation.tsx` (desktop sidebar nav)
-- [ ] Build `MobileNav.tsx` (bottom tab bar)
-- [ ] Build `ThemeToggle.tsx` (light/dark/system cycle)
-- [ ] Build `index.astro` page (landing with search)
-- [ ] Build `search.astro` page (results layout with URL params)
-- [ ] Build `MapView.tsx` (MapLibre GL island)
-- [ ] Build `MapControls.tsx` (zoom, location, search-here)
-- [ ] Build `PhotoFootprints.tsx` (GeoJSON polygon layer)
-- [ ] Build `PinDrop.tsx` (click-to-search flow)
-- [ ] Build `useMapSync.ts` hook (map <-> grid synchronization)
-- [ ] Implement glassmorphic panel styles (`glass.module.css`)
-- [ ] Mobile: Bottom sheet search, responsive results panel
+- [x] Create fetch-based API client (`src/lib/api-client.ts`) -- 2026-03-15
+- [x] Create geocoding service (`src/lib/geocoding.ts`) -- 2026-03-15
+- [x] Create search history client (`src/lib/search-history.ts`) -- 2026-03-15
+- [x] Create Zustand stores: `searchStore`, `filterStore`, `uiStore` -- 2026-03-15 (Phase 0)
+- [x] Create `usePhotos` hook (TanStack Query) -- 2026-03-15
+- [x] Create `useSearchState` hook (URL param sync) -- 2026-03-15
+- [x] Build `SearchBar.tsx` (geocoding, debounced, presets, keyboard nav) -- 2026-03-15
+- [x] Build `LandingSearchBar.tsx` (wrapper for index page island) -- 2026-03-15
+- [x] Build `Navigation.tsx` (desktop sidebar nav, glassmorphic) -- 2026-03-15
+- [x] Build `MobileNav.tsx` (bottom tab bar, safe area insets) -- 2026-03-15
+- [x] Build `ThemeToggle.tsx` (light/dark/system cycle) -- 2026-03-15
+- [x] Build `index.astro` page (landing with search island) -- 2026-03-15
+- [x] Build `search.astro` page (map + results layout with islands) -- 2026-03-15
+- [x] Build `MapView.tsx` (MapLibre GL, OSM tiles, fly-to) -- 2026-03-15
+- [x] Build `MapControls.tsx` (zoom, location, search-here) -- 2026-03-15
+- [x] Build `PhotoFootprints.tsx` (GeoJSON polygon layer) -- 2026-03-15
+- [x] Build `PinDrop.tsx` (click-to-search marker) -- 2026-03-15
+- [x] Build `useMapSync.ts` hook (map <-> search synchronization) -- 2026-03-15
+- [x] Build `ErrorBoundary.tsx` (Mantine-styled fallback) -- 2026-03-15
+- [x] Build `LoadingOverlay.tsx` (container + full-page modes) -- 2026-03-15
+- [x] Implement glassmorphic panel styles (`glass.module.css`) -- 2026-03-15 (Phase 0)
+- [x] Mobile: Bottom tab nav + responsive results panel -- 2026-03-15
 - [ ] Test on mobile viewport (375px)
 
 ### Phase 3: Photo Display & Viewer
@@ -407,8 +413,8 @@ const r2 = env.TIFF_STORAGE;
 - [ ] Build `FilterPresets.tsx`
 - [ ] Build `MobileFilterSheet.tsx` (Mantine Drawer bottom)
 - [ ] Create `filterStore` with persist middleware
-- [ ] Build `ErrorBoundary.tsx`
-- [ ] Build `LoadingOverlay.tsx`
+- [x] Build `ErrorBoundary.tsx` -- 2026-03-15 (moved to Phase 2)
+- [x] Build `LoadingOverlay.tsx` -- 2026-03-15 (moved to Phase 2)
 - [ ] Build `BackToTop.tsx`
 
 ### Phase 4: Comparison & Advanced Features
@@ -488,6 +494,31 @@ Append a summary after each working session so the next session has context.
 - Removed ConvertHub dependency (not used in this project)
 - Verified `astro build` completes successfully
 - Phase 0 substantially complete (remaining: Vitest, Playwright, ESLint/Prettier/Husky, dev server verification)
+
+### Session 2 -- 2026-03-15
+
+- Deployed 13 parallel agents (Wave 1) to complete Phase 0, Phase 1, and Phase 2 simultaneously
+- Wave 1 completed all backend work:
+  - Phase 0: Created vitest.config.ts, playwright.config.ts, eslint.config.js, tests/ directory structure
+  - Phase 1 libs: Ported arcgis.ts, cache.ts, r2.ts, auth.ts, ai.ts, image-conversion.ts; created format.ts, search-helpers.ts
+  - Phase 1 API routes: All 20 endpoints created (layers, me, search/location, search/bounds, images/tiff, images/webp GET+PUT, images/thumbnail, images/image, convert/tiff-health, convert/tiff-url, convert/tiff-upload, convert/tiff-proxy, ai/enhance-search, ai/parse-search, ai/search-summary, favorites CRUD, search-history CRUD)
+  - Phase 1 middleware: CORS middleware in src/middleware.ts
+  - Phase 2 libs: api-client.ts, geocoding.ts, search-history.ts
+  - Phase 2 layout: Navigation.tsx, MobileNav.tsx, ThemeToggle.tsx
+- Deployed 5 parallel agents (Wave 2) for remaining Phase 2 frontend:
+  - SearchBar.tsx with geocoding autocomplete, debounce, presets, keyboard nav
+  - MapView.tsx, MapControls.tsx, PhotoFootprints.tsx, PinDrop.tsx
+  - Hooks: usePhotos.ts, useSearchState.ts, useMapSync.ts
+  - Pages: index.astro (landing with search island), search.astro (map + results layout)
+  - Common: ErrorBoundary.tsx, LoadingOverlay.tsx
+- Also created LandingSearchBar.tsx (thin wrapper needed because Astro can't serialize callback props across server/client boundary)
+- Installed additional packages: @eslint/js, globals, typescript-eslint, jsdom, @vitest/coverage-v8, utif2, @cloudflare/workers-types
+- Verified `astro build` completes successfully with all new files
+- Total files created this session: ~70 files (src/lib: 9, src/pages/api: 20, src/components: 14, src/hooks: 3, configs: 4, tests/.gitkeep: 3)
+- Known pre-existing LSP issue: `Property 'X' does not exist on type 'Env'` in all API routes -- the `cloudflare:workers` module augmentation in env.d.ts isn't resolving in local TS server. Build succeeds fine.
+- Remaining for Phase 0: Husky + lint-staged, dev server verification
+- Remaining for Phase 1: Unit tests for lib modules, dev server verification
+- Remaining for Phase 2: Mobile viewport testing (375px)
 
 ---
 
