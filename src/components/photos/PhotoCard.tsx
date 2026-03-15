@@ -22,8 +22,7 @@ export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
   const isFavorite = useFavoritesStore((s) => s.isFavorite(photo.objectId, photo.layerId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
-  const thumbnailSrc =
-    photo.thumbnailUrl || `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
+  const thumbnailSrc = photo.thumbnailUrl || `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
 
   const layerLabel = getLayerTypeLabel(photo.layerId);
   const badgeColor = LAYER_BADGE_COLOR[layerLabel] ?? 'gray';
@@ -56,6 +55,8 @@ export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
       radius="md"
       padding={0}
       onClick={handleCardClick}
+      aria-label={`Photo: ${photo.name}${photo.year > 0 ? `, ${photo.year}` : ''}`}
+      role="article"
     >
       <div className={classes.imageContainer}>
         <img
@@ -84,12 +85,8 @@ export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
             <Badge size="xs" color={badgeColor} variant="filled">
               {layerLabel}
             </Badge>
-            {photo.year > 0 && (
-              <Text className={classes.overlayText}>{photo.year}</Text>
-            )}
-            {scaleDisplay && (
-              <Text className={classes.overlayText}>{scaleDisplay}</Text>
-            )}
+            {photo.year > 0 && <Text className={classes.overlayText}>{photo.year}</Text>}
+            {scaleDisplay && <Text className={classes.overlayText}>{scaleDisplay}</Text>}
             {onCompare && (
               <ActionIcon
                 className={classes.compareButton}

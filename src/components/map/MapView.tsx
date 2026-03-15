@@ -82,6 +82,8 @@ export function MapView({ onBoundsChange, onClick, center, zoom, className }: Ma
     <div
       ref={containerRef}
       className={`${classes.container} ${className || ''}`}
+      role="application"
+      aria-label="Interactive map"
     />
   );
 }

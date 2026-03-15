@@ -31,12 +31,10 @@ export function MobileNav() {
             href={item.href}
             className={`${classes.item} ${isActive ? classes.active : ''}`}
             onClick={() => setActive(item.href)}
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
           >
-            <ActionIcon
-              variant="transparent"
-              color={isActive ? 'emerald' : 'gray'}
-              size="lg"
-            >
+            <ActionIcon variant="transparent" color={isActive ? 'emerald' : 'gray'} size="lg">
               <item.icon size={24} />
             </ActionIcon>
             <Text size="xs" c={isActive ? 'emerald' : 'dimmed'} fw={isActive ? 600 : 400}>

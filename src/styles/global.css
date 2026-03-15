@@ -38,14 +38,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overscroll-behavior: none;
-}
-
-/* iOS safe area insets */
-body {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Map containers should fill their parent */
@@ -54,21 +47,37 @@ body {
   height: 100%;
 }
 
-/* Touch target minimum for accessibility */
-a,
-button,
-[role="button"],
-input,
+/* Touch targets: 44px minimum for buttons and form controls (Apple HIG) */
+button:not(.mantine-UnstyledButton-root),
+[role='button'],
+input[type='checkbox'] + label,
+input[type='radio'] + label,
+input:not([type='hidden']),
 select,
 textarea {
   min-height: 44px;
+}
+
+button:not(.mantine-UnstyledButton-root),
+[role='button'] {
   min-width: 44px;
 }
 
-/* Exception for inline text links */
-p a,
-li a,
-td a {
-  min-height: unset;
-  min-width: unset;
+/* Skip-to-content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--mantine-color-emerald-6);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 0.875rem;
+  text-decoration: none;
+  min-height: auto;
+  min-width: auto;
+}
+
+.skip-link:focus {
+  top: 0;
 }
