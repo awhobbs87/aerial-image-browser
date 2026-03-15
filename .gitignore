@@ -1,12 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
+dist/
+.astro/
+
+# Cloudflare
 .wrangler/
 .dev.vars
+.mf/
+
+# Environment
 .env
 .env.local
-dist/
-*.log
-.DS_Store
+.env.production
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
 coverage/
-frontend/dist/
+test-results/
+playwright-report/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+*.tgz
+.worker-types/

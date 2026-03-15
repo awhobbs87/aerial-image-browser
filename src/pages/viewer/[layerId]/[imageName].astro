@@ -1,0 +1,11 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+
+const { layerId, imageName } = Astro.params;
+---
+
+<AppLayout title={`${imageName} -- Tasmania Aerial Photo Explorer`}>
+  <main>
+    <p>Viewer page for layer {layerId}, image {imageName} -- coming soon</p>
+  </main>
+</AppLayout>

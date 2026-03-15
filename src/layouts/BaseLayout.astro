@@ -1,0 +1,38 @@
+---
+import { Font } from 'astro:assets';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Tasmania Aerial Photo Explorer',
+  description = 'Browse historical, orthophoto, and digital aerial imagery of Tasmania from the LIST ArcGIS services.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#2ac56a" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#10994d" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>{title}</title>
+    <Font cssVariable="--font-inter" preload />
+    <ColorSchemeScript defaultColorScheme="auto" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,4 @@
+# Copy this file to .dev.vars for local development
+# These values are secrets and must NOT be committed
+
+TIFF_CONVERSION_SERVICE_URL=https://tiff.awhq.uk
