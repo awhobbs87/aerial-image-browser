@@ -32,6 +32,8 @@ interface CloudflareEnv {
   TIFF_CONVERSION_SERVICE_URL: string;
 }
 
-declare module "cloudflare:workers" {
+declare module 'cloudflare:workers' {
+  // Merge CloudflareEnv into CloudflareBindings so Astro endpoints can access bindings
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface CloudflareBindings extends CloudflareEnv {}
 }

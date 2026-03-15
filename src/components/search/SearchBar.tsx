@@ -24,7 +24,11 @@ const LOCATION_PRESETS = [
   { label: 'Freycinet', lat: -42.1341, lon: 148.2918 },
 ];
 
-export function SearchBar({ onLocationSelect, placeholder = 'Search Tasmania...', size = 'lg' }: SearchBarProps) {
+export function SearchBar({
+  onLocationSelect,
+  placeholder = 'Search Tasmania...',
+  size = 'lg',
+}: SearchBarProps) {
   const { query, setQuery, setLocation } = useSearchStore();
   const { searchFocused, setSearchFocused } = useUIStore();
 
@@ -39,11 +43,13 @@ export function SearchBar({ onLocationSelect, placeholder = 'Search Tasmania...'
   // Geocode on debounced input change
   useEffect(() => {
     if (!debouncedValue || debouncedValue.length < 2) {
-      setResults([]);
-      return;
+      // Schedule the clear outside the synchronous effect body
+      const id = setTimeout(() => setResults([]), 0);
+      return () => clearTimeout(id);
     }
 
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSearching(true);
 
     geocodeSearch(debouncedValue, 5)
@@ -150,7 +156,9 @@ export function SearchBar({ onLocationSelect, placeholder = 'Search Tasmania...'
                   <Group gap="sm" wrap="nowrap">
                     <IconMapPin size={16} style={{ flexShrink: 0 }} />
                     <div>
-                      <Text size="sm" lineClamp={1}>{result.displayName.split(',')[0]}</Text>
+                      <Text size="sm" lineClamp={1}>
+                        {result.displayName.split(',')[0]}
+                      </Text>
                       <Text size="xs" c="dimmed" lineClamp={1}>
                         {result.displayName.split(',').slice(1).join(',').trim()}
                       </Text>

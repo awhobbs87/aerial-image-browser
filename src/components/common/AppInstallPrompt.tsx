@@ -25,7 +25,7 @@ export function AppInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  }, [dismissed]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;

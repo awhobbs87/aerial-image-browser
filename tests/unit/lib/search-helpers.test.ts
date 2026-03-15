@@ -7,8 +7,9 @@ import {
   jsonError,
   jsonSuccess,
 } from '@/lib/search-helpers';
-import type { SearchPhoto, SearchFilters } from '@/lib/search-helpers';
+import type { SearchFilters } from '@/lib/search-helpers';
 import type { ArcGISFeature } from '@/lib/arcgis';
+import type { EnhancedPhoto } from '@/types/photo';
 
 // ----------------------------------------------------------------
 // enhancePhoto
@@ -18,33 +19,56 @@ describe('enhancePhoto', () => {
     const feature: ArcGISFeature = {
       attributes: {
         OBJECTID: 1,
-        IMAGE_NAME: 'test_001',
+        IMAGE_NAME: 'test_001.tif',
         FLY_DATE: 1577836800000, // 1 Jan 2020
         SCALE: 15000,
+        IMAGE_TYPE: 'Black & White',
+        RUN_NO: '3',
+        HEIGHT: 5000,
+        FRAME: '42',
+        PROJ_NAME: 'Hobart Project',
+        'SHAPE.AREA': 1234567,
+        THUMBNAIL_LINK: 'https://example.com/thumb.jpg',
+        DOWNLOAD_LINK: 'https://example.com/test.tif',
       },
-      geometry: { rings: [[[147, -42], [148, -42], [148, -43], [147, -43], [147, -42]]] },
+      geometry: {
+        rings: [
+          [
+            [147, -42],
+            [148, -42],
+            [148, -43],
+            [147, -43],
+            [147, -42],
+          ],
+        ],
+      },
     };
 
     const result = enhancePhoto(feature, 0);
 
-    expect(result.OBJECTID).toBe(1);
-    expect(result.IMAGE_NAME).toBe('test_001');
+    expect(result.objectId).toBe(1);
+    expect(result.name).toBe('test_001');
     expect(result.layerId).toBe(0);
-    expect(result.layerType).toBe('aerial');
-    expect(result.dateFormatted).toBeTypeOf('string');
-    expect(result.dateFormatted).toContain('2020');
-    expect(result.scaleFormatted).toBe('1:15,000');
-    expect(result.cached).toBe(false);
-    expect(result.thumbnailCached).toBe(false);
-    expect(result.geometry).toBeDefined();
-    expect(result.geometry?.rings).toHaveLength(1);
+    expect(result.year).toBe(2020);
+    expect(result.dateFlown).toBe(1577836800000);
+    expect(result.scale).toBe(15000);
+    expect(result.type).toBe('Black & White');
+    expect(result.run).toBe('3');
+    expect(result.altitude).toBe(5000);
+    expect(result.photoNo).toBe('42');
+    expect(result.layerName).toBe('Hobart Project');
+    expect(result.area).toBe(1234567);
+    expect(result.thumbnailUrl).toBe('https://example.com/thumb.jpg');
+    expect(result.tiffUrl).toBe('https://example.com/test.tif');
+    expect(result.imageUrl).toBe('/api/images/webp/0/test_001');
+    expect(result.rings).toHaveLength(1);
   });
 
   it('handles missing FLY_DATE by falling back to CAPTURE_START_DATE', () => {
     const feature: ArcGISFeature = {
       attributes: {
         OBJECTID: 2,
-        IMAGE_NAME: 'test_002',
+        IMAGE_NAME: 'test_002.tif',
         CAPTURE_START_DATE: 487728000000, // June 1985
         SCALE: 5000,
       },
@@ -52,11 +76,12 @@ describe('enhancePhoto', () => {
 
     const result = enhancePhoto(feature, 1);
 
-    expect(result.layerType).toBe('ortho');
-    expect(result.dateFormatted).toContain('1985');
+    expect(result.layerId).toBe(1);
+    expect(result.year).toBe(1985);
+    expect(result.dateFlown).toBe(487728000000);
   });
 
-  it('returns null dateFormatted when no date fields exist', () => {
+  it('returns year 0 when no date fields exist', () => {
     const feature: ArcGISFeature = {
       attributes: {
         OBJECTID: 3,
@@ -66,17 +91,24 @@ describe('enhancePhoto', () => {
 
     const result = enhancePhoto(feature, 2);
 
-    expect(result.layerType).toBe('digital');
-    expect(result.dateFormatted).toBeNull();
-    expect(result.scaleFormatted).toBeNull();
+    expect(result.layerId).toBe(2);
+    expect(result.year).toBe(0);
+    expect(result.dateFlown).toBe(0);
+    expect(result.scale).toBe(0);
   });
 
-  it('maps layer IDs to correct layer types', () => {
-    const feature: ArcGISFeature = { attributes: { OBJECTID: 1 } };
+  it('strips .tif extension from IMAGE_NAME', () => {
+    const feature: ArcGISFeature = {
+      attributes: { OBJECTID: 1, IMAGE_NAME: 'photo_123.tif' },
+    };
+    expect(enhancePhoto(feature, 0).name).toBe('photo_123');
+  });
 
-    expect(enhancePhoto(feature, 0).layerType).toBe('aerial');
-    expect(enhancePhoto(feature, 1).layerType).toBe('ortho');
-    expect(enhancePhoto(feature, 2).layerType).toBe('digital');
+  it('handles IMAGE_NAME without .tif extension', () => {
+    const feature: ArcGISFeature = {
+      attributes: { OBJECTID: 1, IMAGE_NAME: 'photo_123' },
+    };
+    expect(enhancePhoto(feature, 0).name).toBe('photo_123');
   });
 });
 
@@ -84,40 +116,48 @@ describe('enhancePhoto', () => {
 // applyFilters
 // ----------------------------------------------------------------
 describe('applyFilters', () => {
-  const photos: SearchPhoto[] = [
-    {
-      OBJECTID: 1,
-      FLY_DATE: new Date('2000-01-01').getTime(),
-      SCALE: 10000,
+  function makePhoto(overrides: Partial<EnhancedPhoto>): EnhancedPhoto {
+    return {
+      objectId: 0,
       layerId: 0,
-      layerType: 'aerial',
-      dateFormatted: '1 January 2000',
-      scaleFormatted: '1:10,000',
-      cached: false,
-      thumbnailCached: false,
-    },
-    {
-      OBJECTID: 2,
-      FLY_DATE: new Date('2010-06-15').getTime(),
-      SCALE: 25000,
+      name: 'test',
+      type: '',
+      run: '',
+      dateFlown: 0,
+      year: 0,
+      scale: 0,
+      filmType: '',
+      altitude: 0,
+      photoNo: '',
+      layerName: '',
+      area: 0,
+      thumbnailUrl: '',
+      imageUrl: '',
+      tiffUrl: '',
+      rings: [],
+      ...overrides,
+    };
+  }
+
+  const photos: EnhancedPhoto[] = [
+    makePhoto({
+      objectId: 1,
+      dateFlown: new Date('2000-01-01').getTime(),
+      scale: 10000,
+      layerId: 0,
+    }),
+    makePhoto({
+      objectId: 2,
+      dateFlown: new Date('2010-06-15').getTime(),
+      scale: 25000,
       layerId: 1,
-      layerType: 'ortho',
-      dateFormatted: '15 June 2010',
-      scaleFormatted: '1:25,000',
-      cached: false,
-      thumbnailCached: false,
-    },
-    {
-      OBJECTID: 3,
-      FLY_DATE: new Date('2020-12-31').getTime(),
-      SCALE: 5000,
+    }),
+    makePhoto({
+      objectId: 3,
+      dateFlown: new Date('2020-12-31').getTime(),
+      scale: 5000,
       layerId: 2,
-      layerType: 'digital',
-      dateFormatted: '31 December 2020',
-      scaleFormatted: '1:5,000',
-      cached: false,
-      thumbnailCached: false,
-    },
+    }),
   ];
 
   it('returns all photos when no filters are applied', () => {
@@ -128,13 +168,13 @@ describe('applyFilters', () => {
   it('filters by startDate', () => {
     const result = applyFilters(photos, { startDate: '2005-01-01' });
     expect(result).toHaveLength(2);
-    expect(result.map((p) => p.OBJECTID)).toEqual([2, 3]);
+    expect(result.map((p) => p.objectId)).toEqual([2, 3]);
   });
 
   it('filters by endDate', () => {
     const result = applyFilters(photos, { endDate: '2015-01-01' });
     expect(result).toHaveLength(2);
-    expect(result.map((p) => p.OBJECTID)).toEqual([1, 2]);
+    expect(result.map((p) => p.objectId)).toEqual([1, 2]);
   });
 
   it('filters by date range (startDate + endDate)', () => {
@@ -143,31 +183,31 @@ describe('applyFilters', () => {
       endDate: '2015-01-01',
     });
     expect(result).toHaveLength(1);
-    expect(result[0].OBJECTID).toBe(2);
+    expect(result[0].objectId).toBe(2);
   });
 
   it('filters by minScale', () => {
     const result = applyFilters(photos, { minScale: 10000 });
     expect(result).toHaveLength(2);
-    expect(result.map((p) => p.OBJECTID)).toEqual([1, 2]);
+    expect(result.map((p) => p.objectId)).toEqual([1, 2]);
   });
 
   it('filters by maxScale', () => {
     const result = applyFilters(photos, { maxScale: 10000 });
     expect(result).toHaveLength(2);
-    expect(result.map((p) => p.OBJECTID)).toEqual([1, 3]);
+    expect(result.map((p) => p.objectId)).toEqual([1, 3]);
   });
 
   it('filters by imageTypes', () => {
     const result = applyFilters(photos, { imageTypes: ['aerial', 'digital'] });
     expect(result).toHaveLength(2);
-    expect(result.map((p) => p.OBJECTID)).toEqual([1, 3]);
+    expect(result.map((p) => p.objectId)).toEqual([1, 3]);
   });
 
   it('filters by single imageType', () => {
     const result = applyFilters(photos, { imageTypes: ['ortho'] });
     expect(result).toHaveLength(1);
-    expect(result[0].OBJECTID).toBe(2);
+    expect(result[0].objectId).toBe(2);
   });
 
   it('applies combined filters', () => {
@@ -177,7 +217,7 @@ describe('applyFilters', () => {
       imageTypes: ['digital'],
     });
     expect(result).toHaveLength(1);
-    expect(result[0].OBJECTID).toBe(3);
+    expect(result[0].objectId).toBe(3);
   });
 
   it('returns empty array when nothing matches', () => {
@@ -185,20 +225,9 @@ describe('applyFilters', () => {
     expect(result).toHaveLength(0);
   });
 
-  it('passes photos without FLY_DATE through date filters', () => {
-    const photosWithMissing: SearchPhoto[] = [
-      {
-        OBJECTID: 10,
-        layerId: 0,
-        layerType: 'aerial',
-        dateFormatted: null,
-        scaleFormatted: null,
-        cached: false,
-        thumbnailCached: false,
-      },
-    ];
-    // No FLY_DATE means the date filter conditions short-circuit
-    const result = applyFilters(photosWithMissing, { startDate: '2020-01-01' });
+  it('passes photos without dateFlown through date filters', () => {
+    const photosNoDate = [makePhoto({ objectId: 10, dateFlown: 0 })];
+    const result = applyFilters(photosNoDate, { startDate: '2020-01-01' });
     expect(result).toHaveLength(1);
   });
 });
@@ -208,7 +237,9 @@ describe('applyFilters', () => {
 // ----------------------------------------------------------------
 describe('parseFilterParams', () => {
   it('parses all filter params from URL', () => {
-    const url = new URL('https://example.com/search?startDate=2000-01-01&endDate=2020-12-31&minScale=5000&maxScale=25000&imageTypes=aerial,ortho');
+    const url = new URL(
+      'https://example.com/search?startDate=2000-01-01&endDate=2020-12-31&minScale=5000&maxScale=25000&imageTypes=aerial,ortho',
+    );
     const result = parseFilterParams(url);
     expect(result).toEqual({
       startDate: '2000-01-01',
@@ -278,24 +309,44 @@ describe('parseLayerIds', () => {
 // sortByDateDesc
 // ----------------------------------------------------------------
 describe('sortByDateDesc', () => {
-  it('sorts photos by FLY_DATE descending', () => {
-    const photos: SearchPhoto[] = [
-      { FLY_DATE: 100, layerId: 0, layerType: 'aerial', dateFormatted: null, scaleFormatted: null, cached: false, thumbnailCached: false },
-      { FLY_DATE: 300, layerId: 0, layerType: 'aerial', dateFormatted: null, scaleFormatted: null, cached: false, thumbnailCached: false },
-      { FLY_DATE: 200, layerId: 0, layerType: 'aerial', dateFormatted: null, scaleFormatted: null, cached: false, thumbnailCached: false },
+  function makePhoto(overrides: Partial<EnhancedPhoto>): EnhancedPhoto {
+    return {
+      objectId: 0,
+      layerId: 0,
+      name: '',
+      type: '',
+      run: '',
+      dateFlown: 0,
+      year: 0,
+      scale: 0,
+      filmType: '',
+      altitude: 0,
+      photoNo: '',
+      layerName: '',
+      area: 0,
+      thumbnailUrl: '',
+      imageUrl: '',
+      tiffUrl: '',
+      rings: [],
+      ...overrides,
+    };
+  }
+
+  it('sorts photos by dateFlown descending', () => {
+    const photos = [
+      makePhoto({ dateFlown: 100 }),
+      makePhoto({ dateFlown: 300 }),
+      makePhoto({ dateFlown: 200 }),
     ];
     const sorted = sortByDateDesc(photos);
-    expect(sorted.map((p) => p.FLY_DATE)).toEqual([300, 200, 100]);
+    expect(sorted.map((p) => p.dateFlown)).toEqual([300, 200, 100]);
   });
 
-  it('sorts photos without FLY_DATE to the end', () => {
-    const photos: SearchPhoto[] = [
-      { layerId: 0, layerType: 'aerial', dateFormatted: null, scaleFormatted: null, cached: false, thumbnailCached: false },
-      { FLY_DATE: 100, layerId: 0, layerType: 'aerial', dateFormatted: null, scaleFormatted: null, cached: false, thumbnailCached: false },
-    ];
+  it('sorts photos without dateFlown to the end', () => {
+    const photos = [makePhoto({ dateFlown: 0 }), makePhoto({ dateFlown: 100 })];
     const sorted = sortByDateDesc(photos);
-    expect(sorted[0].FLY_DATE).toBe(100);
-    expect(sorted[1].FLY_DATE).toBeUndefined();
+    expect(sorted[0].dateFlown).toBe(100);
+    expect(sorted[1].dateFlown).toBe(0);
   });
 });
 

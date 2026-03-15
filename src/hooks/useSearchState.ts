@@ -36,7 +36,10 @@ export function useSearchState() {
     }
 
     if (urlLayers) {
-      const parsed = urlLayers.split(',').map(Number).filter((n) => !isNaN(n));
+      const parsed = urlLayers
+        .split(',')
+        .map(Number)
+        .filter((n) => !isNaN(n));
       if (parsed.length > 0) setLayers(parsed);
     }
 
@@ -46,6 +49,7 @@ export function useSearchState() {
         urlEndYear ? parseInt(urlEndYear) : null,
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Write state to URL params

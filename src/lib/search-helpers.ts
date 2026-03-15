@@ -4,28 +4,8 @@
  */
 
 import type { ArcGISFeature } from '@/lib/arcgis';
-import { formatDate, getLayerType } from '@/lib/format';
-
-/**
- * Enhanced photo as returned by search endpoints.
- *
- * Extends the raw ArcGIS attributes (UPPER_CASE field names) with computed
- * display fields and layer metadata. Uses the same shape as the original
- * Hono API to maintain frontend compatibility.
- */
-export interface SearchPhoto {
-  /** All raw ArcGIS attributes (OBJECTID, IMAGE_NAME, FLY_DATE, SCALE, etc.) */
-  [key: string]: unknown;
-  layerId: number;
-  layerType: 'aerial' | 'ortho' | 'digital';
-  dateFormatted: string | null;
-  scaleFormatted: string | null;
-  cached: boolean;
-  thumbnailCached: boolean;
-  geometry?: {
-    rings?: number[][][];
-  };
-}
+import { getLayerType } from '@/lib/format';
+import type { EnhancedPhoto } from '@/types/photo';
 
 /** Filter parameters parsed from query string */
 export interface SearchFilters {
@@ -37,56 +17,64 @@ export interface SearchFilters {
 }
 
 /**
- * Convert a raw ArcGIS feature into an enhanced photo object.
- * Spreads the raw attributes, adds computed display fields and layer metadata.
+ * Convert a raw ArcGIS feature into an EnhancedPhoto.
+ * Maps ArcGIS UPPER_CASE fields to the camelCase EnhancedPhoto interface
+ * that the frontend expects.
  */
-export function enhancePhoto(feature: ArcGISFeature, layerId: number): SearchPhoto {
-  const attrs = feature.attributes as Record<string, unknown>;
-  const layerType = getLayerType(layerId);
-  const flyDate = (attrs.FLY_DATE ?? attrs.CAPTURE_START_DATE) as number | undefined;
+export function enhancePhoto(feature: ArcGISFeature, layerId: number): EnhancedPhoto {
+  const a = feature.attributes;
+  const flyDate = (a.FLY_DATE ?? a.CAPTURE_START_DATE ?? 0) as number;
+  const year = flyDate > 0 ? new Date(flyDate).getFullYear() : 0;
+  const imageName = ((a.IMAGE_NAME ?? '') as string).replace(/\.tif$/i, '');
 
   return {
-    ...attrs,
-    geometry: feature.geometry,
+    objectId: a.OBJECTID as number,
     layerId,
-    layerType,
-    dateFormatted: formatDate(flyDate),
-    scaleFormatted: attrs.SCALE ? `1:${(attrs.SCALE as number).toLocaleString()}` : null,
-    cached: false,
-    thumbnailCached: false,
+    name: imageName,
+    type: (a.IMAGE_TYPE ?? '') as string,
+    run: (a.RUN_NO ?? '') as string,
+    dateFlown: flyDate,
+    year,
+    scale: (a.SCALE ?? 0) as number,
+    filmType: (a.FILM_NO ?? '') as string,
+    altitude: (a.HEIGHT ?? 0) as number,
+    photoNo: (a.FRAME ?? '') as string,
+    layerName: (a.PROJ_NAME ?? '') as string,
+    area: (a['SHAPE.AREA'] ?? a.Shape__Area ?? 0) as number,
+    thumbnailUrl: (a.THUMBNAIL_LINK ?? '') as string,
+    imageUrl: `/api/images/webp/${layerId}/${imageName}`,
+    tiffUrl: (a.DOWNLOAD_LINK ?? '') as string,
+    rings: feature.geometry?.rings ?? [],
   };
 }
 
 /**
  * Apply date, scale, and image type filters to an array of enhanced photos.
- * Matches the filtering logic from the original Hono routes.
  */
-export function applyFilters(photos: SearchPhoto[], filters: SearchFilters): SearchPhoto[] {
+export function applyFilters(photos: EnhancedPhoto[], filters: SearchFilters): EnhancedPhoto[] {
   return photos.filter((photo) => {
-    const flyDate = photo.FLY_DATE as number | undefined;
-    const scale = photo.SCALE as number | undefined;
-
     // Date filtering
-    if (filters.startDate && flyDate) {
+    if (filters.startDate && photo.dateFlown) {
       const startTime = new Date(filters.startDate).getTime();
-      if (flyDate < startTime) return false;
+      if (photo.dateFlown < startTime) return false;
     }
-    if (filters.endDate && flyDate) {
+    if (filters.endDate && photo.dateFlown) {
       const endTime = new Date(filters.endDate).getTime();
-      if (flyDate > endTime) return false;
+      if (photo.dateFlown > endTime) return false;
     }
 
     // Scale filtering
-    if (filters.minScale && scale && scale < filters.minScale) {
+    if (filters.minScale && photo.scale && photo.scale < filters.minScale) {
       return false;
     }
-    if (filters.maxScale && scale && scale > filters.maxScale) {
+    if (filters.maxScale && photo.scale && photo.scale > filters.maxScale) {
       return false;
     }
 
     // Image type filtering (aerial, ortho, digital)
     if (filters.imageTypes && filters.imageTypes.length > 0) {
-      if (!filters.imageTypes.includes(photo.layerType)) {
+      const layerType = getLayerType(photo.layerId);
+      if (!filters.imageTypes.includes(layerType)) {
         return false;
       }
     }
@@ -121,39 +109,36 @@ export function parseFilterParams(url: URL): SearchFilters {
 export function parseLayerIds(url: URL): number[] {
   const raw = url.searchParams.get('layers');
   if (!raw) return [0, 1, 2];
-  return raw.split(',').map(Number).filter((n) => !isNaN(n));
+  return raw
+    .split(',')
+    .map(Number)
+    .filter((n) => !isNaN(n));
 }
 
 /**
- * Sort photos by FLY_DATE descending (newest first).
+ * Sort photos by dateFlown descending (newest first).
  * Photos without a date are sorted to the end.
  */
-export function sortByDateDesc(photos: SearchPhoto[]): SearchPhoto[] {
+export function sortByDateDesc(photos: EnhancedPhoto[]): EnhancedPhoto[] {
   return photos.sort((a, b) => {
-    const aDate = (a.FLY_DATE as number) || 0;
-    const bDate = (b.FLY_DATE as number) || 0;
+    const aDate = a.dateFlown || 0;
+    const bDate = b.dateFlown || 0;
     return bDate - aDate;
   });
 }
 
 /** Create a JSON error response */
 export function jsonError(message: string, status: number): Response {
-  return new Response(
-    JSON.stringify({ success: false, error: message }),
-    {
-      status,
-      headers: { 'Content-Type': 'application/json' },
-    },
-  );
+  return new Response(JSON.stringify({ success: false, error: message }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 /** Create a JSON success response */
 export function jsonSuccess(data: unknown): Response {
-  return new Response(
-    JSON.stringify({ success: true, data }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    },
-  );
+  return new Response(JSON.stringify({ success: true, data }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

@@ -1,11 +1,27 @@
 .wrapper {
   position: relative;
   width: 100%;
-  max-width: 600px;
 }
 
 .input {
-  font-size: var(--mantine-font-size-md);
+  font-size: var(--mantine-font-size-sm);
+  border: none;
+  background: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.06));
+  color: inherit;
+  border-radius: 10px;
+  height: 40px;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.input::placeholder {
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-2));
+}
+
+.input:focus {
+  background: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.1));
+  box-shadow: 0 0 0 1px light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1));
 }
 
 .dropdown {
@@ -36,8 +52,5 @@
 
 .result:hover,
 .active {
-  background: light-dark(
-    var(--mantine-color-gray-0),
-    var(--mantine-color-dark-5)
-  );
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
 }

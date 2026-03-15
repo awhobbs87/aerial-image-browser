@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActionIcon, Text } from '@mantine/core';
-import { IconSearch, IconMap, IconTimeline, IconHeart } from '@tabler/icons-react';
+import { IconSearch, IconMap, IconHeart } from '@tabler/icons-react';
 import classes from './MobileNav.module.css';
 
 interface NavItem {
@@ -12,7 +12,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Search', icon: IconSearch, href: '/' },
   { label: 'Map', icon: IconMap, href: '/search' },
-  { label: 'Timeline', icon: IconTimeline, href: '/timeline' },
   { label: 'Favorites', icon: IconHeart, href: '/favorites' },
 ];
 

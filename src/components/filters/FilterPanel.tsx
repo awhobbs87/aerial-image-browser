@@ -1,4 +1,14 @@
-import { Checkbox, Group, Stack, Text, NumberInput, Button, Chip, Divider, Paper } from '@mantine/core';
+import {
+  Checkbox,
+  Group,
+  Stack,
+  Text,
+  NumberInput,
+  Button,
+  Chip,
+  Divider,
+  Paper,
+} from '@mantine/core';
 import { IconFilter, IconRefresh } from '@tabler/icons-react';
 import { useFilterStore } from '@/stores/filterStore';
 import { SCALE_CATEGORIES } from '@/types/photo';
@@ -15,7 +25,7 @@ const LAYER_OPTIONS = [
   { id: 2, label: 'Digital Imagery', color: 'orange' },
 ];
 
-export function FilterPanel({ onClose }: FilterPanelProps) {
+export function FilterPanel({ onClose: _onClose }: FilterPanelProps) {
   const {
     layers,
     startYear,
@@ -27,7 +37,8 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
     resetFilters,
   } = useFilterStore();
 
-  const hasActiveFilters = layers.length < 3 || startYear !== null || endYear !== null || scaleCategories.length > 0;
+  const hasActiveFilters =
+    layers.length < 3 || startYear !== null || endYear !== null || scaleCategories.length > 0;
 
   return (
     <Paper className={classes.panel} p="md" radius="md">
@@ -35,7 +46,9 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
         <Group justify="space-between">
           <Group gap="xs">
             <IconFilter size={18} />
-            <Text fw={600} size="sm">Filters</Text>
+            <Text fw={600} size="sm">
+              Filters
+            </Text>
           </Group>
           {hasActiveFilters && (
             <Button
@@ -56,7 +69,9 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
 
         {/* Layer toggles */}
         <Stack gap="xs">
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed">Image Type</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+            Image Type
+          </Text>
           {LAYER_OPTIONS.map((layer) => (
             <Checkbox
               key={layer.id}
@@ -73,7 +88,9 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
 
         {/* Date range */}
         <Stack gap="xs">
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed">Date Range</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+            Date Range
+          </Text>
           <Group grow>
             <NumberInput
               label="From"
@@ -100,7 +117,9 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
 
         {/* Scale categories */}
         <Stack gap="xs">
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed">Scale</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+            Scale
+          </Text>
           <Group gap="xs">
             {SCALE_CATEGORIES.map((cat) => (
               <Chip

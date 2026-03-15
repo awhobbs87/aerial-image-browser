@@ -1,16 +1,13 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { MantineWrapper } from '../components/common/MantineWrapper';
-import { Navigation } from '../components/layout/Navigation';
-import { MobileNav } from '../components/layout/MobileNav';
-import { FavoritesContent } from '../components/favorites/FavoritesContent';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
+import { FavoritesIsland } from '../components/islands/FavoritesIsland';
 ---
 
 <AppLayout title="Favorites - Tasmania Aerial Photo Explorer">
   <!-- Desktop sidebar navigation -->
-  <MantineWrapper client:load>
-    <Navigation />
-  </MantineWrapper>
+  <NavigationIsland client:only="react" />
 
   <div class="favorites-page">
     <div class="favorites-header">
@@ -18,17 +15,12 @@ import { FavoritesContent } from '../components/favorites/FavoritesContent';
       <p class="subtitle">Your bookmarked aerial photos</p>
     </div>
     <div class="favorites-content">
-      <!-- Favorites island: client:load so stored favorites render immediately -->
-      <MantineWrapper client:load>
-        <FavoritesContent />
-      </MantineWrapper>
+      <FavoritesIsland client:only="react" />
     </div>
   </div>
 
-  <!-- Mobile bottom tab bar: client:visible for lazy hydration -->
-  <MantineWrapper client:visible>
-    <MobileNav />
-  </MantineWrapper>
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>
@@ -40,7 +32,8 @@ import { FavoritesContent } from '../components/favorites/FavoritesContent';
 
   @media (min-width: 48em) {
     .favorites-page {
-      padding-left: calc(64px + 2rem);
+      padding-left: 2rem;
+      padding-right: 2rem;
       max-width: 1200px;
     }
   }

@@ -9,12 +9,12 @@ import {
   Stack,
   Text,
   Title,
-} from "@mantine/core";
-import { IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
-import { useFavoritesStore } from "../../stores/favoritesStore";
-import { formatDate, formatScale, getLayerTypeLabel } from "../../lib/format";
-import type { EnhancedPhoto } from "../../types/photo";
-import classes from "./FavoritesContent.module.css";
+} from '@mantine/core';
+import { IconHeart, IconTrash } from '@tabler/icons-react';
+import { useFavoritesStore } from '../../stores/favoritesStore';
+import { formatDate, formatScale, getLayerTypeLabel } from '../../lib/format';
+import type { EnhancedPhoto } from '../../types/photo';
+import classes from './FavoritesContent.module.css';
 
 function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
@@ -105,8 +105,7 @@ export function FavoritesContent() {
     <Stack gap="md">
       <Group justify="space-between">
         <Text size="sm" c="dimmed">
-          {favorites.length} {favorites.length === 1 ? "photo" : "photos"}{" "}
-          saved
+          {favorites.length} {favorites.length === 1 ? 'photo' : 'photos'} saved
         </Text>
         <Button
           variant="subtle"
@@ -119,15 +118,9 @@ export function FavoritesContent() {
         </Button>
       </Group>
 
-      <SimpleGrid
-        cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4 }}
-        spacing="md"
-      >
+      <SimpleGrid cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4 }} spacing="md">
         {favorites.map((photo) => (
-          <FavoriteCard
-            key={`${photo.layerId}-${photo.objectId}`}
-            photo={photo}
-          />
+          <FavoriteCard key={`${photo.layerId}-${photo.objectId}`} photo={photo} />
         ))}
       </SimpleGrid>
     </Stack>

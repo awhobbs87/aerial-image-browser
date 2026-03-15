@@ -1,29 +1,23 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { MantineWrapper } from '../components/common/MantineWrapper';
-import { LandingSearchBar } from '../components/search/LandingSearchBar';
-import { Navigation } from '../components/layout/Navigation';
-import { MobileNav } from '../components/layout/MobileNav';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
+import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
 ---
 
 <AppLayout title="Tasmania Aerial Photo Explorer">
   <!-- Desktop sidebar navigation -->
-  <MantineWrapper client:load>
-    <Navigation />
-  </MantineWrapper>
+  <NavigationIsland client:only="react" />
 
   <div class="landing">
     <div class="hero">
       <h1 class="title">Tasmania Aerial<br />Photo Explorer</h1>
       <p class="subtitle">
-        Browse historical, orthophoto, and digital aerial imagery of Tasmania
-        from the LIST ArcGIS services.
+        Browse historical, orthophoto, and digital aerial imagery of Tasmania from the LIST ArcGIS
+        services.
       </p>
       <div class="search-container">
-        <!-- Search bar island: client:load for immediate interactivity -->
-        <MantineWrapper client:load>
-          <LandingSearchBar />
-        </MantineWrapper>
+        <LandingSearchIsland client:only="react" />
       </div>
       <div class="features">
         <div class="feature">
@@ -42,10 +36,8 @@ import { MobileNav } from '../components/layout/MobileNav';
     </div>
   </div>
 
-  <!-- Mobile bottom tab bar: client:visible for lazy hydration -->
-  <MantineWrapper client:visible>
-    <MobileNav />
-  </MantineWrapper>
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>
@@ -59,11 +51,7 @@ import { MobileNav } from '../components/layout/MobileNav';
     padding: 1rem;
   }
 
-  @media (min-width: 48em) {
-    .landing {
-      padding-left: 80px; /* Account for desktop nav sidebar */
-    }
-  }
+  /* Desktop sidebar offset handled by AppLayout --sidebar-width */
 
   .hero {
     text-align: center;

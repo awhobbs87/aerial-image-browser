@@ -1,6 +1,6 @@
 ---
 import { Font } from 'astro:assets';
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import '../styles/global.css';
@@ -26,14 +26,13 @@ const {
     <meta name="theme-color" content="#10994d" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>{title}</title>
     <Font cssVariable="--font-inter" preload />
     <ColorSchemeScript defaultColorScheme="auto" />
   </head>
   <body>
-    <a href="#main-content" class="skip-link">Skip to content</a>
     <main id="main-content">
       <slot />
     </main>

@@ -1,8 +1,13 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
 ---
 
 <AppLayout title="Timeline - Tasmania Aerial Photo Explorer">
+  <!-- Desktop sidebar navigation -->
+  <NavigationIsland client:only="react" />
+
   <div class="timeline-page">
     <div class="timeline-header">
       <h1>Photo Timeline</h1>
@@ -13,26 +18,8 @@ import AppLayout from '../layouts/AppLayout.astro';
     </div>
   </div>
 
-  <script>
-    import { createElement } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { MantineWrapper } from '../components/common/MantineWrapper';
-    import { Navigation } from '../components/layout/Navigation';
-    import { MobileNav } from '../components/layout/MobileNav';
-
-    // Mount navigation
-    const navContainer = document.createElement('div');
-    document.body.prepend(navContainer);
-    createRoot(navContainer).render(
-      createElement(MantineWrapper, null, createElement(Navigation))
-    );
-
-    const mobileNavContainer = document.createElement('div');
-    document.body.append(mobileNavContainer);
-    createRoot(mobileNavContainer).render(
-      createElement(MantineWrapper, null, createElement(MobileNav))
-    );
-  </script>
+  <!-- Mobile bottom tab bar -->
+  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>
@@ -43,7 +30,8 @@ import AppLayout from '../layouts/AppLayout.astro';
 
   @media (min-width: 48em) {
     .timeline-page {
-      padding-left: calc(64px + 2rem);
+      padding-left: 2rem;
+      padding-right: 2rem;
       max-width: 900px;
       margin: 0 auto;
     }

@@ -1,14 +1,8 @@
 import { useState } from 'react';
-import {
-  ActionIcon,
-  Stack,
-  Tooltip,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { ActionIcon, Stack, Tooltip, useMantineColorScheme } from '@mantine/core';
 import {
   IconSearch,
   IconMap,
-  IconTimeline,
   IconHeart,
   IconSun,
   IconMoon,
@@ -25,7 +19,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Search', icon: IconSearch, href: '/' },
   { label: 'Map', icon: IconMap, href: '/search' },
-  { label: 'Timeline', icon: IconTimeline, href: '/timeline' },
   { label: 'Favorites', icon: IconHeart, href: '/favorites' },
 ];
 
@@ -41,9 +34,13 @@ export function Navigation() {
   };
 
   const colorSchemeIcon =
-    colorScheme === 'light' ? <IconSun size={20} /> :
-    colorScheme === 'dark' ? <IconMoon size={20} /> :
-    <IconDeviceDesktop size={20} />;
+    colorScheme === 'light' ? (
+      <IconSun size={20} />
+    ) : colorScheme === 'dark' ? (
+      <IconMoon size={20} />
+    ) : (
+      <IconDeviceDesktop size={20} />
+    );
 
   return (
     <nav className={classes.nav}>

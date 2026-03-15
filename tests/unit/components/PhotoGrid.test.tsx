@@ -14,7 +14,11 @@ vi.mock('@/components/photos/PhotoSkeleton', () => ({
 
 vi.mock('@/components/photos/PhotoGrid.module.css', () => ({
   default: {
+    header: 'header',
+    group: 'group',
     decadeHeader: 'decadeHeader',
+    decadeLabel: 'decadeLabel',
+    decadeCount: 'decadeCount',
   },
 }));
 

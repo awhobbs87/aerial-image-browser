@@ -1,13 +1,6 @@
 import { useState, useMemo } from 'react';
-import {
-  SimpleGrid,
-  Group,
-  Text,
-  SegmentedControl,
-  Button,
-  Stack,
-  Center,
-} from '@mantine/core';
+import { SimpleGrid, NativeSelect, Text, Button, Stack, Center } from '@mantine/core';
+import { IconArrowsSort } from '@tabler/icons-react';
 import type { EnhancedPhoto } from '@/types/photo';
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoCard } from './PhotoCard';
@@ -38,18 +31,26 @@ export function PhotoGrid({
   const { sortBy, setSortBy } = useFilterStore();
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
-  // Sort photos
+  // Sort photos -- undated (dateFlown=0) always go to the end for date sorts
   const sortedPhotos = useMemo(() => {
     const sorted = [...photos];
     switch (sortBy) {
       case 'date-desc':
-        sorted.sort((a, b) => (b.dateFlown || 0) - (a.dateFlown || 0));
+        sorted.sort((a, b) => {
+          if (!a.dateFlown && b.dateFlown) return 1;
+          if (a.dateFlown && !b.dateFlown) return -1;
+          return (b.dateFlown || 0) - (a.dateFlown || 0);
+        });
         break;
       case 'date-asc':
-        sorted.sort((a, b) => (a.dateFlown || 0) - (b.dateFlown || 0));
+        sorted.sort((a, b) => {
+          if (!a.dateFlown && b.dateFlown) return 1;
+          if (a.dateFlown && !b.dateFlown) return -1;
+          return (a.dateFlown || 0) - (b.dateFlown || 0);
+        });
         break;
       case 'scale-asc':
-        sorted.sort((a, b) => (a.scale || 0) - (b.scale || 0));
+        sorted.sort((a, b) => (a.scale || Infinity) - (b.scale || Infinity));
         break;
       case 'scale-desc':
         sorted.sort((a, b) => (b.scale || 0) - (a.scale || 0));
@@ -67,12 +68,19 @@ export function PhotoGrid({
     const displayed = sortedPhotos.slice(0, displayCount);
 
     for (const photo of displayed) {
-      const decade = photo.year ? `${Math.floor(photo.year / 10) * 10}s` : 'Unknown';
+      const decade = photo.year > 0 ? `${Math.floor(photo.year / 10) * 10}s` : 'Undated';
       if (!groups.has(decade)) groups.set(decade, []);
       groups.get(decade)!.push(photo);
     }
 
-    return groups;
+    // Sort groups: decades chronologically, "Undated" at the end
+    return new Map(
+      [...groups.entries()].sort((a, b) => {
+        if (a[0] === 'Undated') return 1;
+        if (b[0] === 'Undated') return -1;
+        return a[0].localeCompare(b[0]);
+      }),
+    );
   }, [sortedPhotos, displayCount]);
 
   const handleLoadMore = () => {
@@ -84,11 +92,9 @@ export function PhotoGrid({
 
   if (isLoading && photos.length === 0) {
     return (
-      <div>
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
-          <PhotoSkeleton count={6} />
-        </SimpleGrid>
-      </div>
+      <SimpleGrid cols={{ base: 2, sm: 2, md: 3 }} spacing={10}>
+        <PhotoSkeleton count={6} />
+      </SimpleGrid>
     );
   }
 
@@ -96,40 +102,47 @@ export function PhotoGrid({
     return (
       <Center py="xl">
         <Stack align="center" gap="sm">
-          <Text size="lg" fw={600} c="dimmed">No photos found</Text>
-          <Text size="sm" c="dimmed">Try searching a different location or adjusting your filters.</Text>
+          <Text size="lg" fw={600} c="dimmed">
+            No photos found
+          </Text>
+          <Text size="sm" c="dimmed">
+            Try searching a different location or adjusting your filters.
+          </Text>
         </Stack>
       </Center>
     );
   }
 
   return (
-    <Stack gap="md">
-      {/* Header with count and sort controls */}
-      <Group justify="space-between" wrap="nowrap">
-        <Text size="sm" c="dimmed">
-          {total} photo{total !== 1 ? 's' : ''} found
-        </Text>
-        <SegmentedControl
+    <Stack gap="sm">
+      {/* Header: count + sort select */}
+      <div className={classes.header}>
+        <span className={classes.count}>
+          {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
+        </span>
+        <NativeSelect
           size="xs"
           value={sortBy}
-          onChange={(value) => setSortBy(value as typeof sortBy)}
+          onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
+          leftSection={<IconArrowsSort size={12} />}
           data={[
-            { label: 'Newest', value: 'date-desc' },
-            { label: 'Oldest', value: 'date-asc' },
+            { label: 'Newest first', value: 'date-desc' },
+            { label: 'Oldest first', value: 'date-asc' },
             { label: 'Scale', value: 'scale-desc' },
             { label: 'Name', value: 'name' },
           ]}
+          classNames={{ input: classes.sortSelect }}
         />
-      </Group>
+      </div>
 
       {/* Grouped photo grid */}
       {Array.from(groupedPhotos.entries()).map(([decade, groupPhotos]) => (
-        <div key={decade}>
-          <Text size="sm" fw={700} c="dimmed" mb="xs" className={classes.decadeHeader}>
-            {decade}
-          </Text>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+        <div key={decade} className={classes.group}>
+          <div className={classes.decadeHeader}>
+            <span className={classes.decadeLabel}>{decade}</span>
+            <span className={classes.decadeCount}>{groupPhotos.length}</span>
+          </div>
+          <SimpleGrid cols={{ base: 2, sm: 2, md: 3 }} spacing={10}>
             {groupPhotos.map((photo) => (
               <PhotoCard
                 key={`${photo.layerId}-${photo.objectId}`}
@@ -144,9 +157,11 @@ export function PhotoGrid({
 
       {/* Load more */}
       {canLoadMore && (
-        <Center>
+        <Center py="sm">
           <Button
-            variant="light"
+            variant="subtle"
+            color="gray"
+            size="sm"
             onClick={handleLoadMore}
             loading={isLoading}
           >

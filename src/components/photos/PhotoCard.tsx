@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
-import { ActionIcon, Badge, Card, Text } from '@mantine/core';
-import { IconHeart, IconHeartFilled, IconArrowsSplit2 } from '@tabler/icons-react';
+import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { useFavoritesStore } from '@/stores/favoritesStore';
-import { formatScale, getLayerTypeLabel } from '@/lib/format';
+import { formatScale } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
 import classes from './PhotoCard.module.css';
 
@@ -12,21 +11,35 @@ interface PhotoCardProps {
   onCompare?: (photo: EnhancedPhoto) => void;
 }
 
-const LAYER_BADGE_COLOR: Record<string, string> = {
-  Aerial: 'green',
-  Orthophoto: 'blue',
-  Digital: 'orange',
-};
+/** Extract the short project label from layerName, e.g. "HUON - DERWENT" from a long string */
+function shortProject(layerName: string): string {
+  if (!layerName) return '';
+  // Take first segment before any long description
+  const parts = layerName.split(/\s*[-]\s*/);
+  if (parts.length >= 2) return `${parts[0].trim()} - ${parts[1].trim()}`;
+  return layerName.trim();
+}
 
-export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
+/** Map IMAGE_TYPE values to friendly labels */
+function filmLabel(type: string): string | null {
+  if (!type) return null;
+  const t = type.toLowerCase();
+  if (t.includes('colour') || t.includes('color') || t === 'c') return 'Colour';
+  if (t.includes('b&w') || t.includes('bw') || t.includes('black') || t === 'b') return 'B&W';
+  if (t.includes('ir') || t.includes('infrared')) return 'IR';
+  // Return the raw value title-cased if it's short enough to be a pill
+  if (type.length <= 12) return type;
+  return null;
+}
+
+export function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const isFavorite = useFavoritesStore((s) => s.isFavorite(photo.objectId, photo.layerId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const thumbnailSrc = photo.thumbnailUrl || `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
-
-  const layerLabel = getLayerTypeLabel(photo.layerId);
-  const badgeColor = LAYER_BADGE_COLOR[layerLabel] ?? 'gray';
   const scaleDisplay = formatScale(photo.scale);
+  const project = shortProject(photo.layerName);
+  const typeLabel = filmLabel(photo.type);
 
   const handleCardClick = useCallback(() => {
     onClick?.(photo);
@@ -40,25 +53,19 @@ export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
     [toggleFavorite, photo],
   );
 
-  const handleCompareClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onCompare?.(photo);
-    },
-    [onCompare, photo],
-  );
-
   return (
-    <Card
+    <div
       className={classes.card}
-      shadow="sm"
-      radius="md"
-      padding={0}
       onClick={handleCardClick}
-      aria-label={`Photo: ${photo.name}${photo.year > 0 ? `, ${photo.year}` : ''}`}
       role="article"
+      tabIndex={0}
+      aria-label={`Photo: ${photo.name}${photo.year > 0 ? `, ${photo.year}` : ''}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleCardClick();
+      }}
     >
-      <div className={classes.imageContainer}>
+      {/* Image with 4:3 aspect ratio */}
+      <div className={classes.imageWrap}>
         <img
           className={classes.image}
           src={thumbnailSrc}
@@ -66,61 +73,38 @@ export function PhotoCard({ photo, onClick, onCompare }: PhotoCardProps) {
           loading="lazy"
         />
 
-        <ActionIcon
-          className={classes.favoriteButton}
-          variant="subtle"
-          color={isFavorite ? 'red' : 'gray'}
-          size={44}
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        {/* Favorite heart */}
+        <button
+          className={`${classes.heart} ${isFavorite ? classes.heartActive : ''}`}
           onClick={handleFavoriteClick}
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          type="button"
         >
-          {isFavorite ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
-        </ActionIcon>
+          {isFavorite ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
+        </button>
 
+        {/* Type badge (Colour / B&W) -- top left corner on image */}
+        {typeLabel && <span className={classes.typeBadge}>{typeLabel}</span>}
+
+        {/* Hover overlay */}
         <div className={classes.overlay}>
-          <Text className={classes.overlayName} lineClamp={1}>
-            {photo.name}
-          </Text>
-          <div className={classes.overlayMeta}>
-            <Badge size="xs" color={badgeColor} variant="filled">
-              {layerLabel}
-            </Badge>
-            {photo.year > 0 && <Text className={classes.overlayText}>{photo.year}</Text>}
-            {scaleDisplay && <Text className={classes.overlayText}>{scaleDisplay}</Text>}
-            {onCompare && (
-              <ActionIcon
-                className={classes.compareButton}
-                variant="filled"
-                color="emerald"
-                size={44}
-                aria-label="Add to comparison"
-                onClick={handleCompareClick}
-              >
-                <IconArrowsSplit2 size={18} />
-              </ActionIcon>
-            )}
-          </div>
+          {scaleDisplay && <span className={classes.overlayScale}>{scaleDisplay}</span>}
+          <span className={classes.overlayRef}>Ref: {photo.name}</span>
         </div>
       </div>
 
-      <div className={classes.info}>
-        <Text className={classes.infoName}>{photo.name}</Text>
-        <div className={classes.infoMeta}>
-          <Badge size="xs" color={badgeColor} variant="light">
-            {layerLabel}
-          </Badge>
-          {photo.year > 0 && (
-            <Text size="xs" c="dimmed">
-              {photo.year}
-            </Text>
-          )}
-          {scaleDisplay && (
-            <Text size="xs" c="dimmed">
-              {scaleDisplay}
-            </Text>
-          )}
-        </div>
+      {/* Info below image */}
+      <div className={classes.meta}>
+        {/* Main title: year (big, bold) */}
+        <span className={classes.year}>{photo.year > 0 ? photo.year : 'Undated'}</span>
+        {/* Subtitle: project/layerName */}
+        {project && <span className={classes.project}>{project}</span>}
+        {/* Technical data + ref */}
+        <span className={classes.details}>
+          {scaleDisplay && <span className={classes.scale}>{scaleDisplay}</span>}
+          <span className={classes.ref}>{photo.name}</span>
+        </span>
       </div>
-    </Card>
+    </div>
   );
 }
