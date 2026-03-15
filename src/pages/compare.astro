@@ -2,8 +2,69 @@
 import AppLayout from '../layouts/AppLayout.astro';
 ---
 
-<AppLayout title="Compare -- Tasmania Aerial Photo Explorer">
-  <main>
-    <p>Compare page -- coming soon</p>
-  </main>
+<AppLayout title="Compare - Tasmania Aerial Photo Explorer">
+  <div class="compare-page">
+    <div class="compare-header">
+      <h1>Compare Photos</h1>
+      <p>Select two photos to compare side by side, with a slider, or then vs now.</p>
+    </div>
+    <div class="compare-content" id="compare-island">
+      <p class="placeholder">Select photos from search results to compare them here.</p>
+    </div>
+  </div>
+
+  <script>
+    import { createElement } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { MantineWrapper } from '../components/common/MantineWrapper';
+    import { Navigation } from '../components/layout/Navigation';
+    import { MobileNav } from '../components/layout/MobileNav';
+
+    const navContainer = document.createElement('div');
+    document.body.prepend(navContainer);
+    createRoot(navContainer).render(
+      createElement(MantineWrapper, null, createElement(Navigation))
+    );
+
+    const mobileNavContainer = document.createElement('div');
+    document.body.append(mobileNavContainer);
+    createRoot(mobileNavContainer).render(
+      createElement(MantineWrapper, null, createElement(MobileNav))
+    );
+  </script>
 </AppLayout>
+
+<style>
+  .compare-page {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  @media (min-width: 48em) {
+    .compare-page {
+      padding-left: calc(64px + 2rem);
+      max-width: 1200px;
+    }
+  }
+
+  .compare-header {
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+  }
+
+  .compare-header h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .compare-header p {
+    opacity: 0.6;
+  }
+
+  .placeholder {
+    text-align: center;
+    opacity: 0.5;
+    padding: 3rem 1rem;
+  }
+</style>

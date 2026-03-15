@@ -1,0 +1,135 @@
+.card {
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.4));
+}
+
+.imageContainer {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 300ms ease;
+}
+
+.card:hover .image {
+  transform: scale(1.05);
+}
+
+.favoriteButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  min-width: 44px;
+  min-height: 44px;
+  background: light-dark(rgba(255, 255, 255, 0.72), rgba(15, 23, 42, 0.72));
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.favoriteButton:hover {
+  transform: scale(1.1);
+  background: light-dark(rgba(255, 255, 255, 0.9), rgba(15, 23, 42, 0.9));
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--mantine-spacing-sm);
+  background: linear-gradient(
+    to top,
+    light-dark(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)) 0%,
+    transparent 60%
+  );
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  opacity: 0;
+  transition: opacity 250ms ease, backdrop-filter 250ms ease;
+  z-index: 1;
+}
+
+.card:hover .overlay {
+  opacity: 1;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.overlayName {
+  color: var(--mantine-color-white);
+  font-weight: 600;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.overlayMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.overlayText {
+  color: var(--mantine-color-gray-2);
+  font-size: var(--mantine-font-size-xs);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.compareButton {
+  min-width: 44px;
+  min-height: 44px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.card:hover .compareButton {
+  opacity: 1;
+}
+
+.info {
+  padding: var(--mantine-spacing-sm);
+}
+
+.infoName {
+  font-weight: 600;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.infoMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+@supports not (backdrop-filter: blur(12px)) {
+  .favoriteButton {
+    background: light-dark(rgba(255, 255, 255, 0.95), rgba(15, 23, 42, 0.95));
+  }
+}

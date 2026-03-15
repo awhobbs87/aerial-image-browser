@@ -2,10 +2,88 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 
 const { layerId, imageName } = Astro.params;
+const cleanName = imageName?.replace(/\.\w+$/, '') || '';
+const layerIdNum = parseInt(layerId || '0');
+const imageUrl = `/api/images/webp/${layerId}/${cleanName}`;
+const tiffUrl = `/api/images/tiff/${layerId}/${cleanName}`;
+const thumbnailUrl = `/api/images/thumbnail/${layerId}/${cleanName}`;
 ---
 
-<AppLayout title={`${imageName} -- Tasmania Aerial Photo Explorer`}>
-  <main>
-    <p>Viewer page for layer {layerId}, image {imageName} -- coming soon</p>
-  </main>
+<AppLayout title={`${cleanName} - Tasmania Aerial Photo Explorer`}>
+  <div class="viewer-page">
+    <div class="viewer-container" id="viewer-island">
+      <div class="viewer-loading">Loading image viewer...</div>
+    </div>
+  </div>
+
+  <script define:vars={{ imageUrl, layerIdNum, cleanName, tiffUrl, thumbnailUrl }}>
+    // Pass data to the client-side script
+    window.__VIEWER_DATA__ = { imageUrl, layerIdNum, cleanName, tiffUrl, thumbnailUrl };
+  </script>
+
+  <script>
+    import { createElement } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { MantineWrapper } from '../../../components/common/MantineWrapper';
+    import { ImageViewer } from '../../../components/viewer/ImageViewer';
+    import { Navigation } from '../../../components/layout/Navigation';
+    import { MobileNav } from '../../../components/layout/MobileNav';
+
+    const data = (window as any).__VIEWER_DATA__;
+
+    // Mount viewer
+    const viewerContainer = document.getElementById('viewer-island');
+    if (viewerContainer && data) {
+      viewerContainer.innerHTML = '';
+      createRoot(viewerContainer).render(
+        createElement(MantineWrapper, null,
+          createElement(ImageViewer, {
+            imageUrl: data.thumbnailUrl,
+            layerId: data.layerIdNum,
+            imageName: data.cleanName,
+            tiffUrl: data.tiffUrl,
+          })
+        )
+      );
+    }
+
+    // Mount navigation
+    const navContainer = document.createElement('div');
+    document.body.prepend(navContainer);
+    createRoot(navContainer).render(
+      createElement(MantineWrapper, null, createElement(Navigation))
+    );
+
+    const mobileNavContainer = document.createElement('div');
+    document.body.append(mobileNavContainer);
+    createRoot(mobileNavContainer).render(
+      createElement(MantineWrapper, null, createElement(MobileNav))
+    );
+  </script>
 </AppLayout>
+
+<style>
+  .viewer-page {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  @media (min-width: 48em) {
+    .viewer-page {
+      padding-left: 64px;
+    }
+  }
+
+  .viewer-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .viewer-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    opacity: 0.5;
+  }
+</style>

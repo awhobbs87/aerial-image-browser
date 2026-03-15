@@ -1,9 +1,66 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
+import { MantineWrapper } from '../components/common/MantineWrapper';
+import { Navigation } from '../components/layout/Navigation';
+import { MobileNav } from '../components/layout/MobileNav';
+import { FavoritesContent } from '../components/favorites/FavoritesContent';
 ---
 
-<AppLayout title="Favorites -- Tasmania Aerial Photo Explorer">
-  <main>
-    <p>Favorites page -- coming soon</p>
-  </main>
+<AppLayout title="Favorites - Tasmania Aerial Photo Explorer">
+  <!-- Desktop sidebar navigation -->
+  <MantineWrapper client:load>
+    <Navigation />
+  </MantineWrapper>
+
+  <div class="favorites-page">
+    <div class="favorites-header">
+      <h1 class="title">Saved Favorites</h1>
+      <p class="subtitle">Your bookmarked aerial photos</p>
+    </div>
+    <div class="favorites-content">
+      <!-- Favorites island: client:load so stored favorites render immediately -->
+      <MantineWrapper client:load>
+        <FavoritesContent />
+      </MantineWrapper>
+    </div>
+  </div>
+
+  <!-- Mobile bottom tab bar: client:visible for lazy hydration -->
+  <MantineWrapper client:visible>
+    <MobileNav />
+  </MantineWrapper>
 </AppLayout>
+
+<style>
+  .favorites-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 1rem;
+  }
+
+  @media (min-width: 48em) {
+    .favorites-page {
+      padding-left: calc(64px + 2rem);
+      max-width: 1200px;
+    }
+  }
+
+  .favorites-header {
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+  }
+
+  .title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    opacity: 0.6;
+  }
+
+  .favorites-content {
+    width: 100%;
+  }
+</style>
