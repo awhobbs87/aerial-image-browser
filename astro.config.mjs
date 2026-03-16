@@ -7,6 +7,9 @@ export default defineConfig({
 
   adapter: cloudflare({
     imageService: 'compile',
+    // Disable remote proxy session during build — CI environments lack wrangler auth.
+    // Bindings are only needed at runtime, not at build time.
+    remoteBindings: false,
   }),
 
   integrations: [react()],
