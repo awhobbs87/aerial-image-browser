@@ -29,7 +29,9 @@ export default defineConfig({
     ssr: {
       // @cloudflare/unenv-preset polyfills are virtual modules injected by workerd
       // and should not be processed by Vite's SSR dep optimizer.
-      external: ['@cloudflare/unenv-preset'],
+      // geotiff-tilesource is client-only (dynamically imported in ImageViewer);
+      // its bundled Web Worker breaks Rollup's SSR entry resolution.
+      external: ['@cloudflare/unenv-preset', 'geotiff-tilesource'],
     },
   },
 
