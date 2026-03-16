@@ -26,11 +26,19 @@ export default defineConfig({
     build: {
       minify: false,
     },
+    worker: {
+      // Must be 'es' for code-splitting compatibility; geotiff-tilesource's
+      // worker files are pre-built and served from public/assets/ instead.
+      format: 'es',
+    },
+    optimizeDeps: {
+      // Exclude geotiff-tilesource from dep optimization so Vite doesn't
+      // try to process its `new Worker(new URL(...))` patterns.
+      exclude: ['geotiff-tilesource'],
+    },
     ssr: {
-      // @cloudflare/unenv-preset polyfills are virtual modules injected by workerd
-      // and should not be processed by Vite's SSR dep optimizer.
-      // geotiff-tilesource is client-only (dynamically imported in ImageViewer);
-      // its bundled Web Worker breaks Rollup's SSR entry resolution.
+      // @cloudflare/unenv-preset polyfills are virtual modules injected by workerd.
+      // geotiff-tilesource is client-only; its bundled Web Worker breaks SSR builds.
       external: ['@cloudflare/unenv-preset', 'geotiff-tilesource'],
     },
   },
