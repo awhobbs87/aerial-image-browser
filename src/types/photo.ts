@@ -3,21 +3,30 @@
  * Ported from the original src/types/bindings.ts.
  */
 
-/** Raw attributes from ArcGIS REST API feature response */
+/**
+ * Raw attributes from the ArcGIS REST API feature response.
+ * Field names match what the service actually returns (UPPER_CASE).
+ * These are the fields read by enhancePhoto() in search-helpers.ts.
+ */
 export interface PhotoAttributes {
   OBJECTID: number;
-  Ession_Id: string;
-  Photo_Name: string;
-  Photo_Type: string;
-  Run: string;
-  Date_Flown: number;
-  Scale: number;
-  Film_Type: string;
-  Altitude: number;
-  Photo_No: string;
-  Layer_Name: string;
-  Shape__Area: number;
-  Shape__Length: number;
+  IMAGE_NAME: string;
+  IMAGE_TYPE: string;
+  RUN_NO: string;
+  /** Unix timestamp ms. May be 0/null — fall back to layerName year extraction. */
+  FLY_DATE: number;
+  /** Present on orthophoto/digital layers; fallback when FLY_DATE is absent. */
+  CAPTURE_START_DATE?: number;
+  SCALE: number;
+  FILM_NO: string;
+  HEIGHT: number;
+  FRAME: string;
+  /** Project/survey name, e.g. "Hobart 82", "HUON - DERWENT 1982 COASTAL" */
+  PROJ_NAME: string;
+  'SHAPE.AREA'?: number;
+  Shape__Area?: number;
+  THUMBNAIL_LINK: string;
+  DOWNLOAD_LINK: string;
 }
 
 /** Photo with computed display properties */
@@ -62,47 +71,52 @@ export interface SearchResult {
   radius: number;
 }
 
-/** Scale category for filtering */
+/** Scale category for filtering — matches the original app's 4-tier system */
 export type ScaleCategory =
-  | "very-large"
-  | "large"
-  | "medium"
-  | "small"
-  | "very-small";
+  | 'very-detailed' // ≤ 1:5,000  (largest / most detailed)
+  | 'detailed' // 1:5,001 – 1:15,000
+  | 'standard' // 1:15,001 – 1:40,000
+  | 'overview'; // > 1:40,000 (smallest / least detailed)
 
 /** Scale category definition */
 export interface ScaleCategoryDef {
   key: ScaleCategory;
   label: string;
+  /** Inclusive lower bound (0 = no lower bound) */
   minScale: number;
+  /** Inclusive upper bound (Infinity = no upper bound) */
   maxScale: number;
 }
 
-/** Predefined scale categories */
+/**
+ * Predefined scale categories.
+ * Mirrors the original filterPanelConfig.ts SCALE_CATEGORIES.
+ * Note: "scale" here means the denominator of the representative fraction
+ * (e.g. 5000 = 1:5,000). Smaller denominator = larger / more detailed image.
+ */
 export const SCALE_CATEGORIES: ScaleCategoryDef[] = [
-  { key: "very-large", label: "< 1:5,000", minScale: 0, maxScale: 5000 },
   {
-    key: "large",
-    label: "1:5,000 - 1:15,000",
-    minScale: 5000,
+    key: 'very-detailed',
+    label: 'Very detailed (≤ 1:5,000)',
+    minScale: 0,
+    maxScale: 5000,
+  },
+  {
+    key: 'detailed',
+    label: 'Detailed (1:5,000–15,000)',
+    minScale: 5001,
     maxScale: 15000,
   },
   {
-    key: "medium",
-    label: "1:15,000 - 1:30,000",
-    minScale: 15000,
-    maxScale: 30000,
+    key: 'standard',
+    label: 'Standard (1:15,000–40,000)',
+    minScale: 15001,
+    maxScale: 40000,
   },
   {
-    key: "small",
-    label: "1:30,000 - 1:50,000",
-    minScale: 30000,
-    maxScale: 50000,
-  },
-  {
-    key: "very-small",
-    label: "> 1:50,000",
-    minScale: 50000,
+    key: 'overview',
+    label: 'Overview (> 1:40,000)',
+    minScale: 40001,
     maxScale: Infinity,
   },
 ];

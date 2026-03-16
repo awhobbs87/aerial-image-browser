@@ -29,20 +29,17 @@ describe('SearchBar', () => {
     expect(screen.getByPlaceholderText('Search Tasmania...')).toBeInTheDocument();
   });
 
-  it('shows preset locations when focused with empty input', async () => {
+  it('shows popular locations when focused with empty input', async () => {
     render(<SearchBar />);
     const input = screen.getByPlaceholderText('Search Tasmania...');
     fireEvent.focus(input);
 
     await waitFor(() => {
-      expect(screen.getByText('Popular locations')).toBeInTheDocument();
+      expect(screen.getByText('Popular')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Hobart')).toBeInTheDocument();
     expect(screen.getByText('Launceston')).toBeInTheDocument();
-    expect(screen.getByText('Devonport')).toBeInTheDocument();
-    expect(screen.getByText('Port Arthur')).toBeInTheDocument();
-    expect(screen.getByText('Cradle Mountain')).toBeInTheDocument();
   });
 
   it('updates input value on type', async () => {

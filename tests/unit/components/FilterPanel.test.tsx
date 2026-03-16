@@ -7,41 +7,34 @@ vi.mock('@/components/filters/FilterPresets', () => ({
   FilterPresets: () => <div data-testid="filter-presets">Presets</div>,
 }));
 
-vi.mock('@/components/filters/FilterPanel.module.css', () => ({
-  default: {
-    panel: 'panel',
-  },
-}));
-
 describe('FilterPanel', () => {
   beforeEach(() => {
     useFilterStore.getState().resetFilters();
   });
 
-  it('renders all three layer checkboxes', () => {
+  it('renders image type buttons', () => {
     render(<FilterPanel />);
-    expect(screen.getByLabelText('Aerial Photos')).toBeInTheDocument();
-    expect(screen.getByLabelText('Orthophotos')).toBeInTheDocument();
-    expect(screen.getByLabelText('Digital Imagery')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aerial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ortho' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Digital' })).toBeInTheDocument();
   });
 
-  it('renders date range inputs (From / To labels)', () => {
+  it('renders date range inputs', () => {
     render(<FilterPanel />);
-    expect(screen.getByLabelText('From')).toBeInTheDocument();
-    expect(screen.getByLabelText('To')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('From')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('To')).toBeInTheDocument();
   });
 
-  it('renders "Quick Filters" section', () => {
+  it('renders quick filters section', () => {
     render(<FilterPanel />);
     expect(screen.getByTestId('filter-presets')).toBeInTheDocument();
   });
 
-  it('renders scale category chips', () => {
+  it('renders scale category buttons', () => {
     render(<FilterPanel />);
-    expect(screen.getByText('< 1:5,000')).toBeInTheDocument();
-    expect(screen.getByText('1:5,000 - 1:15,000')).toBeInTheDocument();
-    expect(screen.getByText('1:15,000 - 1:30,000')).toBeInTheDocument();
-    expect(screen.getByText('1:30,000 - 1:50,000')).toBeInTheDocument();
-    expect(screen.getByText('> 1:50,000')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Very detailed (≤ 1:5,000)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Detailed (1:5,000–15,000)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Standard (1:15,000–40,000)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Overview (> 1:40,000)' })).toBeInTheDocument();
   });
 });

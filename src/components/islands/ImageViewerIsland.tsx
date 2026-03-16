@@ -6,21 +6,34 @@ interface ImageViewerIslandProps {
   layerId: number;
   imageName: string;
   tiffUrl?: string;
+  year?: number;
+  scale?: number;
+  project?: string;
+  photoType?: string;
 }
 
-/**
- * Self-contained island for the image viewer.
- * Must be used with client:only="react".
- */
 export function ImageViewerIsland({
   imageUrl,
   layerId,
   imageName,
   tiffUrl,
+  year,
+  scale,
+  project,
+  photoType,
 }: ImageViewerIslandProps) {
   return (
     <MantineWrapper>
-      <ImageViewer imageUrl={imageUrl} layerId={layerId} imageName={imageName} tiffUrl={tiffUrl} />
+      <ImageViewer
+        imageUrl={imageUrl}
+        layerId={layerId}
+        imageName={imageName}
+        tiffUrl={tiffUrl}
+        year={year}
+        scale={scale}
+        project={project}
+        photoType={photoType}
+      />
     </MantineWrapper>
   );
 }

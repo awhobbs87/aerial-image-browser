@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { ActionIcon, Tooltip } from '@mantine/core';
-import { IconCurrentLocation } from '@tabler/icons-react';
+import { IconCurrentLocation, IconMap, IconSatellite } from '@tabler/icons-react';
 import { TASMANIA_DEFAULT_VIEWPORT } from '@/types/map';
 import type { MapBounds } from '@/types/map';
 import classes from './MapView.module.css';
@@ -10,25 +10,63 @@ import classes from './MapView.module.css';
 interface MapViewProps {
   onBoundsChange?: (bounds: MapBounds) => void;
   onClick?: (lat: number, lon: number) => void;
+  onMapReady?: (map: maplibregl.Map) => void;
   center?: [number, number];
   zoom?: number;
   className?: string;
 }
 
-/** Dark-mode aware tile URLs */
+/** Tile URLs */
 const LIGHT_TILES = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
 const DARK_TILES = 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png';
+const SATELLITE_TILES =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
 function prefersDark(): boolean {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
-export function MapView({ onBoundsChange, onClick, center, zoom, className }: MapViewProps) {
+function buildStyle(tileUrl: string, attribution: string): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      'base-tiles': {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        attribution,
+      },
+    },
+    layers: [
+      {
+        id: 'base-tiles',
+        type: 'raster',
+        source: 'base-tiles',
+        minzoom: 0,
+        maxzoom: 20,
+      },
+    ],
+  };
+}
+
+const CARTO_ATTR =
+  '&copy; <a href="https://carto.com">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>';
+const SAT_ATTR = '&copy; <a href="https://www.esri.com">Esri</a> World Imagery';
+
+export function MapView({
+  onBoundsChange,
+  onClick,
+  onMapReady,
+  center,
+  zoom,
+  className,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [locating, setLocating] = useState(false);
+  const [satellite, setSatellite] = useState(true);
 
   // Create or move the click marker
   const showMarker = useCallback((lngLat: [number, number]) => {
@@ -38,50 +76,19 @@ export function MapView({ onBoundsChange, onClick, center, zoom, className }: Ma
     if (markerRef.current) {
       markerRef.current.setLngLat(lngLat);
     } else {
-      const el = document.createElement('div');
-      el.className = 'map-pin-marker';
-      // Add the pulse ring child
-      const pulse = document.createElement('div');
-      pulse.className = 'map-pin-pulse';
-      el.appendChild(pulse);
-      markerRef.current = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map);
+      markerRef.current = new maplibregl.Marker({ color: '#2ac56a', scale: 0.85 })
+        .setLngLat(lngLat)
+        .addTo(map);
     }
-
-    // Restart animations
-    const el = markerRef.current.getElement();
-    el.classList.remove('map-pin-animate');
-    void el.offsetWidth;
-    el.classList.add('map-pin-animate');
   }, []);
 
+  // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const isDark = prefersDark();
-
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'carto-tiles': {
-            type: 'raster',
-            tiles: [isDark ? DARK_TILES : LIGHT_TILES],
-            tileSize: 256,
-            attribution:
-              '&copy; <a href="https://carto.com">CARTO</a> &copy; <a href="https://stadiamaps.com">Stadia</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-          },
-        },
-        layers: [
-          {
-            id: 'carto-tiles',
-            type: 'raster',
-            source: 'carto-tiles',
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: buildStyle(SATELLITE_TILES, SAT_ATTR),
       center: center || TASMANIA_DEFAULT_VIEWPORT.center,
       zoom: zoom ?? TASMANIA_DEFAULT_VIEWPORT.zoom,
       attributionControl: false,
@@ -106,35 +113,15 @@ export function MapView({ onBoundsChange, onClick, center, zoom, className }: Ma
     });
 
     mapRef.current = map;
+    map.once('load', () => onMapReady?.(map));
 
-    // Listen for color scheme changes
+    // Listen for color scheme changes (only affects map mode, not satellite)
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSchemeChange = (e: MediaQueryListEvent) => {
-      const tiles = e.matches ? DARK_TILES : LIGHT_TILES;
-      const source = map.getSource('carto-tiles') as maplibregl.RasterTileSource | undefined;
-      if (source) {
-        // MapLibre doesn't support setTiles directly, so reload the style
-        map.setStyle({
-          version: 8,
-          sources: {
-            'carto-tiles': {
-              type: 'raster',
-              tiles: [tiles],
-              tileSize: 256,
-              attribution:
-                '&copy; <a href="https://carto.com">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-            },
-          },
-          layers: [
-            {
-              id: 'carto-tiles',
-              type: 'raster',
-              source: 'carto-tiles',
-              minzoom: 0,
-              maxzoom: 20,
-            },
-          ],
-        });
+      // Only swap if we're in map mode (not satellite)
+      if (!satellite) {
+        const tiles = e.matches ? DARK_TILES : LIGHT_TILES;
+        map.setStyle(buildStyle(tiles, CARTO_ATTR));
       }
     };
     mq.addEventListener('change', handleSchemeChange);
@@ -158,6 +145,35 @@ export function MapView({ onBoundsChange, onClick, center, zoom, className }: Ma
     showMarker(center);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerLng, centerLat, zoom, showMarker]);
+
+  // Toggle satellite/map style
+  const handleToggleSatellite = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const newSat = !satellite;
+    setSatellite(newSat);
+
+    if (newSat) {
+      map.setStyle(buildStyle(SATELLITE_TILES, SAT_ATTR));
+    } else {
+      const isDark = prefersDark();
+      map.setStyle(buildStyle(isDark ? DARK_TILES : LIGHT_TILES, CARTO_ATTR));
+    }
+
+    // Re-add marker after style change (setStyle removes all layers/sources)
+    map.once('style.load', () => {
+      if (markerRef.current) {
+        const lngLat = markerRef.current.getLngLat();
+        markerRef.current.remove();
+        markerRef.current = new maplibregl.Marker({ color: '#2ac56a', scale: 0.85 })
+          .setLngLat(lngLat)
+          .addTo(map);
+      }
+      // Re-fire mapReady so PhotoFootprints re-adds its layers
+      onMapReady?.(map);
+    });
+  }, [satellite, onMapReady]);
 
   // Locate me handler
   const handleLocateMe = useCallback(() => {
@@ -187,8 +203,20 @@ export function MapView({ onBoundsChange, onClick, center, zoom, className }: Ma
         aria-label="Interactive map"
       />
 
-      {/* Locate me button */}
-      <div className={classes.locateBtn}>
+      {/* Map controls — bottom right stack */}
+      <div className={classes.controls}>
+        <Tooltip label={satellite ? 'Map view' : 'Satellite view'} position="left" withArrow>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            radius="md"
+            onClick={handleToggleSatellite}
+            aria-label={satellite ? 'Switch to map view' : 'Switch to satellite view'}
+            className={classes.controlBtn}
+          >
+            {satellite ? <IconMap size={18} /> : <IconSatellite size={18} />}
+          </ActionIcon>
+        </Tooltip>
         <Tooltip label="My location" position="left" withArrow>
           <ActionIcon
             variant="default"

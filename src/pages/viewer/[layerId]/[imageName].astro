@@ -7,8 +7,18 @@ import { ImageViewerIsland } from '../../../components/islands/ImageViewerIsland
 const { layerId, imageName } = Astro.params;
 const cleanName = imageName?.replace(/\.\w+$/, '') || '';
 const layerIdNum = parseInt(layerId || '0');
-const thumbnailUrl = `/api/images/thumbnail/${layerId}/${cleanName}`;
-const tiffUrl = `/api/images/tiff/${layerId}/${cleanName}`;
+
+// Fallback JPEG for initial display while TIFF loads
+const imageUrl = `/api/images/image/${layerId}/${cleanName}?width=2400&quality=95`;
+
+// TIFF proxy that supports HTTP range requests (needed by GeoTIFFTileSource).
+const tiffProxyUrl = `/api/images/tiff-proxy/${layerId}/${cleanName}`;
+
+// Photo metadata passed via query params from the preview modal
+const year = parseInt(Astro.url.searchParams.get('year') || '0') || 0;
+const scale = parseInt(Astro.url.searchParams.get('scale') || '0') || 0;
+const project = Astro.url.searchParams.get('project') || '';
+const photoType = Astro.url.searchParams.get('type') || '';
 ---
 
 <AppLayout title={`${cleanName} - Tasmania Aerial Photo Explorer`}>
@@ -19,10 +29,14 @@ const tiffUrl = `/api/images/tiff/${layerId}/${cleanName}`;
     <div class="viewer-container">
       <ImageViewerIsland
         client:only="react"
-        imageUrl={thumbnailUrl}
+        imageUrl={imageUrl}
         layerId={layerIdNum}
         imageName={cleanName}
-        tiffUrl={tiffUrl}
+        tiffUrl={tiffProxyUrl}
+        year={year}
+        scale={scale}
+        project={project}
+        photoType={photoType}
       />
     </div>
   </div>

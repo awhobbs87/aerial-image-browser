@@ -89,12 +89,34 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     padding: 10px 12px 6px;
     position: sticky;
     top: 0;
-    z-index: 2;
+    /* Must be above photo card badges (z-index 3) and below dropdown (z-index 200) */
+    z-index: 100;
     background: inherit;
+  }
+
+  /* Row that holds search input + filter toggle button side-by-side */
+  .search-panel-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-panel-bar > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Collapsible filter section (desktop only) */
+  .search-panel-filters {
+    border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.06));
+    position: relative;
+    z-index: 1;
   }
 
   .search-panel-content {
     padding: 0 12px 12px;
     flex: 1;
+    /* Isolate stacking context so photo card badges don't bleed above the header */
+    isolation: isolate;
   }
 </style>
