@@ -19,6 +19,7 @@
     "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css,json}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,astro,css,json}'",
+    "postinstall": "mkdir -p public/assets && cp node_modules/geotiff-tilesource/dist/assets/* public/assets/ 2>/dev/null || true",
     "prepare": "husky"
   },
   "dependencies": {
