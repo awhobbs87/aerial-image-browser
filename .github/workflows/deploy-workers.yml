@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Workers
+name: Build Check
 
 on:
   push:
@@ -8,12 +8,11 @@ on:
 
 permissions:
   contents: read
-  deployments: write
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    name: Deploy to Cloudflare Workers
+    name: Build & Test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,14 +26,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
-        run: npx astro build
+      - name: Run tests
+        run: npm test
 
-      - name: Deploy to Cloudflare Workers
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
-        run: npx wrangler deploy
+      # Deployment is handled by Cloudflare Pages build system (auto-deploys on push).
+      # To re-enable wrangler deploy, create a CLOUDFLARE_API_TOKEN secret with
+      # Workers Scripts permissions and uncomment the steps below.
+      # - name: Build
+      #   env:
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
+      #   run: npx astro build
+      # - name: Deploy
+      #   env:
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
+      #   run: npx wrangler deploy
