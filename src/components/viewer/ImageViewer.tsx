@@ -11,7 +11,9 @@ import {
   Slider,
   Divider,
   Popover,
+  Collapse,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   IconZoomIn,
   IconZoomOut,
@@ -24,6 +26,7 @@ import {
   IconDownload,
   IconArrowLeft,
   IconAdjustments,
+  IconDots,
 } from '@tabler/icons-react';
 import classes from './ImageViewer.module.css';
 
@@ -59,6 +62,8 @@ export function ImageViewer({
   const [loading, setLoading] = useState(true);
   const [usingTiff, setUsingTiff] = useState(false);
   const [finetuneOpen, setFinetuneOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -99,7 +104,7 @@ export function ImageViewer({
         prefixUrl: '',
         tileSources,
         showNavigationControl: false,
-        showNavigator: true,
+        showNavigator: !isMobile,
         navigatorPosition: 'BOTTOM_RIGHT',
         navigatorSizeRatio: 0.15,
         minZoomLevel: 0.5,
@@ -108,7 +113,11 @@ export function ImageViewer({
         constrainDuringPan: true,
         animationTime: 0.3,
         crossOriginPolicy: 'Anonymous',
-        gestureSettingsTouch: { pinchRotate: true },
+        gestureSettingsTouch: {
+          // Disable pinch-rotate on touch — it fights with pinch-to-zoom.
+          // Rotation is available via manual controls instead.
+          pinchRotate: false,
+        },
       });
 
       viewer.addHandler('zoom', (event: { zoom: number }) => {
@@ -127,22 +136,18 @@ export function ImageViewer({
       viewerRef.current?.destroy();
       viewerRef.current = null;
     };
-  }, [imageUrl, tiffUrl]);
+  }, [imageUrl, tiffUrl, isMobile]);
 
-  // Apply rotation to OpenSeadragon viewport
   const applyRotation = useCallback((deg: number) => {
     setRotation(deg);
     viewerRef.current?.viewport?.setRotation(deg);
   }, []);
 
-  // Apply flip via CSS transform on the canvas container
-  // OpenSeadragon doesn't have native flip, so we use CSS scaleX/scaleY
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const sx = flippedH ? -1 : 1;
     const sy = flippedV ? -1 : 1;
-    // Apply to the OSD canvas container (first child of our ref)
     const canvas = el.querySelector('.openseadragon-canvas') as HTMLElement | null;
     if (canvas) {
       canvas.style.transform = `scale(${sx}, ${sy})`;
@@ -173,6 +178,8 @@ export function ImageViewer({
   };
 
   const layerLabel = layerId === 0 ? 'Aerial' : layerId === 1 ? 'Ortho' : 'Digital';
+  const iconSize = isMobile ? 16 : 20;
+  const btnSize = isMobile ? 'md' : 'lg';
 
   return (
     <div className={classes.wrapper}>
@@ -187,176 +194,210 @@ export function ImageViewer({
       {/* Back button */}
       <Paper className={classes.backBtn} shadow="md" radius="md" p={0}>
         <Tooltip label="Back to results" position="right" withArrow>
-          <ActionIcon variant="subtle" size="lg" onClick={handleBack} aria-label="Back">
-            <IconArrowLeft size={20} />
+          <ActionIcon variant="subtle" size={btnSize} onClick={handleBack} aria-label="Back">
+            <IconArrowLeft size={iconSize} />
           </ActionIcon>
         </Tooltip>
       </Paper>
 
       {/* Controls overlay */}
       {ready && (
-        <Paper className={classes.controls} shadow="md" radius="md" p="xs">
-          <Stack gap={4}>
+        <Paper className={classes.controls} shadow="md" radius="md" p={isMobile ? 4 : 'xs'}>
+          <Stack gap={isMobile ? 2 : 4}>
+            {/* Always-visible core controls */}
             <Tooltip label="Zoom in" position="left" withArrow>
-              <ActionIcon variant="subtle" size="lg" onClick={handleZoomIn} aria-label="Zoom in">
-                <IconZoomIn size={20} />
+              <ActionIcon
+                variant="subtle"
+                size={btnSize}
+                onClick={handleZoomIn}
+                aria-label="Zoom in"
+              >
+                <IconZoomIn size={iconSize} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Zoom out" position="left" withArrow>
-              <ActionIcon variant="subtle" size="lg" onClick={handleZoomOut} aria-label="Zoom out">
-                <IconZoomOut size={20} />
+              <ActionIcon
+                variant="subtle"
+                size={btnSize}
+                onClick={handleZoomOut}
+                aria-label="Zoom out"
+              >
+                <IconZoomOut size={iconSize} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Reset view" position="left" withArrow>
-              <ActionIcon variant="subtle" size="lg" onClick={handleReset} aria-label="Reset view">
-                <IconZoomReset size={20} />
-              </ActionIcon>
-            </Tooltip>
-
-            <Divider my={2} />
-
-            {/* Rotation controls */}
-            <Tooltip label="Rotate left 90" position="left" withArrow>
               <ActionIcon
                 variant="subtle"
-                size="lg"
-                onClick={handleRotateCCW}
-                aria-label="Rotate left"
+                size={btnSize}
+                onClick={handleReset}
+                aria-label="Reset view"
               >
-                <IconRotate2 size={20} style={{ transform: 'scaleX(-1)' }} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Rotate right 90" position="left" withArrow>
-              <ActionIcon
-                variant="subtle"
-                size="lg"
-                onClick={handleRotateCW}
-                aria-label="Rotate right"
-              >
-                <IconRotateClockwise size={20} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Flip horizontal" position="left" withArrow>
-              <ActionIcon
-                variant={flippedH ? 'filled' : 'subtle'}
-                color={flippedH ? 'emerald' : undefined}
-                size="lg"
-                onClick={handleFlipH}
-                aria-label="Flip horizontal"
-              >
-                <IconFlipHorizontal size={20} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Flip vertical" position="left" withArrow>
-              <ActionIcon
-                variant={flippedV ? 'filled' : 'subtle'}
-                color={flippedV ? 'emerald' : undefined}
-                size="lg"
-                onClick={handleFlipV}
-                aria-label="Flip vertical"
-              >
-                <IconFlipVertical size={20} />
+                <IconZoomReset size={iconSize} />
               </ActionIcon>
             </Tooltip>
 
-            {/* Fine-tune rotation popover */}
-            <Popover
-              opened={finetuneOpen}
-              onChange={setFinetuneOpen}
+            {/* Expand/collapse toggle */}
+            <Tooltip
+              label={expanded ? 'Fewer controls' : 'More controls'}
               position="left"
               withArrow
-              shadow="md"
             >
-              <Popover.Target>
-                <Tooltip
-                  label="Fine-tune rotation"
-                  position="left"
-                  withArrow
-                  disabled={finetuneOpen}
-                >
-                  <ActionIcon
-                    variant={finetuneOpen ? 'filled' : 'subtle'}
-                    color={finetuneOpen ? 'emerald' : undefined}
-                    size="lg"
-                    onClick={() => setFinetuneOpen((o) => !o)}
-                    aria-label="Fine-tune rotation"
-                  >
-                    <IconAdjustments size={20} />
-                  </ActionIcon>
-                </Tooltip>
-              </Popover.Target>
-              <Popover.Dropdown p="sm" style={{ width: 220 }}>
-                <Stack gap={6}>
-                  <Group justify="space-between">
-                    <Text size="xs" fw={600}>
-                      Rotation
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {rotation}deg
-                    </Text>
-                  </Group>
-                  <Slider
-                    value={rotation}
-                    onChange={applyRotation}
-                    min={0}
-                    max={359}
-                    step={1}
-                    size="sm"
-                    label={(v) => `${v}deg`}
-                    marks={[
-                      { value: 0, label: '0' },
-                      { value: 90, label: '90' },
-                      { value: 180, label: '180' },
-                      { value: 270, label: '270' },
-                    ]}
-                  />
-                </Stack>
-              </Popover.Dropdown>
-            </Popover>
-
-            <Divider my={2} />
-
-            <Tooltip label="Fullscreen" position="left" withArrow>
               <ActionIcon
-                variant="subtle"
-                size="lg"
-                onClick={handleFullscreen}
-                aria-label="Fullscreen"
+                variant={expanded ? 'light' : 'subtle'}
+                size={btnSize}
+                onClick={() => setExpanded((e) => !e)}
+                aria-label={expanded ? 'Collapse controls' : 'Expand controls'}
               >
-                <IconMaximize size={20} />
+                <IconDots size={iconSize} />
               </ActionIcon>
             </Tooltip>
-            {tiffUrl && (
-              <Tooltip label="Download TIFF" position="left" withArrow>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href={tiffUrl}
-                  aria-label="Download TIFF"
+
+            {/* Expandable section */}
+            <Collapse in={expanded}>
+              <Stack gap={isMobile ? 2 : 4}>
+                <Divider my={1} />
+
+                {/* Rotation controls */}
+                <Tooltip label="Rotate left 90" position="left" withArrow>
+                  <ActionIcon
+                    variant="subtle"
+                    size={btnSize}
+                    onClick={handleRotateCCW}
+                    aria-label="Rotate left"
+                  >
+                    <IconRotate2 size={iconSize} style={{ transform: 'scaleX(-1)' }} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Rotate right 90" position="left" withArrow>
+                  <ActionIcon
+                    variant="subtle"
+                    size={btnSize}
+                    onClick={handleRotateCW}
+                    aria-label="Rotate right"
+                  >
+                    <IconRotateClockwise size={iconSize} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Flip horizontal" position="left" withArrow>
+                  <ActionIcon
+                    variant={flippedH ? 'filled' : 'subtle'}
+                    color={flippedH ? 'emerald' : undefined}
+                    size={btnSize}
+                    onClick={handleFlipH}
+                    aria-label="Flip horizontal"
+                  >
+                    <IconFlipHorizontal size={iconSize} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Flip vertical" position="left" withArrow>
+                  <ActionIcon
+                    variant={flippedV ? 'filled' : 'subtle'}
+                    color={flippedV ? 'emerald' : undefined}
+                    size={btnSize}
+                    onClick={handleFlipV}
+                    aria-label="Flip vertical"
+                  >
+                    <IconFlipVertical size={iconSize} />
+                  </ActionIcon>
+                </Tooltip>
+
+                {/* Fine-tune rotation popover */}
+                <Popover
+                  opened={finetuneOpen}
+                  onChange={setFinetuneOpen}
+                  position="left"
+                  withArrow
+                  shadow="md"
                 >
-                  <IconDownload size={20} />
-                </ActionIcon>
-              </Tooltip>
-            )}
+                  <Popover.Target>
+                    <Tooltip
+                      label="Fine-tune rotation"
+                      position="left"
+                      withArrow
+                      disabled={finetuneOpen}
+                    >
+                      <ActionIcon
+                        variant={finetuneOpen ? 'filled' : 'subtle'}
+                        color={finetuneOpen ? 'emerald' : undefined}
+                        size={btnSize}
+                        onClick={() => setFinetuneOpen((o) => !o)}
+                        aria-label="Fine-tune rotation"
+                      >
+                        <IconAdjustments size={iconSize} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Popover.Target>
+                  <Popover.Dropdown p="sm" style={{ width: 200 }}>
+                    <Stack gap={6}>
+                      <Group justify="space-between">
+                        <Text size="xs" fw={600}>
+                          Rotation
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {rotation}deg
+                        </Text>
+                      </Group>
+                      <Slider
+                        value={rotation}
+                        onChange={applyRotation}
+                        min={0}
+                        max={359}
+                        step={1}
+                        size="sm"
+                        label={(v) => `${v}deg`}
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 90, label: '90' },
+                          { value: 180, label: '180' },
+                          { value: 270, label: '270' },
+                        ]}
+                      />
+                    </Stack>
+                  </Popover.Dropdown>
+                </Popover>
+
+                <Divider my={1} />
+
+                <Tooltip label="Fullscreen" position="left" withArrow>
+                  <ActionIcon
+                    variant="subtle"
+                    size={btnSize}
+                    onClick={handleFullscreen}
+                    aria-label="Fullscreen"
+                  >
+                    <IconMaximize size={iconSize} />
+                  </ActionIcon>
+                </Tooltip>
+                {tiffUrl && (
+                  <Tooltip label="Download TIFF" position="left" withArrow>
+                    <ActionIcon
+                      variant="subtle"
+                      size={btnSize}
+                      component="a"
+                      href={tiffUrl}
+                      aria-label="Download TIFF"
+                    >
+                      <IconDownload size={iconSize} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </Stack>
+            </Collapse>
           </Stack>
         </Paper>
       )}
 
       {/* Info bar */}
-      <Paper className={classes.infoBar} shadow="md" radius="md" px="md" py="xs">
-        <Group gap={10} wrap="nowrap">
-          {/* Primary: year + name */}
+      <Paper className={classes.infoBar} shadow="md" radius="md" px="sm" py={4}>
+        <Group gap={6} wrap="nowrap">
           {year ? (
-            <Text size="sm" fw={700}>
+            <Text size="xs" fw={700}>
               {year}
             </Text>
           ) : null}
-          <Text size="sm" fw={600} lineClamp={1}>
+          <Text size="xs" fw={600} lineClamp={1}>
             {imageName}
           </Text>
-
-          {/* Type + layer badge */}
           {photoType && (
             <Text size="xs" c="dimmed" fw={500} style={{ whiteSpace: 'nowrap' }}>
               {photoType === 'Black & White' ? 'B&W' : photoType}
@@ -365,38 +406,25 @@ export function ImageViewer({
           <Text size="xs" c="dimmed">
             {layerLabel}
           </Text>
-
-          {/* Scale */}
           {scale ? (
             <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
               1:{scale.toLocaleString()}
             </Text>
           ) : null}
-
-          {/* Project name */}
-          {project && (
+          {!isMobile && project && (
             <Text size="xs" c="dimmed" lineClamp={1} style={{ whiteSpace: 'nowrap' }}>
               {project}
             </Text>
           )}
-
-          {/* Divider before viewer state */}
           <Text size="xs" c="dimmed">
             |
           </Text>
-
-          {/* Viewer state */}
           <Text size="xs" c="dimmed">
             {zoom}x
           </Text>
           {rotation !== 0 && (
             <Text size="xs" c="dimmed">
               {rotation}deg
-            </Text>
-          )}
-          {(flippedH || flippedV) && (
-            <Text size="xs" c="dimmed">
-              {flippedH && flippedV ? 'Flipped H+V' : flippedH ? 'Flipped H' : 'Flipped V'}
             </Text>
           )}
           {usingTiff && (
