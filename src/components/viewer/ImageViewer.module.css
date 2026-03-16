@@ -26,8 +26,8 @@
 /* Back button — top left */
 .backBtn {
   position: absolute;
-  top: var(--mantine-spacing-md);
-  left: var(--mantine-spacing-md);
+  top: var(--mantine-spacing-sm);
+  left: var(--mantine-spacing-sm);
   z-index: 10;
   background: light-dark(rgba(255, 255, 255, 0.85), rgba(15, 23, 42, 0.85));
   backdrop-filter: blur(12px);
@@ -35,19 +35,47 @@
 
 .controls {
   position: absolute;
-  top: var(--mantine-spacing-md);
-  right: var(--mantine-spacing-md);
+  top: var(--mantine-spacing-sm);
+  right: var(--mantine-spacing-sm);
   z-index: 10;
   background: light-dark(rgba(255, 255, 255, 0.85), rgba(15, 23, 42, 0.85));
   backdrop-filter: blur(12px);
+  /* Prevent controls from overflowing the viewport on mobile */
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .infoBar {
   position: absolute;
-  bottom: var(--mantine-spacing-md);
-  left: var(--mantine-spacing-md);
+  bottom: var(--mantine-spacing-sm);
+  left: var(--mantine-spacing-sm);
   z-index: 10;
   background: light-dark(rgba(255, 255, 255, 0.85), rgba(15, 23, 42, 0.85));
   backdrop-filter: blur(12px);
-  max-width: calc(100% - 2 * var(--mantine-spacing-md));
+  max-width: calc(100% - 2 * var(--mantine-spacing-sm));
+}
+
+/* Compact on small screens */
+@media (max-width: 480px) {
+  .backBtn,
+  .controls,
+  .infoBar {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+  }
+
+  .controls {
+    left: auto;
+    right: 4px;
+    padding: 4px;
+  }
+
+  .infoBar {
+    bottom: 4px;
+    left: 4px;
+    right: auto;
+    font-size: 11px;
+  }
 }
