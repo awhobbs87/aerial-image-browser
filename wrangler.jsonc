@@ -5,6 +5,27 @@
   "compatibility_date": "2025-05-21",
   "compatibility_flags": ["nodejs_compat"],
 
+  // Custom domain
+  "routes": [
+    {
+      "pattern": "aerial-explorer.awhq.uk/*",
+      "zone_name": "awhq.uk",
+    },
+  ],
+
+  // Observability (logs, tail workers)
+  "observability": {
+    "enabled": true,
+  },
+
+  // Analytics Engine
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "tas-aerial-browser",
+    },
+  ],
+
   // KV Namespaces
   "kv_namespaces": [
     {

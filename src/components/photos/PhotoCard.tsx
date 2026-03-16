@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { useFavoritesStore } from '@/stores/favoritesStore';
+import { useUIStore } from '@/stores/uiStore';
 import { formatScale } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
 import classes from './PhotoCard.module.css';
@@ -35,6 +36,7 @@ function filmLabel(type: string): string | null {
 export function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const isFavorite = useFavoritesStore((s) => s.isFavorite(photo.objectId, photo.layerId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const setHoveredPhotoId = useUIStore((s) => s.setHoveredPhotoId);
 
   const thumbnailSrc = photo.thumbnailUrl || `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
   const scaleDisplay = formatScale(photo.scale);
@@ -57,6 +59,8 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
     <div
       className={classes.card}
       onClick={handleCardClick}
+      onMouseEnter={() => setHoveredPhotoId(photo.objectId)}
+      onMouseLeave={() => setHoveredPhotoId(null)}
       role="article"
       tabIndex={0}
       aria-label={`Photo: ${photo.name}${photo.year > 0 ? `, ${photo.year}` : ''}`}

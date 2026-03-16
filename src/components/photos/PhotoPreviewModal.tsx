@@ -111,7 +111,13 @@ export function PhotoPreviewModal({
   const typeLabel = filmLabel(current.type);
 
   const handleViewFull = () => {
-    window.location.href = `/viewer/${current.layerId}/${current.name}`;
+    const params = new URLSearchParams();
+    if (current.year > 0) params.set('year', String(current.year));
+    if (current.scale) params.set('scale', String(current.scale));
+    if (current.layerName) params.set('project', current.layerName);
+    if (current.type) params.set('type', current.type);
+    const qs = params.toString();
+    window.location.href = `/viewer/${current.layerId}/${current.name}${qs ? `?${qs}` : ''}`;
   };
 
   const handleFavorite = () => {
@@ -122,13 +128,14 @@ export function PhotoPreviewModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      size="lg"
+      size="90vw"
       centered
       withCloseButton={false}
       padding={0}
       radius="lg"
       classNames={{ content: classes.modal, body: classes.body }}
       overlayProps={{ backgroundOpacity: 0.7, blur: 4 }}
+      styles={{ content: { maxWidth: 1100, maxHeight: '90vh' } }}
     >
       {/* Image area */}
       <div className={classes.imageArea}>

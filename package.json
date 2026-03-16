@@ -19,6 +19,7 @@
     "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css,json}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,astro,css,json}'",
+    "postinstall": "mkdir -p public/assets && cp node_modules/geotiff-tilesource/dist/assets/* public/assets/ 2>/dev/null || true",
     "prepare": "husky"
   },
   "dependencies": {
@@ -31,7 +32,9 @@
     "@mantine/notifications": "^8.3.17",
     "@tabler/icons-react": "^3.40.0",
     "@tanstack/react-query": "^5.90.21",
+    "@testing-library/dom": "^10.4.1",
     "astro": "^6.0.4",
+    "geotiff-tilesource": "^2.3.0",
     "maplibre-gl": "^5.20.1",
     "openseadragon": "^6.0.2",
     "react": "^19.2.4",

@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { SimpleGrid, NativeSelect, Text, Button, Stack, Center } from '@mantine/core';
-import { IconArrowsSort } from '@tabler/icons-react';
+import { SimpleGrid, NativeSelect, Text, Button, Stack, Center, Group } from '@mantine/core';
+import { IconArrowsSort, IconLayoutList } from '@tabler/icons-react';
 import type { EnhancedPhoto } from '@/types/photo';
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoCard } from './PhotoCard';
 import { PhotoSkeleton } from './PhotoSkeleton';
 import classes from './PhotoGrid.module.css';
+
+type GroupBy = 'decade' | 'year' | 'none';
 
 interface PhotoGridProps {
   photos: EnhancedPhoto[];
@@ -19,6 +21,23 @@ interface PhotoGridProps {
 
 const ITEMS_PER_PAGE = 24;
 
+/** Derive the grouping key for a photo given the current groupBy mode. */
+function getGroupKey(photo: EnhancedPhoto, groupBy: GroupBy): string {
+  if (groupBy === 'none') return '__all__';
+  if (photo.year <= 0) return 'Undated';
+  if (groupBy === 'year') return String(photo.year);
+  // decade
+  return `${Math.floor(photo.year / 10) * 10}s`;
+}
+
+/** Compare two group keys for chronological ordering. */
+function compareGroupKeys(a: string, b: string): number {
+  if (a === 'Undated') return 1;
+  if (b === 'Undated') return -1;
+  // Both are numeric strings ("1982" or "1980s") — sort lexicographically (works for years/decades)
+  return a.localeCompare(b);
+}
+
 export function PhotoGrid({
   photos,
   isLoading,
@@ -30,8 +49,9 @@ export function PhotoGrid({
 }: PhotoGridProps) {
   const { sortBy, setSortBy } = useFilterStore();
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [groupBy, setGroupBy] = useState<GroupBy>('decade');
 
-  // Sort photos -- undated (dateFlown=0) always go to the end for date sorts
+  // Sort photos — undated (dateFlown=0) pushed to the end for date sorts
   const sortedPhotos = useMemo(() => {
     const sorted = [...photos];
     switch (sortBy) {
@@ -62,26 +82,22 @@ export function PhotoGrid({
     return sorted;
   }, [photos, sortBy]);
 
-  // Group by decade
+  // Group visible photos by the selected groupBy mode
   const groupedPhotos = useMemo(() => {
     const groups: Map<string, EnhancedPhoto[]> = new Map();
     const displayed = sortedPhotos.slice(0, displayCount);
 
     for (const photo of displayed) {
-      const decade = photo.year > 0 ? `${Math.floor(photo.year / 10) * 10}s` : 'Undated';
-      if (!groups.has(decade)) groups.set(decade, []);
-      groups.get(decade)!.push(photo);
+      const key = getGroupKey(photo, groupBy);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(photo);
     }
 
-    // Sort groups: decades chronologically, "Undated" at the end
-    return new Map(
-      [...groups.entries()].sort((a, b) => {
-        if (a[0] === 'Undated') return 1;
-        if (b[0] === 'Undated') return -1;
-        return a[0].localeCompare(b[0]);
-      }),
-    );
-  }, [sortedPhotos, displayCount]);
+    if (groupBy === 'none') return groups;
+
+    // Sort groups chronologically; 'Undated' always last
+    return new Map([...groups.entries()].sort((a, b) => compareGroupKeys(a[0], b[0])));
+  }, [sortedPhotos, displayCount, groupBy]);
 
   const handleLoadMore = () => {
     setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
@@ -113,35 +129,56 @@ export function PhotoGrid({
     );
   }
 
+  const showGroupHeaders = groupBy !== 'none';
+
   return (
     <Stack gap="sm">
-      {/* Header: count + sort select */}
+      {/* Header: count + group-by + sort */}
       <div className={classes.header}>
         <span className={classes.count}>
           {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
         </span>
-        <NativeSelect
-          size="xs"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
-          leftSection={<IconArrowsSort size={12} />}
-          data={[
-            { label: 'Newest first', value: 'date-desc' },
-            { label: 'Oldest first', value: 'date-asc' },
-            { label: 'Scale', value: 'scale-desc' },
-            { label: 'Name', value: 'name' },
-          ]}
-          classNames={{ input: classes.sortSelect }}
-        />
+        <Group gap={6}>
+          <NativeSelect
+            size="xs"
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.currentTarget.value as GroupBy)}
+            leftSection={<IconLayoutList size={12} />}
+            data={[
+              { label: 'By decade', value: 'decade' },
+              { label: 'By year', value: 'year' },
+              { label: 'No grouping', value: 'none' },
+            ]}
+            classNames={{ input: classes.sortSelect }}
+            aria-label="Group photos by"
+          />
+          <NativeSelect
+            size="xs"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
+            leftSection={<IconArrowsSort size={12} />}
+            data={[
+              { label: 'Newest first', value: 'date-desc' },
+              { label: 'Oldest first', value: 'date-asc' },
+              { label: 'Scale (large)', value: 'scale-asc' },
+              { label: 'Scale (small)', value: 'scale-desc' },
+              { label: 'Name', value: 'name' },
+            ]}
+            classNames={{ input: classes.sortSelect }}
+            aria-label="Sort photos"
+          />
+        </Group>
       </div>
 
-      {/* Grouped photo grid */}
-      {Array.from(groupedPhotos.entries()).map(([decade, groupPhotos]) => (
-        <div key={decade} className={classes.group}>
-          <div className={classes.decadeHeader}>
-            <span className={classes.decadeLabel}>{decade}</span>
-            <span className={classes.decadeCount}>{groupPhotos.length}</span>
-          </div>
+      {/* Photo groups */}
+      {Array.from(groupedPhotos.entries()).map(([groupKey, groupPhotos]) => (
+        <div key={groupKey} className={classes.group}>
+          {showGroupHeaders && (
+            <div className={classes.decadeHeader}>
+              <span className={classes.decadeLabel}>{groupKey}</span>
+              <span className={classes.decadeCount}>{groupPhotos.length}</span>
+            </div>
+          )}
           <SimpleGrid cols={{ base: 2, sm: 2, md: 3 }} spacing={10}>
             {groupPhotos.map((photo) => (
               <PhotoCard

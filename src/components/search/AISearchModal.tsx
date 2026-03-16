@@ -1,5 +1,16 @@
 import { useState, useCallback } from 'react';
-import { Modal, TextInput, Button, Stack, Text, Group, Paper, Badge, Loader, Alert, Kbd } from '@mantine/core';
+import {
+  Modal,
+  TextInput,
+  Button,
+  Stack,
+  Text,
+  Group,
+  Paper,
+  Badge,
+  Loader,
+  Alert,
+} from '@mantine/core';
 import { IconSparkles, IconSearch, IconMapPin, IconCalendar, IconZoom } from '@tabler/icons-react';
 import { api } from '@/lib/api-client';
 import { geocodeSearch } from '@/lib/geocoding';
@@ -122,32 +133,46 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
           placeholder="e.g., Find aerial photos of Sandy Bay from the 1950s"
           size="md"
           leftSection={<IconSearch size={18} />}
-          rightSection={isProcessing ? <Loader size="xs" /> : <Kbd size="xs">Enter</Kbd>}
+          rightSection={
+            isProcessing ? (
+              <Loader size="xs" />
+            ) : (
+              <Text size="xs" c="dimmed" fw={500} style={{ fontSize: 10 }}>
+                Enter
+              </Text>
+            )
+          }
           autoFocus
         />
 
         <Group gap="xs">
-          <Text size="xs" c="dimmed">Try:</Text>
-          {['Hobart CBD in the 1940s', 'High resolution photos of Launceston', 'Port Arthur historical aerials'].map(
-            (suggestion) => (
-              <Badge
-                key={suggestion}
-                variant="light"
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  setQuery(suggestion);
-                }}
-              >
-                {suggestion}
-              </Badge>
-            ),
-          )}
+          <Text size="xs" c="dimmed">
+            Try:
+          </Text>
+          {[
+            'Hobart CBD in the 1940s',
+            'High resolution photos of Launceston',
+            'Port Arthur historical aerials',
+          ].map((suggestion) => (
+            <Badge
+              key={suggestion}
+              variant="light"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setQuery(suggestion);
+              }}
+            >
+              {suggestion}
+            </Badge>
+          ))}
         </Group>
 
         {parsed && (
           <Paper p="sm" radius="md" withBorder>
             <Stack gap="xs">
-              <Text size="xs" fw={600} c="dimmed">Parsed query:</Text>
+              <Text size="xs" fw={600} c="dimmed">
+                Parsed query:
+              </Text>
               <Group gap="md">
                 <Group gap={4}>
                   <IconMapPin size={14} />
@@ -162,7 +187,9 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
                   </Group>
                 )}
                 {parsed.imageType && (
-                  <Badge size="sm" variant="light">{parsed.imageType}</Badge>
+                  <Badge size="sm" variant="light">
+                    {parsed.imageType}
+                  </Badge>
                 )}
                 {parsed.resolution && (
                   <Group gap={4}>

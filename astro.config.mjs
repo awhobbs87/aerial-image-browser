@@ -7,8 +7,9 @@ export default defineConfig({
 
   adapter: cloudflare({
     imageService: 'compile',
-    prerenderEnvironment: 'node',
-    persistState: true,
+    // Disable remote proxy session during build — CI environments lack wrangler auth.
+    // Bindings are only needed at runtime, not at build time.
+    remoteBindings: false,
   }),
 
   integrations: [react()],
@@ -25,10 +26,20 @@ export default defineConfig({
     build: {
       minify: false,
     },
+    worker: {
+      // Must be 'es' for code-splitting compatibility; geotiff-tilesource's
+      // worker files are pre-built and served from public/assets/ instead.
+      format: 'es',
+    },
+    optimizeDeps: {
+      // Exclude geotiff-tilesource from dep optimization so Vite doesn't
+      // try to process its `new Worker(new URL(...))` patterns.
+      exclude: ['geotiff-tilesource'],
+    },
     ssr: {
-      // @cloudflare/unenv-preset polyfills are virtual modules injected by workerd
-      // and should not be processed by Vite's SSR dep optimizer.
-      external: ['@cloudflare/unenv-preset'],
+      // @cloudflare/unenv-preset polyfills are virtual modules injected by workerd.
+      // geotiff-tilesource is client-only; its bundled Web Worker breaks SSR builds.
+      external: ['@cloudflare/unenv-preset', 'geotiff-tilesource'],
     },
   },
 

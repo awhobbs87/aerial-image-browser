@@ -264,7 +264,7 @@ This app has a **heavy emphasis on mobile usability**. Every component must work
 **Access pattern in Astro endpoints:**
 
 ```typescript
-import { env } from "cloudflare:workers";
+import { env } from 'cloudflare:workers';
 const kv = env.PHOTO_CACHE;
 const db = env.PHOTOS_DB;
 const r2 = env.TIFF_STORAGE;
@@ -576,6 +576,49 @@ Append a summary after each working session so the next session has context.
 - Also created SearchResults.tsx component (wires usePhotos hook to PhotoGrid)
 - Verified `astro build` succeeds and all 203 unit/component tests pass
 - Remaining: Swipe gestures, pull-to-refresh, Lighthouse audit, perf tests, staging deploy
+
+### Session 5 -- 2026-03-16
+
+- Diagnosed GitHub Actions deploy pipeline failure (run 23111132227):
+  - Root cause: workflow assumed a `frontend/` monorepo subdirectory (`cd frontend && npm ci`, `npm run build:frontend`, `wrangler pages deploy dist --project-name=...`) — none of these exist in the Astro 6 rewrite which is a single-package repo at root deploying to Workers (not Pages)
+  - Additional issue: workflow used Node 20 (deprecated in GitHub Actions, `.nvmrc` requires Node 22)
+- Rewrote `.github/workflows/deploy-pages.yml` → renamed conceptually to Workers deploy:
+  - Removed `frontend/` directory references
+  - Node version: 20 → 22
+  - Build: `npm run build:frontend` → `npx astro build`
+  - Deploy: `wrangler pages deploy dist` → `npx wrangler deploy`
+  - Removed `paths:` filter so all pushes to `main` trigger deploy (not just `frontend/**` changes)
+- Added to `wrangler.jsonc`:
+  - Custom domain route: `aerial-explorer.awhq.uk/*` (zone: `awhq.uk`)
+  - Observability: `enabled: true`
+  - Analytics Engine dataset binding: `ANALYTICS` → `tas-aerial-browser` dataset
+- Note: `ANALYTICS` binding is now available in Worker code via `import { env } from 'cloudflare:workers'` as `env.ANALYTICS`
+
+### Session 6 -- 2026-03-16
+
+- Diagnosed and fixed three categories of bugs in date display, scale filtering, and grid grouping.
+
+**Date / year bugs fixed:**
+
+- Added `extractYearFromLayerName(layerName)` helper in `src/lib/search-helpers.ts` that parses the `PROJ_NAME` field (e.g. `"Hobart 82"` → 1982, `"HUON 1974"` → 1974) as a fallback when `FLY_DATE` / `CAPTURE_START_DATE` is absent or zero.
+- Rules: 4-digit years (1900–2099) used directly; 2-digit years 46–99 → 1900+n (earliest surveys were 1946), 00–25 → 2000+n.
+- `enhancePhoto()` now calls this fallback after the timestamp path fails.
+- Fixed `PhotoAttributes` type to match the actual ArcGIS UPPER_CASE field names (`FLY_DATE`, `PROJ_NAME`, `IMAGE_NAME`, etc.) that `enhancePhoto` reads. The old PascalCase interface (`Date_Flown`, `Layer_Name`) was a dead stub.
+
+**Scale filter bugs fixed:**
+
+- `scaleCategories` in the filter store was present in the query key but never translated to `minScale`/`maxScale` API params — scale chips were cosmetic no-ops.
+- Added `resolveScaleRange()` in `src/hooks/usePhotos.ts` that converts selected category keys to a unioned `{ minScale, maxScale }` range and appends them to both `usePhotos` and `usePhotosByBounds` API calls.
+- Realigned `SCALE_CATEGORIES` in `src/types/photo.ts` from 5 bands (with a wrong 1:50k breakpoint) to 4 bands matching the original app: `very-detailed` (≤ 1:5,000), `detailed` (1:5,001–15,000), `standard` (1:15,001–40,000), `overview` (> 1:40,000).
+- Rewrote `FilterPresets.tsx` to include scale constraints: `High Detail` now sets `scaleCategories: ['very-detailed','detailed']`; added `Standard Scale` and `Overview` scale presets.
+
+**PhotoGrid grouping restored:**
+
+- Added a `groupBy` toggle (decade / year / none) rendered as a `NativeSelect` next to the existing sort control.
+- Extracted `getGroupKey()` and `compareGroupKeys()` helpers so the grouping logic is testable and clear.
+- Fixed the sort dropdown labels (was `'Scale'` ambiguously, now `'Scale (large)'` / `'Scale (small)'`).
+- Fixed stale test assertions: `PhotoGrid.test.tsx` expected `'3 photos found'`; component renders `'3 photos'`. `FilterPanel.test.tsx` expected old scale label strings; updated to new labels.
+- All 209 unit tests pass after fixes.
 
 ---
 

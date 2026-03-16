@@ -1,5 +1,12 @@
 /// <reference types="astro/client" />
 
+declare module 'geotiff-tilesource' {
+  export function enableGeoTIFFTileSource(
+    OpenSeadragon: object,
+    options?: Record<string, unknown>,
+  ): void;
+}
+
 /**
  * Cloudflare Workers bindings type augmentation.
  * These types match the bindings declared in wrangler.jsonc.

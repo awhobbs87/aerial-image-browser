@@ -1,102 +1,85 @@
 # Deployment Setup Guide
 
-This repository has automated deployments configured for both Cloudflare Workers and Cloudflare Pages.
+This project deploys as a **Cloudflare Worker** using the Astro 6 Cloudflare adapter. There is no separate frontend build or Cloudflare Pages project.
 
-## Current Setup
+## Architecture
 
-### Cloudflare Workers (Backend)
+- **Runtime**: Cloudflare Workers (`workerd`)
+- **Adapter**: `@astrojs/cloudflare` v13 (Workers mode)
+- **Entry point**: `@astrojs/cloudflare/entrypoints/server` (set in `wrangler.jsonc`)
+- **Custom domain**: `aerial-explorer.awhq.uk` (zone: `awhq.uk`)
 
-- **Auto-deploy**: Enabled via Cloudflare Dashboard Git integration
-- **Trigger**: Pushes to `main` branch
-- **Status**: ✅ Configured and working
+## Auto-Deploy (GitHub Actions)
 
-### Cloudflare Pages (Frontend)
+The workflow at `.github/workflows/deploy-workers.yml` runs on every push to `main`:
 
-- **Auto-deploy**: GitHub Actions workflow
-- **Trigger**: Pushes to `main` branch (frontend changes only)
-- **Status**: ⚠️ Requires GitHub secrets setup
+1. Checkout repo
+2. Install Node 22
+3. `npm ci`
+4. `npx astro build`
+5. `npx wrangler deploy`
 
-## Required GitHub Secrets
+### Required GitHub Secret
 
-To enable Pages auto-deployment, add these secrets in your GitHub repository:
+Add one secret in **Settings → Secrets and variables → Actions**:
 
-1. Go to: `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
+| Name                   | Value                                                            |
+| ---------------------- | ---------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN` | A Cloudflare API token with **Workers Scripts: Edit** permission |
 
-2. Add the following secret:
-   - **Name**: `CLOUDFLARE_API_TOKEN`
-   - **Value**: Your Cloudflare API token with Pages edit permissions
+### Creating the API Token
 
-### Creating a Cloudflare API Token
+1. Go to [Cloudflare Dashboard → API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Use the **"Edit Cloudflare Workers"** template, or create a custom token with:
+   - **Account → Workers Scripts → Edit**
+   - **Account → Workers KV Storage → Edit** (for KV bindings)
+   - **Zone → Workers Routes → Edit** (for custom domain route)
 
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
-2. Click "Create Token"
-3. Use "Edit Cloudflare Workers" template or create custom token with:
-   - **Account** → **Cloudflare Pages** → **Edit**
-   - **Account** → **Workers Scripts** → **Edit** (if needed)
-4. Copy the token and add it to GitHub secrets
-
-## Cloudflare Pages Configuration
-
-**IMPORTANT**: To prevent build conflicts, configure your Cloudflare Pages project:
-
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Pages** → `tas-aerial-explorer`
-2. Go to **Settings** → **Builds & deployments**
-3. Set the following:
-   - **Build command**: Leave empty or set to `echo "Build handled by GitHub Actions"`
-   - **Build output directory**: `frontend/dist`
-   - **Root directory**: `/` (root of repo)
-   - **Environment variables**: None required
-
-**OR** disable auto-build entirely:
-
-- In Pages settings, disable "Auto-build from Git"
-- All deployments will come from GitHub Actions only
-
-## How It Works
-
-### Worker Auto-Deploy
-
-- Configured in Cloudflare Dashboard
-- Automatically deploys when you push to `main`
-- No additional setup needed
-
-### Pages Auto-Deploy
-
-- GitHub Actions workflow (`.github/workflows/deploy-pages.yml`)
-- Triggers on pushes to `main` that affect `frontend/` directory
-- Builds the frontend and deploys to Cloudflare Pages
-- Requires `CLOUDFLARE_API_TOKEN` secret
-- Uses `skipBuild: true` to prevent Cloudflare from rebuilding
-
-## Manual Deployment (Fallback)
-
-If auto-deploy fails, you can deploy manually:
+## Manual Deploy
 
 ```bash
-# Deploy Worker
 npm run deploy
-
-# Deploy Pages
-npm run build:frontend
-CLOUDFLARE_ACCOUNT_ID=7330403de4c2446fd5f3cc58548a9cd4 npx wrangler pages deploy frontend/dist --project-name=tas-aerial-explorer --functions-directory=frontend/functions
 ```
 
-## Testing Auto-Deploy
+This runs `astro build && wrangler deploy` in one step.
 
-To test the auto-deploy setup:
+## Local Development
 
-1. Make a small change (e.g., update a comment)
-2. Commit and push to `main`
-3. Check:
-   - **Worker**: Cloudflare Dashboard → Workers → Deployments
-   - **Pages**: GitHub Actions tab → Latest workflow run
+```bash
+npm run dev
+```
 
-## Troubleshooting
+Starts the Astro dev server backed by `workerd`. All Cloudflare bindings (KV, D1, R2, AI) work locally via the values in `.dev.vars` and `wrangler.jsonc`.
 
-### Build Errors in Cloudflare Pages
+Copy `.dev.vars.example` to `.dev.vars` and fill in any local secrets before running.
 
-If you see build errors like "Cannot find package '@vitejs/plugin-react'":
+## D1 Migrations
 
-- This means Cloudflare Pages is trying to auto-build
-- Solution: Configure Pages settings as described above, or disable auto-build
-- The GitHub Actions workflow handles all building and deployment
+```bash
+# Local
+npm run db:migrate:local
+
+# Production
+npm run db:migrate
+```
+
+## Wrangler Secrets
+
+Secrets that cannot go in `wrangler.jsonc` must be set via the CLI:
+
+```bash
+npx wrangler secret put TIFF_CONVERSION_SERVICE_URL
+```
+
+## Bindings Summary
+
+| Binding                       | Type             | Resource                                  |
+| ----------------------------- | ---------------- | ----------------------------------------- |
+| `PHOTO_CACHE`                 | KV               | Layer metadata cache, search history      |
+| `PHOTOS_DB`                   | D1               | `tas-browser` — users, favorites, history |
+| `TIFF_STORAGE`                | R2               | `tas-aerial-browser-tiffs`                |
+| `THUMBNAIL_STORAGE`           | R2               | `tas-aerial-browser-thumbnails`           |
+| `AI`                          | Workers AI       | Llama 3 8B Instruct                       |
+| `ANALYTICS`                   | Analytics Engine | `tas-aerial-browser` dataset              |
+| `API_BASE_URL`                | Var              | ArcGIS MapServer URL                      |
+| `TIFF_CONVERSION_SERVICE_URL` | Secret           | Set via `wrangler secret put`             |

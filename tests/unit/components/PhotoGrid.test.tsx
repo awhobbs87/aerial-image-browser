@@ -67,7 +67,7 @@ describe('PhotoGrid', () => {
       makePhoto({ objectId: 3, name: 'C' }),
     ];
     render(<PhotoGrid photos={photos} isLoading={false} total={3} />);
-    expect(screen.getByText('3 photos found')).toBeInTheDocument();
+    expect(screen.getByText('3 photos')).toBeInTheDocument();
   });
 
   it('renders PhotoCard components for each photo', () => {
