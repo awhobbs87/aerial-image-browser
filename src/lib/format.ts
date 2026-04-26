@@ -34,10 +34,14 @@ export function formatFileSize(bytes: number): string {
 /** Get layer type label from layer ID */
 export function getLayerTypeLabel(layerId: number): string {
   switch (layerId) {
-    case 0: return 'Aerial';
-    case 1: return 'Orthophoto';
-    case 2: return 'Digital';
-    default: return 'Unknown';
+    case 0:
+      return 'Aerial';
+    case 1:
+      return 'Orthophoto';
+    case 2:
+      return 'Digital';
+    default:
+      return 'Unknown';
   }
 }
 

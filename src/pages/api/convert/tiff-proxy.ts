@@ -6,10 +6,10 @@ export const GET: APIRoute = async ({ request }) => {
     const imageUrl = url.searchParams.get('url');
 
     if (!imageUrl) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing url parameter' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Missing url parameter' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Fetch the converted image from R2

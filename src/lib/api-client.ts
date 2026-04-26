@@ -31,7 +31,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
+function buildUrl(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>,
+): string {
   const url = new URL(path, window.location.origin);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -44,7 +47,10 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
 }
 
 export const api = {
-  async get<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
+  async get<T>(
+    path: string,
+    params?: Record<string, string | number | boolean | undefined>,
+  ): Promise<T> {
     const url = buildUrl(path, params);
     const response = await fetch(url);
     return handleResponse<T>(response);

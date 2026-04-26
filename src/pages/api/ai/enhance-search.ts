@@ -8,19 +8,18 @@ export const POST: APIRoute = async ({ request }) => {
     const { query, results } = body;
 
     if (!query || !results || !Array.isArray(results)) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing query or results' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Missing query or results' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const aiService = new AIService(env.AI);
     const enhanced = await aiService.enhanceSearchResults(query, results);
 
-    return new Response(
-      JSON.stringify({ success: true, data: enhanced }),
-      { headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, data: enhanced }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({

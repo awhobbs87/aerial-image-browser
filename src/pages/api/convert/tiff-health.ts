@@ -6,7 +6,11 @@ export const GET: APIRoute = async () => {
     const serviceUrl = env.TIFF_CONVERSION_SERVICE_URL;
     if (!serviceUrl) {
       return new Response(
-        JSON.stringify({ success: false, error: 'TIFF conversion service URL not configured', available: false }),
+        JSON.stringify({
+          success: false,
+          error: 'TIFF conversion service URL not configured',
+          available: false,
+        }),
         { status: 503, headers: { 'Content-Type': 'application/json' } },
       );
     }
@@ -18,14 +22,23 @@ export const GET: APIRoute = async () => {
 
     if (!response.ok) {
       return new Response(
-        JSON.stringify({ success: false, error: `Service returned ${response.status}`, available: false }),
+        JSON.stringify({
+          success: false,
+          error: `Service returned ${response.status}`,
+          available: false,
+        }),
         { status: 502, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
     const data = (await response.json()) as { status?: string; timestamp?: string };
     return new Response(
-      JSON.stringify({ success: true, status: data.status, timestamp: data.timestamp, available: true }),
+      JSON.stringify({
+        success: true,
+        status: data.status,
+        timestamp: data.timestamp,
+        available: true,
+      }),
       { headers: { 'Content-Type': 'application/json' } },
     );
   } catch (error) {

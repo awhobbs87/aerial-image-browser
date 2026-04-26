@@ -13,9 +13,10 @@ export function ThenNow({ photo }: ThenNowProps) {
 
   // Esri World Imagery tile at approximate center of photo footprint
   // This is a simple static export -- real implementation would use the actual photo bounds
-  const satelliteUrl = photo.rings && photo.rings[0]
-    ? `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${getBbox(photo.rings)}&size=800,600&format=jpg&f=image`
-    : null;
+  const satelliteUrl =
+    photo.rings && photo.rings[0]
+      ? `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${getBbox(photo.rings)}&size=800,600&format=jpg&f=image`
+      : null;
 
   return (
     <Stack gap="md">
@@ -65,7 +66,10 @@ export function ThenNow({ photo }: ThenNowProps) {
 
 function getBbox(rings: number[][][]): string {
   if (!rings[0] || rings[0].length === 0) return '0,0,0,0';
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const point of rings[0]) {
     if (point[0] < minX) minX = point[0];
     if (point[1] < minY) minY = point[1];

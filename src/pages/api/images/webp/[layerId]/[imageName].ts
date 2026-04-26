@@ -15,10 +15,10 @@ export const GET: APIRoute = async ({ params }) => {
   const imageName = params.imageName;
 
   if (isNaN(layerId) || !imageName) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Invalid parameters' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'Invalid parameters' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Remove .tif extension if provided
@@ -53,26 +53,24 @@ export const GET: APIRoute = async ({ params }) => {
       returnGeometry: 'false',
     });
 
-    const searchResponse = await fetch(
-      `${env.API_BASE_URL}/${layerId}/query?${queryParams}`,
-    );
+    const searchResponse = await fetch(`${env.API_BASE_URL}/${layerId}/query?${queryParams}`);
     const searchData = (await searchResponse.json()) as {
       features?: Array<{ attributes: { DOWNLOAD_LINK?: string } }>;
     };
 
     if (!searchData.features || searchData.features.length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Image not found in ArcGIS' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Image not found in ArcGIS' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const downloadLink = searchData.features[0].attributes.DOWNLOAD_LINK;
     if (!downloadLink) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'No download link available' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'No download link available' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const tiffResponse = await fetch(downloadLink);
@@ -134,10 +132,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
   const imageName = params.imageName;
 
   if (isNaN(layerId) || !imageName) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Invalid parameters' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'Invalid parameters' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Remove .tif extension if provided
@@ -147,10 +145,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
     const webpBuffer = await request.arrayBuffer();
 
     if (!webpBuffer || webpBuffer.byteLength === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Empty request body' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Empty request body' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const r2 = new R2Manager(env.TIFF_STORAGE, env.THUMBNAIL_STORAGE);

@@ -1,29 +1,5 @@
 import UTIF from 'utif2';
 
-declare global {
-  class OffscreenCanvas {
-    constructor(width: number, height: number);
-    getContext(contextId: '2d'): OffscreenCanvasRenderingContext2D | null;
-    convertToBlob(options?: { type?: string; quality?: number }): Promise<Blob>;
-  }
-
-  interface OffscreenCanvasRenderingContext2D {
-    putImageData(imageData: ImageData, dx: number, dy: number): void;
-    drawImage(
-      image: OffscreenCanvas,
-      sx: number, sy: number, sw: number, sh: number,
-      dx: number, dy: number, dw: number, dh: number,
-    ): void;
-  }
-
-  class ImageData {
-    constructor(data: Uint8ClampedArray, width: number, height: number);
-    readonly data: Uint8ClampedArray;
-    readonly width: number;
-    readonly height: number;
-  }
-}
-
 export interface ConversionOptions {
   quality?: number;
   maxWidth?: number;
@@ -79,8 +55,11 @@ export async function convertTiffToWebP(
     const originalWidth = firstImage.width;
     const originalHeight = firstImage.height;
 
-    const { width: targetWidth, height: targetHeight, scale } =
-      calculateOptimalDimensions(originalWidth, originalHeight, options);
+    const {
+      width: targetWidth,
+      height: targetHeight,
+      scale,
+    } = calculateOptimalDimensions(originalWidth, originalHeight, options);
 
     if (scale < 1.0) {
       console.log(
@@ -100,19 +79,21 @@ export async function convertTiffToWebP(
       const tempCtx = tempCanvas.getContext('2d');
       if (!tempCtx) throw new Error('Failed to get temporary canvas context');
 
-      const imageData = new ImageData(
-        new Uint8ClampedArray(rgba),
-        originalWidth,
-        originalHeight,
-      );
+      const imageData = new ImageData(new Uint8ClampedArray(rgba), originalWidth, originalHeight);
       tempCtx.putImageData(imageData, 0, 0);
-      ctx.drawImage(tempCanvas, 0, 0, originalWidth, originalHeight, 0, 0, targetWidth, targetHeight);
-    } else {
-      const imageData = new ImageData(
-        new Uint8ClampedArray(rgba),
+      ctx.drawImage(
+        tempCanvas,
+        0,
+        0,
         originalWidth,
         originalHeight,
+        0,
+        0,
+        targetWidth,
+        targetHeight,
       );
+    } else {
+      const imageData = new ImageData(new Uint8ClampedArray(rgba), originalWidth, originalHeight);
       ctx.putImageData(imageData, 0, 0);
     }
 

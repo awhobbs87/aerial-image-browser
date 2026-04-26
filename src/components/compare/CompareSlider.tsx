@@ -21,16 +21,22 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
     setPosition(pct);
   }, []);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    isDragging.current = true;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    handleMove(e.clientX);
-  }, [handleMove]);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      isDragging.current = true;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      handleMove(e.clientX);
+    },
+    [handleMove],
+  );
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current) return;
-    handleMove(e.clientX);
-  }, [handleMove]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current) return;
+      handleMove(e.clientX);
+    },
+    [handleMove],
+  );
 
   const handlePointerUp = useCallback(() => {
     isDragging.current = false;
@@ -67,10 +73,14 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
 
       {/* Labels */}
       <Paper className={classes.labelLeft} px="xs" py={2} radius="sm">
-        <Text size="xs" fw={600}>{photoA.name} ({photoA.year})</Text>
+        <Text size="xs" fw={600}>
+          {photoA.name} ({photoA.year})
+        </Text>
       </Paper>
       <Paper className={classes.labelRight} px="xs" py={2} radius="sm">
-        <Text size="xs" fw={600}>{photoB.name} ({photoB.year})</Text>
+        <Text size="xs" fw={600}>
+          {photoB.name} ({photoB.year})
+        </Text>
       </Paper>
     </div>
   );

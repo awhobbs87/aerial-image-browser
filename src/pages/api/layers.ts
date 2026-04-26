@@ -9,10 +9,9 @@ export const GET: APIRoute = async () => {
   // Check cache first
   const cached = await cache.get<unknown>('layers:all');
   if (cached) {
-    return new Response(
-      JSON.stringify({ success: true, data: cached, cached: true }),
-      { headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, data: cached, cached: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Fetch from ArcGIS
@@ -22,8 +21,7 @@ export const GET: APIRoute = async () => {
   // Cache for 24 hours
   await cache.set('layers:all', layers);
 
-  return new Response(
-    JSON.stringify({ success: true, data: layers, cached: false }),
-    { headers: { 'Content-Type': 'application/json' } },
-  );
+  return new Response(JSON.stringify({ success: true, data: layers, cached: false }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 };

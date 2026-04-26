@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import type { EnhancedPhoto } from "../types/photo";
+import { create } from 'zustand';
+import type { EnhancedPhoto } from '../types/photo';
 
-type CompareMode = "slider" | "side-by-side" | "then-now";
+type CompareMode = 'slider' | 'side-by-side' | 'then-now';
 
 interface ComparisonState {
   mode: CompareMode;
@@ -18,7 +18,7 @@ interface ComparisonState {
 }
 
 export const useComparisonStore = create<ComparisonState>((set) => ({
-  mode: "slider",
+  mode: 'slider',
   photoA: null,
   photoB: null,
   isSelecting: false,

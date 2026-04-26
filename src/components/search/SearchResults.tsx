@@ -1,6 +1,4 @@
-import { useSearchStore } from '@/stores/searchStore';
 import { useFilterStore } from '@/stores/filterStore';
-import { usePhotos } from '@/hooks/usePhotos';
 import { useMediaQuery } from '@mantine/hooks';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
 import { Stack, Text, Group, ActionIcon, Tooltip, Button } from '@mantine/core';
@@ -10,6 +8,12 @@ import { SCALE_CATEGORIES } from '@/types/photo';
 import type { EnhancedPhoto } from '@/types/photo';
 
 interface SearchResultsProps {
+  query: string;
+  hasLocation: boolean;
+  photos: EnhancedPhoto[];
+  total: number;
+  isLoading: boolean;
+  error: Error | null;
   onPhotoClick?: (photo: EnhancedPhoto) => void;
   onPhotoCompare?: (photo: EnhancedPhoto) => void;
 }
@@ -29,14 +33,19 @@ function shortLocation(raw: string): { primary: string; secondary: string } {
   };
 }
 
-export function SearchResults({ onPhotoClick, onPhotoCompare }: SearchResultsProps) {
-  const { lat, lon, query } = useSearchStore();
+export function SearchResults({
+  query,
+  hasLocation,
+  photos,
+  total,
+  isLoading,
+  error,
+  onPhotoClick,
+  onPhotoCompare,
+}: SearchResultsProps) {
   const { setFilterPanelOpen } = useUIStore();
   const { scaleCategories, toggleScaleCategory } = useFilterStore();
   const isDesktop = useMediaQuery('(min-width: 48em)');
-  const hasLocation = lat !== null && lon !== null;
-
-  const { data, isLoading, error } = usePhotos({ enabled: hasLocation });
 
   if (!hasLocation) {
     return (
@@ -64,8 +73,6 @@ export function SearchResults({ onPhotoClick, onPhotoCompare }: SearchResultsPro
     );
   }
 
-  const photos = (data?.photos ?? []) as unknown as EnhancedPhoto[];
-  const total = data?.count ?? 0;
   const loc = shortLocation(query);
 
   return (

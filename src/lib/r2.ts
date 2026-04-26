@@ -21,7 +21,11 @@ export class R2Manager {
     return await this.tiffBucket.get(key);
   }
 
-  async putTiff(imageName: string, layerId: number, data: ArrayBuffer | ReadableStream): Promise<void> {
+  async putTiff(
+    imageName: string,
+    layerId: number,
+    data: ArrayBuffer | ReadableStream,
+  ): Promise<void> {
     const key = `tiff/${layerId}/${imageName}.tif`;
     await this.tiffBucket.put(key, data, {
       httpMetadata: {
@@ -41,7 +45,11 @@ export class R2Manager {
     return await this.thumbnailBucket.get(key);
   }
 
-  async putThumbnail(imageName: string, layerId: number, data: ArrayBuffer | ReadableStream): Promise<void> {
+  async putThumbnail(
+    imageName: string,
+    layerId: number,
+    data: ArrayBuffer | ReadableStream,
+  ): Promise<void> {
     const key = `thumbnail/${layerId}/${imageName}.jpg`;
     await this.thumbnailBucket.put(key, data, {
       httpMetadata: {
@@ -61,7 +69,11 @@ export class R2Manager {
     return await this.tiffBucket.get(key);
   }
 
-  async putWebP(imageName: string, layerId: number, data: ArrayBuffer | ReadableStream): Promise<void> {
+  async putWebP(
+    imageName: string,
+    layerId: number,
+    data: ArrayBuffer | ReadableStream,
+  ): Promise<void> {
     const key = `webp/${layerId}/${imageName}.webp`;
     await this.tiffBucket.put(key, data, {
       httpMetadata: {

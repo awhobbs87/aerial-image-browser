@@ -4,35 +4,37 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 2px;
+  padding-bottom: 6px;
 }
 
 .count {
   font-size: 11px;
-  font-weight: 500;
-  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-2));
+  font-weight: 700;
+  color: light-dark(var(--mantine-color-gray-6), rgba(255, 255, 255, 0.72));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
 /* ---------- Sort dropdown ---------- */
 .sortSelect {
   font-size: 11px;
-  min-height: 28px;
-  height: 28px;
+  min-height: 32px;
+  height: 32px;
   padding-top: 0;
   padding-bottom: 0;
   padding-left: 26px;
   padding-right: 24px;
-  border: none;
-  background: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.06));
-  border-radius: 6px;
+  border: 1px solid light-dark(rgba(15, 23, 42, 0.06), rgba(255, 255, 255, 0.08));
+  background: light-dark(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.04));
+  border-radius: 999px;
   color: inherit;
   cursor: pointer;
 }
 
 .sortSelect:focus {
   outline: none;
-  box-shadow: 0 0 0 1px light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12));
+  box-shadow: 0 0 0 3px light-dark(rgba(42, 197, 106, 0.1), rgba(42, 197, 106, 0.12));
 }
 
 /* ---------- Decade groups ---------- */
@@ -44,19 +46,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 0;
+  padding: 8px 0;
   margin-bottom: 6px;
 }
 
 .decadeLabel {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
 }
 
 .decadeCount {
   font-size: 11px;
-  font-weight: 500;
-  color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
+  font-weight: 700;
+  color: var(--mantine-color-emerald-7);
 }

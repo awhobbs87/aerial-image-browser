@@ -5,7 +5,7 @@ import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
 
 vi.mock('@/lib/geocoding', () => ({
-  geocodeSearch: vi.fn().mockResolvedValue([]),
+  geocodeSearch: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
 }));
 
 vi.mock('@/components/search/SearchBar.module.css', () => ({

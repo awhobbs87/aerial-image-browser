@@ -26,8 +26,8 @@ export interface ParsedSearchQuery {
   location: string;
   startYear?: number;
   endYear?: number;
-  resolution?: "high" | "medium" | "low";
-  imageType?: "aerial" | "ortho" | "digital";
+  resolution?: 'high' | 'medium' | 'low';
+  imageType?: 'aerial' | 'ortho' | 'digital';
   additionalContext?: string;
 }
 
@@ -56,7 +56,7 @@ export class AIService {
     const prompt = `You are a location formatting assistant. Format these Nominatim geocoding results like Google Maps does.
 
 User searched for: "${query}"
-${queryLooksLikeAddress ? "NOTE: User is searching for a STREET ADDRESS - preserve the street number and name!" : ""}
+${queryLooksLikeAddress ? 'NOTE: User is searching for a STREET ADDRESS - preserve the street number and name!' : ''}
 
 Raw Nominatim results:
 ${JSON.stringify(
@@ -87,25 +87,25 @@ Respond with ONLY a JSON array:
 [{"index": 0, "formattedName": "...", "shortName": "...", "confidence": 0.95, "category": "Street Address"}]`;
 
     try {
-      const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {
+      const response = await this.ai.run('@cf/meta/llama-3-8b-instruct', {
         messages: [
           {
-            role: "system",
+            role: 'system',
             content:
-              "You are a helpful assistant that returns only valid JSON. Never include explanations or markdown formatting.",
+              'You are a helpful assistant that returns only valid JSON. Never include explanations or markdown formatting.',
           },
-          { role: "user", content: prompt },
+          { role: 'user', content: prompt },
         ],
         max_tokens: 1024,
         temperature: 0.1, // Low temperature for consistent output
       });
 
-      const text = (response as { response?: string }).response || "";
+      const text = (response as { response?: string }).response || '';
 
       // Extract JSON from response (handle potential markdown code blocks)
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
-        console.error("AI response did not contain valid JSON array:", text);
+        console.error('AI response did not contain valid JSON array:', text);
         return this.fallbackEnhancement(results);
       }
 
@@ -122,18 +122,15 @@ Respond with ONLY a JSON array:
         .filter((e) => e.index < results.length)
         .map((enhancement) => ({
           ...results[enhancement.index],
-          formattedName:
-            enhancement.formattedName || results[enhancement.index].displayName,
-          shortName:
-            enhancement.shortName ||
-            results[enhancement.index].displayName.split(",")[0],
+          formattedName: enhancement.formattedName || results[enhancement.index].displayName,
+          shortName: enhancement.shortName || results[enhancement.index].displayName.split(',')[0],
           confidence: enhancement.confidence || 0.5,
           category: enhancement.category || results[enhancement.index].type,
         }))
         .sort((a, b) => b.confidence - a.confidence)
         .slice(0, 5);
     } catch (error) {
-      console.error("AI enhancement failed:", error);
+      console.error('AI enhancement failed:', error);
       return this.fallbackEnhancement(results);
     }
   }
@@ -141,11 +138,9 @@ Respond with ONLY a JSON array:
   /**
    * Fallback enhancement when AI fails - formats like Google Maps
    */
-  private fallbackEnhancement(
-    results: GeocodingResult[],
-  ): EnhancedGeocodingResult[] {
+  private fallbackEnhancement(results: GeocodingResult[]): EnhancedGeocodingResult[] {
     return results.slice(0, 5).map((result) => {
-      const parts = result.displayName.split(", ");
+      const parts = result.displayName.split(', ');
 
       // Extract key components
       const shortName = parts[0];
@@ -155,11 +150,11 @@ Respond with ONLY a JSON array:
       const cleanParts = parts.filter((p) => {
         const lower = p.toLowerCase();
         return (
-          !lower.includes("australia") &&
-          lower !== "tasmania" &&
-          lower !== "tas" &&
-          !lower.includes("local government area") &&
-          !lower.includes("council")
+          !lower.includes('australia') &&
+          lower !== 'tasmania' &&
+          lower !== 'tas' &&
+          !lower.includes('local government area') &&
+          !lower.includes('council')
         );
       });
 
@@ -169,14 +164,12 @@ Respond with ONLY a JSON array:
       if (cleanParts.length >= 2) {
         // Check if first part looks like a street address
         const isAddress =
-          /^\d+/.test(shortName) ||
-          result.type === "house" ||
-          result.type === "building";
+          /^\d+/.test(shortName) || result.type === 'house' || result.type === 'building';
 
         if (isAddress && cleanParts.length >= 3) {
           // Address format: "123 Street, Suburb TAS Postcode"
           const postcode = parts.find((p) => /^\d{4}$/.test(p.trim()));
-          formattedName = `${cleanParts[0]}, ${cleanParts[1]} TAS${postcode ? ` ${postcode}` : ""}`;
+          formattedName = `${cleanParts[0]}, ${cleanParts[1]} TAS${postcode ? ` ${postcode}` : ''}`;
         } else {
           // Place format: "Place, City TAS"
           formattedName = `${cleanParts[0]}, ${cleanParts[1]} TAS`;
@@ -187,21 +180,21 @@ Respond with ONLY a JSON array:
 
       // Determine category from type
       const categoryMap: Record<string, string> = {
-        suburb: "Suburb",
-        city: "City",
-        town: "Town",
-        village: "Town",
-        house: "Street Address",
-        building: "Building",
-        residential: "Street Address",
-        street: "Street",
-        road: "Road",
-        peak: "Landmark",
-        water: "Landmark",
-        park: "Park",
-        administrative: "Region",
+        suburb: 'Suburb',
+        city: 'City',
+        town: 'Town',
+        village: 'Town',
+        house: 'Street Address',
+        building: 'Building',
+        residential: 'Street Address',
+        street: 'Street',
+        road: 'Road',
+        peak: 'Landmark',
+        water: 'Landmark',
+        park: 'Park',
+        administrative: 'Region',
       };
-      const category = categoryMap[result.type] || "Location";
+      const category = categoryMap[result.type] || 'Location';
 
       return {
         ...result,
@@ -261,25 +254,25 @@ CRITICAL RULES:
 - Default to Tasmania, Australia context`;
 
     try {
-      const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {
+      const response = await this.ai.run('@cf/meta/llama-3-8b-instruct', {
         messages: [
           {
-            role: "system",
+            role: 'system',
             content:
-              "You are a helpful assistant that returns only valid JSON. Never include explanations or markdown formatting.",
+              'You are a helpful assistant that returns only valid JSON. Never include explanations or markdown formatting.',
           },
-          { role: "user", content: prompt },
+          { role: 'user', content: prompt },
         ],
         max_tokens: 512,
         temperature: 0.1,
       });
 
-      const text = (response as { response?: string }).response || "";
+      const text = (response as { response?: string }).response || '';
 
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error("AI response did not contain valid JSON:", text);
+        console.error('AI response did not contain valid JSON:', text);
         return this.fallbackParseQuery(query);
       }
 
@@ -289,27 +282,23 @@ CRITICAL RULES:
       return {
         location: parsed.location || query,
         startYear:
-          parsed.startYear &&
-          parsed.startYear >= 1900 &&
-          parsed.startYear <= 2024
+          parsed.startYear && parsed.startYear >= 1900 && parsed.startYear <= 2024
             ? parsed.startYear
             : undefined,
         endYear:
           parsed.endYear && parsed.endYear >= 1900 && parsed.endYear <= 2024
             ? parsed.endYear
             : undefined,
-        resolution: ["high", "medium", "low"].includes(parsed.resolution || "")
+        resolution: ['high', 'medium', 'low'].includes(parsed.resolution || '')
           ? parsed.resolution
           : undefined,
-        imageType: ["aerial", "ortho", "digital"].includes(
-          parsed.imageType || "",
-        )
+        imageType: ['aerial', 'ortho', 'digital'].includes(parsed.imageType || '')
           ? parsed.imageType
           : undefined,
         additionalContext: parsed.additionalContext,
       };
     } catch (error) {
-      console.error("AI parsing failed:", error);
+      console.error('AI parsing failed:', error);
       // Fallback: extract location using regex heuristics
       return this.fallbackParseQuery(query);
     }
@@ -327,15 +316,13 @@ CRITICAL RULES:
     let endYear: number | undefined;
 
     // Match patterns like "1940-1960", "between 1940 and 1960", "from 1940 to 1960"
-    const yearRangeMatch = cleanedLocation.match(
-      /(?:between\s+)?(\d{4})\s*[-–—to]+\s*(\d{4})/i,
-    );
+    const yearRangeMatch = cleanedLocation.match(/(?:between\s+)?(\d{4})\s*[-–—to]+\s*(\d{4})/i);
     if (yearRangeMatch) {
       startYear = parseInt(yearRangeMatch[1]);
       endYear = parseInt(yearRangeMatch[2]);
       cleanedLocation = cleanedLocation
-        .replace(yearRangeMatch[0], "")
-        .replace(/\b(between|from|and)\b/gi, "");
+        .replace(yearRangeMatch[0], '')
+        .replace(/\b(between|from|and)\b/gi, '');
     }
 
     // Match "the 1930s", "in the 1950s"
@@ -344,44 +331,36 @@ CRITICAL RULES:
       const decade = parseInt(decadeMatch[1]);
       startYear = decade;
       endYear = decade + 9;
-      cleanedLocation = cleanedLocation.replace(decadeMatch[0], "");
+      cleanedLocation = cleanedLocation.replace(decadeMatch[0], '');
     }
 
     // Match "around 1950", "circa 1950"
-    const aroundYearMatch = cleanedLocation.match(
-      /(?:around|circa|about|near)\s+(\d{4})/i,
-    );
+    const aroundYearMatch = cleanedLocation.match(/(?:around|circa|about|near)\s+(\d{4})/i);
     if (aroundYearMatch && !startYear) {
       const year = parseInt(aroundYearMatch[1]);
       startYear = year - 5;
       endYear = year + 5;
-      cleanedLocation = cleanedLocation.replace(aroundYearMatch[0], "");
+      cleanedLocation = cleanedLocation.replace(aroundYearMatch[0], '');
     }
 
     // Detect resolution
-    let resolution: "high" | "medium" | "low" | undefined;
-    if (
-      /\b(high\s+res|high\s+resolution|detailed|clear)\b/i.test(
-        cleanedLocation,
-      )
-    ) {
-      resolution = "high";
-    } else if (
-      /\b(low\s+res|low\s+resolution|overview)\b/i.test(cleanedLocation)
-    ) {
-      resolution = "low";
+    let resolution: 'high' | 'medium' | 'low' | undefined;
+    if (/\b(high\s+res|high\s+resolution|detailed|clear)\b/i.test(cleanedLocation)) {
+      resolution = 'high';
+    } else if (/\b(low\s+res|low\s+resolution|overview)\b/i.test(cleanedLocation)) {
+      resolution = 'low';
     }
 
     // Strip common non-location words
     cleanedLocation = cleanedLocation
       .replace(
         /\b(find|show|show\s+me|get|search|search\s+for|look\s+for|looking\s+for|display|view|views|aerial|photos?|images?|pictures?|photography|historical|old|vintage|recent|modern|new|high\s+resolution|high\s+res|low\s+res|detailed|clear|overview|of|the|in|at|near|from|around|circa|about|between|and|to|with|for|me|my|some|any|what\s+did|look\s+like)\b/gi,
-        " ",
+        ' ',
       )
-      .replace(/\d{4}/g, "") // Remove standalone years
-      .replace(/\s+/g, " ")
-      .replace(/^[\s,]+|[\s,]+$/g, "") // Trim leading/trailing commas and spaces
-      .replace(/,\s*,/g, ",") // Clean double commas
+      .replace(/\d{4}/g, '') // Remove standalone years
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s,]+|[\s,]+$/g, '') // Trim leading/trailing commas and spaces
+      .replace(/,\s*,/g, ',') // Clean double commas
       .trim();
 
     // If we stripped everything, fall back to the original query
@@ -389,20 +368,16 @@ CRITICAL RULES:
       cleanedLocation = query
         .replace(
           /\b(find|show|show\s+me|get|search|aerial|photos?|images?|historical|old|of|the)\b/gi,
-          " ",
+          ' ',
         )
-        .replace(/\s+/g, " ")
+        .replace(/\s+/g, ' ')
         .trim();
     }
 
     return {
       location: cleanedLocation || query,
-      startYear:
-        startYear && startYear >= 1900 && startYear <= 2024
-          ? startYear
-          : undefined,
-      endYear:
-        endYear && endYear >= 1900 && endYear <= 2024 ? endYear : undefined,
+      startYear: startYear && startYear >= 1900 && startYear <= 2024 ? startYear : undefined,
+      endYear: endYear && endYear >= 1900 && endYear <= 2024 ? endYear : undefined,
       resolution,
     };
   }
@@ -423,20 +398,19 @@ CRITICAL RULES:
 
 Query: "${query}"
 Results found: ${resultCount}
-${dateRange?.earliest ? `Earliest photo: ${dateRange.earliest}` : ""}
-${dateRange?.latest ? `Latest photo: ${dateRange.latest}` : ""}
+${dateRange?.earliest ? `Earliest photo: ${dateRange.earliest}` : ''}
+${dateRange?.latest ? `Latest photo: ${dateRange.latest}` : ''}
 
 Keep it under 100 characters. Be informative but concise.`;
 
     try {
-      const response = await this.ai.run("@cf/meta/llama-3-8b-instruct", {
+      const response = await this.ai.run('@cf/meta/llama-3-8b-instruct', {
         messages: [
           {
-            role: "system",
-            content:
-              "You are a helpful assistant. Provide brief, informative responses.",
+            role: 'system',
+            content: 'You are a helpful assistant. Provide brief, informative responses.',
           },
-          { role: "user", content: prompt },
+          { role: 'user', content: prompt },
         ],
         max_tokens: 100,
         temperature: 0.3,
@@ -447,7 +421,7 @@ Keep it under 100 characters. Be informative but concise.`;
         `Found ${resultCount} aerial photos for ${query}`
       );
     } catch (error) {
-      console.error("AI summary failed:", error);
+      console.error('AI summary failed:', error);
       return `Found ${resultCount} aerial photos for ${query}`;
     }
   }

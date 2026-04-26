@@ -15,10 +15,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { url } = body;
 
     if (!url) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing url' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Missing url' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Forward request to conversion service
@@ -47,10 +47,10 @@ export const POST: APIRoute = async ({ request }) => {
         errorText = (await response.text()) || `HTTP ${response.status}`;
       }
       const statusCode = response.status >= 500 ? 502 : response.status >= 400 ? 400 : 500;
-      return new Response(
-        JSON.stringify({ success: false, error: errorText }),
-        { status: statusCode, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: errorText }), {
+        status: statusCode,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const data = (await response.json()) as {
@@ -98,7 +98,9 @@ export const POST: APIRoute = async ({ request }) => {
     const errorMessage = error instanceof Error ? error.message : 'Conversion failed';
     const isNetworkError =
       error instanceof Error &&
-      (error.message.includes('fetch') || error.message.includes('network') || error.name === 'TypeError');
+      (error.message.includes('fetch') ||
+        error.message.includes('network') ||
+        error.name === 'TypeError');
 
     return new Response(
       JSON.stringify({

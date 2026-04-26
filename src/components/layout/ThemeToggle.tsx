@@ -10,15 +10,25 @@ export function ThemeToggle() {
   };
 
   const icon =
-    colorScheme === 'light' ? <IconSun size={18} /> :
-    colorScheme === 'dark' ? <IconMoon size={18} /> :
-    <IconDeviceDesktop size={18} />;
+    colorScheme === 'light' ? (
+      <IconSun size={18} />
+    ) : colorScheme === 'dark' ? (
+      <IconMoon size={18} />
+    ) : (
+      <IconDeviceDesktop size={18} />
+    );
 
   const label = `Theme: ${colorScheme}`;
 
   return (
     <Tooltip label={label} withArrow>
-      <ActionIcon variant="subtle" size="lg" onClick={cycleColorScheme} color="gray" aria-label={label}>
+      <ActionIcon
+        variant="subtle"
+        size="lg"
+        onClick={cycleColorScheme}
+        color="gray"
+        aria-label={label}
+      >
         {icon}
       </ActionIcon>
     </Tooltip>

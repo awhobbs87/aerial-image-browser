@@ -8,12 +8,10 @@
   background: light-dark(rgba(255, 255, 255, 0.72), rgba(15, 23, 42, 0.78));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid
-    light-dark(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
   box-shadow:
     0 4px 24px light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.3)),
-    inset 0 1px 0
-      light-dark(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.05));
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.05));
 }
 
 .panelElevated {
@@ -22,16 +20,14 @@
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   box-shadow:
     0 8px 32px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.4)),
-    inset 0 1px 0
-      light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.08));
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.08));
 }
 
 .panelSubtle {
   background: light-dark(rgba(255, 255, 255, 0.5), rgba(15, 23, 42, 0.5));
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid
-    light-dark(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
 }
 
 /* Fallback for browsers without backdrop-filter */

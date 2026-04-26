@@ -9,7 +9,8 @@ interface TiffConverterProps {
 }
 
 export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterProps) {
-  const { status, result, error, progress, convertFromUrl, convertFromFile, reset } = useTiffConversion();
+  const { status, result, error, progress, convertFromUrl, convertFromFile, reset } =
+    useTiffConversion();
 
   const handleConvertUrl = async () => {
     if (!tiffUrl) return;
@@ -26,7 +27,9 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
   return (
     <Paper p="md" radius="md" withBorder>
       <Stack gap="sm">
-        <Text size="sm" fw={600}>TIFF Conversion</Text>
+        <Text size="sm" fw={600}>
+          TIFF Conversion
+        </Text>
 
         {status === 'idle' && (
           <Group gap="sm">
@@ -42,7 +45,12 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
             )}
             <FileButton onChange={handleFileUpload} accept=".tif,.tiff">
               {(props) => (
-                <Button {...props} leftSection={<IconUpload size={16} />} size="sm" variant="outline">
+                <Button
+                  {...props}
+                  leftSection={<IconUpload size={16} />}
+                  size="sm"
+                  variant="outline"
+                >
                   Upload TIFF
                 </Button>
               )}
@@ -52,21 +60,31 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
 
         {(status === 'checking' || status === 'converting') && (
           <Stack gap="xs">
-            <Text size="xs" c="dimmed">{progress}</Text>
+            <Text size="xs" c="dimmed">
+              {progress}
+            </Text>
             <Progress value={status === 'checking' ? 30 : 70} animated color="emerald" />
           </Stack>
         )}
 
         {status === 'complete' && result && (
-          <Alert icon={<IconCheck size={16} />} color="green" variant="light" title="Conversion complete">
+          <Alert
+            icon={<IconCheck size={16} />}
+            color="green"
+            variant="light"
+            title="Conversion complete"
+          >
             <Stack gap={4}>
               {result.originalSize && result.convertedSize && (
                 <Text size="xs">
-                  {formatFileSize(result.originalSize)} TIFF to {formatFileSize(result.convertedSize)} WebP
-                  ({Math.round((1 - result.convertedSize / result.originalSize) * 100)}% reduction)
+                  {formatFileSize(result.originalSize)} TIFF to{' '}
+                  {formatFileSize(result.convertedSize)} WebP (
+                  {Math.round((1 - result.convertedSize / result.originalSize) * 100)}% reduction)
                 </Text>
               )}
-              {result.duration && <Text size="xs">Completed in {(result.duration / 1000).toFixed(1)}s</Text>}
+              {result.duration && (
+                <Text size="xs">Completed in {(result.duration / 1000).toFixed(1)}s</Text>
+              )}
               <Group gap="sm" mt="xs">
                 <Button size="xs" component="a" href={result.url} target="_blank" variant="light">
                   View converted image
@@ -80,7 +98,12 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
         )}
 
         {status === 'error' && (
-          <Alert icon={<IconAlertTriangle size={16} />} color="red" variant="light" title="Conversion failed">
+          <Alert
+            icon={<IconAlertTriangle size={16} />}
+            color="red"
+            variant="light"
+            title="Conversion failed"
+          >
             <Stack gap="xs">
               <Text size="xs">{error}</Text>
               <Button size="xs" variant="light" color="red" onClick={reset}>

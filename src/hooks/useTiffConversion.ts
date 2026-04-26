@@ -40,94 +40,134 @@ export function useTiffConversion() {
     }
   }, []);
 
-  const convertFromUrl = useCallback(async (tiffUrl: string) => {
-    setState({ status: 'checking', result: null, error: null, progress: 'Checking conversion service...' });
+  const convertFromUrl = useCallback(
+    async (tiffUrl: string) => {
+      setState({
+        status: 'checking',
+        result: null,
+        error: null,
+        progress: 'Checking conversion service...',
+      });
 
-    try {
-      const health = await checkHealth();
-      if (!health.available) {
-        setState({ status: 'error', result: null, error: 'TIFF conversion service is unavailable', progress: '' });
+      try {
+        const health = await checkHealth();
+        if (!health.available) {
+          setState({
+            status: 'error',
+            result: null,
+            error: 'TIFF conversion service is unavailable',
+            progress: '',
+          });
+          return null;
+        }
+
+        setState((s) => ({ ...s, status: 'converting', progress: 'Converting TIFF to WebP...' }));
+
+        const response = await api.post<{
+          success: boolean;
+          url?: string;
+          format?: string;
+          originalSize?: number;
+          convertedSize?: number;
+          duration?: number;
+          error?: string;
+        }>('/api/convert/tiff-url', { url: tiffUrl });
+
+        if (response.success && response.url) {
+          const result: ConversionResult = {
+            url: response.url,
+            format: response.format || 'webp',
+            originalSize: response.originalSize,
+            convertedSize: response.convertedSize,
+            duration: response.duration,
+          };
+          setState({ status: 'complete', result, error: null, progress: '' });
+          return result;
+        } else {
+          setState({
+            status: 'error',
+            result: null,
+            error: response.error || 'Conversion failed',
+            progress: '',
+          });
+          return null;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Conversion failed';
+        setState({ status: 'error', result: null, error: message, progress: '' });
         return null;
       }
+    },
+    [checkHealth],
+  );
 
-      setState((s) => ({ ...s, status: 'converting', progress: 'Converting TIFF to WebP...' }));
+  const convertFromFile = useCallback(
+    async (file: File) => {
+      setState({
+        status: 'checking',
+        result: null,
+        error: null,
+        progress: 'Checking conversion service...',
+      });
 
-      const response = await api.post<{
-        success: boolean;
-        url?: string;
-        format?: string;
-        originalSize?: number;
-        convertedSize?: number;
-        duration?: number;
-        error?: string;
-      }>('/api/convert/tiff-url', { url: tiffUrl });
+      try {
+        const health = await checkHealth();
+        if (!health.available) {
+          setState({
+            status: 'error',
+            result: null,
+            error: 'TIFF conversion service is unavailable',
+            progress: '',
+          });
+          return null;
+        }
 
-      if (response.success && response.url) {
-        const result: ConversionResult = {
-          url: response.url,
-          format: response.format || 'webp',
-          originalSize: response.originalSize,
-          convertedSize: response.convertedSize,
-          duration: response.duration,
-        };
-        setState({ status: 'complete', result, error: null, progress: '' });
-        return result;
-      } else {
-        setState({ status: 'error', result: null, error: response.error || 'Conversion failed', progress: '' });
+        setState((s) => ({
+          ...s,
+          status: 'converting',
+          progress: `Uploading and converting ${file.name}...`,
+        }));
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.postFormData<{
+          success: boolean;
+          url?: string;
+          format?: string;
+          originalSize?: number;
+          convertedSize?: number;
+          duration?: number;
+          error?: string;
+        }>('/api/convert/tiff-upload', formData);
+
+        if (response.success && response.url) {
+          const result: ConversionResult = {
+            url: response.url,
+            format: response.format || 'webp',
+            originalSize: response.originalSize,
+            convertedSize: response.convertedSize,
+            duration: response.duration,
+          };
+          setState({ status: 'complete', result, error: null, progress: '' });
+          return result;
+        } else {
+          setState({
+            status: 'error',
+            result: null,
+            error: response.error || 'Conversion failed',
+            progress: '',
+          });
+          return null;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Conversion failed';
+        setState({ status: 'error', result: null, error: message, progress: '' });
         return null;
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed';
-      setState({ status: 'error', result: null, error: message, progress: '' });
-      return null;
-    }
-  }, [checkHealth]);
-
-  const convertFromFile = useCallback(async (file: File) => {
-    setState({ status: 'checking', result: null, error: null, progress: 'Checking conversion service...' });
-
-    try {
-      const health = await checkHealth();
-      if (!health.available) {
-        setState({ status: 'error', result: null, error: 'TIFF conversion service is unavailable', progress: '' });
-        return null;
-      }
-
-      setState((s) => ({ ...s, status: 'converting', progress: `Uploading and converting ${file.name}...` }));
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await api.postFormData<{
-        success: boolean;
-        url?: string;
-        format?: string;
-        originalSize?: number;
-        convertedSize?: number;
-        duration?: number;
-        error?: string;
-      }>('/api/convert/tiff-upload', formData);
-
-      if (response.success && response.url) {
-        const result: ConversionResult = {
-          url: response.url,
-          format: response.format || 'webp',
-          originalSize: response.originalSize,
-          convertedSize: response.convertedSize,
-          duration: response.duration,
-        };
-        setState({ status: 'complete', result, error: null, progress: '' });
-        return result;
-      } else {
-        setState({ status: 'error', result: null, error: response.error || 'Conversion failed', progress: '' });
-        return null;
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed';
-      setState({ status: 'error', result: null, error: message, progress: '' });
-      return null;
-    }
-  }, [checkHealth]);
+    },
+    [checkHealth],
+  );
 
   const reset = useCallback(() => {
     setState({ status: 'idle', result: null, error: null, progress: '' });

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ActionIcon, Text } from '@mantine/core';
 import { IconSearch, IconMap, IconHeart } from '@tabler/icons-react';
 import classes from './MobileNav.module.css';
 
@@ -33,12 +32,10 @@ export function MobileNav() {
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            <ActionIcon variant="transparent" color={isActive ? 'emerald' : 'gray'} size="lg">
+            <span className={classes.iconWrap}>
               <item.icon size={24} />
-            </ActionIcon>
-            <Text size="xs" c={isActive ? 'emerald' : 'dimmed'} fw={isActive ? 600 : 400}>
-              {item.label}
-            </Text>
+            </span>
+            <span className={classes.label}>{item.label}</span>
           </a>
         );
       })}

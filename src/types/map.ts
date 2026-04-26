@@ -35,11 +35,11 @@ export const TASMANIA_BOUNDS: MapBounds = {
 };
 
 /** Map base style options */
-export type MapStyle = "streets" | "satellite" | "terrain";
+export type MapStyle = 'streets' | 'satellite' | 'terrain';
 
 /** GeoJSON feature for photo footprints */
 export interface PhotoFootprintFeature {
-  type: "Feature";
+  type: 'Feature';
   properties: {
     objectId: number;
     layerId: number;
@@ -48,7 +48,7 @@ export interface PhotoFootprintFeature {
     scale: number;
   };
   geometry: {
-    type: "Polygon";
+    type: 'Polygon';
     coordinates: number[][][];
   };
 }

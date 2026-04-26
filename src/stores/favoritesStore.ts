@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { EnhancedPhoto } from "../types/photo";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { EnhancedPhoto } from '../types/photo';
 
 interface FavoritesState {
   favorites: EnhancedPhoto[];
@@ -17,16 +17,13 @@ export const useFavoritesStore = create<FavoritesState>()(
       favorites: [],
 
       isFavorite: (objectId, layerId) =>
-        get().favorites.some(
-          (f) => f.objectId === objectId && f.layerId === layerId,
-        ),
+        get().favorites.some((f) => f.objectId === objectId && f.layerId === layerId),
 
       addFavorite: (photo) =>
         set((state) => {
           if (
             state.favorites.some(
-              (f) =>
-                f.objectId === photo.objectId && f.layerId === photo.layerId,
+              (f) => f.objectId === photo.objectId && f.layerId === photo.layerId,
             )
           ) {
             return state;
@@ -52,6 +49,6 @@ export const useFavoritesStore = create<FavoritesState>()(
 
       clearFavorites: () => set({ favorites: [] }),
     }),
-    { name: "tas-aerial-favorites" },
+    { name: 'tas-aerial-favorites' },
   ),
 );

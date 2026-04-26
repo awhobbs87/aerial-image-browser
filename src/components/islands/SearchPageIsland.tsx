@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconAdjustments, IconSparkles } from '@tabler/icons-react';
@@ -6,8 +6,6 @@ import type maplibregl from 'maplibre-gl';
 import { MantineWrapper } from '../common/MantineWrapper';
 import { SearchBar } from '../search/SearchBar';
 import { SearchResults } from '../search/SearchResults';
-import { PhotoPreviewModal } from '../photos/PhotoPreviewModal';
-import { AISearchModal } from '../search/AISearchModal';
 import { MapView } from '../map/MapView';
 import { PhotoFootprints } from '../map/PhotoFootprints';
 import { FilterPanel } from '../filters/FilterPanel';
@@ -17,6 +15,15 @@ import { useUIStore } from '@/stores/uiStore';
 import { usePhotos } from '@/hooks/usePhotos';
 import type { EnhancedPhoto } from '@/types/photo';
 import type { MapBounds } from '@/types/map';
+
+const PhotoPreviewModal = lazy(async () => {
+  const module = await import('../photos/PhotoPreviewModal');
+  return { default: module.PhotoPreviewModal };
+});
+const AISearchModal = lazy(async () => {
+  const module = await import('../search/AISearchModal');
+  return { default: module.AISearchModal };
+});
 
 function SearchPageContent() {
   const { lat, lon, query, setLocation, setQuery } = useSearchStore();
@@ -29,8 +36,9 @@ function SearchPageContent() {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
 
   const hasLocation = lat !== null && lon !== null;
-  const { data } = usePhotos({ enabled: hasLocation });
-  const photos = useMemo(() => (data?.photos ?? []) as unknown as EnhancedPhoto[], [data]);
+  const { data, isLoading, error } = usePhotos({ enabled: hasLocation });
+  const photos = useMemo(() => data?.photos ?? [], [data]);
+  const total = data?.count ?? 0;
 
   // Read URL params on mount
   useEffect(() => {
@@ -137,21 +145,37 @@ function SearchPageContent() {
         )}
 
         <div className="search-panel-content">
-          <SearchResults onPhotoClick={handlePhotoClick} />
+          <SearchResults
+            query={query}
+            hasLocation={hasLocation}
+            photos={photos}
+            total={total}
+            isLoading={isLoading}
+            error={error instanceof Error ? error : null}
+            onPhotoClick={handlePhotoClick}
+          />
         </div>
       </div>
 
       {!isDesktop && <MobileFilterSheet />}
 
-      <PhotoPreviewModal
-        photo={photos[previewIndex] ?? null}
-        photos={photos}
-        opened={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        initialIndex={previewIndex}
-      />
+      <Suspense fallback={null}>
+        {previewOpen && (
+          <PhotoPreviewModal
+            photo={photos[previewIndex] ?? null}
+            photos={photos}
+            opened={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            initialIndex={previewIndex}
+          />
+        )}
+      </Suspense>
 
-      <AISearchModal opened={aiSearchOpen} onClose={() => setAiSearchOpen(false)} />
+      <Suspense fallback={null}>
+        {aiSearchOpen && (
+          <AISearchModal opened={aiSearchOpen} onClose={() => setAiSearchOpen(false)} />
+        )}
+      </Suspense>
     </div>
   );
 }

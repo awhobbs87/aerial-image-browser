@@ -78,20 +78,30 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
       max-height: 100vh;
       max-height: 100dvh;
       overflow-y: auto;
-      background: light-dark(rgba(255, 255, 255, 0.88), rgba(15, 23, 42, 0.88));
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      margin: 14px 0 14px 14px;
+      border-radius: 26px;
+      background: linear-gradient(
+        180deg,
+        light-dark(rgba(255, 255, 255, 0.92), rgba(15, 23, 42, 0.92)),
+        light-dark(rgba(255, 255, 255, 0.82), rgba(15, 23, 42, 0.84))
+      );
+      backdrop-filter: blur(24px) saturate(130%);
+      -webkit-backdrop-filter: blur(24px) saturate(130%);
       border-right: 1px solid light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08));
+      box-shadow:
+        0 24px 80px rgba(15, 23, 42, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
   }
 
   .search-panel-header {
-    padding: 10px 12px 6px;
+    padding: 14px 14px 8px;
     position: sticky;
     top: 0;
     /* Must be above photo card badges (z-index 3) and below dropdown (z-index 200) */
     z-index: 100;
     background: inherit;
+    border-bottom: 1px solid light-dark(rgba(15, 23, 42, 0.05), rgba(255, 255, 255, 0.08));
   }
 
   /* Row that holds search input + filter toggle button side-by-side */
@@ -114,7 +124,7 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
   }
 
   .search-panel-content {
-    padding: 0 12px 12px;
+    padding: 0 14px 16px;
     flex: 1;
     /* Isolate stacking context so photo card badges don't bleed above the header */
     isolation: isolate;

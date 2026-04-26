@@ -13,10 +13,10 @@ export const GET: APIRoute = async ({ params }) => {
   const imageName = params.imageName;
 
   if (isNaN(layerId) || !imageName) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Invalid parameters' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'Invalid parameters' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Remove .jpg extension if provided
@@ -44,26 +44,24 @@ export const GET: APIRoute = async ({ params }) => {
     returnGeometry: 'false',
   });
 
-  const searchResponse = await fetch(
-    `${env.API_BASE_URL}/${layerId}/query?${queryParams}`,
-  );
+  const searchResponse = await fetch(`${env.API_BASE_URL}/${layerId}/query?${queryParams}`);
   const searchData = (await searchResponse.json()) as {
     features?: Array<{ attributes: { THUMBNAIL_LINK?: string } }>;
   };
 
   if (!searchData.features || searchData.features.length === 0) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Image not found in ArcGIS' }),
-      { status: 404, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'Image not found in ArcGIS' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const thumbnailLink = searchData.features[0].attributes.THUMBNAIL_LINK;
   if (!thumbnailLink) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'No thumbnail link available' }),
-      { status: 404, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'No thumbnail link available' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Download the thumbnail from ArcGIS

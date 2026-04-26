@@ -21,10 +21,9 @@ export const POST: APIRoute = async ({ request }) => {
     const aiService = new AIService(env.AI);
     const summary = await aiService.generateSearchSummary(query, resultCount, dateRange);
 
-    return new Response(
-      JSON.stringify({ success: true, data: { summary } }),
-      { headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, data: { summary } }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({

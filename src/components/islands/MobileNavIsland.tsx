@@ -1,4 +1,3 @@
-import { MantineWrapper } from '../common/MantineWrapper';
 import { MobileNav } from '../layout/MobileNav';
 
 /**
@@ -7,9 +6,5 @@ import { MobileNav } from '../layout/MobileNav';
  * so Astro has nothing to SSR.
  */
 export function MobileNavIsland() {
-  return (
-    <MantineWrapper>
-      <MobileNav />
-    </MantineWrapper>
-  );
+  return <MobileNav />;
 }

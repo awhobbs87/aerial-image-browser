@@ -2,7 +2,7 @@
  * API request/response types for Astro endpoints.
  */
 
-import type { EnhancedPhoto, LayerInfo } from "./photo";
+import type { EnhancedPhoto, LayerInfo } from './photo';
 
 /** Standard API error response */
 export interface ApiError {
@@ -13,7 +13,7 @@ export interface ApiError {
 
 /** Health check response */
 export interface HealthResponse {
-  status: "ok" | "degraded";
+  status: 'ok' | 'degraded';
   timestamp: number;
   bindings: {
     kv: boolean;
@@ -106,7 +106,7 @@ export interface AISearchResponse {
 
 /** TIFF conversion status */
 export interface TiffConversionStatus {
-  status: "pending" | "processing" | "complete" | "error";
+  status: 'pending' | 'processing' | 'complete' | 'error';
   progress?: number;
   url?: string;
   error?: string;

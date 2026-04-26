@@ -8,19 +8,18 @@ export const POST: APIRoute = async ({ request }) => {
     const { query } = body;
 
     if (!query) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing query' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'Missing query' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const aiService = new AIService(env.AI);
     const parsed = await aiService.parseNaturalLanguageSearch(query);
 
-    return new Response(
-      JSON.stringify({ success: true, data: parsed }),
-      { headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, data: parsed }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({

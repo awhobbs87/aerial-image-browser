@@ -8,7 +8,7 @@ describe('ArcGISClient', () => {
 
   beforeEach(() => {
     client = new ArcGISClient(BASE_URL);
-    fetchSpy = vi.fn();
+    fetchSpy = vi.fn<typeof fetch>();
     vi.stubGlobal('fetch', fetchSpy);
   });
 

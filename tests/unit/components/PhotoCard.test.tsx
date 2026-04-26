@@ -78,7 +78,7 @@ describe('PhotoCard', () => {
   });
 
   it('fires onClick when card is clicked', () => {
-    const handleClick = vi.fn();
+    const handleClick = vi.fn<(photo: EnhancedPhoto) => void>();
     render(<PhotoCard photo={mockPhoto} onClick={handleClick} />);
     const card = screen.getByRole('article');
     fireEvent.click(card);

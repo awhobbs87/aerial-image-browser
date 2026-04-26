@@ -5,10 +5,10 @@ export const GET: APIRoute = async ({ request }) => {
   const identity = getAccessIdentity(request);
 
   if (!identity?.email) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Not authenticated' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: false, error: 'Not authenticated' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   return new Response(

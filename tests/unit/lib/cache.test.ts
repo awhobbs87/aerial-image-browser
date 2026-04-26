@@ -2,11 +2,11 @@ import { CacheManager } from '@/lib/cache';
 
 function createMockKV() {
   return {
-    get: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
-    list: vi.fn(),
-    getWithMetadata: vi.fn(),
+    get: vi.fn<KVNamespace['get']>(),
+    put: vi.fn<KVNamespace['put']>(),
+    delete: vi.fn<KVNamespace['delete']>(),
+    list: vi.fn<KVNamespace['list']>(),
+    getWithMetadata: vi.fn<KVNamespace['getWithMetadata']>(),
   } as unknown as KVNamespace;
 }
 

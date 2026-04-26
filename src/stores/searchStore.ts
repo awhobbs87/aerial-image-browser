@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { EnhancedPhoto } from "../types/photo";
+import { create } from 'zustand';
+import type { EnhancedPhoto } from '../types/photo';
 
 interface SearchState {
   query: string;
@@ -23,7 +23,7 @@ interface SearchState {
 }
 
 const initialState = {
-  query: "",
+  query: '',
   lat: null as number | null,
   lon: null as number | null,
   radius: 2000,
@@ -40,10 +40,8 @@ export const useSearchStore = create<SearchState>((set) => ({
   setQuery: (query) => set({ query }),
   setLocation: (lat, lon) => set({ lat, lon }),
   setRadius: (radius) => set({ radius }),
-  setPhotos: (photos, total, hasMore) =>
-    set({ photos, total, hasMore, error: null }),
-  appendPhotos: (photos) =>
-    set((state) => ({ photos: [...state.photos, ...photos] })),
+  setPhotos: (photos, total, hasMore) => set({ photos, total, hasMore, error: null }),
+  appendPhotos: (photos) => set((state) => ({ photos: [...state.photos, ...photos] })),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error, isLoading: false }),
   reset: () => set(initialState),

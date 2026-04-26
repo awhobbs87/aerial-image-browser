@@ -1,8 +1,8 @@
-import type { APIRoute } from "astro";
-import { env } from "cloudflare:workers";
-import { getAccessIdentity } from "@/lib/auth";
+import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
+import { getAccessIdentity } from '@/lib/auth';
 
-const JSON_HEADERS = { "Content-Type": "application/json" } as const;
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 
 const MAX_HISTORY_ITEMS = 20;
 const HISTORY_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days
@@ -21,10 +21,10 @@ function kvKey(email: string): string {
 }
 
 function unauthorizedResponse(): Response {
-  return new Response(
-    JSON.stringify({ success: false, error: "Unauthorized" }),
-    { status: 401, headers: JSON_HEADERS },
-  );
+  return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+    status: 401,
+    headers: JSON_HEADERS,
+  });
 }
 
 async function loadHistory(email: string): Promise<SearchHistoryItem[]> {
@@ -32,10 +32,7 @@ async function loadHistory(email: string): Promise<SearchHistoryItem[]> {
   return json ? (JSON.parse(json) as SearchHistoryItem[]) : [];
 }
 
-async function saveHistory(
-  email: string,
-  history: SearchHistoryItem[],
-): Promise<void> {
+async function saveHistory(email: string, history: SearchHistoryItem[]): Promise<void> {
   await env.PHOTO_CACHE.put(kvKey(email), JSON.stringify(history), {
     expirationTtl: HISTORY_TTL_SECONDS,
   });
@@ -50,13 +47,11 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const history = await loadHistory(identity.email);
 
-    return new Response(
-      JSON.stringify({ success: true, data: history }),
-      { headers: JSON_HEADERS },
-    );
+    return new Response(JSON.stringify({ success: true, data: history }), {
+      headers: JSON_HEADERS,
+    });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({
         success: false,
@@ -85,7 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Missing required fields: query, lat, lon",
+          error: 'Missing required fields: query, lat, lon',
         }),
         { status: 400, headers: JSON_HEADERS },
       );
@@ -113,13 +108,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     await saveHistory(identity.email, updated);
 
-    return new Response(
-      JSON.stringify({ success: true, data: newItem }),
-      { status: 201, headers: JSON_HEADERS },
-    );
+    return new Response(JSON.stringify({ success: true, data: newItem }), {
+      status: 201,
+      headers: JSON_HEADERS,
+    });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({
         success: false,

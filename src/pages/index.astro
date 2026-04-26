@@ -10,7 +10,10 @@ import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
   <NavigationIsland client:only="react" />
 
   <div class="landing">
+    <div class="landing-orb landing-orb-a"></div>
+    <div class="landing-orb landing-orb-b"></div>
     <div class="hero">
+      <div class="eyebrow">Tasmania archive explorer</div>
       <h1 class="title">Tasmania Aerial<br />Photo Explorer</h1>
       <p class="subtitle">
         Browse historical, orthophoto, and digital aerial imagery of Tasmania from the LIST ArcGIS
@@ -46,17 +49,69 @@ import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
     min-height: 100vh;
     min-height: 100dvh;
     padding: 1rem;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top left, rgba(42, 197, 106, 0.14), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(16, 153, 77, 0.12), transparent 26%);
   }
 
   /* Desktop sidebar offset handled by AppLayout --sidebar-width */
 
+  .landing-orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+
+  .landing-orb-a {
+    top: -4rem;
+    right: -5rem;
+    width: 16rem;
+    height: 16rem;
+    background: rgba(42, 197, 106, 0.22);
+  }
+
+  .landing-orb-b {
+    left: -5rem;
+    bottom: -6rem;
+    width: 18rem;
+    height: 18rem;
+    background: rgba(15, 23, 42, 0.12);
+  }
+
   .hero {
+    position: relative;
     text-align: center;
     max-width: 640px;
     width: 100%;
+    padding: 2rem 1.5rem;
+    border-radius: 28px;
+    background: light-dark(rgba(255, 255, 255, 0.72), rgba(15, 23, 42, 0.68));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+      0 24px 80px rgba(15, 23, 42, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: light-dark(rgba(42, 197, 106, 0.12), rgba(42, 197, 106, 0.18));
+    color: var(--mantine-color-emerald-7);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .title {
@@ -69,7 +124,7 @@ import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
 
   .subtitle {
     font-size: clamp(1rem, 2vw, 1.25rem);
-    opacity: 0.6;
+    opacity: 0.75;
     margin-bottom: 2rem;
     line-height: 1.6;
   }
@@ -98,7 +153,11 @@ import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    opacity: 0.5;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: light-dark(rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.05));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    opacity: 0.78;
     font-size: 0.875rem;
   }
 

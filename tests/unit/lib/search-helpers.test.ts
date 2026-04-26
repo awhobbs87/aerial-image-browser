@@ -7,7 +7,6 @@ import {
   jsonError,
   jsonSuccess,
 } from '@/lib/search-helpers';
-import type { SearchFilters } from '@/lib/search-helpers';
 import type { ArcGISFeature } from '@/lib/arcgis';
 import type { EnhancedPhoto } from '@/types/photo';
 

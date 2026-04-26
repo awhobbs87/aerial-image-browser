@@ -1,20 +1,20 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { ScaleCategory } from "../types/photo";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { ScaleCategory } from '../types/photo';
 
 interface FilterState {
   layers: number[];
   startYear: number | null;
   endYear: number | null;
   scaleCategories: ScaleCategory[];
-  sortBy: "date-asc" | "date-desc" | "scale-asc" | "scale-desc" | "name";
+  sortBy: 'date-asc' | 'date-desc' | 'scale-asc' | 'scale-desc' | 'name';
 
   setLayers: (layers: number[]) => void;
   toggleLayer: (layerId: number) => void;
   setDateRange: (startYear: number | null, endYear: number | null) => void;
   setScaleCategories: (categories: ScaleCategory[]) => void;
   toggleScaleCategory: (category: ScaleCategory) => void;
-  setSortBy: (sortBy: FilterState["sortBy"]) => void;
+  setSortBy: (sortBy: FilterState['sortBy']) => void;
   resetFilters: () => void;
 }
 
@@ -23,7 +23,7 @@ const initialFilters = {
   startYear: null as number | null,
   endYear: null as number | null,
   scaleCategories: [] as ScaleCategory[],
-  sortBy: "date-desc" as const,
+  sortBy: 'date-desc' as const,
 };
 
 export const useFilterStore = create<FilterState>()(
@@ -49,6 +49,6 @@ export const useFilterStore = create<FilterState>()(
       setSortBy: (sortBy) => set({ sortBy }),
       resetFilters: () => set(initialFilters),
     }),
-    { name: "tas-aerial-filters" },
+    { name: 'tas-aerial-filters' },
   ),
 );

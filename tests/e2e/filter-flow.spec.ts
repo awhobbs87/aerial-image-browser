@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test.describe('Filters', () => {
   test.fixme('filter panel toggles on search page', async ({ page }) => {

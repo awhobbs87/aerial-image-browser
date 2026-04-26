@@ -46,9 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
           m="md"
         >
           <Stack gap="sm">
-            <Text size="sm">
-              An unexpected error occurred. Please try again.
-            </Text>
+            <Text size="sm">An unexpected error occurred. Please try again.</Text>
             {this.state.error && (
               <Code block style={{ fontSize: '0.75rem', maxHeight: 120, overflow: 'auto' }}>
                 {this.state.error.message}

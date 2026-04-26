@@ -11,13 +11,10 @@ export function useMapSync() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [hasMoved, setHasMoved] = useState(false);
 
-  const handleBoundsChange = useCallback(
-    (newBounds: MapBounds) => {
-      setBounds(newBounds);
-      setHasMoved(true);
-    },
-    [],
-  );
+  const handleBoundsChange = useCallback((newBounds: MapBounds) => {
+    setBounds(newBounds);
+    setHasMoved(true);
+  }, []);
 
   const handleMapClick = useCallback(
     (clickLat: number, clickLon: number) => {

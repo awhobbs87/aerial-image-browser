@@ -30,7 +30,10 @@ export const GET: APIRoute = async ({ request }) => {
   const north = parseFloat(url.searchParams.get('north') || '');
 
   if (isNaN(west) || isNaN(south) || isNaN(east) || isNaN(north)) {
-    return jsonError('Invalid bounds. Provide numeric west, south, east, and north query parameters.', 400);
+    return jsonError(
+      'Invalid bounds. Provide numeric west, south, east, and north query parameters.',
+      400,
+    );
   }
 
   // Validate geographic ranges

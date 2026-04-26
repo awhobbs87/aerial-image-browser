@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ActionIcon, Stack, Tooltip, useMantineColorScheme } from '@mantine/core';
 import {
   IconSearch,
   IconMap,
@@ -23,14 +22,20 @@ const navItems: NavItem[] = [
 ];
 
 export function Navigation() {
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [active, setActive] = useState(
     typeof window !== 'undefined' ? window.location.pathname : '/',
   );
+  const [colorScheme, setColorScheme] = useState<'light' | 'dark' | 'auto'>(() => {
+    if (typeof document === 'undefined') return 'auto';
+    const current = document.documentElement.getAttribute('data-mantine-color-scheme') ?? 'auto';
+    return current === 'light' || current === 'dark' || current === 'auto' ? current : 'auto';
+  });
 
   const cycleColorScheme = () => {
     const next = colorScheme === 'light' ? 'dark' : colorScheme === 'dark' ? 'auto' : 'light';
     setColorScheme(next);
+    document.documentElement.setAttribute('data-mantine-color-scheme', next);
+    window.localStorage.setItem('mantine-color-scheme-value', next);
   };
 
   const colorSchemeIcon =
@@ -44,28 +49,33 @@ export function Navigation() {
 
   return (
     <nav className={classes.nav}>
-      <Stack gap="xs" align="center">
+      <div className={classes.group}>
         <div className={classes.logo}>TAS</div>
         {navItems.map((item) => (
-          <Tooltip key={item.href} label={item.label} position="right" withArrow>
-            <ActionIcon
-              component="a"
-              href={item.href}
-              variant={active === item.href ? 'filled' : 'subtle'}
-              color={active === item.href ? 'emerald' : 'gray'}
-              size="xl"
-              onClick={() => setActive(item.href)}
-            >
+          <a
+            key={item.href}
+            href={item.href}
+            className={`${classes.iconButton} ${active === item.href ? classes.active : ''}`}
+            onClick={() => setActive(item.href)}
+            aria-label={item.label}
+            aria-current={active === item.href ? 'page' : undefined}
+            title={item.label}
+          >
+            <span className={classes.iconWrap}>
               <item.icon size={22} />
-            </ActionIcon>
-          </Tooltip>
+            </span>
+          </a>
         ))}
-      </Stack>
-      <Tooltip label={`Theme: ${colorScheme}`} position="right" withArrow>
-        <ActionIcon variant="subtle" size="xl" onClick={cycleColorScheme} color="gray">
-          {colorSchemeIcon}
-        </ActionIcon>
-      </Tooltip>
+      </div>
+      <button
+        type="button"
+        className={classes.iconButton}
+        onClick={cycleColorScheme}
+        aria-label={`Theme: ${colorScheme}`}
+        title={`Theme: ${colorScheme}`}
+      >
+        <span className={classes.iconWrap}>{colorSchemeIcon}</span>
+      </button>
     </nav>
   );
 }

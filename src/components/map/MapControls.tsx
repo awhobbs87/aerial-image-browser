@@ -22,7 +22,12 @@ export function MapControls({
       <Stack gap={4}>
         {showSearchHere && (
           <Tooltip label="Search this area" position="left" withArrow>
-            <ActionIcon variant="white" size="lg" onClick={onSearchHere} aria-label="Search this area">
+            <ActionIcon
+              variant="white"
+              size="lg"
+              onClick={onSearchHere}
+              aria-label="Search this area"
+            >
               <IconSearch size={18} />
             </ActionIcon>
           </Tooltip>

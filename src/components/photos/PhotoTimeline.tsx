@@ -1,5 +1,17 @@
 import { useMemo, useRef } from 'react';
-import { Timeline, Text, Group, Stack, ScrollArea, Card, Image, Skeleton, Center, Badge, UnstyledButton } from '@mantine/core';
+import {
+  Timeline,
+  Text,
+  Group,
+  Stack,
+  ScrollArea,
+  Card,
+  Image,
+  Skeleton,
+  Center,
+  Badge,
+  UnstyledButton,
+} from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
 import type { EnhancedPhoto } from '@/types/photo';
 import classes from './PhotoTimeline.module.css';
@@ -64,15 +76,19 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
       {/* Year jump nav */}
       <ScrollArea type="never" className={classes.yearNav}>
         <Group gap={4} wrap="nowrap">
-          {years.filter(y => y > 0).map((year) => (
-            <UnstyledButton
-              key={year}
-              className={classes.yearChip}
-              onClick={() => scrollToYear(year)}
-            >
-              <Text size="xs" fw={600}>{year}</Text>
-            </UnstyledButton>
-          ))}
+          {years
+            .filter((y) => y > 0)
+            .map((year) => (
+              <UnstyledButton
+                key={year}
+                className={classes.yearChip}
+                onClick={() => scrollToYear(year)}
+              >
+                <Text size="xs" fw={600}>
+                  {year}
+                </Text>
+              </UnstyledButton>
+            ))}
         </Group>
       </ScrollArea>
 
@@ -86,7 +102,9 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
             title={
               <Group gap="xs">
                 <Text fw={700}>{year || 'Unknown'}</Text>
-                <Badge size="sm" variant="light">{yearPhotos.length}</Badge>
+                <Badge size="sm" variant="light">
+                  {yearPhotos.length}
+                </Badge>
               </Group>
             }
           >

@@ -39,8 +39,18 @@ interface CloudflareEnv {
   TIFF_CONVERSION_SERVICE_URL: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface Env extends CloudflareEnv {}
+
+declare namespace Cloudflare {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Env extends CloudflareEnv {}
+}
+
 declare module 'cloudflare:workers' {
   // Merge CloudflareEnv into CloudflareBindings so Astro endpoints can access bindings
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface CloudflareBindings extends CloudflareEnv {}
+
+  export const env: CloudflareEnv;
 }

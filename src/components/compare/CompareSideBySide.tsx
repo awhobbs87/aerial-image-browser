@@ -20,8 +20,12 @@ export function CompareSideBySide({ photoA, photoB }: CompareSideBySideProps) {
         />
         <Paper className={classes.label} px="sm" py="xs" radius="sm">
           <Stack gap={2}>
-            <Text size="sm" fw={600}>{photoA.name}</Text>
-            <Text size="xs" c="dimmed">{photoA.year} | Scale 1:{photoA.scale?.toLocaleString()}</Text>
+            <Text size="sm" fw={600}>
+              {photoA.name}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {photoA.year} | Scale 1:{photoA.scale?.toLocaleString()}
+            </Text>
           </Stack>
         </Paper>
       </div>
@@ -35,8 +39,12 @@ export function CompareSideBySide({ photoA, photoB }: CompareSideBySideProps) {
         />
         <Paper className={classes.label} px="sm" py="xs" radius="sm">
           <Stack gap={2}>
-            <Text size="sm" fw={600}>{photoB.name}</Text>
-            <Text size="xs" c="dimmed">{photoB.year} | Scale 1:{photoB.scale?.toLocaleString()}</Text>
+            <Text size="sm" fw={600}>
+              {photoB.name}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {photoB.year} | Scale 1:{photoB.scale?.toLocaleString()}
+            </Text>
           </Stack>
         </Paper>
       </div>
