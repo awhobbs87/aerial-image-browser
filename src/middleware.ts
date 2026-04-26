@@ -1,6 +1,12 @@
 import { defineMiddleware } from 'astro:middleware';
 
 export const onRequest = defineMiddleware(async ({ request, url }, next) => {
+  // Cloudflare Access / stale clients can occasionally bounce back to the
+  // literal wildcard route path. Normalize it to the app root.
+  if (url.pathname === '/*' || url.pathname === '/%2A') {
+    return Response.redirect(new URL('/', request.url), 307);
+  }
+
   // Only apply CORS to API routes
   if (!url.pathname.startsWith('/api/')) {
     return next();
