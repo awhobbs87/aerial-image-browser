@@ -1,6 +1,7 @@
 ---
 import { Font } from 'astro:assets';
 import { ColorSchemeScript } from '@mantine/core';
+import { ServiceWorkerRegistration } from '../components/common/ServiceWorkerRegistration';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import '../styles/global.css';
@@ -36,5 +37,6 @@ const {
     <main id="main-content">
       <slot />
     </main>
+    <ServiceWorkerRegistration client:only="react" />
   </body>
 </html>

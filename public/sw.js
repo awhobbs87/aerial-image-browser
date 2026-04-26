@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tas-aerial-v1';
+const CACHE_NAME = 'tas-aerial-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -34,6 +34,9 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
+  // Never intercept Cloudflare system/auth routes.
+  if (url.pathname.startsWith('/cdn-cgi/')) return;
+
   // API requests: network-first with timeout
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(event.request));
@@ -59,7 +62,8 @@ self.addEventListener('fetch', (event) => {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    const isSameOrigin = new URL(request.url).origin === self.location.origin;
+    if (response.ok && !response.redirected && isSameOrigin) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
@@ -82,7 +86,8 @@ async function cacheFirst(request, cacheName) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    const isSameOrigin = new URL(request.url).origin === self.location.origin;
+    if (response.ok && !response.redirected && isSameOrigin) {
       const cache = await caches.open(cacheName);
       cache.put(request, response.clone());
     }

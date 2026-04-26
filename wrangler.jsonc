@@ -2,6 +2,7 @@
   "name": "tas-aerial-browser",
   "account_id": "7330403de4c2446fd5f3cc58548a9cd4",
   "main": "@astrojs/cloudflare/entrypoints/server",
+  "workers_dev": true,
   "compatibility_date": "2025-05-21",
   "compatibility_flags": ["nodejs_compat"],
 
