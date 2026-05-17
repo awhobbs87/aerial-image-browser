@@ -1,95 +1,83 @@
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Card,
-  Group,
-  Image,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
 import { IconHeart, IconTrash } from '@tabler/icons-react';
 import { useFavoritesStore } from '../../stores/favoritesStore';
 import { formatDate, formatScale, getLayerTypeLabel } from '../../lib/format';
 import type { EnhancedPhoto } from '../../types/photo';
-import classes from './FavoritesContent.module.css';
 
 function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
 
   return (
-    <Card className={classes.card} padding="sm" radius="md" withBorder>
-      <Card.Section>
-        <a href={`/viewer/${photo.layerId}/${photo.name}`}>
-          <Image
-            src={photo.thumbnailUrl}
-            height={180}
-            alt={photo.name}
-            fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='180'%3E%3Crect fill='%23e9ecef' width='300' height='180'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23868e96' font-size='14'%3ENo preview%3C/text%3E%3C/svg%3E"
-          />
-        </a>
-      </Card.Section>
+    <article className="overflow-hidden rounded-xl border border-slate-950/10 bg-white/75 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5">
+      <a
+        href={`/viewer/${photo.layerId}/${photo.name}`}
+        className="block overflow-hidden bg-slate-950"
+      >
+        <img
+          src={photo.thumbnailUrl}
+          alt={photo.name}
+          loading="lazy"
+          className="h-44 w-full object-cover transition duration-200 hover:scale-[1.025]"
+        />
+      </a>
 
-      <Stack gap="xs" mt="sm">
-        <Group justify="space-between" wrap="nowrap">
-          <Text fw={600} size="sm" truncate>
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="min-w-0 truncate text-sm font-bold text-slate-950 dark:text-slate-50">
             {photo.name}
-          </Text>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            size="sm"
+          </h3>
+          <button
+            type="button"
             onClick={() => removeFavorite(photo.objectId, photo.layerId)}
             aria-label={`Remove ${photo.name} from favorites`}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
           >
             <IconTrash size={16} />
-          </ActionIcon>
-        </Group>
+          </button>
+        </div>
 
-        <Group gap="xs">
-          <Badge size="xs" variant="light" color="emerald">
+        <div className="flex flex-wrap gap-1">
+          <span className="rounded-full bg-sky-600/10 px-2 py-0.5 text-[11px] font-bold text-sky-700 dark:text-sky-300">
             {getLayerTypeLabel(photo.layerId)}
-          </Badge>
+          </span>
           {photo.year > 0 && (
-            <Badge size="xs" variant="light" color="gray">
+            <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
               {photo.year}
-            </Badge>
+            </span>
           )}
           {photo.scale > 0 && (
-            <Badge size="xs" variant="light" color="gray">
+            <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
               {formatScale(photo.scale)}
-            </Badge>
+            </span>
           )}
-        </Group>
+        </div>
 
         {photo.dateFlown > 0 && (
-          <Text size="xs" c="dimmed">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {formatDate(photo.dateFlown)}
-          </Text>
+          </p>
         )}
-      </Stack>
-    </Card>
+      </div>
+    </article>
   );
 }
 
 function EmptyState() {
   return (
-    <Stack align="center" gap="md" py="xl">
-      <IconHeart size={48} stroke={1.2} opacity={0.3} />
-      <Stack align="center" gap={4}>
-        <Title order={4} c="dimmed">
-          No favorites yet
-        </Title>
-        <Text size="sm" c="dimmed" maw={360} ta="center">
+    <div className="flex flex-col items-center gap-3 py-12 text-center">
+      <IconHeart size={48} stroke={1.2} className="text-slate-400" />
+      <div>
+        <h2 className="text-base font-bold text-slate-600 dark:text-slate-300">No favorites yet</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
           Heart a photo from search results to save it here for quick access.
-        </Text>
-      </Stack>
-      <Button component="a" href="/" variant="light" color="emerald" size="sm">
+        </p>
+      </div>
+      <a
+        href="/"
+        className="rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+      >
         Search photos
-      </Button>
-    </Stack>
+      </a>
+    </div>
   );
 }
 
@@ -97,32 +85,29 @@ export function FavoritesContent() {
   const favorites = useFavoritesStore((s) => s.favorites);
   const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
 
-  if (favorites.length === 0) {
-    return <EmptyState />;
-  }
+  if (favorites.length === 0) return <EmptyState />;
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Text size="sm" c="dimmed">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {favorites.length} {favorites.length === 1 ? 'photo' : 'photos'} saved
-        </Text>
-        <Button
-          variant="subtle"
-          color="red"
-          size="xs"
-          leftSection={<IconTrash size={14} />}
+        </p>
+        <button
+          type="button"
           onClick={clearFavorites}
+          className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold text-red-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
         >
+          <IconTrash size={14} />
           Clear all
-        </Button>
-      </Group>
+        </button>
+      </div>
 
-      <SimpleGrid cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4 }} spacing="md">
+      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {favorites.map((photo) => (
           <FavoriteCard key={`${photo.layerId}-${photo.objectId}`} photo={photo} />
         ))}
-      </SimpleGrid>
-    </Stack>
+      </div>
+    </div>
   );
 }

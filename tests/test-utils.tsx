@@ -1,14 +1,8 @@
-import { MantineProvider } from '@mantine/core';
 import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { theme } from '@/styles/theme';
 
 function AllProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <MantineProvider theme={theme} defaultColorScheme="light">
-      {children}
-    </MantineProvider>
-  );
+  return <>{children}</>;
 }
 
 export function renderWithProviders(

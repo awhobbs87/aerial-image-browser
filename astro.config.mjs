@@ -1,9 +1,13 @@
 import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   output: 'server',
+  devToolbar: {
+    enabled: false,
+  },
 
   adapter: cloudflare({
     imageService: 'compile',
@@ -23,6 +27,7 @@ export default defineConfig({
   ],
 
   vite: {
+    plugins: [tailwindcss()],
     build: {
       minify: false,
     },

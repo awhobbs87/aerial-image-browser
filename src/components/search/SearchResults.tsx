@@ -1,11 +1,12 @@
 import { useFilterStore } from '@/stores/filterStore';
-import { useMediaQuery } from '@mantine/hooks';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
-import { Stack, Text, Group, ActionIcon, Tooltip, Button } from '@mantine/core';
 import { IconAdjustments, IconMapPin } from '@tabler/icons-react';
 import { useUIStore } from '@/stores/uiStore';
 import { SCALE_CATEGORIES } from '@/types/photo';
 import type { EnhancedPhoto } from '@/types/photo';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { cn } from '@/lib/cn';
 
 interface SearchResultsProps {
   query: string;
@@ -49,76 +50,79 @@ export function SearchResults({
 
   if (!hasLocation) {
     return (
-      <Stack align="center" py="xl" gap="sm">
-        <Text size="lg" fw={600} c="dimmed">
+      <div className="flex flex-col items-center gap-2 py-10 text-center">
+        <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
           Search for a location
-        </Text>
-        <Text size="sm" c="dimmed" ta="center">
+        </p>
+        <p className="max-w-72 text-sm text-slate-500 dark:text-slate-400">
           Enter a place name or click on the map to find aerial photos.
-        </Text>
-      </Stack>
+        </p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Stack align="center" py="xl" gap="sm">
-        <Text size="lg" fw={600} c="red">
+      <div className="flex flex-col items-center gap-2 py-10 text-center">
+        <p className="text-base font-semibold text-red-600 dark:text-red-400">
           Error loading photos
-        </Text>
-        <Text size="sm" c="dimmed">
-          {error.message}
-        </Text>
-      </Stack>
+        </p>
+        <p className="max-w-80 text-sm text-slate-500 dark:text-slate-400">{error.message}</p>
+      </div>
     );
   }
 
   const loc = shortLocation(query);
 
   return (
-    <Stack gap="xs">
+    <div className="flex flex-col gap-3">
       {/* Location header */}
-      <Group justify="space-between" align="flex-start" wrap="nowrap" pt={4}>
-        <Group gap={6} wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
-          <IconMapPin size={14} style={{ flexShrink: 0, marginTop: 2, opacity: 0.4 }} />
-          <div style={{ minWidth: 0 }}>
-            <Text size="sm" fw={600} truncate="end" lh={1.3}>
+      <div className="flex items-start justify-between gap-3 pt-1">
+        <div className="flex min-w-0 items-start gap-1.5">
+          <IconMapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
+          <div className="min-w-0">
+            <p className="truncate text-sm leading-tight font-semibold text-slate-900 dark:text-slate-50">
               {loc.primary}
-            </Text>
+            </p>
             {loc.secondary && (
-              <Text size="xs" c="dimmed" truncate="end" lh={1.3}>
+              <p className="truncate text-xs leading-tight text-slate-500 dark:text-slate-400">
                 {loc.secondary}
-              </Text>
+              </p>
             )}
           </div>
-        </Group>
+        </div>
         {!isDesktop && (
-          <Tooltip label="Filters" withArrow>
-            <ActionIcon
-              variant="subtle"
-              size="sm"
+          <Tooltip label="Filters">
+            <button
+              type="button"
               onClick={() => setFilterPanelOpen(true)}
               aria-label="Open filters"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <IconAdjustments size={16} />
-            </ActionIcon>
+            </button>
           </Tooltip>
         )}
-      </Group>
+      </div>
 
       {/* Always-visible scale filter row */}
-      <Group gap={4}>
+      <div className="flex flex-wrap gap-1">
         {SCALE_CATEGORIES.map((cat) => (
-          <Button
+          <button
             key={cat.key}
-            size="compact-xs"
-            variant={scaleCategories.includes(cat.key) ? 'filled' : 'light'}
+            type="button"
             onClick={() => toggleScaleCategory(cat.key)}
+            className={cn(
+              'rounded-full px-2.5 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+              scaleCategories.includes(cat.key)
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'bg-slate-950/5 text-slate-600 hover:bg-slate-950/10 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12',
+            )}
           >
             {cat.label}
-          </Button>
+          </button>
         ))}
-      </Group>
+      </div>
 
       <PhotoGrid
         photos={photos}
@@ -127,6 +131,6 @@ export function SearchResults({
         onPhotoClick={onPhotoClick}
         onPhotoCompare={onPhotoCompare}
       />
-    </Stack>
+    </div>
   );
 }

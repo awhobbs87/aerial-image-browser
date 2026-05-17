@@ -1,21 +1,10 @@
 import { useState, useCallback } from 'react';
-import {
-  Modal,
-  TextInput,
-  Button,
-  Stack,
-  Text,
-  Group,
-  Paper,
-  Badge,
-  Loader,
-  Alert,
-} from '@mantine/core';
 import { IconSparkles, IconSearch, IconMapPin, IconCalendar, IconZoom } from '@tabler/icons-react';
 import { api } from '@/lib/api-client';
 import { geocodeSearch } from '@/lib/geocoding';
 import { useSearchStore } from '@/stores/searchStore';
 import { useFilterStore } from '@/stores/filterStore';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface AISearchModalProps {
   opened: boolean;
@@ -49,11 +38,10 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
     setParsed(null);
 
     try {
-      // Step 1: AI parses the natural language query
-      const parseResponse = await api.post<{
-        success: boolean;
-        data: ParsedQuery;
-      }>('/api/ai/parse-search', { query });
+      const parseResponse = await api.post<{ success: boolean; data: ParsedQuery }>(
+        '/api/ai/parse-search',
+        { query },
+      );
 
       if (!parseResponse.success) {
         setError('Failed to parse search query');
@@ -62,8 +50,6 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
 
       const parsedData = parseResponse.data;
       setParsed(parsedData);
-
-      // Step 2: Geocode the extracted location
       const geoResults = await geocodeSearch(parsedData.location, 3);
 
       if (geoResults.length === 0) {
@@ -73,7 +59,6 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
 
       const topResult = geoResults[0];
 
-      // Step 3: Apply parsed filters
       if (parsedData.startYear || parsedData.endYear) {
         setDateRange(parsedData.startYear ?? null, parsedData.endYear ?? null);
       }
@@ -84,15 +69,11 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
           ortho: [1],
           digital: [2],
         };
-        if (layerMap[parsedData.imageType]) {
-          setLayers(layerMap[parsedData.imageType]);
-        }
+        if (layerMap[parsedData.imageType]) setLayers(layerMap[parsedData.imageType]);
       }
 
-      // Step 4: Set search location
       setSearchQuery(parsedData.location);
       setLocation(topResult.lat, topResult.lon);
-
       onSearch?.(topResult.lat, topResult.lon, parsedData.location);
       onClose();
     } catch (err) {
@@ -102,122 +83,113 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
     }
   }, [query, setSearchQuery, setLocation, setDateRange, setLayers, onSearch, onClose]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isProcessing) {
-      handleSubmit();
-    }
-  };
-
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
+    <Dialog
+      open={opened}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
       title={
-        <Group gap="xs">
-          <IconSparkles size={20} />
-          <Text fw={600}>AI Search</Text>
-        </Group>
+        <span className="inline-flex items-center gap-2">
+          <IconSparkles size={18} />
+          AI Search
+        </span>
       }
-      size="lg"
-      centered
     >
-      <Stack gap="md">
-        <Text size="sm" c="dimmed">
+      <div className="flex flex-col gap-4 p-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Describe what you're looking for in natural language.
-        </Text>
+        </p>
 
-        <TextInput
-          value={query}
-          onChange={(e) => setQuery(e.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g., Find aerial photos of Sandy Bay from the 1950s"
-          size="md"
-          leftSection={<IconSearch size={18} />}
-          rightSection={
-            isProcessing ? (
-              <Loader size="xs" />
-            ) : (
-              <Text size="xs" c="dimmed" fw={500} style={{ fontSize: 10 }}>
-                Enter
-              </Text>
-            )
-          }
-          autoFocus
-        />
+        <div className="relative">
+          <IconSearch
+            size={18}
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isProcessing) handleSubmit();
+            }}
+            placeholder="e.g., Find aerial photos of Sandy Bay from the 1950s"
+            className="h-11 w-full rounded-2xl border border-slate-950/10 bg-white pr-14 pl-10 text-sm outline-none transition focus:border-sky-600/50 focus:ring-3 focus:ring-sky-600/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-50"
+            autoFocus
+          />
+          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+            {isProcessing ? '...' : 'Enter'}
+          </span>
+        </div>
 
-        <Group gap="xs">
-          <Text size="xs" c="dimmed">
-            Try:
-          </Text>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Try:</span>
           {[
             'Hobart CBD in the 1940s',
             'High resolution photos of Launceston',
             'Port Arthur historical aerials',
           ].map((suggestion) => (
-            <Badge
+            <button
               key={suggestion}
-              variant="light"
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setQuery(suggestion);
-              }}
+              type="button"
+              onClick={() => setQuery(suggestion)}
+              className="rounded-full bg-sky-600/10 px-2 py-1 text-xs font-bold text-sky-700 transition hover:bg-sky-600/15 dark:text-sky-300"
             >
               {suggestion}
-            </Badge>
+            </button>
           ))}
-        </Group>
+        </div>
 
         {parsed && (
-          <Paper p="sm" radius="md" withBorder>
-            <Stack gap="xs">
-              <Text size="xs" fw={600} c="dimmed">
-                Parsed query:
-              </Text>
-              <Group gap="md">
-                <Group gap={4}>
-                  <IconMapPin size={14} />
-                  <Text size="sm">{parsed.location}</Text>
-                </Group>
-                {(parsed.startYear || parsed.endYear) && (
-                  <Group gap={4}>
-                    <IconCalendar size={14} />
-                    <Text size="sm">
-                      {parsed.startYear || '...'} - {parsed.endYear || '...'}
-                    </Text>
-                  </Group>
-                )}
-                {parsed.imageType && (
-                  <Badge size="sm" variant="light">
-                    {parsed.imageType}
-                  </Badge>
-                )}
-                {parsed.resolution && (
-                  <Group gap={4}>
-                    <IconZoom size={14} />
-                    <Text size="sm">{parsed.resolution} res</Text>
-                  </Group>
-                )}
-              </Group>
-            </Stack>
-          </Paper>
+          <div className="rounded-2xl border border-slate-950/10 bg-slate-950/[0.02] p-3 dark:border-white/10 dark:bg-white/5">
+            <p className="mb-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              Parsed query
+            </p>
+            <div className="flex flex-wrap gap-3 text-sm text-slate-700 dark:text-slate-200">
+              <span className="inline-flex items-center gap-1.5">
+                <IconMapPin size={14} />
+                {parsed.location}
+              </span>
+              {(parsed.startYear || parsed.endYear) && (
+                <span className="inline-flex items-center gap-1.5">
+                  <IconCalendar size={14} />
+                  {parsed.startYear || '...'} - {parsed.endYear || '...'}
+                </span>
+              )}
+              {parsed.imageType && (
+                <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-xs font-bold dark:bg-white/10">
+                  {parsed.imageType}
+                </span>
+              )}
+              {parsed.resolution && (
+                <span className="inline-flex items-center gap-1.5">
+                  <IconZoom size={14} />
+                  {parsed.resolution} res
+                </span>
+              )}
+            </div>
+          </div>
         )}
 
         {error && (
-          <Alert color="red" variant="light" title="Error">
+          <div className="rounded-xl border border-red-500/20 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-200">
             {error}
-          </Alert>
+          </div>
         )}
 
-        <Button
+        <button
+          type="button"
           onClick={handleSubmit}
-          loading={isProcessing}
-          leftSection={<IconSparkles size={16} />}
-          disabled={!query.trim()}
-          fullWidth
+          disabled={!query.trim() || isProcessing}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
         >
+          {isProcessing ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <IconSparkles size={16} />
+          )}
           Search with AI
-        </Button>
-      </Stack>
-    </Modal>
+        </button>
+      </div>
+    </Dialog>
   );
 }

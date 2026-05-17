@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Modal, ActionIcon, Text, Loader, Tooltip, Group } from '@mantine/core';
 import {
-  IconX,
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
@@ -12,7 +10,8 @@ import {
 import { useFavoritesStore } from '@/stores/favoritesStore';
 import { formatScale } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
-import classes from './PhotoPreviewModal.module.css';
+import { Dialog } from '@/components/ui/Dialog';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface PhotoPreviewModalProps {
   photo: EnhancedPhoto | null;
@@ -22,7 +21,6 @@ interface PhotoPreviewModalProps {
   initialIndex?: number;
 }
 
-/** Extract short project label from layerName */
 function shortProject(layerName: string): string {
   if (!layerName) return '';
   const parts = layerName.split(/\s*[-]\s*/);
@@ -30,7 +28,6 @@ function shortProject(layerName: string): string {
   return layerName.trim();
 }
 
-/** Map IMAGE_TYPE to friendly label */
 function filmLabel(type: string): string | null {
   if (!type) return null;
   const t = type.toLowerCase();
@@ -50,49 +47,39 @@ export function PhotoPreviewModal({
 }: PhotoPreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
-
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
-  const isGallery = photos && photos.length > 1;
-  const photoList = isGallery ? photos : photo ? [photo] : [];
+  const isGallery = Boolean(photos && photos.length > 1);
+  const photoList = isGallery && photos ? photos : photo ? [photo] : [];
   const current = photoList[currentIndex] || photo;
 
   const isFavorite = useFavoritesStore((s) =>
     current ? s.isFavorite(current.objectId, current.layerId) : false,
   );
 
-  const thumbnailUrl = current
-    ? current.thumbnailUrl || `/api/images/thumbnail/${current.layerId}/${current.name}`
-    : '';
-
-  // Reset index when modal opens or initialIndex changes
   useEffect(() => {
-    if (opened) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!opened) return undefined;
+    const id = window.requestAnimationFrame(() => {
       setCurrentIndex(initialIndex);
       setImageLoaded(false);
-    }
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [opened, initialIndex]);
-
-  // Reset image loaded when navigating within gallery
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setImageLoaded(false);
-  }, [currentIndex]);
 
   const handlePrev = useCallback(() => {
     if (isGallery && currentIndex > 0) {
+      setImageLoaded(false);
       setCurrentIndex((i) => i - 1);
     }
   }, [currentIndex, isGallery]);
 
   const handleNext = useCallback(() => {
     if (isGallery && currentIndex < photoList.length - 1) {
+      setImageLoaded(false);
       setCurrentIndex((i) => i + 1);
     }
   }, [currentIndex, isGallery, photoList.length]);
 
-  // Keyboard navigation
   useEffect(() => {
     if (!opened) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -106,6 +93,8 @@ export function PhotoPreviewModal({
 
   if (!current) return null;
 
+  const thumbnailUrl =
+    current.thumbnailUrl || `/api/images/thumbnail/${current.layerId}/${current.name}`;
   const scaleStr = formatScale(current.scale);
   const project = shortProject(current.layerName);
   const typeLabel = filmLabel(current.type);
@@ -120,148 +109,118 @@ export function PhotoPreviewModal({
     window.location.href = `/viewer/${current.layerId}/${current.name}${qs ? `?${qs}` : ''}`;
   };
 
-  const handleFavorite = () => {
-    toggleFavorite(current);
-  };
-
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      size="90vw"
-      centered
-      withCloseButton={false}
-      padding={0}
-      radius="lg"
-      classNames={{ content: classes.modal, body: classes.body }}
-      overlayProps={{ backgroundOpacity: 0.7, blur: 4 }}
-      styles={{ content: { maxWidth: 1100, maxHeight: '90vh' } }}
+    <Dialog
+      open={opened}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      className="w-[min(94vw,68rem)] overflow-hidden p-0"
     >
-      {/* Image area */}
-      <div className={classes.imageArea}>
-        {!imageLoaded && (
-          <div className={classes.loader}>
-            <Loader size="md" color="gray" />
-          </div>
-        )}
-        <img
-          className={classes.image}
-          src={thumbnailUrl}
-          alt={current.name}
-          onLoad={() => setImageLoaded(true)}
-          style={{ opacity: imageLoaded ? 1 : 0 }}
-        />
+      <div className="relative bg-slate-950">
+        <div className="relative flex h-[min(68vh,42rem)] items-center justify-center">
+          {!imageLoaded && (
+            <span className="absolute h-8 w-8 animate-spin rounded-full border-3 border-white/20 border-t-white" />
+          )}
+          <img
+            className="max-h-full max-w-full object-contain transition-opacity duration-150"
+            src={thumbnailUrl}
+            alt={current.name}
+            onLoad={() => setImageLoaded(true)}
+            style={{ opacity: imageLoaded ? 1 : 0 }}
+          />
 
-        {/* Close button */}
-        <ActionIcon
-          className={classes.closeBtn}
-          variant="subtle"
-          color="gray"
-          size="sm"
-          onClick={onClose}
-          aria-label="Close preview"
-        >
-          <IconX size={18} />
-        </ActionIcon>
+          {isGallery && (
+            <div className="absolute top-3 left-3 rounded-full bg-black/50 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+              {currentIndex + 1} / {photoList.length}
+            </div>
+          )}
 
-        {/* Gallery counter */}
-        {isGallery && (
-          <div className={classes.counter}>
-            {currentIndex + 1} / {photoList.length}
-          </div>
-        )}
-
-        {/* Gallery nav arrows */}
-        {isGallery && (
-          <>
-            <button
-              className={`${classes.navBtn} ${classes.navPrev}`}
-              onClick={handlePrev}
-              disabled={currentIndex === 0}
-              aria-label="Previous photo"
-              type="button"
-            >
-              <IconChevronLeft size={24} />
-            </button>
-            <button
-              className={`${classes.navBtn} ${classes.navNext}`}
-              onClick={handleNext}
-              disabled={currentIndex === photoList.length - 1}
-              aria-label="Next photo"
-              type="button"
-            >
-              <IconChevronRight size={24} />
-            </button>
-          </>
-        )}
+          {isGallery && (
+            <>
+              <button
+                className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-30"
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
+                aria-label="Previous photo"
+                type="button"
+              >
+                <IconChevronLeft size={24} />
+              </button>
+              <button
+                className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-30"
+                onClick={handleNext}
+                disabled={currentIndex === photoList.length - 1}
+                aria-label="Next photo"
+                type="button"
+              >
+                <IconChevronRight size={24} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Metadata bar -- year as title, project as subtitle, type badge, scale + ref */}
-      <div className={classes.info}>
-        <div className={classes.infoLeft}>
-          <div className={classes.titleRow}>
-            <Text size="lg" fw={700} className={classes.yearTitle}>
+      <div className="flex items-center justify-between gap-3 border-t border-slate-950/10 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-950">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-lg font-bold text-slate-950 dark:text-slate-50">
               {current.year > 0 ? current.year : 'Undated'}
-            </Text>
-            {typeLabel && <span className={classes.typePill}>{typeLabel}</span>}
+            </p>
+            {typeLabel && (
+              <span className="rounded-full bg-sky-600/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+                {typeLabel}
+              </span>
+            )}
           </div>
           {project && (
-            <Text size="xs" c="dimmed" className={classes.projectText}>
-              {project}
-            </Text>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{project}</p>
           )}
-          <div className={classes.detailRow}>
-            {scaleStr && (
-              <Text size="xs" c="dimmed">
-                {scaleStr}
-              </Text>
-            )}
-            <Text size="xs" c="dimmed" className={classes.refText}>
-              Ref: {current.name}
-            </Text>
+          <div className="mt-1 flex min-w-0 gap-2 text-xs text-slate-500 dark:text-slate-400">
+            {scaleStr && <span>{scaleStr}</span>}
+            <span className="truncate">Ref: {current.name}</span>
           </div>
         </div>
-        <Group gap={4} className={classes.actions}>
-          <Tooltip label={isFavorite ? 'Remove favorite' : 'Add favorite'} withArrow>
-            <ActionIcon
-              variant="subtle"
-              color={isFavorite ? 'red' : 'gray'}
-              size="md"
-              onClick={handleFavorite}
+        <div className="flex shrink-0 items-center gap-1">
+          <Tooltip label={isFavorite ? 'Remove favorite' : 'Add favorite'}>
+            <button
+              type="button"
+              onClick={() => toggleFavorite(current)}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
-              {isFavorite ? <IconHeartFilled size={18} /> : <IconHeart size={18} />}
-            </ActionIcon>
+              {isFavorite ? (
+                <IconHeartFilled size={18} className="text-rose-500" />
+              ) : (
+                <IconHeart size={18} />
+              )}
+            </button>
           </Tooltip>
           {current.tiffUrl && (
-            <Tooltip label="Download TIFF" withArrow>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="md"
-                component="a"
+            <Tooltip label="Download TIFF">
+              <a
                 href={current.tiffUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Download TIFF"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <IconDownload size={18} />
-              </ActionIcon>
+              </a>
             </Tooltip>
           )}
-          <Tooltip label="Full viewer" withArrow>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="md"
+          <Tooltip label="Full viewer">
+            <button
+              type="button"
               onClick={handleViewFull}
               aria-label="Open full viewer"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <IconMaximize size={18} />
-            </ActionIcon>
+            </button>
           </Tooltip>
-        </Group>
+        </div>
       </div>
-    </Modal>
+    </Dialog>
   );
 }

@@ -1,6 +1,7 @@
-name: Build Check
+name: CI
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -10,9 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  oxlint-oxfmt:
+    name: Oxlint & Oxfmt
     runs-on: ubuntu-latest
-    name: Build & Test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,19 +27,91 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Check formatting with oxfmt
+        run: npm run format:ox:check
 
-      # Deployment is handled by Cloudflare Pages build system (auto-deploys on push).
-      # To re-enable wrangler deploy, create a CLOUDFLARE_API_TOKEN secret with
-      # Workers Scripts permissions and uncomment the steps below.
-      # - name: Build
-      #   env:
-      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
-      #   run: npx astro build
-      # - name: Deploy
-      #   env:
-      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     CLOUDFLARE_ACCOUNT_ID: 7330403de4c2446fd5f3cc58548a9cd4
-      #   run: npx wrangler deploy
+      - name: Lint with oxlint
+        run: npm run lint:ox
+
+  typecheck-and-unit:
+    name: Typecheck & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run type-check
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  theme-regression:
+    name: Theme Regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run theme unit tests
+        run: npm run test:unit -- tests/unit/lib/theme.test.ts
+
+      - name: Run theme browser regressions
+        run: npx playwright test tests/e2e/theme.spec.ts
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-theme-report
+          path: playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs:
+      - oxlint-oxfmt
+      - typecheck-and-unit
+      - theme-regression
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Worker
+        run: npm run build
+
+      # Deployment is handled by Cloudflare's connected build system.
+      # To re-enable direct wrangler deploy from GitHub Actions, add
+      # CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets and run:
+      # npx wrangler deploy

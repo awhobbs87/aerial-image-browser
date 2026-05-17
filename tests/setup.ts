@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-// Mantine requires window.matchMedia for color scheme detection
+// Theme and responsive components use window.matchMedia.
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
@@ -15,7 +15,7 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
-// Mantine SegmentedControl and other components require ResizeObserver
+// Browser-driven components require ResizeObserver in tests.
 class ResizeObserverMock {
   observe() {}
   unobserve() {}

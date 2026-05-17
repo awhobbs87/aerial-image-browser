@@ -1,6 +1,6 @@
-import { Group, Button } from '@mantine/core';
 import { useFilterStore } from '@/stores/filterStore';
 import type { ScaleCategory } from '@/types/photo';
+import { cn } from '@/lib/cn';
 
 interface Preset {
   label: string;
@@ -71,17 +71,22 @@ export function FilterPresets() {
     arraysEqual(preset.scaleCategories, scaleCategories);
 
   return (
-    <Group gap="xs">
+    <div className="flex flex-wrap gap-1.5">
       {PRESETS.map((preset) => (
-        <Button
+        <button
           key={preset.label}
-          size="xs"
-          variant={isActive(preset) ? 'filled' : 'light'}
+          type="button"
           onClick={() => applyPreset(preset)}
+          className={cn(
+            'rounded-full px-2.5 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+            isActive(preset)
+              ? 'bg-sky-600 text-white shadow-sm'
+              : 'bg-slate-950/5 text-slate-600 hover:bg-slate-950/10 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12',
+          )}
         >
           {preset.label}
-        </Button>
+        </button>
       ))}
-    </Group>
+    </div>
   );
 }

@@ -17,7 +17,7 @@ export function PinDrop({ map, lat, lon }: PinDropProps) {
     markerRef.current = null;
 
     if (lat !== null && lon !== null) {
-      markerRef.current = new maplibregl.Marker({ color: '#2ac56a', scale: 0.85 })
+      markerRef.current = new maplibregl.Marker({ color: '#0ea5e9', scale: 0.85 })
         .setLngLat([lon, lat])
         .addTo(map);
     }

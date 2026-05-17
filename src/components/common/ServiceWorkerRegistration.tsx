@@ -1,33 +1,14 @@
 import { useEffect } from 'react';
-import { notifications } from '@mantine/notifications';
 
+/** Registers the service worker in production without surfacing update UI. */
 export function ServiceWorkerRegistration() {
   useEffect(() => {
+    if (!import.meta.env.PROD) return;
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        // Check for updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-              notifications.show({
-                title: 'App updated',
-                message: 'A new version is available. Refresh to update.',
-                color: 'emerald',
-                autoClose: false,
-              });
-            }
-          });
-        });
-      })
-      .catch((err) => {
-        console.warn('Service worker registration failed:', err);
-      });
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
   }, []);
 
   return null;

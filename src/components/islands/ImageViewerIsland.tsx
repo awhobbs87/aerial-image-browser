@@ -1,4 +1,4 @@
-import { MantineWrapper } from '../common/MantineWrapper';
+import { AppProviders } from '../common/AppProviders';
 import { ImageViewer } from '../viewer/ImageViewer';
 
 interface ImageViewerIslandProps {
@@ -23,7 +23,7 @@ export function ImageViewerIsland({
   photoType,
 }: ImageViewerIslandProps) {
   return (
-    <MantineWrapper>
+    <AppProviders>
       <ImageViewer
         imageUrl={imageUrl}
         layerId={layerId}
@@ -34,6 +34,6 @@ export function ImageViewerIsland({
         project={project}
         photoType={photoType}
       />
-    </MantineWrapper>
+    </AppProviders>
   );
 }

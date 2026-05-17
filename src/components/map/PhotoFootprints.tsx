@@ -64,7 +64,7 @@ export function PhotoFootprints({
       type: 'fill',
       source: SOURCE_ID,
       paint: {
-        'fill-color': '#2ac56a',
+        'fill-color': '#0ea5e9',
         'fill-opacity': [
           'case',
           ['boolean', ['feature-state', 'hover'], false],
@@ -80,7 +80,7 @@ export function PhotoFootprints({
       type: 'line',
       source: SOURCE_ID,
       paint: {
-        'line-color': '#2ac56a',
+        'line-color': '#0ea5e9',
         'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 0],
         'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.9, 0],
       },

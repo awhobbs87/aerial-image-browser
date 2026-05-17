@@ -1,5 +1,3 @@
-import { Skeleton } from '@mantine/core';
-
 interface PhotoSkeletonProps {
   count?: number;
 }
@@ -8,11 +6,11 @@ export function PhotoSkeleton({ count = 6 }: PhotoSkeletonProps) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i}>
-          <Skeleton height={0} style={{ paddingBottom: '75%', borderRadius: 6 }} radius={0} />
-          <div style={{ padding: '8px 2px 4px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Skeleton height={13} width="60%" radius={4} />
-            <Skeleton height={11} width="40%" radius={4} />
+        <div key={i} className="animate-pulse">
+          <div className="aspect-4/3 rounded-md bg-slate-950/10 dark:bg-white/10" />
+          <div className="flex flex-col gap-1 px-0.5 py-2">
+            <div className="h-3.5 w-3/5 rounded bg-slate-950/10 dark:bg-white/10" />
+            <div className="h-3 w-2/5 rounded bg-slate-950/10 dark:bg-white/10" />
           </div>
         </div>
       ))}

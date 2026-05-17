@@ -1,20 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ActionIcon,
-  Group,
-  Text,
-  Paper,
-  Tooltip,
-  Stack,
-  Loader,
-  Center,
-  Slider,
-  Divider,
-  Popover,
-  Collapse,
-} from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
-import {
   IconZoomIn,
   IconZoomOut,
   IconZoomReset,
@@ -28,7 +13,9 @@ import {
   IconAdjustments,
   IconDots,
 } from '@tabler/icons-react';
-import classes from './ImageViewer.module.css';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/cn';
 
 interface ImageViewerProps {
   imageUrl: string;
@@ -39,6 +26,41 @@ interface ImageViewerProps {
   scale?: number;
   project?: string;
   photoType?: string;
+}
+
+function ViewerButton({
+  label,
+  onClick,
+  active,
+  children,
+  href,
+}: {
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+  children: React.ReactNode;
+  href?: string;
+}) {
+  const className = cn(
+    'flex h-10 w-10 items-center justify-center rounded-xl transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+    active
+      ? 'bg-sky-600 text-white shadow-sm'
+      : 'text-slate-600 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',
+  );
+
+  return (
+    <Tooltip label={label} side="left">
+      {href ? (
+        <a href={href} aria-label={label} className={className}>
+          {children}
+        </a>
+      ) : (
+        <button type="button" onClick={onClick} aria-label={label} className={className}>
+          {children}
+        </button>
+      )}
+    </Tooltip>
+  );
 }
 
 export function ImageViewer({
@@ -100,7 +122,7 @@ export function ImageViewer({
       if (destroyed || !containerRef.current) return;
 
       const viewer = OpenSeadragon({
-        element: containerRef.current!,
+        element: containerRef.current,
         prefixUrl: '',
         tileSources,
         showNavigationControl: false,
@@ -111,11 +133,9 @@ export function ImageViewer({
         maxZoomLevel: 40,
         visibilityRatio: 0.8,
         constrainDuringPan: true,
-        animationTime: 0.3,
+        animationTime: 0.2,
         crossOriginPolicy: 'Anonymous',
         gestureSettingsTouch: {
-          // Disable pinch-rotate on touch — it fights with pinch-to-zoom.
-          // Rotation is available via manual controls instead.
           pinchRotate: false,
         },
       });
@@ -146,16 +166,10 @@ export function ImageViewer({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const sx = flippedH ? -1 : 1;
-    const sy = flippedV ? -1 : 1;
     const canvas = el.querySelector('.openseadragon-canvas') as HTMLElement | null;
-    if (canvas) {
-      canvas.style.transform = `scale(${sx}, ${sy})`;
-    }
+    if (canvas) canvas.style.transform = `scale(${flippedH ? -1 : 1}, ${flippedV ? -1 : 1})`;
   }, [flippedH, flippedV]);
 
-  const handleZoomIn = () => viewerRef.current?.viewport?.zoomBy(1.5);
-  const handleZoomOut = () => viewerRef.current?.viewport?.zoomBy(0.67);
   const handleReset = () => {
     viewerRef.current?.viewport?.goHome();
     applyRotation(0);
@@ -163,277 +177,153 @@ export function ImageViewer({
     setFlippedV(false);
   };
 
-  const handleRotateCW = () => applyRotation((rotation + 90) % 360);
-  const handleRotateCCW = () => applyRotation((rotation - 90 + 360) % 360);
-  const handleFlipH = () => setFlippedH((f) => !f);
-  const handleFlipV = () => setFlippedV((f) => !f);
-  const handleFullscreen = () => viewerRef.current?.setFullScreen(!viewerRef.current?.isFullPage());
-
   const handleBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = '/search';
-    }
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = '/search';
   };
 
+  const iconSize = isMobile ? 16 : 19;
   const layerLabel = layerId === 0 ? 'Aerial' : layerId === 1 ? 'Ortho' : 'Digital';
-  const iconSize = isMobile ? 16 : 20;
-  const btnSize = isMobile ? 'md' : 'lg';
 
   return (
-    <div className={classes.wrapper}>
-      <div ref={containerRef} className={classes.viewer} />
+    <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
+      <div ref={containerRef} className="h-full w-full" />
 
       {loading && (
-        <Center className={classes.loader}>
-          <Loader size="lg" color="gray" />
-        </Center>
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <span className="h-9 w-9 animate-spin rounded-full border-3 border-white/20 border-t-white" />
+        </div>
       )}
 
-      {/* Back button */}
-      <Paper className={classes.backBtn} shadow="md" radius="md" p={0}>
-        <Tooltip label="Back to results" position="right" withArrow>
-          <ActionIcon variant="subtle" size={btnSize} onClick={handleBack} aria-label="Back">
-            <IconArrowLeft size={iconSize} />
-          </ActionIcon>
-        </Tooltip>
-      </Paper>
+      <div className="absolute top-3 left-3 z-20 rounded-2xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+        <ViewerButton label="Back to results" onClick={handleBack}>
+          <IconArrowLeft size={iconSize} />
+        </ViewerButton>
+      </div>
 
-      {/* Controls overlay */}
       {ready && (
-        <Paper className={classes.controls} shadow="md" radius="md" p={isMobile ? 4 : 'xs'}>
-          <Stack gap={isMobile ? 2 : 4}>
-            {/* Always-visible core controls */}
-            <Tooltip label="Zoom in" position="left" withArrow>
-              <ActionIcon
-                variant="subtle"
-                size={btnSize}
-                onClick={handleZoomIn}
-                aria-label="Zoom in"
-              >
-                <IconZoomIn size={iconSize} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Zoom out" position="left" withArrow>
-              <ActionIcon
-                variant="subtle"
-                size={btnSize}
-                onClick={handleZoomOut}
-                aria-label="Zoom out"
-              >
-                <IconZoomOut size={iconSize} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Reset view" position="left" withArrow>
-              <ActionIcon
-                variant="subtle"
-                size={btnSize}
-                onClick={handleReset}
-                aria-label="Reset view"
-              >
-                <IconZoomReset size={iconSize} />
-              </ActionIcon>
-            </Tooltip>
-
-            {/* Expand/collapse toggle */}
-            <Tooltip
-              label={expanded ? 'Fewer controls' : 'More controls'}
-              position="left"
-              withArrow
+        <div className="absolute top-3 right-3 z-20 rounded-2xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+          <div className="flex flex-col gap-1">
+            <ViewerButton label="Zoom in" onClick={() => viewerRef.current?.viewport?.zoomBy(1.5)}>
+              <IconZoomIn size={iconSize} />
+            </ViewerButton>
+            <ViewerButton
+              label="Zoom out"
+              onClick={() => viewerRef.current?.viewport?.zoomBy(0.67)}
             >
-              <ActionIcon
-                variant={expanded ? 'light' : 'subtle'}
-                size={btnSize}
-                onClick={() => setExpanded((e) => !e)}
-                aria-label={expanded ? 'Collapse controls' : 'Expand controls'}
-              >
-                <IconDots size={iconSize} />
-              </ActionIcon>
-            </Tooltip>
+              <IconZoomOut size={iconSize} />
+            </ViewerButton>
+            <ViewerButton label="Reset view" onClick={handleReset}>
+              <IconZoomReset size={iconSize} />
+            </ViewerButton>
+            <ViewerButton
+              label={expanded ? 'Fewer controls' : 'More controls'}
+              onClick={() => setExpanded((e) => !e)}
+              active={expanded}
+            >
+              <IconDots size={iconSize} />
+            </ViewerButton>
 
-            {/* Expandable section */}
-            <Collapse in={expanded}>
-              <Stack gap={isMobile ? 2 : 4}>
-                <Divider my={1} />
-
-                {/* Rotation controls */}
-                <Tooltip label="Rotate left 90" position="left" withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    size={btnSize}
-                    onClick={handleRotateCCW}
-                    aria-label="Rotate left"
-                  >
-                    <IconRotate2 size={iconSize} style={{ transform: 'scaleX(-1)' }} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Rotate right 90" position="left" withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    size={btnSize}
-                    onClick={handleRotateCW}
-                    aria-label="Rotate right"
-                  >
-                    <IconRotateClockwise size={iconSize} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Flip horizontal" position="left" withArrow>
-                  <ActionIcon
-                    variant={flippedH ? 'filled' : 'subtle'}
-                    color={flippedH ? 'emerald' : undefined}
-                    size={btnSize}
-                    onClick={handleFlipH}
-                    aria-label="Flip horizontal"
-                  >
-                    <IconFlipHorizontal size={iconSize} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Flip vertical" position="left" withArrow>
-                  <ActionIcon
-                    variant={flippedV ? 'filled' : 'subtle'}
-                    color={flippedV ? 'emerald' : undefined}
-                    size={btnSize}
-                    onClick={handleFlipV}
-                    aria-label="Flip vertical"
-                  >
-                    <IconFlipVertical size={iconSize} />
-                  </ActionIcon>
-                </Tooltip>
-
-                {/* Fine-tune rotation popover */}
-                <Popover
-                  opened={finetuneOpen}
-                  onChange={setFinetuneOpen}
-                  position="left"
-                  withArrow
-                  shadow="md"
+            {expanded && (
+              <div className="flex flex-col gap-1 border-t border-slate-950/10 pt-1 dark:border-white/10">
+                <ViewerButton
+                  label="Rotate left 90"
+                  onClick={() => applyRotation((rotation - 90 + 360) % 360)}
                 >
-                  <Popover.Target>
-                    <Tooltip
-                      label="Fine-tune rotation"
-                      position="left"
-                      withArrow
-                      disabled={finetuneOpen}
-                    >
-                      <ActionIcon
-                        variant={finetuneOpen ? 'filled' : 'subtle'}
-                        color={finetuneOpen ? 'emerald' : undefined}
-                        size={btnSize}
-                        onClick={() => setFinetuneOpen((o) => !o)}
-                        aria-label="Fine-tune rotation"
-                      >
-                        <IconAdjustments size={iconSize} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Popover.Target>
-                  <Popover.Dropdown p="sm" style={{ width: 200 }}>
-                    <Stack gap={6}>
-                      <Group justify="space-between">
-                        <Text size="xs" fw={600}>
-                          Rotation
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {rotation}deg
-                        </Text>
-                      </Group>
-                      <Slider
-                        value={rotation}
-                        onChange={applyRotation}
-                        min={0}
-                        max={359}
-                        step={1}
-                        size="sm"
-                        label={(v) => `${v}deg`}
-                        marks={[
-                          { value: 0, label: '0' },
-                          { value: 90, label: '90' },
-                          { value: 180, label: '180' },
-                          { value: 270, label: '270' },
-                        ]}
-                      />
-                    </Stack>
-                  </Popover.Dropdown>
-                </Popover>
-
-                <Divider my={1} />
-
-                <Tooltip label="Fullscreen" position="left" withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    size={btnSize}
-                    onClick={handleFullscreen}
-                    aria-label="Fullscreen"
-                  >
-                    <IconMaximize size={iconSize} />
-                  </ActionIcon>
-                </Tooltip>
+                  <IconRotate2 size={iconSize} style={{ transform: 'scaleX(-1)' }} />
+                </ViewerButton>
+                <ViewerButton
+                  label="Rotate right 90"
+                  onClick={() => applyRotation((rotation + 90) % 360)}
+                >
+                  <IconRotateClockwise size={iconSize} />
+                </ViewerButton>
+                <ViewerButton
+                  label="Flip horizontal"
+                  onClick={() => setFlippedH((f) => !f)}
+                  active={flippedH}
+                >
+                  <IconFlipHorizontal size={iconSize} />
+                </ViewerButton>
+                <ViewerButton
+                  label="Flip vertical"
+                  onClick={() => setFlippedV((f) => !f)}
+                  active={flippedV}
+                >
+                  <IconFlipVertical size={iconSize} />
+                </ViewerButton>
+                <ViewerButton
+                  label="Fine-tune rotation"
+                  onClick={() => setFinetuneOpen((o) => !o)}
+                  active={finetuneOpen}
+                >
+                  <IconAdjustments size={iconSize} />
+                </ViewerButton>
+                <ViewerButton
+                  label="Fullscreen"
+                  onClick={() => viewerRef.current?.setFullScreen(!viewerRef.current?.isFullPage())}
+                >
+                  <IconMaximize size={iconSize} />
+                </ViewerButton>
                 {tiffUrl && (
-                  <Tooltip label="Download TIFF" position="left" withArrow>
-                    <ActionIcon
-                      variant="subtle"
-                      size={btnSize}
-                      component="a"
-                      href={tiffUrl}
-                      aria-label="Download TIFF"
-                    >
-                      <IconDownload size={iconSize} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <ViewerButton label="Download TIFF" href={tiffUrl}>
+                    <IconDownload size={iconSize} />
+                  </ViewerButton>
                 )}
-              </Stack>
-            </Collapse>
-          </Stack>
-        </Paper>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
-      {/* Info bar */}
-      <Paper className={classes.infoBar} shadow="md" radius="md" px="sm" py={4}>
-        <Group gap={6} wrap="nowrap">
+      {finetuneOpen && (
+        <div className="absolute top-3 right-18 z-20 w-56 rounded-2xl border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-md dark:bg-slate-950/95">
+          <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+            <span>Rotation</span>
+            <span>{rotation}deg</span>
+          </div>
+          <input
+            type="range"
+            value={rotation}
+            onChange={(e) => applyRotation(Number(e.currentTarget.value))}
+            min={0}
+            max={359}
+            step={1}
+            className="w-full accent-sky-600"
+          />
+        </div>
+      )}
+
+      <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+        <div className="flex items-center gap-2 overflow-hidden text-xs">
           {year ? (
-            <Text size="xs" fw={700}>
-              {year}
-            </Text>
+            <span className="font-bold text-slate-950 dark:text-slate-50">{year}</span>
           ) : null}
-          <Text size="xs" fw={600} lineClamp={1}>
+          <span className="truncate font-semibold text-slate-800 dark:text-slate-100">
             {imageName}
-          </Text>
+          </span>
           {photoType && (
-            <Text size="xs" c="dimmed" fw={500} style={{ whiteSpace: 'nowrap' }}>
+            <span className="shrink-0 text-slate-500 dark:text-slate-400">
               {photoType === 'Black & White' ? 'B&W' : photoType}
-            </Text>
+            </span>
           )}
-          <Text size="xs" c="dimmed">
-            {layerLabel}
-          </Text>
+          <span className="shrink-0 text-slate-500 dark:text-slate-400">{layerLabel}</span>
           {scale ? (
-            <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+            <span className="shrink-0 text-slate-500 dark:text-slate-400">
               1:{scale.toLocaleString()}
-            </Text>
+            </span>
           ) : null}
           {!isMobile && project && (
-            <Text size="xs" c="dimmed" lineClamp={1} style={{ whiteSpace: 'nowrap' }}>
-              {project}
-            </Text>
+            <span className="truncate text-slate-500 dark:text-slate-400">{project}</span>
           )}
-          <Text size="xs" c="dimmed">
-            |
-          </Text>
-          <Text size="xs" c="dimmed">
-            {zoom}x
-          </Text>
+          <span className="shrink-0 text-slate-400">|</span>
+          <span className="shrink-0 text-slate-500 dark:text-slate-400">{zoom}x</span>
           {rotation !== 0 && (
-            <Text size="xs" c="dimmed">
-              {rotation}deg
-            </Text>
+            <span className="shrink-0 text-slate-500 dark:text-slate-400">{rotation}deg</span>
           )}
-          {usingTiff && (
-            <Text size="xs" c="green" fw={500}>
-              Full res
-            </Text>
-          )}
-        </Group>
-      </Paper>
+          {usingTiff && <span className="shrink-0 font-bold text-sky-600">Full res</span>}
+        </div>
+      </div>
     </div>
   );
 }

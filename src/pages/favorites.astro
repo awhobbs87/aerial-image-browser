@@ -1,14 +1,9 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { NavigationIsland } from '../components/islands/NavigationIsland';
-import { MobileNavIsland } from '../components/islands/MobileNavIsland';
 import { FavoritesIsland } from '../components/islands/FavoritesIsland';
 ---
 
 <AppLayout title="Favorites - Tasmania Aerial Photo Explorer">
-  <!-- Desktop sidebar navigation -->
-  <NavigationIsland client:only="react" />
-
   <div class="favorites-page">
     <div class="favorites-header">
       <h1 class="title">Saved Favorites</h1>
@@ -18,9 +13,6 @@ import { FavoritesIsland } from '../components/islands/FavoritesIsland';
       <FavoritesIsland client:only="react" />
     </div>
   </div>
-
-  <!-- Mobile bottom tab bar -->
-  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>
@@ -28,6 +20,7 @@ import { FavoritesIsland } from '../components/islands/FavoritesIsland';
     min-height: 100vh;
     min-height: 100dvh;
     padding: 1rem;
+    color: inherit;
   }
 
   @media (min-width: 48em) {

@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Text, Paper } from '@mantine/core';
 import type { EnhancedPhoto } from '@/types/photo';
-import classes from './CompareSlider.module.css';
 
 interface CompareSliderProps {
   photoA: EnhancedPhoto;
@@ -17,8 +15,7 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
-    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    setPosition(pct);
+    setPosition(Math.max(0, Math.min(100, (x / rect.width) * 100)));
   }, []);
 
   const handlePointerDown = useCallback(
@@ -30,58 +27,46 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
     [handleMove],
   );
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDragging.current) return;
-      handleMove(e.clientX);
-    },
-    [handleMove],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    isDragging.current = false;
-  }, []);
-
   const imgA = `/api/images/thumbnail/${photoA.layerId}/${photoA.name}`;
   const imgB = `/api/images/thumbnail/${photoB.layerId}/${photoB.name}`;
 
   return (
     <div
       ref={containerRef}
-      className={classes.container}
+      className="relative aspect-4/3 w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-xl bg-slate-950"
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      style={{ touchAction: 'none' }}
+      onPointerMove={(e) => {
+        if (isDragging.current) handleMove(e.clientX);
+      }}
+      onPointerUp={() => {
+        isDragging.current = false;
+      }}
     >
-      {/* Bottom layer (photo B - right side) */}
-      <img src={imgB} alt={photoB.name} className={classes.image} draggable={false} />
-
-      {/* Top layer (photo A - left side, clipped) */}
+      <img
+        src={imgB}
+        alt={photoB.name}
+        className="absolute inset-0 h-full w-full object-cover"
+        draggable={false}
+      />
       <img
         src={imgA}
         alt={photoA.name}
-        className={classes.image}
+        className="absolute inset-0 h-full w-full object-cover"
         style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
         draggable={false}
       />
-
-      {/* Divider line */}
-      <div className={classes.divider} style={{ left: `${position}%` }}>
-        <div className={classes.handle} />
+      <div
+        className="absolute top-0 bottom-0 z-10 w-0.75 -translate-x-1/2 bg-white shadow-md"
+        style={{ left: `${position}%` }}
+      >
+        <div className="absolute top-1/2 left-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-600 bg-white shadow-lg" />
       </div>
-
-      {/* Labels */}
-      <Paper className={classes.labelLeft} px="xs" py={2} radius="sm">
-        <Text size="xs" fw={600}>
-          {photoA.name} ({photoA.year})
-        </Text>
-      </Paper>
-      <Paper className={classes.labelRight} px="xs" py={2} radius="sm">
-        <Text size="xs" fw={600}>
-          {photoB.name} ({photoB.year})
-        </Text>
-      </Paper>
+      <div className="absolute bottom-3 left-3 z-5 rounded-lg bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+        {photoA.name} ({photoA.year})
+      </div>
+      <div className="absolute right-3 bottom-3 z-5 rounded-lg bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+        {photoB.name} ({photoB.year})
+      </div>
     </div>
   );
 }

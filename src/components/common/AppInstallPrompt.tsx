@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Paper, Group, Text, Button, CloseButton } from '@mantine/core';
-import { IconDownload } from '@tabler/icons-react';
+import { IconDownload, IconX } from '@tabler/icons-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,8 +14,7 @@ export function AppInstallPrompt() {
   });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (dismissed) return;
+    if (typeof window === 'undefined' || dismissed) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -31,9 +29,7 @@ export function AppInstallPrompt() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
+    if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
   const handleDismiss = () => {
@@ -44,40 +40,35 @@ export function AppInstallPrompt() {
   if (!deferredPrompt || dismissed) return null;
 
   return (
-    <Paper
-      p="sm"
-      shadow="lg"
-      radius="lg"
-      style={{
-        position: 'fixed',
-        bottom: 80,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        maxWidth: 360,
-        width: 'calc(100% - 2rem)',
-      }}
-      withBorder
-    >
-      <Group justify="space-between" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap">
-          <IconDownload size={20} />
-          <div>
-            <Text size="sm" fw={600}>
-              Install App
-            </Text>
-            <Text size="xs" c="dimmed">
+    <div className="fixed bottom-20 left-1/2 z-1000 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-slate-950/10 bg-white/95 p-3 text-slate-950 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-50">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <IconDownload size={20} className="shrink-0 text-sky-600" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold">Install App</p>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
               Add to home screen for quick access
-            </Text>
+            </p>
           </div>
-        </Group>
-        <Group gap="xs" wrap="nowrap">
-          <Button size="xs" onClick={handleInstall}>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={handleInstall}
+            className="h-8 rounded-full bg-sky-600 px-3 text-xs font-bold text-white transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+          >
             Install
-          </Button>
-          <CloseButton size="sm" onClick={handleDismiss} aria-label="Dismiss" />
-        </Group>
-      </Group>
-    </Paper>
+          </button>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            aria-label="Dismiss"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+          >
+            <IconX size={15} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

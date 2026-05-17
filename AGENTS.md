@@ -20,7 +20,7 @@
 
 Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS REST services for historical, orthophoto, and digital aerial imagery. It proxies and caches images via Cloudflare Workers + R2/KV, and presents them with map, grid, timeline, and comparison views.
 
-**This branch (`feat/astro6-rewrite`) is a ground-up rewrite** of the original React 19 + Vite + MUI + Hono application into a modern Astro 6 + React 19 + Mantine 8 stack.
+**This branch (`feat/astro6-rewrite`) is a ground-up rewrite** of the original React 19 + Vite + MUI + Hono application into a modern Astro 6 + React 19 stack. The styling direction changed on 2026-05-16 from Mantine CSS Modules to Tailwind CSS v4.
 
 ---
 
@@ -30,8 +30,8 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 | ----------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
 | Meta-framework    | Astro 6                                     | Islands architecture, file-based routing, Cloudflare adapter v13         |
 | UI framework      | React 19                                    | Islands via `client:load` / `client:visible` / `client:only="react"`     |
-| Component library | Mantine 8                                   | CSS Modules, built-in dark/light, hooks library, `@tabler/icons-react`   |
-| Styling           | Mantine CSS Modules + PostCSS               | `postcss-preset-mantine`, `postcss-simple-vars`. No Tailwind, no Emotion |
+| Component library | Radix primitives + local components         | Radix for accessible dialogs/tooltips/sheets; native Tailwind-styled controls elsewhere |
+| Styling           | Tailwind CSS v4                             | Official `@tailwindcss/vite` plugin. Tailwind utilities are the styling source of truth |
 | Map               | MapLibre GL JS                              | Vector tiles, GPU-accelerated, native mobile gestures                    |
 | State management  | Zustand 5                                   | Replaces 30+ useState hooks. Persist middleware for localStorage         |
 | Server state      | TanStack Query v5                           | Photo search caching, layer metadata                                     |
@@ -158,10 +158,7 @@ aerial-image-browser/
 |   |   |-- format.ts                # Coordinate/date formatters
 |   |
 |   |-- styles/
-|   |   |-- theme.ts                 # Mantine theme (single source of truth)
-|   |   |-- global.css               # Minimal global resets
-|   |   |-- glass.module.css         # Glassmorphic panel styles
-|   |   |-- map.module.css           # Map-specific styles
+|   |   |-- global.css               # Tailwind import, theme tokens, global resets
 |   |
 |   |-- types/
 |   |   |-- api.ts                   # API request/response types
@@ -216,7 +213,7 @@ aerial-image-browser/
 - **Hooks**: `use*` prefix, camelCase (`usePhotos.ts`, `useMapSync.ts`).
 - **Stores**: camelCase with `Store` suffix (`searchStore.ts`, `filterStore.ts`).
 - **Lib utilities**: kebab-case (`api-client.ts`, `image-conversion.ts`).
-- **CSS Modules**: `*.module.css` co-located with components or in `src/styles/`.
+- **CSS Modules**: Avoid new CSS Modules. Existing modules are migration debt and should be replaced with Tailwind utilities when touched.
 - **API endpoints**: Return `Response` objects directly. Use `import { env } from 'cloudflare:workers'` for bindings.
 - **No default exports** for React components (named exports only). Astro pages use default exports per Astro convention.
 - **No emojis** in code, comments, or commit messages unless the user explicitly requests them.
@@ -225,11 +222,11 @@ aerial-image-browser/
 
 ## Styling Rules
 
-- **One styling system**: Mantine CSS Modules + PostCSS. No Tailwind, no Emotion, no inline styles, no `sx` prop.
-- **Theme tokens** live in `src/styles/theme.ts`. All colors, radii, spacing, and typography reference the Mantine theme.
-- **Dark/light mode**: `colorScheme: 'auto'` in Mantine theme detects system preference. `ColorSchemeScript` in `<head>` prevents flash. Manual override via `useMantineColorScheme()`.
-- **Glassmorphism**: Defined in `src/styles/glass.module.css` using `light-dark()` CSS function for theme-aware translucency. Applied via `className` -- never inline backdrop-filter.
-- **Mobile-first**: Write mobile styles as the default. Use Mantine breakpoints (`@media (min-width: ...)`) or `useMediaQuery` to add desktop enhancements.
+- **One styling system**: Tailwind CSS v4 utilities. Do not add new Mantine CSS Modules, Emotion styles, `sx` props, or scoped Astro CSS for ordinary component styling.
+- **Theme tokens** live in `src/styles/global.css` via Tailwind v4 `@theme`. Keep app colors, font family, and shared tokens there.
+- **Dark/light mode**: Tailwind `dark:` utilities are driven by `html[data-theme='dark']`. Theme toggles must keep this attribute resolved to `light` or `dark`, even when the saved preference is `auto`.
+- **Glassmorphism**: Use Tailwind utilities (`bg-white/..`, `dark:bg-..`, `backdrop-blur-*`, arbitrary shadows) directly in `className` / `class`. Do not reintroduce `glass.module.css` patterns when touching components.
+- **Mobile-first**: Write mobile styles as the default. Use Tailwind responsive variants (`sm:`, `md:`, `lg:`) and only use `useMediaQuery` when rendering different component trees is necessary.
 - **Touch targets**: Minimum 44x44px for all interactive elements (Apple HIG compliance).
 
 ---
@@ -239,12 +236,12 @@ aerial-image-browser/
 This app has a **heavy emphasis on mobile usability**. Every component must work excellently on phones.
 
 1. **Bottom navigation** (tab bar) on mobile -- Search, Map, Timeline, Favorites. Always thumb-reachable.
-2. **Bottom sheets** (Mantine Drawer anchored bottom) for filters, search suggestions, photo actions. Never full-screen modals on mobile.
+2. **Bottom sheets** for filters, search suggestions, photo actions. Prefer Tailwind-styled native/headless implementations. Never full-screen modals on mobile.
 3. **Native gestures** via MapLibre (pinch, rotate, two-finger tilt). No custom gesture implementations.
 4. **No hamburger menus.** All primary navigation is always visible.
 5. **Skeleton loading** on every data-dependent surface. No layout shift.
-6. **Reduced motion**: Respect `prefers-reduced-motion` via Mantine's built-in transition handling.
-7. **Viewport-aware rendering**: Use `useMediaQuery` from `@mantine/hooks` for conditional component trees (not CSS display:none).
+6. **Reduced motion**: Respect `prefers-reduced-motion` via global CSS and Tailwind motion variants.
+7. **Viewport-aware rendering**: Prefer Tailwind responsive utilities. Use media-query hooks only for truly different component trees.
 8. **PWA**: Service worker caches map tiles, recent thumbnails, and app shell. Offline fallback page.
 
 ---
@@ -444,6 +441,10 @@ const r2 = env.TIFF_STORAGE;
 - [x] Touch target audit (44x44px minimum in global.css, scoped to buttons/controls) -- 2026-03-15
 - [x] `prefers-reduced-motion` compliance check (verified in global.css) -- 2026-03-15
 - [x] iOS Safari quirks pass (safe area insets, overscroll-behavior, -webkit-overflow-scrolling) -- 2026-03-15
+- [x] Mobile viewport/gesture overhaul for landing and search routes -- 2026-05-18
+- [x] Anchor mobile bottom navigation with explicit viewport reserve and no search-route document scroll -- 2026-05-18
+- [x] Fix MapLibre mobile pinch/rotate competition with page scroll (`touch-action: none` on map canvas/container) -- 2026-05-18
+- [x] Lock mobile landing page to one viewport and prevent focused-search keyboard scroll gap -- 2026-05-18
 
 ### Phase 6: Testing & Launch
 
@@ -458,6 +459,34 @@ const r2 = env.TIFF_STORAGE;
 - [ ] Deploy to staging
 - [ ] Compare against current production
 - [ ] Final cleanup and PR
+
+### Phase 7: Tailwind CSS Migration
+
+- [x] Install Tailwind CSS v4 and `@tailwindcss/vite` -- 2026-05-16
+- [x] Configure Astro/Vite to use the official Tailwind v4 plugin -- 2026-05-16
+- [x] Replace Mantine-specific PostCSS config with empty PostCSS config -- 2026-05-16
+- [x] Remove unused Mantine PostCSS packages (`postcss-preset-mantine`, `postcss-simple-vars`) -- 2026-05-16
+- [x] Add Tailwind `@import`, `@theme`, and dark variant plumbing in `src/styles/global.css` -- 2026-05-16
+- [x] Convert landing page from scoped Astro CSS to Tailwind utilities -- 2026-05-16
+- [x] Convert desktop and mobile navigation from CSS Modules to Tailwind utilities -- 2026-05-16
+- [x] Convert `SearchBar` styling from CSS Module/Mantine core components to Tailwind utilities + native controls -- 2026-05-16
+- [x] Deploy Tailwind foundation before full cutover -- 2026-05-16 (`986e4127-9912-47f6-8403-478593b99277`)
+- [x] Install Radix primitives for dialogs, sheets, tooltips, popovers/select-style primitives -- 2026-05-16
+- [x] Convert remaining CSS Modules to Tailwind utilities (`PhotoCard`, `PhotoGrid`, `PhotoTimeline`, map controls, viewer, compare, favorites, filters) -- 2026-05-16
+- [x] Replace remaining Mantine UI components with Tailwind-styled native/Radix components -- 2026-05-16
+- [x] Remove Mantine dependencies and imports once no longer used -- 2026-05-16
+- [x] Landing page full visual overhaul with satellite-backed hero and leaner composition -- 2026-05-16
+- [x] Replace satellite landing hero with oversized rotating wireframe globe -- 2026-05-16
+- [x] Reset theme default to system/auto unless user explicitly chooses light/dark/system -- 2026-05-17
+- [x] Rework landing/shell colors from single-hue tint to neutral archival surfaces with amber/cyan accents -- 2026-05-16
+- [x] Disable Astro dev toolbar and service-worker update toast during local visual review -- 2026-05-16
+- [x] Fix landing light/dark class mismatch and stale localStorage light-mode pinning -- 2026-05-17
+- [x] Verify `npm run lint`, `npm run type-check`, and `npm run build` after cutover -- 2026-05-16
+- [x] Run visual regression pass for landing light mode on mobile and desktop -- 2026-05-16
+- [x] Run visual regression pass for landing auto-dark, explicit-light, explicit-dark, and mobile auto-dark -- 2026-05-17
+- [x] Run mobile visual/metric pass for landing search focus and search map route -- 2026-05-18
+- [x] Run mobile focused-search regression for landing no-scroll and hidden tab bar while keyboard is active -- 2026-05-18
+- [ ] Run visual regression pass for remaining app routes in light/dark on mobile and desktop
 
 ---
 
@@ -475,6 +504,10 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-03-15 | Native `fetch` over Axios                                         | Axios is 13KB for no benefit in modern browsers. Cloudflare Workers use fetch natively                                                  |
 | 2026-03-15 | Workers (not Pages) deployment                                    | Cloudflare recommends Workers for new projects. Pages support deprecated in adapter v13                                                 |
 | 2026-03-15 | `@tabler/icons-react` over `lucide-react` + `@mui/icons-material` | Single icon set, standard for Mantine ecosystem, tree-shakeable                                                                         |
+| 2026-05-16 | Tailwind CSS v4 over Mantine CSS Modules                          | User requested a pure Tailwind direction after dark-mode inconsistencies exposed the cost of mixing Mantine theme state with CSS `light-dark()` |
+| 2026-05-16 | Wireframe globe uses Three.js with 2D canvas fallback              | Real browsers get the 3D renderer; automated/headless or WebGL-restricted environments still render the high-resolution rotating globe for QA |
+| 2026-05-18 | Mobile search uses a fixed viewport shell with an internally scrolling results panel | Prevents the document scroll container from competing with the fixed bottom nav and MapLibre touch gestures on mobile |
+| 2026-05-18 | Hide the mobile tab bar while the landing search input is focused | iOS Safari can otherwise keep fixed chrome above the keyboard and expose a blank scroll gap beneath it |
 
 ---
 
@@ -619,6 +652,101 @@ Append a summary after each working session so the next session has context.
 - Fixed the sort dropdown labels (was `'Scale'` ambiguously, now `'Scale (large)'` / `'Scale (small)'`).
 - Fixed stale test assertions: `PhotoGrid.test.tsx` expected `'3 photos found'`; component renders `'3 photos'`. `FilterPanel.test.tsx` expected old scale label strings; updated to new labels.
 - All 209 unit tests pass after fixes.
+
+### Session 7 -- 2026-05-16
+
+- User requested moving the app to a pure Tailwind styling direction after dark mode rendered with a light glass panel and dark-mode text.
+- Root cause of the dark-mode screenshot: custom CSS relied on `light-dark()` while Mantine's color-scheme state and the browser `color-scheme` resolution were not consistently aligned.
+- Installed Tailwind CSS v4 and `@tailwindcss/vite`; configured the official Tailwind Vite plugin in `astro.config.mjs`.
+- Replaced the Mantine-specific PostCSS plugin config with an empty PostCSS config and removed the now-unused PostCSS Mantine packages.
+- Added Tailwind import, theme tokens, and a dark variant keyed off `html[data-mantine-color-scheme='dark']` in `src/styles/global.css`.
+- Converted the landing page, desktop navigation, mobile navigation, and SearchBar styling to Tailwind utilities.
+- Deleted CSS Modules for the converted shell/search components: `Navigation.module.css`, `MobileNav.module.css`, and `SearchBar.module.css`.
+- Left remaining Mantine components in place as migration debt rather than breaking the app in one pass; Phase 7 tracks the remaining conversion.
+
+### Session 8 -- 2026-05-16
+
+- Deployed the Tailwind foundation state to Cloudflare Workers before continuing:
+  - Workers URL: `https://tas-aerial-browser.awhobbs.workers.dev`
+  - Custom route: `aerial-explorer.awhq.uk/*`
+  - Version ID: `986e4127-9912-47f6-8403-478593b99277`
+- Completed the Radix + Tailwind full cutover:
+  - Removed Mantine packages (`@mantine/core`, `@mantine/form`, `@mantine/hooks`, `@mantine/notifications`)
+  - Removed `MantineWrapper`, `theme.ts`, Mantine CSS imports, Mantine test provider, and remaining Mantine color-scheme naming
+  - Added `AppProviders`, local hooks (`useMediaQuery`, `useDebouncedValue`, `useClickOutside`), `cn`, Radix-backed `Dialog` and `Tooltip`
+  - Converted common components, filters, map controls, photo grid/cards/timeline, preview modal, favorites, compare views, AI search modal, TIFF converter, and image viewer to Tailwind/native/Radix components
+  - Deleted remaining component CSS Modules and unused `glass.module.css`
+- Performed polish pass for speed/snap:
+  - Shorter transitions, less heavy glass/shadow, denser controls, lighter card hover transforms, native inputs/selects, reduced panel chrome
+  - Landing page rebuilt as a satellite-backed first viewport with prominent search, quick location chips, and compact status cards
+- Verified after cutover: `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+
+### Session 9 -- 2026-05-16
+
+- User clarified the landing page should use a Cloudflare-inspired oversized wireframe globe, not a textured/static image, and that the issue was overall clunky color/icon usage rather than simply removing green.
+- Replaced the satellite-backed landing hero with `EarthGlobe.tsx`:
+  - Three.js wireframe globe for normal browser rendering
+  - High-resolution Canvas 2D fallback when WebGL is unavailable, which keeps visual regression tests useful in headless Chromium
+  - Globe is oversized and anchored under the lower-right page corner with slow rotation
+- Reworked landing page visual language:
+  - Neutral archival paper surface, large editorial hero type, faint grid, amber archive/search accents, cyan only for the globe/map infrastructure
+  - Updated search field, location chips, and status cards to reduce the previous glassy/green-tinted feel
+- Updated app shell polish:
+  - Theme default is now light unless the user explicitly chooses dark or system
+  - Desktop/mobile navigation use neutral surfaces and amber active state
+  - Mobile nav now includes Timeline per the mobile navigation plan
+  - Disabled Astro dev toolbar and dev-time service worker update toast so screenshots are not polluted by local-only UI
+- Verified:
+  - `npm run format`
+  - `npm run lint`
+  - `npm run type-check`
+  - `npm run build`
+  - Playwright desktop/mobile landing checks against `http://127.0.0.1:4321/`: canvas nonblank, globe pixels changed over time, theme resolved to light, no Astro toolbar, no update toast.
+
+### Session 10 -- 2026-05-17
+
+- User reported dark mode detection was broken; screenshot showed light page background with dark-mode-only landing panels/text, plus system/browser dark chrome.
+- Fixed two root causes:
+  - Landing page had many dark-looking Tailwind classes without light-mode alternatives; rewrote those surfaces/copy/chips/cards/footer classes to have explicit light defaults and `dark:` variants.
+  - Earlier work could leave `localStorage.theme-preference = "light"` even when the user had not explicitly selected light; added `theme-preference-explicit` migration guard so stale implicit light values fall back to system/auto detection.
+- Updated theme bootstrap and shared theme helpers:
+  - `BaseLayout.astro` inline script now ignores stored theme unless `theme-preference-explicit` is true.
+  - `src/lib/theme.ts` and `src/lib/theme-swap.ts` follow the same rule.
+  - `setPreference()` now marks the preference as explicit when the user cycles the theme.
+- Verified:
+  - `npm run format`
+  - `npm run lint`
+  - `npm run type-check`
+  - `npm run build`
+- Playwright checks for desktop auto-dark with stale `theme-preference=light` (resolves dark), desktop explicit-light (stays light), desktop explicit-dark (stays dark), mobile auto-dark, and mobile explicit-light.
+
+### Session 11 -- 2026-05-18
+
+- User requested a mobile optimisation overhaul after issues with the bottom nav, rubber-band scrolling, and awkward pinch zoom.
+- Reworked mobile layout/gesture handling:
+  - `AppLayout.astro` now exposes a `--mobile-nav-height` reserve and clips horizontal overflow.
+  - `search.astro` mobile layout is a viewport-sized shell; map is fixed within the route and results scroll inside `.search-panel-content`.
+  - `global.css` now applies stronger root/body overflow and overscroll containment, removes the overly broad `body:has([data-state='open'])` touch lock, and forces MapLibre canvas/container `touch-action: none`.
+  - `MapView.tsx` enables native MapLibre touch zoom/rotate/pitch and removes Tailwind pan-touch classes that could compete with pinch gestures.
+  - `SearchBar.tsx` clamps the portaled autocomplete dropdown to the visual viewport so focused mobile search does not run under the tab bar.
+  - `index.astro` mobile spacing was tightened so landing search focus no longer introduces document overflow at 375x812.
+- Browser QA at 375x812:
+  - Landing route: document/body width 375, height 812; focused search dropdown stays above bottom nav.
+  - Search route: document/body height 812; `.search-layout` height 748 above 64px nav; `.search-panel-content` is the only vertical scroller; MapLibre canvas reports `touch-action: none`.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+
+### Session 12 -- 2026-05-18
+
+- User provided an iPhone screenshot showing the landing page after opening search and exiting/scrolling: the mobile tab bar floated above a blank gap while the keyboard was still active.
+- Fixed landing-specific mobile viewport behavior:
+  - `index.astro` landing root is now an exact-height mobile viewport rather than a `min-height` page, and internal spacing was tightened so the landing fits without document scroll.
+  - `global.css` locks `html`, `body`, `#app-root`, and `.page-shell` for the landing route on mobile using route-scoped `:has(.landing-page)` selectors.
+  - When the landing search input is focused, the mobile tab bar is hidden and the app-root bottom reserve is removed so iOS cannot leave fixed app chrome floating above the keyboard.
+  - `LandingSearchBar.tsx` watches the shared search focus state and pins `scrollTop` back to 0 during visual viewport resize/scroll events.
+- Browser QA at 375x812:
+  - Before focus: document/body `scrollHeight` equals `clientHeight` (812), landing area is 748px above the 64px tab bar.
+  - Focused search: document/body still `scrollTop: 0`; `.landing-page` is 812px; mobile nav display is `none`; dropdown is visible and contained.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
 
 ---
 

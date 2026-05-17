@@ -1,5 +1,5 @@
-import { Modal, Table, Text, Group, Kbd } from '@mantine/core';
 import { IconKeyboard } from '@tabler/icons-react';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface KeyboardShortcutsHelpProps {
   opened: boolean;
@@ -21,49 +21,53 @@ const SHORTCUTS = [
 
 export function KeyboardShortcutsHelp({ opened, onClose }: KeyboardShortcutsHelpProps) {
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
+    <Dialog
+      open={opened}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
       title={
-        <Group gap="xs">
-          <IconKeyboard size={20} />
-          <Text fw={600}>Keyboard Shortcuts</Text>
-        </Group>
+        <span className="inline-flex items-center gap-2">
+          <IconKeyboard size={18} />
+          Keyboard Shortcuts
+        </span>
       }
-      size="md"
-      centered
+      className="overflow-hidden"
     >
-      <Table>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Shortcut</Table.Th>
-            <Table.Th>Action</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {SHORTCUTS.map((shortcut) => (
-            <Table.Tr key={shortcut.description}>
-              <Table.Td>
-                <Group gap={4}>
-                  {shortcut.keys.map((key, i) => (
-                    <span key={i}>
-                      {i > 0 && (
-                        <Text span size="xs" c="dimmed" mx={2}>
-                          +
-                        </Text>
-                      )}
-                      <Kbd size="sm">{key}</Kbd>
-                    </span>
-                  ))}
-                </Group>
-              </Table.Td>
-              <Table.Td>
-                <Text size="sm">{shortcut.description}</Text>
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </Modal>
+      <div className="max-h-[70dvh] overflow-y-auto p-3">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="text-left text-xs tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              <th className="px-2 py-2 font-bold">Shortcut</th>
+              <th className="px-2 py-2 font-bold">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SHORTCUTS.map((shortcut) => (
+              <tr
+                key={shortcut.description}
+                className="border-t border-slate-950/10 dark:border-white/10"
+              >
+                <td className="px-2 py-2">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {shortcut.keys.map((key, i) => (
+                      <span key={i} className="inline-flex items-center gap-1">
+                        {i > 0 && <span className="text-xs text-slate-400">+</span>}
+                        <kbd className="rounded-md border border-slate-950/10 bg-slate-950/5 px-1.5 py-0.5 text-xs font-bold dark:border-white/10 dark:bg-white/10">
+                          {key}
+                        </kbd>
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-2 py-2 text-slate-600 dark:text-slate-300">
+                  {shortcut.description}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Dialog>
   );
 }

@@ -1,7 +1,5 @@
 ---
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { NavigationIsland } from '../../../components/islands/NavigationIsland';
-import { MobileNavIsland } from '../../../components/islands/MobileNavIsland';
 import { ImageViewerIsland } from '../../../components/islands/ImageViewerIsland';
 
 const { layerId, imageName } = Astro.params;
@@ -22,9 +20,6 @@ const photoType = Astro.url.searchParams.get('type') || '';
 ---
 
 <AppLayout title={`${cleanName} - Tasmania Aerial Photo Explorer`}>
-  <!-- Desktop sidebar navigation -->
-  <NavigationIsland client:only="react" />
-
   <div class="viewer-page">
     <div class="viewer-container">
       <ImageViewerIsland
@@ -42,7 +37,6 @@ const photoType = Astro.url.searchParams.get('type') || '';
   </div>
 
   <!-- Mobile bottom tab bar -->
-  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>

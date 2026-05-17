@@ -1,4 +1,4 @@
-import { MantineWrapper } from '../common/MantineWrapper';
+import { AppProviders } from '../common/AppProviders';
 import { LandingSearchBar } from '../search/LandingSearchBar';
 
 /**
@@ -8,8 +8,8 @@ import { LandingSearchBar } from '../search/LandingSearchBar';
  */
 export function LandingSearchIsland() {
   return (
-    <MantineWrapper>
+    <AppProviders>
       <LandingSearchBar />
-    </MantineWrapper>
+    </AppProviders>
   );
 }

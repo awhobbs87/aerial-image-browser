@@ -1,9 +1,11 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import { Font } from 'astro:assets';
-import { ColorSchemeScript } from '@mantine/core';
 import { ServiceWorkerRegistration } from '../components/common/ServiceWorkerRegistration';
-import '@mantine/core/styles.css';
-import '@mantine/notifications/styles.css';
+import { NavigationProgress } from '../components/common/NavigationProgress';
+import { NavigationIsland } from '../components/islands/NavigationIsland';
+import { MobileNavIsland } from '../components/islands/MobileNavIsland';
+import { ThemeSyncIsland } from '../components/islands/ThemeSyncIsland';
 import '../styles/global.css';
 
 interface Props {
@@ -23,20 +25,59 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#2ac56a" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#10994d" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>{title}</title>
     <Font cssVariable="--font-inter" preload />
-    <ColorSchemeScript defaultColorScheme="auto" />
+    <ClientRouter />
+    <script is:inline>
+      (() => {
+        const KEY = 'theme-preference';
+        const EXPLICIT_KEY = 'theme-preference-explicit';
+        const readPref = () => {
+          const stored = localStorage.getItem(KEY);
+          const explicit = localStorage.getItem(EXPLICIT_KEY) === 'true';
+          if (!explicit) return 'auto';
+          return stored === 'light' || stored === 'dark' || stored === 'auto' ? stored : 'auto';
+        };
+        const resolve = (pref) =>
+          pref === 'dark' ||
+          (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            ? 'dark'
+            : 'light';
+        const applyTo = (root, pref) => {
+          const resolved = resolve(pref ?? readPref());
+          root.setAttribute('data-theme', resolved);
+          root.setAttribute('data-theme-preference', pref ?? readPref());
+          root.classList.toggle('dark', resolved === 'dark');
+        };
+        const apply = () => applyTo(document.documentElement);
+        apply();
+        document.addEventListener('astro:before-swap', (event) => {
+          const newDoc = event.detail?.newDocument;
+          if (newDoc) applyTo(newDoc.documentElement);
+        });
+        document.addEventListener('astro:page-load', apply);
+        document.addEventListener('astro:after-swap', apply);
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+          if (readPref() === 'auto') apply();
+        });
+      })();
+    </script>
   </head>
   <body>
-    <main id="main-content">
+    <NavigationProgress client:only="react" />
+    <ThemeSyncIsland client:only="react" transition:persist="app-theme" />
+    <NavigationIsland client:only="react" transition:persist="app-nav" />
+    <main id="main-content" transition:name="main-content">
       <slot />
     </main>
+    <MobileNavIsland client:only="react" transition:persist="app-mobile-nav" />
     <ServiceWorkerRegistration client:only="react" />
   </body>
 </html>

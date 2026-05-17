@@ -1,13 +1,8 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { NavigationIsland } from '../components/islands/NavigationIsland';
-import { MobileNavIsland } from '../components/islands/MobileNavIsland';
 ---
 
 <AppLayout title="Timeline - Tasmania Aerial Photo Explorer">
-  <!-- Desktop sidebar navigation -->
-  <NavigationIsland client:only="react" />
-
   <div class="timeline-page">
     <div class="timeline-header">
       <h1>Photo Timeline</h1>
@@ -17,9 +12,6 @@ import { MobileNavIsland } from '../components/islands/MobileNavIsland';
       <p class="placeholder">Search for a location to see the timeline</p>
     </div>
   </div>
-
-  <!-- Mobile bottom tab bar -->
-  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style>

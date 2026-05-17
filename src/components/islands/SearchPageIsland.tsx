@@ -1,20 +1,22 @@
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react';
-import { useMediaQuery } from '@mantine/hooks';
-import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconAdjustments, IconSparkles } from '@tabler/icons-react';
 import type maplibregl from 'maplibre-gl';
-import { MantineWrapper } from '../common/MantineWrapper';
 import { SearchBar } from '../search/SearchBar';
 import { SearchResults } from '../search/SearchResults';
 import { MapView } from '../map/MapView';
 import { PhotoFootprints } from '../map/PhotoFootprints';
 import { FilterPanel } from '../filters/FilterPanel';
 import { MobileFilterSheet } from '../filters/MobileFilterSheet';
+import { AppProviders } from '../common/AppProviders';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
 import { usePhotos } from '@/hooks/usePhotos';
 import type { EnhancedPhoto } from '@/types/photo';
 import type { MapBounds } from '@/types/map';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { cn } from '@/lib/cn';
 
 const PhotoPreviewModal = lazy(async () => {
   const module = await import('../photos/PhotoPreviewModal');
@@ -40,7 +42,6 @@ function SearchPageContent() {
   const photos = useMemo(() => data?.photos ?? [], [data]);
   const total = data?.count ?? 0;
 
-  // Read URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlLat = params.get('lat');
@@ -50,7 +51,6 @@ function SearchPageContent() {
     if (urlQ) setQuery(urlQ);
   }, [setLocation, setQuery]);
 
-  // Sync search state back to URL so reloads preserve progress
   useEffect(() => {
     const params = new URLSearchParams();
     if (lat !== null && lon !== null) {
@@ -99,7 +99,6 @@ function SearchPageContent() {
           onClick={handleMapClick}
           onMapReady={handleMapReady}
         />
-        {/* Renderless component: manages footprint layers on the map */}
         <PhotoFootprints
           map={mapInstance}
           photos={photos}
@@ -112,28 +111,30 @@ function SearchPageContent() {
         <div className="search-panel-header">
           <div className="search-panel-bar">
             <SearchBar size="md" onLocationSelect={handleLocationSelect} />
-            <Tooltip label="AI search" withArrow>
-              <ActionIcon
-                variant="subtle"
-                size="lg"
+            <Tooltip label="AI search">
+              <button
+                type="button"
                 onClick={() => setAiSearchOpen(true)}
                 aria-label="AI search"
-                style={{ flexShrink: 0 }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition duration-100 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <IconSparkles size={18} />
-              </ActionIcon>
+              </button>
             </Tooltip>
-            <Tooltip label={filterPanelOpen ? 'Hide filters' : 'Show filters'} withArrow>
-              <ActionIcon
-                variant={filterPanelOpen ? 'filled' : 'subtle'}
-                color={filterPanelOpen ? 'emerald' : undefined}
-                size="lg"
+            <Tooltip label={filterPanelOpen ? 'Hide filters' : 'Show filters'}>
+              <button
+                type="button"
                 onClick={() => setFilterPanelOpen(!filterPanelOpen)}
                 aria-label="Toggle filters"
-                style={{ flexShrink: 0 }}
+                className={cn(
+                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+                  filterPanelOpen
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',
+                )}
               >
                 <IconAdjustments size={18} />
-              </ActionIcon>
+              </button>
             </Tooltip>
           </div>
         </div>
@@ -182,8 +183,10 @@ function SearchPageContent() {
 
 export function SearchPageIsland() {
   return (
-    <MantineWrapper>
-      <SearchPageContent />
-    </MantineWrapper>
+    <AppProviders>
+      <ErrorBoundary>
+        <SearchPageContent />
+      </ErrorBoundary>
+    </AppProviders>
   );
 }

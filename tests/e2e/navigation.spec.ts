@@ -4,7 +4,7 @@ test.describe('Navigation', () => {
   test('landing page loads with title and search', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Tasmania Aerial Photo Explorer/);
-    await expect(page.locator('h1')).toContainText('Tasmania Aerial');
+    await expect(page.locator('h1')).toContainText('Search Tasmania');
     await expect(page.locator('input[placeholder*="Search"]')).toBeVisible();
   });
 

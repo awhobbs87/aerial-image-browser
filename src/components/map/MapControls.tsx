@@ -1,6 +1,5 @@
-import { ActionIcon, Stack, Tooltip } from '@mantine/core';
 import { IconPlus, IconMinus, IconCurrentLocation, IconSearch } from '@tabler/icons-react';
-import classes from './MapControls.module.css';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface MapControlsProps {
   onZoomIn?: () => void;
@@ -8,6 +7,29 @@ interface MapControlsProps {
   onLocateMe?: () => void;
   onSearchHere?: () => void;
   showSearchHere?: boolean;
+}
+
+function ControlButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip label={label} side="left">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-950/10 bg-white/90 text-slate-700 shadow-md backdrop-blur-md transition duration-100 hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-white/10 dark:bg-slate-950/85 dark:text-slate-200 dark:hover:bg-slate-900"
+      >
+        {children}
+      </button>
+    </Tooltip>
+  );
 }
 
 export function MapControls({
@@ -18,36 +40,21 @@ export function MapControls({
   showSearchHere = false,
 }: MapControlsProps) {
   return (
-    <div className={classes.controls}>
-      <Stack gap={4}>
-        {showSearchHere && (
-          <Tooltip label="Search this area" position="left" withArrow>
-            <ActionIcon
-              variant="white"
-              size="lg"
-              onClick={onSearchHere}
-              aria-label="Search this area"
-            >
-              <IconSearch size={18} />
-            </ActionIcon>
-          </Tooltip>
-        )}
-        <Tooltip label="Zoom in" position="left" withArrow>
-          <ActionIcon variant="white" size="lg" onClick={onZoomIn} aria-label="Zoom in">
-            <IconPlus size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label="Zoom out" position="left" withArrow>
-          <ActionIcon variant="white" size="lg" onClick={onZoomOut} aria-label="Zoom out">
-            <IconMinus size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label="My location" position="left" withArrow>
-          <ActionIcon variant="white" size="lg" onClick={onLocateMe} aria-label="My location">
-            <IconCurrentLocation size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Stack>
+    <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-1.5">
+      {showSearchHere && (
+        <ControlButton label="Search this area" onClick={onSearchHere}>
+          <IconSearch size={18} />
+        </ControlButton>
+      )}
+      <ControlButton label="Zoom in" onClick={onZoomIn}>
+        <IconPlus size={18} />
+      </ControlButton>
+      <ControlButton label="Zoom out" onClick={onZoomOut}>
+        <IconMinus size={18} />
+      </ControlButton>
+      <ControlButton label="My location" onClick={onLocateMe}>
+        <IconCurrentLocation size={18} />
+      </ControlButton>
     </div>
   );
 }

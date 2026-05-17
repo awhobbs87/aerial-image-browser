@@ -1,25 +1,21 @@
-import { Drawer, ScrollArea } from '@mantine/core';
 import { useUIStore } from '@/stores/uiStore';
 import { FilterPanel } from './FilterPanel';
+import { Dialog } from '@/components/ui/Dialog';
 
 export function MobileFilterSheet() {
   const { filterPanelOpen, setFilterPanelOpen } = useUIStore();
 
   return (
-    <Drawer
-      opened={filterPanelOpen}
-      onClose={() => setFilterPanelOpen(false)}
-      position="bottom"
-      size="80%"
-      radius="lg"
+    <Dialog
+      open={filterPanelOpen}
+      onOpenChange={setFilterPanelOpen}
       title="Filters"
-      styles={{
-        body: { padding: 0 },
-      }}
+      sheet="bottom"
+      className="overflow-hidden"
     >
-      <ScrollArea h="100%" p="md">
+      <div className="max-h-[calc(82dvh-3.25rem)] overflow-y-auto">
         <FilterPanel onClose={() => setFilterPanelOpen(false)} />
-      </ScrollArea>
-    </Drawer>
+      </div>
+    </Dialog>
   );
 }

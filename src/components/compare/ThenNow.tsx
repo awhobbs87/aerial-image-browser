@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { SegmentedControl, Stack, Text, Paper, Image, Center } from '@mantine/core';
 import type { EnhancedPhoto } from '@/types/photo';
+import { cn } from '@/lib/cn';
 
 interface ThenNowProps {
   photo: EnhancedPhoto;
@@ -10,66 +10,71 @@ export function ThenNow({ photo }: ThenNowProps) {
   const [view, setView] = useState<'then' | 'now'>('then');
 
   const historicalUrl = `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
-
-  // Esri World Imagery tile at approximate center of photo footprint
-  // This is a simple static export -- real implementation would use the actual photo bounds
   const satelliteUrl =
     photo.rings && photo.rings[0]
       ? `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${getBbox(photo.rings)}&size=800,600&format=jpg&f=image`
       : null;
 
   return (
-    <Stack gap="md">
-      <Center>
-        <SegmentedControl
-          value={view}
-          onChange={(v) => setView(v as 'then' | 'now')}
-          data={[
-            { label: `Then (${photo.year || 'Historical'})`, value: 'then' },
-            { label: 'Now (Satellite)', value: 'now' },
-          ]}
-        />
-      </Center>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-full bg-slate-950/5 p-1 dark:bg-white/10">
+          {[
+            ['then', `Then (${photo.year || 'Historical'})`],
+            ['now', 'Now (Satellite)'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setView(value as 'then' | 'now')}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-sm font-bold transition duration-100',
+                view === value
+                  ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-slate-50'
+                  : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <Paper radius="md" style={{ overflow: 'hidden', aspectRatio: '4/3' }}>
+      <div className="aspect-4/3 overflow-hidden rounded-xl bg-slate-950/5 dark:bg-white/5">
         {view === 'then' ? (
-          <Image
+          <img
             src={historicalUrl}
             alt={`${photo.name} - Historical`}
-            fit="contain"
-            h="100%"
-            w="100%"
+            className="h-full w-full object-contain"
           />
         ) : satelliteUrl ? (
-          <Image
+          <img
             src={satelliteUrl}
             alt={`${photo.name} - Current satellite`}
-            fit="contain"
-            h="100%"
-            w="100%"
+            className="h-full w-full object-contain"
           />
         ) : (
-          <Center h="100%">
-            <Text c="dimmed">Satellite imagery unavailable for this location</Text>
-          </Center>
+          <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+            Satellite imagery unavailable for this location
+          </div>
         )}
-      </Paper>
+      </div>
 
-      <Text size="sm" c="dimmed" ta="center">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         {view === 'then'
           ? `Historical aerial photo from ${photo.year || 'unknown year'}`
           : 'Current Esri World Imagery satellite view'}
-      </Text>
-    </Stack>
+      </p>
+    </div>
   );
 }
 
 function getBbox(rings: number[][][]): string {
   if (!rings[0] || rings[0].length === 0) return '0,0,0,0';
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
   for (const point of rings[0]) {
     if (point[0] < minX) minX = point[0];
     if (point[1] < minY) minY = point[1];

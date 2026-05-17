@@ -1,4 +1,4 @@
-import { MantineWrapper } from '../common/MantineWrapper';
+import { AppProviders } from '../common/AppProviders';
 import { FavoritesContent } from '../favorites/FavoritesContent';
 
 /**
@@ -8,8 +8,8 @@ import { FavoritesContent } from '../favorites/FavoritesContent';
  */
 export function FavoritesIsland() {
   return (
-    <MantineWrapper>
+    <AppProviders>
       <FavoritesContent />
-    </MantineWrapper>
+    </AppProviders>
   );
 }

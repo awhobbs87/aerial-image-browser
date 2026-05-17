@@ -1,4 +1,4 @@
-import { MantineWrapper } from '../common/MantineWrapper';
+import { AppProviders } from '../common/AppProviders';
 import { MapView } from '../map/MapView';
 
 interface Props {
@@ -12,8 +12,8 @@ interface Props {
  */
 export function MapViewIsland({ className }: Props) {
   return (
-    <MantineWrapper>
+    <AppProviders>
       <MapView className={className} />
-    </MantineWrapper>
+    </AppProviders>
   );
 }

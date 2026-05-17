@@ -1,5 +1,3 @@
-import { Overlay, Center, Stack, Loader, Text } from '@mantine/core';
-
 interface LoadingOverlayProps {
   visible: boolean;
   message?: string;
@@ -9,56 +7,20 @@ interface LoadingOverlayProps {
 export function LoadingOverlay({ visible, message, fullPage = false }: LoadingOverlayProps) {
   if (!visible) return null;
 
-  const content = (
-    <Center style={{ height: '100%', width: '100%' }}>
-      <Stack align="center" gap="md">
-        <Loader size="lg" color="emerald" />
-        {message && (
-          <Text size="sm" c="dimmed">
-            {message}
-          </Text>
-        )}
-      </Stack>
-    </Center>
-  );
-
-  if (fullPage) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Overlay backgroundOpacity={0.6} blur={4} zIndex={-1} />
-        {content}
-      </div>
-    );
-  }
-
   return (
     <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      className={
+        fullPage
+          ? 'fixed inset-0 z-9999 flex items-center justify-center bg-white/70 backdrop-blur-sm dark:bg-slate-950/70'
+          : 'absolute inset-0 z-100 flex items-center justify-center bg-white/50 backdrop-blur-[2px] dark:bg-slate-950/50'
+      }
     >
-      <Overlay backgroundOpacity={0.4} blur={2} zIndex={-1} />
-      {content}
+      <div className="flex flex-col items-center gap-3">
+        <span className="h-8 w-8 animate-spin rounded-full border-3 border-sky-600/20 border-t-sky-600" />
+        {message && (
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{message}</p>
+        )}
+      </div>
     </div>
   );
 }

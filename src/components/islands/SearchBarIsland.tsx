@@ -1,4 +1,4 @@
-import { MantineWrapper } from '../common/MantineWrapper';
+import { AppProviders } from '../common/AppProviders';
 import { SearchBar } from '../search/SearchBar';
 
 interface Props {
@@ -12,8 +12,8 @@ interface Props {
  */
 export function SearchBarIsland({ size = 'md' }: Props) {
   return (
-    <MantineWrapper>
+    <AppProviders>
       <SearchBar size={size} />
-    </MantineWrapper>
+    </AppProviders>
   );
 }

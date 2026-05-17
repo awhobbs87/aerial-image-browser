@@ -1,22 +1,20 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { NavigationIsland } from '../components/islands/NavigationIsland';
-import { MobileNavIsland } from '../components/islands/MobileNavIsland';
 import { SearchPageIsland } from '../components/islands/SearchPageIsland';
 ---
 
 <AppLayout title="Search - Tasmania Aerial Photo Explorer">
-  <NavigationIsland client:only="react" />
   <SearchPageIsland client:only="react" />
-  <MobileNavIsland client:only="react" />
 </AppLayout>
 
 <style is:global>
   /* Search page layout */
   .search-layout {
     position: relative;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   /* Map fills the entire background */
@@ -27,6 +25,8 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     right: 0;
     bottom: 0;
     z-index: 0;
+    overscroll-behavior: none;
+    touch-action: none;
   }
 
   @media (min-width: 48em) {
@@ -49,25 +49,43 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    overscroll-behavior: contain;
   }
 
-  /* Mobile: stacked layout */
+  /* Mobile: stacked layout — map pinned at top, panel scrolls below */
   @media (max-width: 47.99em) {
     .search-layout {
-      display: flex;
-      flex-direction: column;
+      height: calc(100dvh - var(--mobile-nav-height, calc(64px + env(safe-area-inset-bottom))));
+      min-height: 0;
     }
 
     .search-map {
-      position: relative;
-      height: 40vh;
-      min-height: 250px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: clamp(240px, 42dvh, 360px);
+      min-height: 0;
+      z-index: 0;
     }
 
     .search-panel {
+      position: absolute;
+      top: clamp(240px, 42dvh, 360px);
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
       min-height: auto;
-      flex: 1;
-      background: var(--mantine-color-body, #fff);
+      overflow: hidden;
+      background: #fff;
+      border-top-left-radius: 22px;
+      border-top-right-radius: 22px;
+      box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.12);
+    }
+
+    html[data-theme='dark'] .search-panel {
+      background: #020617;
     }
   }
 
@@ -80,17 +98,17 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
       overflow-y: auto;
       margin: 14px 0 14px 14px;
       border-radius: 26px;
-      background: linear-gradient(
-        180deg,
-        light-dark(rgba(255, 255, 255, 0.92), rgba(15, 23, 42, 0.92)),
-        light-dark(rgba(255, 255, 255, 0.82), rgba(15, 23, 42, 0.84))
-      );
-      backdrop-filter: blur(24px) saturate(130%);
-      -webkit-backdrop-filter: blur(24px) saturate(130%);
-      border-right: 1px solid light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08));
-      box-shadow:
-        0 24px 80px rgba(15, 23, 42, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px) saturate(120%);
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+    }
+
+    html[data-theme='dark'] .search-panel {
+      background: rgba(2, 6, 23, 0.88);
+      border-right-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
     }
   }
 
@@ -98,10 +116,15 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     padding: 14px 14px 8px;
     position: sticky;
     top: 0;
-    /* Must be above photo card badges (z-index 3) and below dropdown (z-index 200) */
-    z-index: 100;
+    /* Above photo card badges; below portaled overlays (z-overlay / z-modal) */
+    z-index: 20;
     background: inherit;
-    border-bottom: 1px solid light-dark(rgba(15, 23, 42, 0.05), rgba(255, 255, 255, 0.08));
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    overscroll-behavior: contain;
+  }
+
+  html[data-theme='dark'] .search-panel-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
   }
 
   /* Row that holds search input + filter toggle button side-by-side */
@@ -118,15 +141,29 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
 
   /* Collapsible filter section (desktop only) */
   .search-panel-filters {
-    border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.06));
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     position: relative;
     z-index: 1;
+  }
+
+  html[data-theme='dark'] .search-panel-filters {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
   }
 
   .search-panel-content {
     padding: 0 14px 16px;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     /* Isolate stacking context so photo card badges don't bleed above the header */
     isolation: isolate;
+  }
+
+  @media (min-width: 48em) {
+    .search-panel-content {
+      overflow: visible;
+    }
   }
 </style>

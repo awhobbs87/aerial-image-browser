@@ -1,53 +1,34 @@
-import { Stack, Text, Paper, Image } from '@mantine/core';
 import type { EnhancedPhoto } from '@/types/photo';
-import classes from './CompareSideBySide.module.css';
 
 interface CompareSideBySideProps {
   photoA: EnhancedPhoto;
   photoB: EnhancedPhoto;
 }
 
+function Pane({ photo }: { photo: EnhancedPhoto }) {
+  return (
+    <div className="relative min-h-72 flex-1 overflow-hidden rounded-xl bg-slate-950/5 dark:bg-white/5">
+      <img
+        src={`/api/images/thumbnail/${photo.layerId}/${photo.name}`}
+        alt={photo.name}
+        className="h-full w-full object-contain"
+        loading="lazy"
+      />
+      <div className="absolute bottom-3 left-3 rounded-lg border border-white/10 bg-white/85 px-3 py-2 text-slate-950 shadow-sm backdrop-blur-md dark:bg-slate-950/85 dark:text-slate-50">
+        <p className="text-sm font-bold">{photo.name}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {photo.year} | Scale 1:{photo.scale?.toLocaleString()}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function CompareSideBySide({ photoA, photoB }: CompareSideBySideProps) {
   return (
-    <div className={classes.container}>
-      <div className={classes.pane}>
-        <Image
-          src={`/api/images/thumbnail/${photoA.layerId}/${photoA.name}`}
-          alt={photoA.name}
-          fit="contain"
-          h="100%"
-          fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e0e0e0' width='400' height='300'/%3E%3C/svg%3E"
-        />
-        <Paper className={classes.label} px="sm" py="xs" radius="sm">
-          <Stack gap={2}>
-            <Text size="sm" fw={600}>
-              {photoA.name}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {photoA.year} | Scale 1:{photoA.scale?.toLocaleString()}
-            </Text>
-          </Stack>
-        </Paper>
-      </div>
-      <div className={classes.pane}>
-        <Image
-          src={`/api/images/thumbnail/${photoB.layerId}/${photoB.name}`}
-          alt={photoB.name}
-          fit="contain"
-          h="100%"
-          fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e0e0e0' width='400' height='300'/%3E%3C/svg%3E"
-        />
-        <Paper className={classes.label} px="sm" py="xs" radius="sm">
-          <Stack gap={2}>
-            <Text size="sm" fw={600}>
-              {photoB.name}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {photoB.year} | Scale 1:{photoB.scale?.toLocaleString()}
-            </Text>
-          </Stack>
-        </Paper>
-      </div>
+    <div className="flex min-h-72 flex-col gap-3 md:h-[60vh] md:flex-row">
+      <Pane photo={photoA} />
+      <Pane photo={photoB} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   IconSearch,
   IconMap,
@@ -7,7 +7,7 @@ import {
   IconMoon,
   IconDeviceDesktop,
 } from '@tabler/icons-react';
-import classes from './Navigation.module.css';
+import { useThemePreference } from '@/hooks/useThemePreference';
 
 interface NavItem {
   label: string;
@@ -25,43 +25,46 @@ export function Navigation() {
   const [active, setActive] = useState(
     typeof window !== 'undefined' ? window.location.pathname : '/',
   );
-  const [colorScheme, setColorScheme] = useState<'light' | 'dark' | 'auto'>(() => {
-    if (typeof document === 'undefined') return 'auto';
-    const current = document.documentElement.getAttribute('data-mantine-color-scheme') ?? 'auto';
-    return current === 'light' || current === 'dark' || current === 'auto' ? current : 'auto';
-  });
+  const { preference, cyclePreference } = useThemePreference();
 
-  const cycleColorScheme = () => {
-    const next = colorScheme === 'light' ? 'dark' : colorScheme === 'dark' ? 'auto' : 'light';
-    setColorScheme(next);
-    document.documentElement.setAttribute('data-mantine-color-scheme', next);
-    window.localStorage.setItem('mantine-color-scheme-value', next);
-  };
+  useEffect(() => {
+    const syncPath = () => setActive(window.location.pathname);
+    syncPath();
+    document.addEventListener('astro:page-load', syncPath);
+    return () => document.removeEventListener('astro:page-load', syncPath);
+  }, []);
 
   const colorSchemeIcon =
-    colorScheme === 'light' ? (
+    preference === 'light' ? (
       <IconSun size={20} />
-    ) : colorScheme === 'dark' ? (
+    ) : preference === 'dark' ? (
       <IconMoon size={20} />
     ) : (
       <IconDeviceDesktop size={20} />
     );
 
   return (
-    <nav className={classes.nav}>
-      <div className={classes.group}>
-        <div className={classes.logo}>TAS</div>
+    <nav className="app-chrome-nav fixed top-0 bottom-0 left-0 z-nav hidden w-16 flex-col items-center justify-between border-r border-slate-950/8 bg-white/86 py-4 shadow-[0_8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex dark:border-white/10 dark:bg-slate-950/84">
+      <div className="flex flex-col items-center gap-3">
+        <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-xs font-extrabold tracking-normal text-white shadow-[0_14px_28px_rgba(15,23,42,0.22)] ring-1 ring-white/30 dark:bg-white dark:text-slate-950">
+          TAS
+        </div>
         {navItems.map((item) => (
           <a
             key={item.href}
             href={item.href}
-            className={`${classes.iconButton} ${active === item.href ? classes.active : ''}`}
+            data-astro-prefetch
+            className={`relative flex h-11 w-11 items-center justify-center rounded-2xl text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/64 dark:hover:bg-white/10 dark:hover:text-white ${
+              active === item.href
+                ? 'bg-amber-400/18 text-slate-950 ring-1 ring-amber-500/24 hover:bg-amber-400/22 dark:bg-amber-300/14 dark:text-amber-100 dark:ring-amber-200/20'
+                : ''
+            }`}
             onClick={() => setActive(item.href)}
             aria-label={item.label}
             aria-current={active === item.href ? 'page' : undefined}
             title={item.label}
           >
-            <span className={classes.iconWrap}>
+            <span className="inline-flex items-center justify-center">
               <item.icon size={22} />
             </span>
           </a>
@@ -69,12 +72,12 @@ export function Navigation() {
       </div>
       <button
         type="button"
-        className={classes.iconButton}
-        onClick={cycleColorScheme}
-        aria-label={`Theme: ${colorScheme}`}
-        title={`Theme: ${colorScheme}`}
+        className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/64 dark:hover:bg-white/10 dark:hover:text-white"
+        onClick={cyclePreference}
+        aria-label={`Theme: ${preference}`}
+        title={`Theme: ${preference}`}
       >
-        <span className={classes.iconWrap}>{colorSchemeIcon}</span>
+        <span className="inline-flex items-center justify-center">{colorSchemeIcon}</span>
       </button>
     </nav>
   );
