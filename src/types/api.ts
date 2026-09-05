@@ -23,6 +23,18 @@ export interface HealthResponse {
   };
 }
 
+/** Worker build/version metadata response */
+export interface VersionResponse {
+  appVersion: string;
+  workerVersion: {
+    id: string | null;
+    tag: string | null;
+    timestamp: string | null;
+  };
+  displayVersion: string;
+  timestamp: number;
+}
+
 /** Layer metadata response */
 export interface LayersResponse {
   layers: LayerInfo[];

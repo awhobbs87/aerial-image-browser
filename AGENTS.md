@@ -1030,6 +1030,11 @@ Append a summary after each working session so the next session has context.
   - Verification on 2026-09-06: `npm run lint`, `npm run type-check`, `xcodegen generate`, and generic `xcodebuild build -project ios/TasmaniaAerialExplorer/TasmaniaAerialExplorer.xcodeproj -scheme TasmaniaAerialExplorer -destination 'generic/platform=iOS Simulator'` passed.
   - Concrete simulator `xcodebuild test` is currently blocked by local simulator state: CoreSimulator reports version `1051.54.0` while device support expects `1051.55.0`, and the requested `iPhone 17` simulator destination is unavailable.
   - No service-token secret files should be staged or committed.
+- Added a desktop sidebar Worker build pill:
+  - Added the Cloudflare `version_metadata` binding as `CF_VERSION_METADATA`.
+  - Added `GET /api/version` to return the current Worker version ID/tag/timestamp with a local fallback.
+  - Updated the desktop sidebar `Navigation` island to fetch the version endpoint and show the shortened Worker version in a glass pill at the bottom of the rail.
+  - Verification on 2026-09-06: `npm run lint`, `npm run type-check`, `npm run build`, and `npx wrangler deploy --dry-run` passed; the dry-run output confirmed `env.CF_VERSION_METADATA` is available.
 
 ---
 

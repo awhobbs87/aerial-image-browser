@@ -40,6 +40,9 @@ interface CloudflareEnv {
 
   /** Cloudflare service binding to the TIFF tile Container Worker */
   TIFF_TILE_SERVICE?: Fetcher;
+
+  /** Cloudflare Worker deployment version metadata */
+  CF_VERSION_METADATA?: WorkerVersionMetadata;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
