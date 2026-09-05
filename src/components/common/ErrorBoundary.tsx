@@ -34,25 +34,23 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="m-4 rounded-2xl border border-red-500/20 bg-red-50 p-4 text-red-950 dark:bg-red-950/30 dark:text-red-100">
-          <div className="flex items-start gap-3">
-            <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
+        <div className="m-4 flex min-h-64 items-center justify-center rounded-lg border border-slate-950/10 bg-white/82 p-6 text-slate-950 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-[#070b12]/88 dark:text-white">
+          <div className="flex max-w-md items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/18 text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-200">
+              <IconAlertTriangle size={20} />
+            </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-bold">Something went wrong</h2>
-              <p className="mt-1 text-sm text-red-900/80 dark:text-red-100/75">
-                An unexpected error occurred. Please try again.
+              <h2 className="text-base font-bold">This view could not be displayed</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Refresh the page to try again. If the map is affected, check that hardware
+                acceleration is enabled in your browser.
               </p>
-              {this.state.error && (
-                <pre className="mt-3 max-h-28 overflow-auto rounded-lg bg-red-950/10 p-2 text-xs">
-                  {this.state.error.message}
-                </pre>
-              )}
               <button
                 type="button"
-                onClick={this.handleReset}
-                className="mt-3 h-9 rounded-full bg-red-600 px-3 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                onClick={() => window.location.reload()}
+                className="mt-4 min-h-11 rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
               >
-                Try again
+                Refresh page
               </button>
             </div>
           </div>

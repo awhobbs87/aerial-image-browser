@@ -20,8 +20,8 @@ const photoType = Astro.url.searchParams.get('type') || '';
 ---
 
 <AppLayout title={`${cleanName} - Tasmania Aerial Photo Explorer`}>
-  <div class="viewer-page">
-    <div class="viewer-container">
+  <div class="h-[calc(100dvh-var(--mobile-nav-height,0px))] sm:h-dvh">
+    <div class="h-full w-full">
       <ImageViewerIsland
         client:only="react"
         imageUrl={imageUrl}
@@ -35,18 +35,4 @@ const photoType = Astro.url.searchParams.get('type') || '';
       />
     </div>
   </div>
-
-  <!-- Mobile bottom tab bar -->
 </AppLayout>
-
-<style>
-  .viewer-page {
-    height: 100vh;
-    height: 100dvh;
-  }
-
-  .viewer-container {
-    width: 100%;
-    height: 100%;
-  }
-</style>

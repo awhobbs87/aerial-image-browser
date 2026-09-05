@@ -116,14 +116,14 @@ export function PhotoPreviewModal({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      className="grid h-[calc(100dvh-16px)] w-[calc(100vw-16px)] max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-2xl p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)]"
+      className="grid h-[calc(100dvh-16px)] w-[calc(100vw-16px)] max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-lg p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)]"
     >
       <div className="relative min-h-0 bg-slate-950">
         <button
           type="button"
           onClick={onClose}
           aria-label="Close preview"
-          className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-lg bg-black/52 text-white backdrop-blur-md transition hover:bg-black/72 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           <IconX size={20} />
         </button>
@@ -149,7 +149,7 @@ export function PhotoPreviewModal({
           {isGallery && (
             <>
               <button
-                className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-30"
+                className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-black/48 text-white backdrop-blur-md transition hover:bg-black/70 disabled:opacity-30"
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
                 aria-label="Previous photo"
@@ -158,7 +158,7 @@ export function PhotoPreviewModal({
                 <IconChevronLeft size={24} />
               </button>
               <button
-                className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-30"
+                className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-black/48 text-white backdrop-blur-md transition hover:bg-black/70 disabled:opacity-30"
                 onClick={handleNext}
                 disabled={currentIndex === photoList.length - 1}
                 aria-label="Next photo"
@@ -197,7 +197,7 @@ export function PhotoPreviewModal({
               type="button"
               onClick={() => toggleFavorite(current)}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               {isFavorite ? (
                 <IconHeartFilled size={18} className="text-rose-500" />
@@ -213,7 +213,7 @@ export function PhotoPreviewModal({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Download TIFF"
-                className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <IconDownload size={18} />
               </a>
@@ -224,7 +224,7 @@ export function PhotoPreviewModal({
               type="button"
               onClick={handleViewFull}
               aria-label="Open full viewer"
-              className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <IconMaximize size={18} />
             </button>

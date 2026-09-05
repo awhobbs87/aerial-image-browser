@@ -3,50 +3,35 @@ import AppLayout from '../layouts/AppLayout.astro';
 ---
 
 <AppLayout title="Timeline - Tasmania Aerial Photo Explorer">
-  <div class="timeline-page">
-    <div class="timeline-header">
-      <h1>Photo Timeline</h1>
-      <p>Browse aerial photos organized chronologically</p>
+  <div class="app-page min-h-[calc(100dvh-var(--mobile-nav-height,0px))]">
+    <div class="app-page-header">
+      <div>
+        <p class="app-eyebrow mb-2">Chronology</p>
+        <h1 class="text-3xl font-bold text-slate-950 sm:text-4xl dark:text-white">
+          Photo timeline
+        </h1>
+        <p class="mt-2 text-sm text-slate-500 sm:text-base dark:text-slate-400">
+          Follow how a place changed across the archive.
+        </p>
+      </div>
     </div>
-    <div class="timeline-content" id="timeline-island">
-      <p class="placeholder">Search for a location to see the timeline</p>
+    <div id="timeline-island" class="app-empty-state">
+      <div
+        class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-400/18 text-xl font-bold text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-200"
+      >
+        46
+      </div>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white">Choose a location first</h2>
+      <p class="max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+        Search the map to gather imagery, then return here to browse it by year.
+      </p>
+      <a
+        href="/search"
+        data-astro-prefetch
+        class="mt-2 inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
+      >
+        Open map
+      </a>
     </div>
   </div>
 </AppLayout>
-
-<style>
-  .timeline-page {
-    min-height: 100vh;
-    padding: 1rem;
-  }
-
-  @media (min-width: 48em) {
-    .timeline-page {
-      padding-left: 2rem;
-      padding-right: 2rem;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-  }
-
-  .timeline-header {
-    margin-bottom: 2rem;
-    padding-top: 1rem;
-  }
-
-  .timeline-header h1 {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-  }
-
-  .timeline-header p {
-    opacity: 0.6;
-  }
-
-  .placeholder {
-    text-align: center;
-    opacity: 0.5;
-    padding: 3rem 1rem;
-  }
-</style>

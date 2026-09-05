@@ -81,9 +81,10 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
       min-height: auto;
       overflow: hidden;
       background: #fff;
-      border-top-left-radius: 22px;
-      border-top-right-radius: 22px;
-      box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.12);
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.1);
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
     }
 
     html[data-theme='dark'] .search-panel {
@@ -94,28 +95,28 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
   /* Desktop: narrow glassmorphic panel */
   @media (min-width: 48em) {
     .search-panel {
-      width: 420px;
+      width: clamp(400px, 31vw, 460px);
       max-height: 100vh;
       max-height: 100dvh;
       overflow-y: auto;
-      margin: 14px 0 14px 14px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(16px) saturate(120%);
-      -webkit-backdrop-filter: blur(16px) saturate(120%);
-      border-right: 1px solid rgba(15, 23, 42, 0.08);
-      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+      margin: 12px 0 12px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px) saturate(125%);
+      -webkit-backdrop-filter: blur(20px) saturate(125%);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 20px 54px rgba(15, 23, 42, 0.14);
     }
 
     html[data-theme='dark'] .search-panel {
-      background: rgba(2, 6, 23, 0.88);
-      border-right-color: rgba(255, 255, 255, 0.08);
+      background: rgba(7, 11, 18, 0.91);
+      border-color: rgba(255, 255, 255, 0.08);
       box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
     }
   }
 
   .search-panel-header {
-    padding: 14px 14px 8px;
+    padding: 12px 12px 10px;
     position: sticky;
     top: 0;
     /* Above photo card badges; below portaled overlays (z-overlay / z-modal) */
@@ -153,7 +154,7 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
   }
 
   .search-panel-content {
-    padding: 0 14px 16px;
+    padding: 10px 12px 18px;
     flex: 1;
     min-height: 0;
     max-width: 100%;

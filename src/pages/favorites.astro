@@ -4,49 +4,25 @@ import { FavoritesIsland } from '../components/islands/FavoritesIsland';
 ---
 
 <AppLayout title="Favorites - Tasmania Aerial Photo Explorer">
-  <div class="favorites-page">
-    <div class="favorites-header">
-      <h1 class="title">Saved Favorites</h1>
-      <p class="subtitle">Your bookmarked aerial photos</p>
+  <div class="app-page min-h-[calc(100dvh-var(--mobile-nav-height,0px))]">
+    <div class="app-page-header">
+      <div>
+        <p class="app-eyebrow mb-2">Your archive</p>
+        <h1 class="text-3xl font-bold text-slate-950 sm:text-4xl dark:text-white">Saved photos</h1>
+        <p class="mt-2 text-sm text-slate-500 sm:text-base dark:text-slate-400">
+          A personal collection of imagery to revisit.
+        </p>
+      </div>
+      <a
+        href="/search"
+        data-astro-prefetch
+        class="inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+      >
+        Find photos
+      </a>
     </div>
-    <div class="favorites-content">
+    <div class="w-full">
       <FavoritesIsland client:only="react" />
     </div>
   </div>
 </AppLayout>
-
-<style>
-  .favorites-page {
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 1rem;
-    color: inherit;
-  }
-
-  @media (min-width: 48em) {
-    .favorites-page {
-      padding-left: 2rem;
-      padding-right: 2rem;
-      max-width: 1200px;
-    }
-  }
-
-  .favorites-header {
-    margin-bottom: 2rem;
-    padding-top: 1rem;
-  }
-
-  .title {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-  }
-
-  .subtitle {
-    opacity: 0.6;
-  }
-
-  .favorites-content {
-    width: 100%;
-  }
-</style>

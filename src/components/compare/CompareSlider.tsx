@@ -33,7 +33,7 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
   return (
     <div
       ref={containerRef}
-      className="relative aspect-4/3 w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-xl bg-slate-950"
+      className="relative aspect-4/3 w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-lg bg-slate-950 shadow-[0_18px_42px_rgba(15,23,42,0.18)] ring-1 ring-white/10"
       onPointerDown={handlePointerDown}
       onPointerMove={(e) => {
         if (isDragging.current) handleMove(e.clientX);
@@ -59,12 +59,14 @@ export function CompareSlider({ photoA, photoB }: CompareSliderProps) {
         className="absolute top-0 bottom-0 z-10 w-0.75 -translate-x-1/2 bg-white shadow-md"
         style={{ left: `${position}%` }}
       >
-        <div className="absolute top-1/2 left-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-600 bg-white shadow-lg" />
+        <div className="absolute top-1/2 left-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-slate-950/75 shadow-lg backdrop-blur-md">
+          <span className="h-4 w-px bg-white/80" />
+        </div>
       </div>
-      <div className="absolute bottom-3 left-3 z-5 rounded-lg bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+      <div className="absolute bottom-3 left-3 z-5 max-w-[42%] truncate rounded bg-black/62 px-2 py-1 text-xs font-bold text-white backdrop-blur-md">
         {photoA.name} ({photoA.year})
       </div>
-      <div className="absolute right-3 bottom-3 z-5 rounded-lg bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+      <div className="absolute right-3 bottom-3 z-5 max-w-[42%] truncate rounded bg-black/62 px-2 py-1 text-xs font-bold text-white backdrop-blur-md">
         {photoB.name} ({photoB.year})
       </div>
     </div>

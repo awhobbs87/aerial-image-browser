@@ -7,7 +7,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-950/10 bg-white/75 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5">
+    <article className="group overflow-hidden rounded-lg border border-slate-950/9 bg-white/78 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)] dark:border-white/9 dark:bg-white/4 dark:hover:border-white/14">
       <a
         href={`/viewer/${photo.layerId}/${photo.name}`}
         className="block overflow-hidden bg-slate-950"
@@ -16,7 +16,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
           src={photo.thumbnailUrl}
           alt={photo.name}
           loading="lazy"
-          className="h-44 w-full object-cover transition duration-200 hover:scale-[1.025]"
+          className="aspect-4/3 w-full object-cover transition duration-300 group-hover:scale-[1.025]"
         />
       </a>
 
@@ -29,7 +29,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
             type="button"
             onClick={() => removeFavorite(photo.objectId, photo.layerId)}
             aria-label={`Remove ${photo.name} from favorites`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
           >
             <IconTrash size={16} />
           </button>
@@ -63,8 +63,10 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <IconHeart size={48} stroke={1.2} className="text-slate-400" />
+    <div className="app-empty-state">
+      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/8 text-rose-500 ring-1 ring-rose-500/12">
+        <IconHeart size={24} stroke={1.5} />
+      </div>
       <div>
         <h2 className="text-base font-bold text-slate-600 dark:text-slate-300">No favorites yet</h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
@@ -72,8 +74,8 @@ function EmptyState() {
         </p>
       </div>
       <a
-        href="/"
-        className="rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+        href="/search"
+        className="mt-2 inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
       >
         Search photos
       </a>
@@ -88,22 +90,22 @@ export function FavoritesContent() {
   if (favorites.length === 0) return <EmptyState />;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between border-b border-slate-950/8 pb-3 dark:border-white/8">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {favorites.length} {favorites.length === 1 ? 'photo' : 'photos'} saved
         </p>
         <button
           type="button"
           onClick={clearFavorites}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold text-red-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-slate-500 transition hover:bg-red-500/8 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:text-slate-400"
         >
           <IconTrash size={14} />
           Clear all
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 min-[30rem]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {favorites.map((photo) => (
           <FavoriteCard key={`${photo.layerId}-${photo.objectId}`} photo={photo} />
         ))}

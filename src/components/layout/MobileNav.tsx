@@ -27,7 +27,7 @@ export function MobileNav() {
   }, []);
 
   return (
-    <nav className="app-chrome-nav fixed right-0 bottom-0 left-0 z-nav flex h-[calc(64px+env(safe-area-inset-bottom))] items-center justify-around border-t border-slate-950/8 bg-white/92 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_32px_rgba(15,23,42,0.1)] backdrop-blur-xl sm:hidden dark:border-white/10 dark:bg-slate-950/92">
+    <nav className="app-chrome-nav fixed right-0 bottom-0 left-0 z-nav flex h-[calc(72px+env(safe-area-inset-bottom))] items-center justify-around border-t border-slate-950/8 bg-white/94 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:hidden dark:border-white/8 dark:bg-[#070b12]/94">
       {navItems.map((item) => {
         const isActive = active === item.href;
         return (
@@ -35,17 +35,18 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             data-astro-prefetch
-            className={`flex min-h-11 min-w-16 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-medium text-slate-500 no-underline transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/62 dark:hover:bg-white/10 dark:hover:text-white ${
-              isActive
-                ? 'bg-amber-400/18 font-bold text-slate-950 ring-1 ring-amber-500/20 dark:bg-amber-300/14 dark:text-amber-100 dark:ring-amber-200/20'
-                : ''
+            className={`relative flex min-h-13 min-w-16 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[0.68rem] font-semibold text-slate-500 no-underline transition duration-150 hover:bg-slate-950/4 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/58 dark:hover:bg-white/8 dark:hover:text-white ${
+              isActive ? 'text-slate-950 dark:text-amber-100' : ''
             }`}
             onClick={() => setActive(item.href)}
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            <span className="inline-flex items-center justify-center">
-              <item.icon size={24} />
+            {isActive && <span className="absolute top-0 h-0.75 w-7 rounded-b-full bg-amber-500" />}
+            <span
+              className={`inline-flex h-7 w-10 items-center justify-center rounded-full ${isActive ? 'bg-amber-400/20 dark:bg-amber-300/14' : ''}`}
+            >
+              <item.icon size={21} stroke={isActive ? 2.2 : 1.8} />
             </span>
             <span className="leading-tight">{item.label}</span>
           </a>

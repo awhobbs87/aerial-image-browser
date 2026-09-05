@@ -489,7 +489,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Run visual regression pass for landing auto-dark, explicit-light, explicit-dark, and mobile auto-dark -- 2026-05-17
 - [x] Run mobile visual/metric pass for landing search focus and search map route -- 2026-05-18
 - [x] Run mobile focused-search regression for landing no-scroll and hidden tab bar while keyboard is active -- 2026-05-18
-- [ ] Run visual regression pass for remaining app routes in light/dark on mobile and desktop
+- [x] Run visual regression pass and holistic responsive polish for remaining app routes on mobile and desktop -- 2026-09-06
 
 ### Phase 8: Native iOS App
 
@@ -576,6 +576,7 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-05-25 | Deploy the TIFF tile generator as a separate Cloudflare Container-backed Worker and bind it to the app Worker | Keeps the public iOS API in the Astro Worker while putting native image-processing dependencies in the runtime designed for containers |
 | 2026-05-25 | Disable `workers_dev` and preview URLs for both new Workers | The app Worker should only be reachable on the production custom route, and the TIFF tile Worker should only be reachable through the Worker service binding; observability remains enabled for both |
 | 2026-06-01 | Use `aerial-api.awhq.uk/v1/*` with Cloudflare Access service-token auth for the native app | Separates browser/WARP policy from native API policy while keeping the tile Worker private behind the app Worker binding |
+| 2026-09-06 | Use one restrained neutral shell, 8px content-card radius, amber interaction accent, and shared responsive page utilities across the web app | A consistent system improves scanability and mobile behavior while preserving map and imagery as the dominant product surfaces |
 
 ---
 
@@ -1035,6 +1036,18 @@ Append a summary after each working session so the next session has context.
   - Added `GET /api/version` to return the current Worker version ID/tag/timestamp with a local fallback.
   - Updated the desktop sidebar `Navigation` island to fetch the version endpoint and show the shortened Worker version in a glass pill at the bottom of the rail.
   - Verification on 2026-09-06: `npm run lint`, `npm run type-check`, `npm run build`, and `npx wrangler deploy --dry-run` passed; the dry-run output confirmed `env.CF_VERSION_METADATA` is available.
+
+### Session 20 -- 2026-09-06
+
+- Completed a holistic web UI polish pass across landing, search/map, favorites, timeline, compare, photo preview, and full image viewer surfaces.
+- Added shared Tailwind page, header, eyebrow, and empty-state utilities; moved the app canvas to a quieter neutral surface and tightened typography rendering and focus behavior.
+- Expanded desktop navigation to include Timeline, made active-route matching work for nested routes, added clearer active indicators, and aligned desktop/mobile chrome to a 72px responsive layout contract.
+- Rebuilt generic page headers and empty states with consistent centered widths, responsive gutters, useful actions, and balanced mobile sizing.
+- Refined map/results ergonomics with a denser desktop glass panel, top-right map controls, horizontally scrollable mobile filter chips, clearer result hierarchy, and a compact browser/WebGL failure fallback that does not expose raw exception data.
+- Polished photo/favorite cards for touch-visible actions, stable aspect ratios, consistent 8px framing, and improved responsive grids.
+- Updated dialogs, photo preview, comparison tools, timeline cards, and full-resolution viewer controls with consistent radii, safe-area-aware placement, and stronger contrast.
+- Visual QA completed at 390x844 and 1440x900 for landing, search fallback, favorites, timeline, and compare. Headless Chromium cannot create the MapLibre WebGL context, so the map itself remains covered by real-browser/manual QA rather than headless screenshots.
+- Verification passed: `npm run lint`, `npm run type-check`, `npm run test` (215 tests), `npm run build`, and `git diff --check`. Production build retains the existing warning for client chunks over 500 kB.
 
 ---
 

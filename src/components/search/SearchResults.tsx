@@ -1,6 +1,6 @@
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
-import { IconAdjustments, IconMapPin } from '@tabler/icons-react';
+import { IconAdjustments, IconMapPin, IconPhotoSearch } from '@tabler/icons-react';
 import { useUIStore } from '@/stores/uiStore';
 import { SCALE_CATEGORIES } from '@/types/photo';
 import type { EnhancedPhoto } from '@/types/photo';
@@ -57,7 +57,10 @@ export function SearchResults({
 
   if (!hasLocation) {
     return (
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
+      <div className="flex min-h-52 flex-col items-center justify-center gap-2 py-10 text-center">
+        <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950/5 text-slate-400 dark:bg-white/6">
+          <IconMapPin size={21} stroke={1.6} />
+        </div>
         <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
           Search for a location
         </p>
@@ -70,7 +73,7 @@ export function SearchResults({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
+      <div className="flex min-h-52 flex-col items-center justify-center gap-2 py-10 text-center">
         <p className="text-base font-semibold text-red-600 dark:text-red-400">
           Error loading photos
         </p>
@@ -84,7 +87,7 @@ export function SearchResults({
   return (
     <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
       {/* Location header */}
-      <div className="flex items-start justify-between gap-3 pt-1">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-950/7 pt-1 pb-3 dark:border-white/8">
         <div className="flex min-w-0 items-start gap-1.5">
           <IconMapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
           <div className="min-w-0">
@@ -104,7 +107,7 @@ export function SearchResults({
               type="button"
               onClick={() => setFilterPanelOpen(true)}
               aria-label="Open filters"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <IconAdjustments size={16} />
             </button>
@@ -113,14 +116,14 @@ export function SearchResults({
       </div>
 
       {/* Always-visible scale filter row */}
-      <div className="flex min-w-0 max-w-full flex-wrap gap-1 overflow-x-hidden">
+      <div className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {SCALE_CATEGORIES.map((cat) => (
           <button
             key={cat.key}
             type="button"
             onClick={() => toggleScaleCategory(cat.key)}
             className={cn(
-              'rounded-full px-2.5 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+              'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
               scaleCategories.includes(cat.key)
                 ? 'bg-sky-600 text-white shadow-sm'
                 : 'bg-slate-950/5 text-slate-600 hover:bg-slate-950/10 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12',
@@ -134,6 +137,7 @@ export function SearchResults({
       {!isLoading && photos.length === 0 && filtersActive ? (
         <div className="flex items-center justify-center py-10 text-center">
           <div className="flex flex-col items-center gap-2">
+            <IconPhotoSearch size={28} stroke={1.5} className="mb-1 text-slate-400" />
             <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
               No photos match these filters
             </p>

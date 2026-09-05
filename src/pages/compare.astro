@@ -3,49 +3,35 @@ import AppLayout from '../layouts/AppLayout.astro';
 ---
 
 <AppLayout title="Compare - Tasmania Aerial Photo Explorer">
-  <div class="compare-page">
-    <div class="compare-header">
-      <h1>Compare Photos</h1>
-      <p>Select two photos to compare side by side, with a slider, or then vs now.</p>
+  <div class="app-page min-h-[calc(100dvh-var(--mobile-nav-height,0px))]">
+    <div class="app-page-header">
+      <div>
+        <p class="app-eyebrow mb-2">Visual comparison</p>
+        <h1 class="text-3xl font-bold text-slate-950 sm:text-4xl dark:text-white">
+          Compare photos
+        </h1>
+        <p class="mt-2 max-w-xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
+          Inspect two captures side by side or reveal change with the comparison slider.
+        </p>
+      </div>
     </div>
-    <div class="compare-content" id="compare-island">
-      <p class="placeholder">Select photos from search results to compare them here.</p>
+    <div class="app-empty-state" id="compare-island">
+      <div
+        class="grid h-12 w-12 grid-cols-2 overflow-hidden rounded-lg ring-1 ring-slate-950/10 dark:ring-white/10"
+      >
+        <span class="bg-amber-400/35"></span><span class="bg-sky-500/30"></span>
+      </div>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white">Select two photos</h2>
+      <p class="max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+        Open a search result and add imagery to your comparison.
+      </p>
+      <a
+        href="/search"
+        data-astro-prefetch
+        class="mt-2 inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
+      >
+        Browse imagery
+      </a>
     </div>
   </div>
 </AppLayout>
-
-<style>
-  .compare-page {
-    min-height: 100vh;
-    padding: 1rem;
-  }
-
-  @media (min-width: 48em) {
-    .compare-page {
-      padding-left: 2rem;
-      padding-right: 2rem;
-      max-width: 1200px;
-    }
-  }
-
-  .compare-header {
-    margin-bottom: 2rem;
-    padding-top: 1rem;
-  }
-
-  .compare-header h1 {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-  }
-
-  .compare-header p {
-    opacity: 0.6;
-  }
-
-  .placeholder {
-    text-align: center;
-    opacity: 0.5;
-    padding: 3rem 1rem;
-  }
-</style>

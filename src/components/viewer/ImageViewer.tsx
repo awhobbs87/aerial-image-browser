@@ -42,7 +42,7 @@ function ViewerButton({
   href?: string;
 }) {
   const className = cn(
-    'flex h-10 w-10 items-center justify-center rounded-xl transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+    'flex h-11 w-11 items-center justify-center rounded-md transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
     active
       ? 'bg-sky-600 text-white shadow-sm'
       : 'text-slate-600 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',
@@ -186,7 +186,7 @@ export function ImageViewer({
   const layerLabel = layerId === 0 ? 'Aerial' : layerId === 1 ? 'Ortho' : 'Digital';
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
+    <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 sm:h-dvh">
       <div ref={containerRef} className="h-full w-full" />
 
       {loading && (
@@ -195,14 +195,14 @@ export function ImageViewer({
         </div>
       )}
 
-      <div className="absolute top-3 left-3 z-20 rounded-2xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
         <ViewerButton label="Back to results" onClick={handleBack}>
           <IconArrowLeft size={iconSize} />
         </ViewerButton>
       </div>
 
       {ready && (
-        <div className="absolute top-3 right-3 z-20 rounded-2xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
           <div className="flex flex-col gap-1">
             <ViewerButton label="Zoom in" onClick={() => viewerRef.current?.viewport?.zoomBy(1.5)}>
               <IconZoomIn size={iconSize} />
@@ -277,7 +277,7 @@ export function ImageViewer({
       )}
 
       {finetuneOpen && (
-        <div className="absolute top-3 right-18 z-20 w-56 rounded-2xl border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-md dark:bg-slate-950/95">
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-18 z-20 w-56 rounded-lg border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:bg-[#070b12]/95">
           <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
             <span>Rotation</span>
             <span>{rotation}deg</span>
@@ -294,7 +294,7 @@ export function ImageViewer({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-md dark:bg-slate-950/85">
+      <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-lg border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
         <div className="flex items-center gap-2 overflow-hidden text-xs">
           {year ? (
             <span className="font-bold text-slate-950 dark:text-slate-50">{year}</span>

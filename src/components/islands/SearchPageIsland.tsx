@@ -116,7 +116,7 @@ function SearchPageContent() {
                 type="button"
                 onClick={() => setAiSearchOpen(true)}
                 aria-label="AI search"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition duration-100 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition duration-100 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <IconSparkles size={18} />
               </button>
@@ -127,7 +127,7 @@ function SearchPageContent() {
                 onClick={() => setFilterPanelOpen(!filterPanelOpen)}
                 aria-label="Toggle filters"
                 className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
                   filterPanelOpen
                     ? 'bg-sky-600 text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',

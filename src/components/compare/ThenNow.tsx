@@ -18,7 +18,7 @@ export function ThenNow({ photo }: ThenNowProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-center">
-        <div className="inline-flex rounded-full bg-slate-950/5 p-1 dark:bg-white/10">
+        <div className="inline-flex rounded-lg border border-slate-950/8 bg-white/72 p-1 shadow-sm dark:border-white/8 dark:bg-white/5">
           {[
             ['then', `Then (${photo.year || 'Historical'})`],
             ['now', 'Now (Satellite)'],
@@ -28,7 +28,7 @@ export function ThenNow({ photo }: ThenNowProps) {
               type="button"
               onClick={() => setView(value as 'then' | 'now')}
               className={cn(
-                'rounded-full px-3 py-1.5 text-sm font-bold transition duration-100',
+                'rounded-md px-3 py-1.5 text-sm font-bold transition duration-100',
                 view === value
                   ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-slate-50'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
@@ -40,7 +40,7 @@ export function ThenNow({ photo }: ThenNowProps) {
         </div>
       </div>
 
-      <div className="aspect-4/3 overflow-hidden rounded-xl bg-slate-950/5 dark:bg-white/5">
+      <div className="aspect-4/3 overflow-hidden rounded-lg border border-slate-950/8 bg-slate-950/5 shadow-sm dark:border-white/8 dark:bg-white/5">
         {view === 'then' ? (
           <img
             src={historicalUrl}

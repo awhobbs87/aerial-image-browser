@@ -3,6 +3,7 @@ import {
   IconSearch,
   IconMap,
   IconHeart,
+  IconClockHour4,
   IconSun,
   IconMoon,
   IconDeviceDesktop,
@@ -19,8 +20,14 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Search', icon: IconSearch, href: '/' },
   { label: 'Map', icon: IconMap, href: '/search' },
+  { label: 'Timeline', icon: IconClockHour4, href: '/timeline' },
   { label: 'Favorites', icon: IconHeart, href: '/favorites' },
 ];
+
+function isActivePath(pathname: string, href: string): boolean {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function isVersionResponse(value: unknown): value is VersionResponse {
   return (
@@ -75,36 +82,44 @@ export function Navigation() {
     );
 
   return (
-    <nav className="app-chrome-nav fixed top-0 bottom-0 left-0 z-nav hidden w-16 flex-col items-center justify-between border-r border-slate-950/8 bg-white/86 py-4 shadow-[0_8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex dark:border-white/10 dark:bg-slate-950/84">
+    <nav className="app-chrome-nav fixed top-0 bottom-0 left-0 z-nav hidden w-18 flex-col items-center justify-between border-r border-slate-950/8 bg-white/88 py-4 shadow-[8px_0_32px_rgba(15,23,42,0.045)] backdrop-blur-2xl sm:flex dark:border-white/8 dark:bg-[#070b12]/88">
       <div className="flex flex-col items-center gap-3">
-        <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-xs font-extrabold tracking-normal text-white shadow-[0_14px_28px_rgba(15,23,42,0.22)] ring-1 ring-white/30 dark:bg-white dark:text-slate-950">
+        <a
+          href="/"
+          aria-label="Tasmania Aerial Photo Explorer home"
+          className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-xs font-extrabold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] ring-1 ring-white/30 transition hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
+        >
           TAS
-        </div>
-        {navItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            data-astro-prefetch
-            className={`relative flex h-11 w-11 items-center justify-center rounded-2xl text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/64 dark:hover:bg-white/10 dark:hover:text-white ${
-              active === item.href
-                ? 'bg-amber-400/18 text-slate-950 ring-1 ring-amber-500/24 hover:bg-amber-400/22 dark:bg-amber-300/14 dark:text-amber-100 dark:ring-amber-200/20'
-                : ''
-            }`}
-            onClick={() => setActive(item.href)}
-            aria-label={item.label}
-            aria-current={active === item.href ? 'page' : undefined}
-            title={item.label}
-          >
-            <span className="inline-flex items-center justify-center">
-              <item.icon size={22} />
-            </span>
-          </a>
-        ))}
+        </a>
+        {navItems.map((item) => {
+          const itemActive = isActivePath(active, item.href);
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              data-astro-prefetch
+              className={`relative flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/60 dark:hover:bg-white/8 dark:hover:text-white ${
+                itemActive
+                  ? 'bg-amber-400/18 text-slate-950 ring-1 ring-amber-500/24 hover:bg-amber-400/22 dark:bg-amber-300/14 dark:text-amber-100 dark:ring-amber-200/20'
+                  : ''
+              }`}
+              onClick={() => setActive(item.href)}
+              aria-label={item.label}
+              aria-current={itemActive ? 'page' : undefined}
+              title={item.label}
+            >
+              {itemActive && (
+                <span className="absolute -left-[0.9rem] h-5 w-0.75 rounded-r-full bg-amber-500" />
+              )}
+              <item.icon size={21} stroke={1.8} />
+            </a>
+          );
+        })}
       </div>
       <div className="flex flex-col items-center gap-2">
         <button
           type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/64 dark:hover:bg-white/10 dark:hover:text-white"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition duration-150 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-white/60 dark:hover:bg-white/8 dark:hover:text-white"
           onClick={cyclePreference}
           aria-label={`Theme: ${preference}`}
           title={`Theme: ${preference}`}

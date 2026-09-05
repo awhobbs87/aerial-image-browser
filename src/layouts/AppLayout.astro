@@ -24,7 +24,7 @@ const { title, description } = Astro.props;
 
   @media (min-width: 48em) {
     :root {
-      --sidebar-width: 64px;
+      --sidebar-width: 72px;
     }
   }
 
@@ -47,7 +47,7 @@ const { title, description } = Astro.props;
   /* Mobile: content area above bottom nav */
   @media (max-width: 47.99em) {
     #app-root {
-      --mobile-nav-height: calc(64px + env(safe-area-inset-bottom));
+      --mobile-nav-height: calc(72px + env(safe-area-inset-bottom));
       padding-bottom: var(--mobile-nav-height);
     }
   }
