@@ -1,0 +1,6 @@
+API_BASE_URL = https:/$()/aerial-api.awhq.uk
+CF_ACCESS_CLIENT_ID =
+CF_ACCESS_CLIENT_SECRET =
+
+#include? "Secrets.xcconfig"
+#include? "LocalOverrides.xcconfig"

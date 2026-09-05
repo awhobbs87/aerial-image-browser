@@ -5,9 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "dev:tiff-tiles": "npm run dev --prefix services/tiff-tile-service",
     "build": "astro build",
     "preview": "astro preview",
+    "start:tiff-tiles": "npm run start --prefix services/tiff-tile-service",
+    "deploy:tiff-tiles": "npm run deploy --prefix services/tiff-tile-service",
+    "deploy:tiff-tiles:dry-run": "npm run deploy:dry-run --prefix services/tiff-tile-service",
     "deploy": "astro build && wrangler deploy",
+    "deploy:cloudflare": "npm run deploy:tiff-tiles && npm run deploy",
     "db:migrate": "wrangler d1 migrations apply PHOTOS_DB",
     "db:migrate:local": "wrangler d1 migrations apply PHOTOS_DB --local",
     "test": "vitest run",
@@ -48,6 +53,7 @@
     "@testing-library/dom": "^10.4.1",
     "@types/three": "^0.184.1",
     "astro": "^6.0.4",
+    "geotiff": "^2.1.3",
     "geotiff-tilesource": "^2.3.0",
     "maplibre-gl": "^5.20.1",
     "openseadragon": "^6.0.2",
@@ -83,7 +89,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0",
     "vitest": "^4.1.0",
-    "wrangler": "^4.73.0"
+    "wrangler": "^4.92.0"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

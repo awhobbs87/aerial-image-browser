@@ -36,7 +36,10 @@ interface CloudflareEnv {
   API_BASE_URL: string;
 
   /** External TIFF conversion service URL (secret) */
-  TIFF_CONVERSION_SERVICE_URL: string;
+  TIFF_CONVERSION_SERVICE_URL?: string;
+
+  /** Cloudflare service binding to the TIFF tile Container Worker */
+  TIFF_TILE_SERVICE?: Fetcher;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

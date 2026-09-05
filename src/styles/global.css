@@ -106,15 +106,6 @@ body {
     overflow: hidden;
   }
 
-  body:has(.landing-page input:focus) #app-root {
-    padding-bottom: 0;
-  }
-
-  body:has(.landing-page input:focus) .landing-page {
-    height: 100dvh;
-    max-height: 100dvh;
-  }
-
   body:has(.landing-page input:focus) .app-chrome-nav {
     display: none;
   }

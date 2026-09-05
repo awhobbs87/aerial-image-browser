@@ -85,4 +85,50 @@ export class R2Manager {
       },
     });
   }
+
+  async getTile(
+    imageName: string,
+    layerId: number,
+    z: number,
+    x: number,
+    y: number,
+  ): Promise<R2ObjectBody | null> {
+    const key = `tiles/v1/${layerId}/${imageName}/${z}/${x}/${y}.webp`;
+    return await this.tiffBucket.get(key);
+  }
+
+  async putTile(
+    imageName: string,
+    layerId: number,
+    z: number,
+    x: number,
+    y: number,
+    data: ArrayBuffer | ReadableStream,
+  ): Promise<void> {
+    const key = `tiles/v1/${layerId}/${imageName}/${z}/${x}/${y}.webp`;
+    await this.tiffBucket.put(key, data, {
+      httpMetadata: {
+        contentType: 'image/webp',
+      },
+      customMetadata: {
+        'tile-z': String(z),
+        'tile-x': String(x),
+        'tile-y': String(y),
+      },
+    });
+  }
+
+  async getTileManifest(imageName: string, layerId: number): Promise<R2ObjectBody | null> {
+    const key = `tile-manifests/v1/${layerId}/${imageName}.json`;
+    return await this.tiffBucket.get(key);
+  }
+
+  async putTileManifest(imageName: string, layerId: number, data: string): Promise<void> {
+    const key = `tile-manifests/v1/${layerId}/${imageName}.json`;
+    await this.tiffBucket.put(key, data, {
+      httpMetadata: {
+        contentType: 'application/json',
+      },
+    });
+  }
 }

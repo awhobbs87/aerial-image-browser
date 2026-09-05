@@ -49,6 +49,8 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    max-width: 100%;
+    overflow-x: hidden;
     overscroll-behavior: contain;
   }
 
@@ -154,8 +156,11 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
     padding: 0 14px 16px;
     flex: 1;
     min-height: 0;
+    max-width: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     /* Isolate stacking context so photo card badges don't bleed above the header */
     isolation: isolate;
@@ -163,7 +168,9 @@ import { SearchPageIsland } from '../components/islands/SearchPageIsland';
 
   @media (min-width: 48em) {
     .search-panel-content {
+      overflow-x: visible;
       overflow: visible;
+      touch-action: auto;
     }
   }
 </style>

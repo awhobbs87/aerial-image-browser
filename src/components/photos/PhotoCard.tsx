@@ -52,7 +52,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
 
   return (
     <div
-      className="group relative cursor-pointer overflow-hidden rounded-md outline-none transition duration-150 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+      className="group relative min-w-0 max-w-full cursor-pointer overflow-hidden rounded-md outline-none transition duration-150 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
       onClick={handleCardClick}
       onMouseEnter={() => setHoveredPhotoId(photo.objectId)}
       onMouseLeave={() => setHoveredPhotoId(null)}
@@ -63,7 +63,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
         if (e.key === 'Enter') handleCardClick();
       }}
     >
-      <div className="relative aspect-4/3 overflow-hidden rounded-md bg-slate-950">
+      <div className="relative aspect-4/3 max-w-full overflow-hidden rounded-md bg-slate-950">
         <img
           className="block h-full w-full object-cover transition duration-200 group-hover:scale-[1.025] group-hover:brightness-105"
           src={thumbnailSrc}

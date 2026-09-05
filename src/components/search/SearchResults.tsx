@@ -45,8 +45,15 @@ export function SearchResults({
   onPhotoCompare,
 }: SearchResultsProps) {
   const { setFilterPanelOpen } = useUIStore();
-  const { scaleCategories, toggleScaleCategory } = useFilterStore();
+  const { layers, startYear, endYear, scaleCategories, toggleScaleCategory, resetFilters } =
+    useFilterStore();
   const isDesktop = useMediaQuery('(min-width: 48em)');
+  const filtersActive =
+    layers.length !== 3 ||
+    ![0, 1, 2].every((layerId) => layers.includes(layerId)) ||
+    startYear !== null ||
+    endYear !== null ||
+    scaleCategories.length > 0;
 
   if (!hasLocation) {
     return (
@@ -75,7 +82,7 @@ export function SearchResults({
   const loc = shortLocation(query);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
       {/* Location header */}
       <div className="flex items-start justify-between gap-3 pt-1">
         <div className="flex min-w-0 items-start gap-1.5">
@@ -106,7 +113,7 @@ export function SearchResults({
       </div>
 
       {/* Always-visible scale filter row */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex min-w-0 max-w-full flex-wrap gap-1 overflow-x-hidden">
         {SCALE_CATEGORIES.map((cat) => (
           <button
             key={cat.key}
@@ -124,13 +131,33 @@ export function SearchResults({
         ))}
       </div>
 
-      <PhotoGrid
-        photos={photos}
-        isLoading={isLoading}
-        total={total}
-        onPhotoClick={onPhotoClick}
-        onPhotoCompare={onPhotoCompare}
-      />
+      {!isLoading && photos.length === 0 && filtersActive ? (
+        <div className="flex items-center justify-center py-10 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
+              No photos match these filters
+            </p>
+            <p className="max-w-72 text-sm text-slate-500 dark:text-slate-400">
+              Clear filters to check all imagery for this location.
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+      ) : (
+        <PhotoGrid
+          photos={photos}
+          isLoading={isLoading}
+          total={total}
+          onPhotoClick={onPhotoClick}
+          onPhotoCompare={onPhotoCompare}
+        />
+      )}
     </div>
   );
 }

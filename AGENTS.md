@@ -22,6 +22,8 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 
 **This branch (`feat/astro6-rewrite`) is a ground-up rewrite** of the original React 19 + Vite + MUI + Hono application into a modern Astro 6 + React 19 stack. The styling direction changed on 2026-05-16 from Mantine CSS Modules to Tailwind CSS v4.
 
+**Native iOS track:** The iOS app in `ios/` is a fresh native SwiftUI product. Use the existing web app only as reference for backend behavior, Cloudflare architecture, ArcGIS integration, TIFF handling, caching, data models, and edge cases. Do not port or visually translate the web UI, Tailwind styling, navigation structure, component hierarchy, landing page, card grids, or browser interaction patterns into the iOS app.
+
 ---
 
 ## Tech Stack
@@ -441,6 +443,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Touch target audit (44x44px minimum in global.css, scoped to buttons/controls) -- 2026-03-15
 - [x] `prefers-reduced-motion` compliance check (verified in global.css) -- 2026-03-15
 - [x] iOS Safari quirks pass (safe area insets, overscroll-behavior, -webkit-overflow-scrolling) -- 2026-03-15
+- [x] Mobile thumbnail preview modal viewport containment pass -- 2026-05-18
 - [x] Mobile viewport/gesture overhaul for landing and search routes -- 2026-05-18
 - [x] Anchor mobile bottom navigation with explicit viewport reserve and no search-route document scroll -- 2026-05-18
 - [x] Fix MapLibre mobile pinch/rotate competition with page scroll (`touch-action: none` on map canvas/container) -- 2026-05-18
@@ -488,6 +491,59 @@ const r2 = env.TIFF_STORAGE;
 - [x] Run mobile focused-search regression for landing no-scroll and hidden tab bar while keyboard is active -- 2026-05-18
 - [ ] Run visual regression pass for remaining app routes in light/dark on mobile and desktop
 
+### Phase 8: Native iOS App
+
+- [x] Create `ios/` folder for native app planning and future Xcode project -- 2026-05-24
+- [x] Add iOS project plan (`ios/PROJECT_PLAN.md`) -- 2026-05-24
+- [x] Add iOS scaffolding guide (`ios/SCAFFOLDING.md`) -- 2026-05-24
+- [x] Add native API contract draft (`ios/API_CONTRACT.md`) -- 2026-05-24
+- [x] Add native UI direction with web-app-as-backend-reference-only rule and Liquid Glass guidance (`ios/UI_DESIGN.md`) -- 2026-05-24
+- [x] Add iOS-specific self-maintaining agent instructions (`ios/AGENTS.md`) -- 2026-05-24
+- [x] Create SwiftUI Xcode project in `ios/TasmaniaAerialExplorer` -- 2026-05-24
+- [x] Remove iOS UI test runner from default scheme after simulator runner crash dialog -- 2026-05-24
+- [x] Implement root tab shell (Search, Map, Timeline, Favorites) -- 2026-05-24
+- [x] Implement MapKit Tasmania map prototype -- 2026-05-24
+- [x] Add Swift API client for `/api/v1/health` -- 2026-05-24
+- [x] Add Cloudflare `/api/v1` API namespace in the Astro/Worker app -- 2026-05-24
+- [x] Add native `/api/v1/layers` and `/api/v1/search/location` endpoints -- 2026-05-24
+- [x] Wire iOS Search tab to native layers and Huonville location search -- 2026-05-24
+- [x] Wire iOS Map tab to native location search with MapKit markers and result chips -- 2026-05-24
+- [x] Fix iOS Map top controls to respect safe area/Dynamic Island clearance -- 2026-05-24
+- [x] Add native photo preview image to the iOS detail sheet -- 2026-05-24
+- [x] Restore smaller individual iOS map control buttons after safe-area fix -- 2026-05-24
+- [x] Set tapped iOS map locations as explicit search center -- 2026-05-24
+- [x] Fix preview lookup for native ortho/digital photo image names without `.tif` suffix -- 2026-05-24
+- [x] Move iOS map controls to direct top-right placement under status icons -- 2026-05-24
+- [x] Restyle iOS search-this-area panel with Liquid Glass/material hierarchy -- 2026-05-24
+- [x] Fix iOS Search action to query tapped marker coordinate instead of map camera center -- 2026-05-24
+- [x] Zoom iOS map into pinned search area after Search completes -- 2026-05-24
+- [x] Request current location on iOS map launch and zoom to user location when available -- 2026-05-25
+- [x] Add iOS user-location recenter behavior to the top map location button -- 2026-05-25
+- [x] Add clearer iOS local API unavailable error for simulator connection failures -- 2026-05-25
+- [x] Add native `/api/v1/photos/{photoId}/tiff` Range-capable endpoint -- 2026-05-24
+- [x] Add first native `/api/v1/photos/{photoId}/tile-manifest` endpoint -- 2026-05-24
+- [x] Add iOS API client method for native tile manifest loading -- 2026-05-24
+- [x] Add first native viewer screen with manifest loading and static preview rendering -- 2026-05-24
+- [x] Implement native tile endpoint route that serves generated WebP tiles from R2 -- 2026-05-24
+- [x] Add generated tile-manifest lookup from R2 with range-manifest fallback -- 2026-05-24
+- [x] Add first native tile-capable viewer surface with basic pan/zoom -- 2026-05-24
+- [x] Add native tile service delegation boundary for TIFF-aware WebP tile generation -- 2026-05-24
+- [x] Version native R2 tile and manifest cache keys under `tiles/v1` and `tile-manifests/v1` -- 2026-05-24
+- [x] Add first dedicated TIFF tile service with `geotiff` range reads and `sharp` WebP encoding -- 2026-05-24
+- [x] Verify Worker-to-tile-service manifest and tile generation path locally -- 2026-05-24
+- [x] Add Cloudflare Container Worker wrapper and Dockerfile for the TIFF tile service -- 2026-05-25
+- [x] Add app Worker `TIFF_TILE_SERVICE` service binding with local URL fallback -- 2026-05-25
+- [x] Add Cloudflare deployment guide for native API and tile generation -- 2026-05-25
+- [x] Disable `workers_dev` and preview URLs for the app Worker and TIFF tile Worker, with observability enabled on both -- 2026-05-25
+- [x] Verify app Worker and TIFF tile Worker dry-run deploys after disabling public dev/preview URLs -- 2026-05-25
+- [x] Deploy hardened app Worker and TIFF tile Worker configs to Cloudflare -- 2026-05-25
+- [x] Add dedicated `aerial-api.awhq.uk/*` Worker route with `/v1/*` native API aliases -- 2026-06-01
+- [x] Wire iOS API client to the dedicated API host and Cloudflare Access service-token headers through ignored xcconfig secrets -- 2026-06-01
+- [x] Add native `/v1/photos/{photoId}/preview` and `/thumbnail` endpoints so iOS media stays inside the API Access app -- 2026-06-01
+- [x] Render visible manifest tiles in the iOS viewer instead of one placeholder tile -- 2026-05-24
+- [x] Add native in-memory tile cache -- 2026-05-24
+- [ ] Add native disk tile cache for recently viewed images
+
 ---
 
 ## Architectural Decisions Log
@@ -508,6 +564,18 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-05-16 | Wireframe globe uses Three.js with 2D canvas fallback              | Real browsers get the 3D renderer; automated/headless or WebGL-restricted environments still render the high-resolution rotating globe for QA |
 | 2026-05-18 | Mobile search uses a fixed viewport shell with an internally scrolling results panel | Prevents the document scroll container from competing with the fixed bottom nav and MapLibre touch gestures on mobile |
 | 2026-05-18 | Hide the mobile tab bar while the landing search input is focused | iOS Safari can otherwise keep fixed chrome above the keyboard and expose a blank scroll gap beneath it |
+| 2026-05-24 | Native iOS app will be a fresh SwiftUI/Liquid Glass design, using the web app only as backend/architecture reference | A direct web UI port would produce a non-native iOS experience and conflict with Apple HIG/Liquid Glass guidance |
+| 2026-05-24 | Use XcodeGen for the initial iOS project scaffold | Keeps the Xcode project repeatable and avoids hand-editing `project.pbxproj` |
+| 2026-05-24 | Native `/api/v1` endpoints wrap existing backend services instead of replacing them | Gives iOS a stable app-shaped contract while preserving the existing web API and ArcGIS integration |
+| 2026-05-24 | Native TIFF endpoint resolves ArcGIS `DOWNLOAD_LINK` before using constructed LIST scan URLs | Constructed `LandTasFilms` URLs work for some historical scans but not all ortho/digital records |
+| 2026-05-24 | Do not use Cloudflare Image Resizing as a TIFF tile generator | Image Resizing does not convert source TIFFs into viewport tiles; generated WebP tiles must come from TIFF-aware decoding/generation |
+| 2026-05-24 | Reuse the GeoTIFFTileSource/geotiff.js approach conceptually for TIFF byte-range tile extraction | The existing web viewer proves range-aware TIFF reads; the native API should move TIFF-aware work behind Cloudflare-generated tiles |
+| 2026-05-24 | Delegate native WebP tile encoding to the TIFF conversion service instead of encoding inside the Worker route | `geotiff.js` can read TIFF metadata/ranges in the Worker, but local workerd exposed that `OffscreenCanvas` is unavailable for WebP encoding; the Worker should cache/proxy generated tiles rather than be the encoder |
+| 2026-05-24 | Implement the first tile generator as a Node service using `geotiff` and `sharp` | Node gives a reliable WebP encoder today while preserving the range-aware TIFF read approach; this can be deployed as the existing conversion service or promoted to a Cloudflare Container |
+| 2026-05-25 | Auto-focus MapKit on the user's current location when permission is granted | Matches expected maps-app behavior and makes the search center immediately relevant on launch |
+| 2026-05-25 | Deploy the TIFF tile generator as a separate Cloudflare Container-backed Worker and bind it to the app Worker | Keeps the public iOS API in the Astro Worker while putting native image-processing dependencies in the runtime designed for containers |
+| 2026-05-25 | Disable `workers_dev` and preview URLs for both new Workers | The app Worker should only be reachable on the production custom route, and the TIFF tile Worker should only be reachable through the Worker service binding; observability remains enabled for both |
+| 2026-06-01 | Use `aerial-api.awhq.uk/v1/*` with Cloudflare Access service-token auth for the native app | Separates browser/WARP policy from native API policy while keeping the tile Worker private behind the app Worker binding |
 
 ---
 
@@ -748,10 +816,228 @@ Append a summary after each working session so the next session has context.
   - Focused search: document/body still `scrollTop: 0`; `.landing-page` is 812px; mobile nav display is `none`; dropdown is visible and contained.
 - Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
 
+### Session 13 -- 2026-05-18
+
+- User requested updating Wrangler after the deploy warning reported a newer CLI.
+- Updated `wrangler` devDependency from `^4.73.0` to `^4.92.0` with `npm install --save-dev wrangler@latest`.
+- `package-lock.json` now resolves top-level Wrangler to `4.92.0`, including newer bundled `workerd`/`miniflare` dependencies for the direct CLI install.
+- Verified `npx wrangler --version` returns `4.92.0`.
+- Verified `npm run build` succeeds after the Wrangler update.
+- `npm install` reported 22 existing audit findings (1 low, 10 moderate, 11 high); no broad `npm audit fix` was run.
+
+### Session 14 -- 2026-05-18
+
+- User reported the landing page content slowly scrolled/drifted downward when opening the search recent-history dropdown.
+- Root cause: the previous focused-search mobile fix changed the landing canvas from `100dvh - mobile nav` to full `100dvh` while the hero content was vertically centered, so the keyboard/dropdown focus animation visibly moved the content.
+- Removed the focused-state landing height expansion and app-root padding change; the tab bar still hides while the landing search input is focused, but the landing page keeps a stable height.
+- Removed the `LandingSearchBar` visual-viewport scroll-pinning effect, which was too aggressive and could fight browser focus handling.
+
+### Session 15 -- 2026-05-18
+
+- User requested a full mobile landing-page overhaul because the search/recent-history interaction still felt buggy.
+- Reworked the mobile landing page from a vertically centered desktop-style hero into a top-anchored app screen:
+  - Header is fixed at the top of the page flow.
+  - Hero copy is smaller and more compact on mobile.
+  - Search is placed immediately below the copy in a stable block.
+  - Quick-location chips use horizontal scrolling on phones instead of wrapping unpredictably.
+  - Footer metadata is a compact three-column status strip pinned at the bottom of the landing canvas.
+  - The wireframe globe is less dominant on mobile and sits behind the content as a background affordance.
+- Browser QA at 375x812 confirmed header, section, footer, landing, and document heights are unchanged before and after focusing the search input; document/body `scrollTop` stayed `0`.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+
+### Session 16 -- 2026-05-18
+
+- User reported left/right rubber-banding when vertically scrolling mobile search results and icon/photo previews.
+- Tightened mobile search result horizontal constraints:
+  - `.search-panel` and `.search-panel-content` now hide horizontal overflow and cap width to 100%.
+  - `.search-panel-content` uses `touch-action: pan-y` on mobile so vertical scrolling does not accept horizontal panning.
+  - `SearchResults`, `PhotoGrid`, group wrappers, grid wrappers, and `PhotoCard` now use `min-w-0`/`max-w-full` and hide horizontal overflow where appropriate.
+  - PhotoGrid toolbar is now mobile-first: controls stack into a two-column grid on phones instead of squeezing count + two selects into one row.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+
+### Session 17 -- 2026-05-18
+
+- User reported Huonville returned zero results even though the official LIST page has records.
+- Checked the local API against LIST ArcGIS for Huonville (`lat=-43.0292365`, `lon=147.0502785`); `/api/search/location` returns 268 records, so the backend point query is working for that place.
+- Likely cause is stale persisted client filters making a valid search look empty.
+- Updated `SearchBar` so selecting a new geocoded location resets filters before setting the new location.
+- Updated `SearchResults` to show an explicit filtered-empty state with a `Clear filters` action when active filters produce zero photos.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+
+### Session 18 -- 2026-05-18
+
+- User reported the thumbnail preview modal extended beyond the mobile viewport and footer buttons could not be interacted with.
+- Reworked `PhotoPreviewModal` mobile geometry:
+  - Dialog is now a fixed-height, viewport-contained two-row grid on phones.
+  - Image area uses the flexible row and shrinks before the footer can leave the viewport.
+  - Footer actions are 44x44px touch targets and include safe-area bottom padding.
+  - Added an explicit close button in the image area for mobile ergonomics.
+- Verified `npm run lint`, `npm run type-check`, and `npm run build` all pass.
+- Attempted mobile Playwright route QA, but headless Chromium failed to create the MapLibre WebGL context and the search island rendered its error boundary before photo cards were available.
+
+### Session 19 -- 2026-05-24
+
+- User asked how to rebuild the app as a native iOS app and whether the current real-time TIFF chunk/viewport loading approach can be reused.
+- Confirmed the current web app uses `geotiff-tilesource` with OpenSeadragon and a range-forwarding TIFF proxy endpoint (`/api/images/tiff-proxy/[layerId]/[imageName]`), so the reusable boundary for native is the HTTP Range-capable TIFF delivery/API layer rather than the JavaScript viewer component.
+- Recommended a Cloudflare Worker API ecosystem for the native app: stable versioned JSON endpoints, range-capable TIFF access, optional server-side tile manifests/derived tiles, R2/KV/D1-backed caching and metadata, and native iOS clients for search, map, viewer, favorites, and offline caching.
+- Recommended starting the iOS rebuild with Apple MapKit unless Google Maps is required for product reasons: MapKit is native, SwiftUI-friendly, and avoids Google billing/API-key setup for the initial prototype; Google Maps remains viable if its basemap/UX is preferred.
+- Checked current Apple cost sources for MapKit and iOS publishing: native MapKit has no separate usage fee beyond Apple Developer Program membership, App Store distribution requires the $99/year developer membership, and paid digital goods/services are subject to App Store commissions unless an exemption/alternative term applies.
+- Confirmed Cloudflare can be the HTTP Range/byte-serving layer for mobile TIFF viewport loading. The critical caveat is that Cloudflare transports byte ranges; the client or a Worker-side tiling service must still understand TIFF/GeoTIFF layout and request/extract the right byte ranges for the visible viewport.
+- Added `ios/UI_DESIGN.md` with instructions to use the old web app only as backend/architecture reference and to design a fresh native SwiftUI app following Apple HIG and Liquid Glass guidance. Liquid Glass should be used for controls/navigation layers, not as a decorative content-layer treatment.
+- Added `ios/AGENTS.md` as the iOS-specific self-maintaining instruction file with progress tracker, decisions log, session notes, and native-app rules.
+- Created the first native SwiftUI scaffold in `ios/TasmaniaAerialExplorer` using XcodeGen:
+  - root `TabView` with Map, Search, Timeline, and Saved tabs;
+  - `NavigationStack` per tab;
+  - MapKit Tasmania map prototype with native controls and material search/results preview;
+  - domain models for layers, photos, search queries, and tile manifests;
+  - `APIClient` with typed envelope/error handling and `/api/v1/health`;
+  - unit and UI test targets.
+- Added `.gitignore` entries for Xcode user state and DerivedData.
+- Normalized the iOS build product name to `TasmaniaAerialExplorer` while keeping the user-facing display name in `Info.plist`, so unit test host resolution works.
+- Verification:
+  - `xcodegen generate` succeeded.
+  - Swift app sources type-check against the iOS SDK with `swiftc -typecheck -target arm64-apple-ios18.0`.
+  - `xcodebuild` simulator build succeeds on iPhone 17 / iOS 26.5.
+  - `xcodebuild test` succeeds on iPhone 17 / iOS 26.5: 2 Swift Testing unit tests and 1 XCTest UI smoke test pass.
+- Added native-facing `/api/v1` endpoints and Swift client wiring:
+  - `src/lib/native-api.ts` defines response envelopes, error payloads, native layers/photos, and mapping helpers.
+  - `GET /api/v1/health` returns native envelope health data.
+  - `GET /api/v1/layers` returns native layer metadata.
+  - `GET /api/v1/search/location` accepts `lat`/`lng`, queries existing ArcGIS helpers, and returns native photo results.
+  - iOS `APIClient` now supports `layers()` and `searchLocation(...)`.
+  - iOS Search tab loads layers and can run a Huonville search, showing native photo result rows.
+- Smoke-tested local native endpoints through `npm run dev`:
+  - health returned `status: ok`;
+  - layers returned the three LIST layers;
+  - Huonville search returned 268 photos.
+- Verified `npm run type-check`, `npm run build`, `xcodegen generate`, and `xcodebuild test` all pass.
+- Continued the iOS map prototype:
+  - `AppRootView` now passes the shared development `APIClient` into `ExplorerMapView`.
+  - `ExplorerMapView` tracks visible MapKit region center, calls `/api/v1/search/location`, renders native photo markers, shows compact result chips, and opens a native photo detail sheet.
+  - Verified `xcodegen generate` and `xcodebuild build` pass.
+  - First simulator test attempt hit a transient CoreSimulator invalid device state / Mach server died error; after `xcrun simctl shutdown all`, `xcodebuild test` passed on iPhone 17 / iOS 26.5.
+- Fixed iOS simulator letterboxing:
+  - Added `LaunchScreen.storyboard`.
+  - Moved launch/display settings into XcodeGen `project.yml` so generated `Info.plist` keeps `UILaunchStoryboardName`, `CFBundleDisplayName`, orientation support, and full-screen sizing metadata.
+  - Verified `xcodegen generate`, `xcodebuild build`, and `xcodebuild test` pass on iPhone 17 / iOS 26.5.
+- Fixed iOS map control safe-area placement:
+  - Replaced the default MapKit top controls with custom SwiftUI floating controls positioned below the status/Dynamic Island safe area.
+  - After user feedback that the safe-area-fixed controls had become too large, changed them to smaller individual 44pt material circle buttons instead of one large capsule.
+  - Added MapReader tap handling so tapping a map location sets the orange search-center marker; panning no longer silently moves the search center.
+  - Fixed the Search button to query the tapped marker coordinate instead of the map camera center.
+  - Moved the controls to a direct top-trailing overlay with fixed top clearance so they stay at the top right under the status icons.
+  - Restyled the search-this-area panel with ultra-thin material, glass stroke/shadow, a stronger header, coordinate readout, prominent Search button, and material result chips.
+  - Added preview image loading to the native photo detail sheet.
+  - Verified `xcodegen generate`, `xcodebuild build`, and a clean simulator retry of `xcodebuild test` pass on iPhone 17 / iOS 26.5.
+  - Verified `xcodebuild build` and `xcodebuild test` pass again after the direct top-right controls, selected-coordinate search fix, and Liquid Glass search panel restyle.
+- Fixed iOS UI test runner crash dialog:
+  - Removed `TasmaniaAerialExplorerUITests` from the default `TasmaniaAerialExplorer` scheme test action in XcodeGen.
+  - The UI test target remains in the project, but routine app-scheme test runs now execute only unit tests and do not launch `TasmaniaAerialExplorerUITests-Runner`.
+  - Verified `xcodegen generate` and `xcodebuild test -scheme TasmaniaAerialExplorer` pass with only the main app and unit-test bundle in the target graph.
+- Updated iOS Search this area behavior:
+  - Successful searches now animate the map camera to a tighter region around the pinned search coordinate.
+  - Added `APIClient.tileManifest(for:)` to continue Phase 4 viewer work by loading a photo's native tile manifest through the existing response-envelope decoder.
+  - Verified `xcodegen generate`, `xcodebuild build`, and `xcodebuild test -scheme TasmaniaAerialExplorer` pass.
+- Fixed native preview availability for ortho/digital records:
+  - `/api/images/image/[layerId]/[imageName]` now queries ArcGIS for `IMAGE_NAME` with or without the `.tif` suffix.
+  - The exact screenshot image `/api/images/image/2/Hobart_25cm_2019_5275252` returns `200 OK` as JPEG locally.
+  - The iOS fallback "Preview unavailable" state is now a compact row rather than a large panel.
+- Added the first native viewer/backend foundation:
+  - `GET /api/v1/photos/{photoId}/tile-manifest` returns a range-backed manifest shell.
+  - `GET /api/v1/photos/{photoId}/tiff` supports HTTP Range forwarding and exposes `Content-Range`, `Content-Length`, and `Accept-Ranges`.
+  - The TIFF endpoint queries ArcGIS `DOWNLOAD_LINK` for the photo first and falls back to the constructed LIST scan URL only if needed.
+  - Verified `npm run type-check` and `npm run build` pass.
+  - Local smoke test for a Huonville TIFF range request returned `206 Partial Content`.
+- Added the first native viewer screen:
+  - `PhotoViewerView` loads a selected photo's native tile manifest.
+  - The viewer renders the available preview image as the first visual surface.
+  - The map photo detail sheet now has an `Open viewer` action.
+  - Verified `xcodegen generate`, `xcodebuild build`, and `xcodebuild test -scheme TasmaniaAerialExplorer` pass on iPhone 17 / iOS 26.5.
+- Added the first native tile endpoint contract and tile-capable surface:
+  - `GET /api/v1/photos/{photoId}/tiles/{z}/{x}/{y}.webp` validates z/x/y and checks R2 tile cache keys under `tiles/{layerId}/{imageName}/{z}/{x}/{y}.webp`.
+  - The endpoint only serves generated WebP tiles that already exist in R2 and returns `TILE_NOT_GENERATED` otherwise.
+  - Native tile manifests now look for generated manifests in R2 at `tile-manifests/{layerId}/{imageName}.json`; absent generated manifests fall back to a range-only manifest with no levels.
+  - Corrected the backend direction: Cloudflare Image Resizing is not a TIFF conversion path. Real tile generation must use TIFF-aware decoding, reusing the existing GeoTIFFTileSource/geotiff.js approach conceptually or through a dedicated service.
+  - `PhotoViewerView` renders manifest tile URLs with basic drag and pinch zoom gestures when generated levels exist; otherwise it remains on the preview surface.
+  - Verified `npm run type-check`, `npm run build`, `xcodegen generate`, `xcodebuild build`, and `xcodebuild test -scheme TasmaniaAerialExplorer` all pass before the Image Resizing correction; after correction, `npm run type-check` and `npm run build` pass.
+- Corrected the tile-generation implementation after smoke testing:
+  - Removed the invalid Worker-side `OffscreenCanvas` WebP encoding path from the native tile route.
+  - Added `src/lib/native-tile-service.ts` as the stable delegation boundary to `TIFF_CONVERSION_SERVICE_URL` for `/tiles/manifest` and `/tiles/generate`.
+  - Native tile manifests now only advertise WebP levels when the TIFF service returns a valid WebP manifest; otherwise they return a TIFF range manifest with metadata and no generated levels.
+  - Native tile R2 cache keys are now versioned under `tiles/v1/...` and `tile-manifests/v1/...` to avoid stale experimental manifests/tiles.
+  - Local smoke test: `tile-manifest` returned `format: "tiff-range"`, `width: 4000`, `height: 4000`, and no levels when the service did not provide a pyramid; the tile route returned `503 TILE_NOT_GENERATED` rather than pretending to convert TIFF in-process.
+  - Verification: `npm run build` passed; first parallel `npm run type-check` collided with the build inspector port, then a standalone `npm run type-check` passed.
+- Completed the first full native tile generation and viewer pass:
+  - Added `services/tiff-tile-service`, a Node 22 service with `GET /health`, `POST /tiles/manifest`, and `POST /tiles/generate`.
+  - The service uses `geotiff` for source TIFF range reads and `sharp` for WebP encoding.
+  - Added root helper scripts `npm run dev:tiff-tiles` and `npm run start:tiff-tiles`.
+  - Updated `.dev.vars.example` with the local `TIFF_CONVERSION_SERVICE_URL=http://127.0.0.1:8788` hint.
+  - Local smoke test with `Hobart_25cm_2019_5275252` returned a WebP manifest with 3 pyramid levels and generated a valid 512x512 WebP tile; repeat tile request returned `X-Cache: HIT`.
+  - Replaced the iOS viewer's single-tile prototype with viewport-aware tile rendering that computes visible `z/x/y` tiles from pan/zoom state.
+  - Added `TileImageMemoryCache`, `TileImageLoader`, and `CachedTileImage` for native in-memory tile caching.
+  - Fixed generated test-bundle Info.plist settings in `ios/TasmaniaAerialExplorer/project.yml`.
+  - Verification: `node --check services/tiff-tile-service/src/server.js`, `npm run lint`, `npm run type-check`, `npm run build`, `xcodegen generate`, `xcodebuild build`, and `xcodebuild test -scheme TasmaniaAerialExplorer` all passed.
+- Updated iOS map launch behavior to be location-first:
+  - Added `UserLocationProvider`, a `CLLocationManager` wrapper for When In Use location permission and current-coordinate publishing.
+  - Added `UserAnnotation()` to `ExplorerMapView` so MapKit shows the native user-location dot.
+  - The map now requests location on launch, zooms tightly to the first user coordinate, and sets that coordinate as the search center.
+  - The top location button now recenters on the user location rather than resetting to all Tasmania.
+  - Added `NSLocationWhenInUseUsageDescription` via XcodeGen.
+  - Added a clearer simulator/local dev error when `localhost:4321` is not running: start `npm run dev` from the repo root.
+  - Console note: CA launch metrics, `CAMetalLayer ... height=0`, and `clip: empty path` still appear in simulator/test logs and are MapKit/CoreAnimation simulator noise; the actionable error was the local API connection refusal.
+  - Verification: `xcodegen generate`, `npm run lint`, `npm run type-check`, `npm run build`, `xcodebuild build`, and `xcodebuild test -scheme TasmaniaAerialExplorer` all passed.
+- Moved the native tile generation architecture toward Cloudflare:
+  - Added Cloudflare Container support for `services/tiff-tile-service` via `Dockerfile`, `.dockerignore`, `src/container-worker.js`, and service-level `wrangler.jsonc`.
+  - Added `@cloudflare/containers` to the service package.
+  - Added root app Worker service binding `TIFF_TILE_SERVICE -> tas-aerial-tiff-tiles`.
+  - Updated native tile service calls to prefer local `TIFF_CONVERSION_SERVICE_URL` only for localhost/127.0.0.1; otherwise they use the Cloudflare service binding first with external URL fallback.
+  - Added deployment scripts: `deploy:tiff-tiles`, `deploy:tiff-tiles:dry-run`, and `deploy:cloudflare`.
+  - Added `ios/CLOUDFLARE_DEPLOYMENT.md` with deployment sequence and smoke tests.
+  - Updated `ios/API_CONTRACT.md` with the Container/service-binding runtime.
+  - Verification: `node --check` passed for the tile Worker and Node service, `npm run lint`, `npm run type-check`, and `npm run build` passed, and app `npx wrangler deploy --dry-run` passed showing `env.TIFF_TILE_SERVICE`.
+  - Tile service `npm run deploy:tiff-tiles:dry-run` bundled the Worker but stopped at the Cloudflare Container image build step because Docker CLI/daemon is not running locally.
+- Finished the Worker exposure hardening pass:
+  - Started Colima as the local Docker-compatible daemon and installed/configured Docker buildx for Wrangler container builds.
+  - Fixed the TIFF tile service compatibility date after Cloudflare rejected a future date.
+  - Set `workers_dev: false` and `preview_urls: false` on both `wrangler.jsonc` files.
+  - Confirmed `observability.enabled: true` remains set on both the app Worker and TIFF tile Worker.
+  - Verification: `npm run deploy:tiff-tiles:dry-run` passed, and `npm run build && npx wrangler deploy --dry-run` passed.
+  - Deployed `tas-aerial-tiff-tiles`; Cloudflare reported current version `369f390f-6f9c-4a76-81ca-22e416deb8ae`.
+  - Deployed `tas-aerial-browser` to `aerial-explorer.awhq.uk/*`; Cloudflare reported current version `f7658256-e4c5-40ff-a59f-705c1315031e`.
+  - Production curl smoke tests reached Cloudflare but returned `Please authenticate via the warp client`, so unauthenticated JSON verification is blocked by the current Access/WARP policy.
+  - Retried production smoke tests for `/api/v1/health`, `/api/v1/layers`, and `/api/v1/search/location`; all still return the WARP authentication message before reaching the Worker.
+- Added the dedicated native API route and service-token client path:
+  - added `aerial-api.awhq.uk/*` to the app Worker routes;
+  - added `/v1/*` endpoint aliases for the native API;
+  - updated native API links to emit `/v1` URLs when requests arrive through `/v1`;
+  - added native `/v1/photos/{photoId}/preview` and `/thumbnail` endpoints;
+  - added iOS xcconfig-based `API_BASE_URL`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET` injection;
+  - stored the local service-token values in ignored `ios/TasmaniaAerialExplorer/Config/Secrets.xcconfig`;
+  - updated the iOS API client to send Cloudflare Access service-token headers when configured.
+- Verification:
+  - `npm run type-check` passed.
+  - `npm run build` passed.
+  - `xcodegen generate` passed.
+  - `xcodebuild build -scheme TasmaniaAerialExplorer` passed on iPhone 17.
+  - `xcodebuild test -scheme TasmaniaAerialExplorer` passed on iPhone 17.
+  - `npm run deploy` deployed app Worker version `070a4e45-4f82-4938-a110-eb068b3f7587`.
+  - Forced-DNS smoke tests with service-token headers passed for `/v1/health`, `/v1/search/location`, `/v1/photos/{photoId}/tile-manifest`, and `/v1/photos/{photoId}/preview`.
+  - DNS for `aerial-api.awhq.uk` was later added and normal-DNS smoke tests passed for `/v1/health`, `/v1/search/location`, `/v1/photos/{photoId}/tile-manifest`, `/v1/photos/{photoId}/preview`, and `/v1/photos/{photoId}/tiles/{z}/{x}/{y}.webp`.
+  - Installed and launched the iOS simulator app built from the production API config; the app bundle contains `APIBaseURL=https://aerial-api.awhq.uk` and an Access client ID from ignored xcconfig settings.
+  - Simulator launch shows the expected location permission prompt. `simctl privacy grant location` did not dismiss the active prompt, so the remaining map/search UI click-through needs manual prompt acceptance or a UI automation path once Computer Use permissions are available.
+- Prepared checkpoint commit for the native iOS and Cloudflare API work:
+  - Confirmed `.gitignore` excludes `ios/TasmaniaAerialExplorer/Config/Secrets.xcconfig`, `ios/TasmaniaAerialExplorer/Config/LocalOverrides.xcconfig`, generated Xcode user state, and service `node_modules`.
+  - Verification on 2026-09-06: `npm run lint`, `npm run type-check`, `xcodegen generate`, and generic `xcodebuild build -project ios/TasmaniaAerialExplorer/TasmaniaAerialExplorer.xcodeproj -scheme TasmaniaAerialExplorer -destination 'generic/platform=iOS Simulator'` passed.
+  - Concrete simulator `xcodebuild test` is currently blocked by local simulator state: CoreSimulator reports version `1051.54.0` while device support expects `1051.55.0`, and the requested `iPhone 17` simulator destination is unavailable.
+  - No service-token secret files should be staged or committed.
+
 ---
 
 ## Blockers & Open Questions
 
 Track anything that needs resolution. Remove items when resolved (but note the resolution in Session Notes).
 
-- None currently.
+- Add persistent disk tile cache for recently viewed native image tiles.
+- Replace the prototype embedded service-token approach before public release; long-lived service tokens in iOS app bundles are not durable secrets.
+- Repair/update the local CoreSimulator runtime before running device-specific `xcodebuild test` again.
+- Complete manual simulator UI pass after accepting the location permission prompt, or enable Computer Use permissions for automated clicking.

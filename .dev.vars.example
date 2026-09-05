@@ -2,3 +2,5 @@
 # These values are secrets and must NOT be committed
 
 TIFF_CONVERSION_SERVICE_URL=https://tiff.awhq.uk
+# For local tile-generation testing:
+# TIFF_CONVERSION_SERVICE_URL=http://127.0.0.1:8788

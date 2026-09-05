@@ -20,6 +20,11 @@ dist/
 .idea/
 *.swp
 *.swo
+*.xcuserstate
+xcuserdata/
+DerivedData/
+ios/TasmaniaAerialExplorer/Config/Secrets.xcconfig
+ios/TasmaniaAerialExplorer/Config/LocalOverrides.xcconfig
 
 # OS
 .DS_Store

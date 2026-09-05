@@ -1,0 +1,665 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		099B7183B2D9C228AD046833 /* TimelineHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E8011A7483445DB1DC3E06 /* TimelineHomeView.swift */; };
+		142DE3F659ADF6ADEDBFEFCE /* SearchQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C50F4BCE8547E6B9D7CF128 /* SearchQuery.swift */; };
+		1DFE1EB2721822B7366C8BD1 /* APIEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C474F3D2F9758943EE0E02 /* APIEnvelope.swift */; };
+		21C558E5092568C1A75BBDC2 /* TasmaniaAerialExplorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A5C4C97142F1FE4CECA4C2 /* TasmaniaAerialExplorerTests.swift */; };
+		4E59FC6E414126598336E99C /* PhotoViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E0CEA95C3C16AA641748A5 /* PhotoViewerView.swift */; };
+		55C39F75E74E079B16E8D026 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABE5624CF2DB11F73FAC5DE /* Photo.swift */; };
+		59562E80F42F47C3DFF01156 /* TileManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EB3F3071B3C06BC7EE2448 /* TileManifest.swift */; };
+		6564EE25C3A356C2DA3E612B /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66FD5A61869BA99A59CB6ECF /* APIError.swift */; };
+		67D46F43D2884C203CF6A772 /* SearchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D885ADE3F6EB358C1F3A10B8 /* SearchHomeView.swift */; };
+		692CF64E5F0BD16203E5E85F /* ExplorerMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2DE41BCC59C02D3E14D039A /* ExplorerMapView.swift */; };
+		6F4DC5633C48EDA8C454462C /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42BAF69E0A67502BEE5D628 /* AppRootView.swift */; };
+		8E05EDFAC20EE467FCABFFD9 /* TasmaniaAerialExplorerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C484613F0140F7D7CA4672B /* TasmaniaAerialExplorerApp.swift */; };
+		91E291AA575BCAD757F45D8E /* UserLocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E010B16E7970E2E6F0E80F0E /* UserLocationProvider.swift */; };
+		A702A3BB2631563FF7611FDC /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1271CC833B3291FBDE68B9C /* AppEnvironment.swift */; };
+		B71F26DD8591CDC7841894BF /* SavedHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4C8FA24941430220EB5C21 /* SavedHomeView.swift */; };
+		D25D2553DBABEE0D9B9D9C98 /* TasmaniaAerialExplorerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6CFA9EB7ED2A9E848E319 /* TasmaniaAerialExplorerUITests.swift */; };
+		D574533593CAFFD32DAB2F13 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D22FCCE51F79E40144C742CF /* APIClient.swift */; };
+		DC502564B9C587829BC2B31F /* TileImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225F985CEE4B51393D22CB8 /* TileImageCache.swift */; };
+		E1C3BAE3205118EEDBBB3E15 /* Layer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B89882A6AA3F7B8F6638F3F4 /* Layer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		52DED487443C847D9A482F7C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC46383EA9129F6663FB662A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1DC3935B9232BC485FA11608;
+			remoteInfo = TasmaniaAerialExplorer;
+		};
+		AE73D69E04A352F9842E9E99 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC46383EA9129F6663FB662A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1DC3935B9232BC485FA11608;
+			remoteInfo = TasmaniaAerialExplorer;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		02908EB42BCDA213E6A1A502 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		1B8502F7E0E2E9EE9DEF3498 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		1BE2D87A46114BC1CCB6D594 /* TasmaniaAerialExplorerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TasmaniaAerialExplorerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C484613F0140F7D7CA4672B /* TasmaniaAerialExplorerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasmaniaAerialExplorerApp.swift; sourceTree = "<group>"; };
+		22E8D7879DD3849128557CB5 /* TasmaniaAerialExplorer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TasmaniaAerialExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30EB3F3071B3C06BC7EE2448 /* TileManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileManifest.swift; sourceTree = "<group>"; };
+		3C50F4BCE8547E6B9D7CF128 /* SearchQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQuery.swift; sourceTree = "<group>"; };
+		49CDA62D04A9842FAB558C2D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		66FD5A61869BA99A59CB6ECF /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		8225F985CEE4B51393D22CB8 /* TileImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileImageCache.swift; sourceTree = "<group>"; };
+		8F4C8FA24941430220EB5C21 /* SavedHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedHomeView.swift; sourceTree = "<group>"; };
+		B0C474F3D2F9758943EE0E02 /* APIEnvelope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvelope.swift; sourceTree = "<group>"; };
+		B5BCF2789A31695C3D663FD9 /* TasmaniaAerialExplorerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TasmaniaAerialExplorerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B89882A6AA3F7B8F6638F3F4 /* Layer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer.swift; sourceTree = "<group>"; };
+		BABE5624CF2DB11F73FAC5DE /* Photo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
+		C4A5C4C97142F1FE4CECA4C2 /* TasmaniaAerialExplorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasmaniaAerialExplorerTests.swift; sourceTree = "<group>"; };
+		C6E8011A7483445DB1DC3E06 /* TimelineHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineHomeView.swift; sourceTree = "<group>"; };
+		D0E6CFA9EB7ED2A9E848E319 /* TasmaniaAerialExplorerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasmaniaAerialExplorerUITests.swift; sourceTree = "<group>"; };
+		D1271CC833B3291FBDE68B9C /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		D22FCCE51F79E40144C742CF /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		D2DE41BCC59C02D3E14D039A /* ExplorerMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplorerMapView.swift; sourceTree = "<group>"; };
+		D885ADE3F6EB358C1F3A10B8 /* SearchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHomeView.swift; sourceTree = "<group>"; };
+		D8E0CEA95C3C16AA641748A5 /* PhotoViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoViewerView.swift; sourceTree = "<group>"; };
+		E010B16E7970E2E6F0E80F0E /* UserLocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLocationProvider.swift; sourceTree = "<group>"; };
+		F42BAF69E0A67502BEE5D628 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1C36DC77D631A60CC226F967 /* TasmaniaAerialExplorerTests */ = {
+			isa = PBXGroup;
+			children = (
+				C4A5C4C97142F1FE4CECA4C2 /* TasmaniaAerialExplorerTests.swift */,
+			);
+			path = TasmaniaAerialExplorerTests;
+			sourceTree = "<group>";
+		};
+		30179CC8F2CD0D8BA9CC63B3 = {
+			isa = PBXGroup;
+			children = (
+				4BF1222630846544ED680B09 /* Config */,
+				36833D994B645B9102D2D74A /* TasmaniaAerialExplorer */,
+				1C36DC77D631A60CC226F967 /* TasmaniaAerialExplorerTests */,
+				3A93488474278250F18A2E3D /* TasmaniaAerialExplorerUITests */,
+				A4160A344DC7A993A68FAD29 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		36833D994B645B9102D2D74A /* TasmaniaAerialExplorer */ = {
+			isa = PBXGroup;
+			children = (
+				6CE50F6CDD6574B827506BC0 /* App */,
+				57F6042770E2A6A5928C68D8 /* Domain */,
+				CC9C3E32C77716BAD32F0DC3 /* Features */,
+				7A54978C54793E760FB3A1D3 /* Infrastructure */,
+			);
+			path = TasmaniaAerialExplorer;
+			sourceTree = "<group>";
+		};
+		3A93488474278250F18A2E3D /* TasmaniaAerialExplorerUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D0E6CFA9EB7ED2A9E848E319 /* TasmaniaAerialExplorerUITests.swift */,
+			);
+			path = TasmaniaAerialExplorerUITests;
+			sourceTree = "<group>";
+		};
+		4BF1222630846544ED680B09 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				02908EB42BCDA213E6A1A502 /* Debug.xcconfig */,
+				1B8502F7E0E2E9EE9DEF3498 /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		57F6042770E2A6A5928C68D8 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				B89882A6AA3F7B8F6638F3F4 /* Layer.swift */,
+				BABE5624CF2DB11F73FAC5DE /* Photo.swift */,
+				3C50F4BCE8547E6B9D7CF128 /* SearchQuery.swift */,
+				30EB3F3071B3C06BC7EE2448 /* TileManifest.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		583C860EFF2E5F33034D9FD5 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				D2DE41BCC59C02D3E14D039A /* ExplorerMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		59DA73FB6C49809B61CCC5B2 /* Viewer */ = {
+			isa = PBXGroup;
+			children = (
+				D8E0CEA95C3C16AA641748A5 /* PhotoViewerView.swift */,
+			);
+			path = Viewer;
+			sourceTree = "<group>";
+		};
+		6CE50F6CDD6574B827506BC0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				D1271CC833B3291FBDE68B9C /* AppEnvironment.swift */,
+				F42BAF69E0A67502BEE5D628 /* AppRootView.swift */,
+				49CDA62D04A9842FAB558C2D /* Info.plist */,
+				1C484613F0140F7D7CA4672B /* TasmaniaAerialExplorerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		6DEC01528AF6D375E4A536E7 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				E010B16E7970E2E6F0E80F0E /* UserLocationProvider.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
+		7A54978C54793E760FB3A1D3 /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				B9FE45CC664893EB14214508 /* API */,
+				BD4205C6305F0AF24ADF9D8C /* Images */,
+				6DEC01528AF6D375E4A536E7 /* Location */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		A187C57C5319F67077A0D6AF /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				D885ADE3F6EB358C1F3A10B8 /* SearchHomeView.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		A4160A344DC7A993A68FAD29 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				22E8D7879DD3849128557CB5 /* TasmaniaAerialExplorer.app */,
+				1BE2D87A46114BC1CCB6D594 /* TasmaniaAerialExplorerTests.xctest */,
+				B5BCF2789A31695C3D663FD9 /* TasmaniaAerialExplorerUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B9FE45CC664893EB14214508 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				D22FCCE51F79E40144C742CF /* APIClient.swift */,
+				B0C474F3D2F9758943EE0E02 /* APIEnvelope.swift */,
+				66FD5A61869BA99A59CB6ECF /* APIError.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		BD4205C6305F0AF24ADF9D8C /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				8225F985CEE4B51393D22CB8 /* TileImageCache.swift */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
+		CC9C3E32C77716BAD32F0DC3 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				583C860EFF2E5F33034D9FD5 /* Map */,
+				F34B36021E25E5EB43980752 /* Saved */,
+				A187C57C5319F67077A0D6AF /* Search */,
+				D2FF9774648E0FA1585D37EE /* Timeline */,
+				59DA73FB6C49809B61CCC5B2 /* Viewer */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		D2FF9774648E0FA1585D37EE /* Timeline */ = {
+			isa = PBXGroup;
+			children = (
+				C6E8011A7483445DB1DC3E06 /* TimelineHomeView.swift */,
+			);
+			path = Timeline;
+			sourceTree = "<group>";
+		};
+		F34B36021E25E5EB43980752 /* Saved */ = {
+			isa = PBXGroup;
+			children = (
+				8F4C8FA24941430220EB5C21 /* SavedHomeView.swift */,
+			);
+			path = Saved;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1DC3935B9232BC485FA11608 /* TasmaniaAerialExplorer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5CA36E60E3399A357263ADC6 /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorer" */;
+			buildPhases = (
+				B8EDB9C4CB4FCF11180B4CF2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TasmaniaAerialExplorer;
+			packageProductDependencies = (
+			);
+			productName = TasmaniaAerialExplorer;
+			productReference = 22E8D7879DD3849128557CB5 /* TasmaniaAerialExplorer.app */;
+			productType = "com.apple.product-type.application";
+		};
+		61B324C42C44E308198ED3C3 /* TasmaniaAerialExplorerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EA76D5DFCA055BA5E2F2C1B /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorerTests" */;
+			buildPhases = (
+				0B63B4C1ED878BC98E6CEBB7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CB5C2DB4C937A1425B7B8BA8 /* PBXTargetDependency */,
+			);
+			name = TasmaniaAerialExplorerTests;
+			packageProductDependencies = (
+			);
+			productName = TasmaniaAerialExplorerTests;
+			productReference = 1BE2D87A46114BC1CCB6D594 /* TasmaniaAerialExplorerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		BFB77601144A7CA9DFD0D03E /* TasmaniaAerialExplorerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B99C2308EC7AB5BBC4328623 /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorerUITests" */;
+			buildPhases = (
+				FEB9FD562E6AC45AA42F53FE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A89BAB5609DAB35AE02C1006 /* PBXTargetDependency */,
+			);
+			name = TasmaniaAerialExplorerUITests;
+			packageProductDependencies = (
+			);
+			productName = TasmaniaAerialExplorerUITests;
+			productReference = B5BCF2789A31695C3D663FD9 /* TasmaniaAerialExplorerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BC46383EA9129F6663FB662A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					BFB77601144A7CA9DFD0D03E = {
+						TestTargetID = 1DC3935B9232BC485FA11608;
+					};
+				};
+			};
+			buildConfigurationList = 1005122CFDE28A0E0608AAB1 /* Build configuration list for PBXProject "TasmaniaAerialExplorer" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 30179CC8F2CD0D8BA9CC63B3;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A4160A344DC7A993A68FAD29 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1DC3935B9232BC485FA11608 /* TasmaniaAerialExplorer */,
+				61B324C42C44E308198ED3C3 /* TasmaniaAerialExplorerTests */,
+				BFB77601144A7CA9DFD0D03E /* TasmaniaAerialExplorerUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0B63B4C1ED878BC98E6CEBB7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21C558E5092568C1A75BBDC2 /* TasmaniaAerialExplorerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8EDB9C4CB4FCF11180B4CF2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D574533593CAFFD32DAB2F13 /* APIClient.swift in Sources */,
+				1DFE1EB2721822B7366C8BD1 /* APIEnvelope.swift in Sources */,
+				6564EE25C3A356C2DA3E612B /* APIError.swift in Sources */,
+				A702A3BB2631563FF7611FDC /* AppEnvironment.swift in Sources */,
+				6F4DC5633C48EDA8C454462C /* AppRootView.swift in Sources */,
+				692CF64E5F0BD16203E5E85F /* ExplorerMapView.swift in Sources */,
+				E1C3BAE3205118EEDBBB3E15 /* Layer.swift in Sources */,
+				55C39F75E74E079B16E8D026 /* Photo.swift in Sources */,
+				4E59FC6E414126598336E99C /* PhotoViewerView.swift in Sources */,
+				B71F26DD8591CDC7841894BF /* SavedHomeView.swift in Sources */,
+				67D46F43D2884C203CF6A772 /* SearchHomeView.swift in Sources */,
+				142DE3F659ADF6ADEDBFEFCE /* SearchQuery.swift in Sources */,
+				8E05EDFAC20EE467FCABFFD9 /* TasmaniaAerialExplorerApp.swift in Sources */,
+				DC502564B9C587829BC2B31F /* TileImageCache.swift in Sources */,
+				59562E80F42F47C3DFF01156 /* TileManifest.swift in Sources */,
+				099B7183B2D9C228AD046833 /* TimelineHomeView.swift in Sources */,
+				91E291AA575BCAD757F45D8E /* UserLocationProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FEB9FD562E6AC45AA42F53FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D25D2553DBABEE0D9B9D9C98 /* TasmaniaAerialExplorerUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A89BAB5609DAB35AE02C1006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1DC3935B9232BC485FA11608 /* TasmaniaAerialExplorer */;
+			targetProxy = AE73D69E04A352F9842E9E99 /* PBXContainerItemProxy */;
+		};
+		CB5C2DB4C937A1425B7B8BA8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1DC3935B9232BC485FA11608 /* TasmaniaAerialExplorer */;
+			targetProxy = 52DED487443C847D9A482F7C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2707C22F4A85D99F8694E170 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		2B525CE8B3B958D0222628B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorerUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TasmaniaAerialExplorer;
+			};
+			name = Release;
+		};
+		5952C649B0B91D79A8349A0C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		5DFE6A4302DC61FBB7DEB27E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 02908EB42BCDA213E6A1A502 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = TasmaniaAerialExplorer/PreviewContent;
+				INFOPLIST_FILE = TasmaniaAerialExplorer/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorer;
+				PRODUCT_NAME = TasmaniaAerialExplorer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		61459B37EF164A66FBAFF038 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1B8502F7E0E2E9EE9DEF3498 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = TasmaniaAerialExplorer/PreviewContent;
+				INFOPLIST_FILE = TasmaniaAerialExplorer/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorer;
+				PRODUCT_NAME = TasmaniaAerialExplorer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		69B808EBE424C5DB4F6C8798 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorerUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TasmaniaAerialExplorer;
+			};
+			name = Debug;
+		};
+		A97BA8869280DCAB91180409 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TasmaniaAerialExplorer.app/TasmaniaAerialExplorer";
+			};
+			name = Debug;
+		};
+		F5B3D7C35544A284D893235A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.awhq.TasmaniaAerialExplorerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TasmaniaAerialExplorer.app/TasmaniaAerialExplorer";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1005122CFDE28A0E0608AAB1 /* Build configuration list for PBXProject "TasmaniaAerialExplorer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5952C649B0B91D79A8349A0C /* Debug */,
+				2707C22F4A85D99F8694E170 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3EA76D5DFCA055BA5E2F2C1B /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A97BA8869280DCAB91180409 /* Debug */,
+				F5B3D7C35544A284D893235A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5CA36E60E3399A357263ADC6 /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5DFE6A4302DC61FBB7DEB27E /* Debug */,
+				61459B37EF164A66FBAFF038 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B99C2308EC7AB5BBC4328623 /* Build configuration list for PBXNativeTarget "TasmaniaAerialExplorerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69B808EBE424C5DB4F6C8798 /* Debug */,
+				2B525CE8B3B958D0222628B9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BC46383EA9129F6663FB662A /* Project object */;
+}

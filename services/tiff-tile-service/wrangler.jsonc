@@ -1,0 +1,40 @@
+{
+  "name": "tas-aerial-tiff-tiles",
+  "main": "src/container-worker.js",
+  "compatibility_date": "2025-05-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "observability": {
+    "enabled": true,
+  },
+
+  "containers": [
+    {
+      "class_name": "TiffTileContainer",
+      "image": "./Dockerfile",
+      "max_instances": 5,
+    },
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TIFF_TILE_CONTAINER",
+        "class_name": "TiffTileContainer",
+      },
+    ],
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TiffTileContainer"],
+    },
+  ],
+
+  "vars": {
+    "TIFF_TILE_CONTAINER_INSTANCES": "3",
+  },
+}

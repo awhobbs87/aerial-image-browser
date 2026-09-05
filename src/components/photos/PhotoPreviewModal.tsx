@@ -6,6 +6,7 @@ import {
   IconMaximize,
   IconHeart,
   IconHeartFilled,
+  IconX,
 } from '@tabler/icons-react';
 import { useFavoritesStore } from '@/stores/favoritesStore';
 import { formatScale } from '@/lib/format';
@@ -115,10 +116,19 @@ export function PhotoPreviewModal({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      className="w-[min(94vw,68rem)] overflow-hidden p-0"
+      className="grid h-[calc(100dvh-16px)] w-[calc(100vw-16px)] max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-2xl p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)]"
     >
-      <div className="relative bg-slate-950">
-        <div className="relative flex h-[min(68vh,42rem)] items-center justify-center">
+      <div className="relative min-h-0 bg-slate-950">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close preview"
+          className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <IconX size={20} />
+        </button>
+
+        <div className="relative flex h-full min-h-[14rem] items-center justify-center sm:h-[min(68vh,42rem)]">
           {!imageLoaded && (
             <span className="absolute h-8 w-8 animate-spin rounded-full border-3 border-white/20 border-t-white" />
           )}
@@ -161,14 +171,14 @@ export function PhotoPreviewModal({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-slate-950/10 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-950">
+      <div className="flex min-h-0 flex-col gap-3 border-t border-slate-950/10 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between sm:pb-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-lg font-bold text-slate-950 dark:text-slate-50">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="shrink-0 text-lg font-bold text-slate-950 dark:text-slate-50">
               {current.year > 0 ? current.year : 'Undated'}
             </p>
             {typeLabel && (
-              <span className="rounded-full bg-sky-600/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+              <span className="truncate rounded-full bg-sky-600/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
                 {typeLabel}
               </span>
             )}
@@ -181,13 +191,13 @@ export function PhotoPreviewModal({
             <span className="truncate">Ref: {current.name}</span>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
           <Tooltip label={isFavorite ? 'Remove favorite' : 'Add favorite'}>
             <button
               type="button"
               onClick={() => toggleFavorite(current)}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               {isFavorite ? (
                 <IconHeartFilled size={18} className="text-rose-500" />
@@ -203,7 +213,7 @@ export function PhotoPreviewModal({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Download TIFF"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <IconDownload size={18} />
               </a>
@@ -214,7 +224,7 @@ export function PhotoPreviewModal({
               type="button"
               onClick={handleViewFull}
               aria-label="Open full viewer"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <IconMaximize size={18} />
             </button>

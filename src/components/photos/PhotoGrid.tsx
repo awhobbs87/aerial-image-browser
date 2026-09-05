@@ -122,13 +122,13 @@ export function PhotoGrid({
   const showGroupHeaders = groupBy !== 'none';
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2 pb-1">
-        <span className="whitespace-nowrap text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
+      <div className="flex min-w-0 max-w-full flex-col gap-2 pb-1 sm:flex-row sm:items-center sm:justify-between">
+        <span className="min-w-0 truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
           {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
         </span>
-        <div className="flex gap-1.5">
-          <label className="relative">
+        <div className="grid min-w-0 max-w-full grid-cols-2 gap-1.5 sm:flex">
+          <label className="relative min-w-0">
             <IconLayoutList
               size={12}
               className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-slate-400"
@@ -137,14 +137,14 @@ export function PhotoGrid({
               value={groupBy}
               onChange={(e) => setGroupBy(e.currentTarget.value as GroupBy)}
               aria-label="Group photos by"
-              className="h-8 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              className="h-8 w-full min-w-0 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
             >
               <option value="decade">By decade</option>
               <option value="year">By year</option>
               <option value="none">No grouping</option>
             </select>
           </label>
-          <label className="relative">
+          <label className="relative min-w-0">
             <IconArrowsSort
               size={12}
               className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-slate-400"
@@ -153,7 +153,7 @@ export function PhotoGrid({
               value={sortBy}
               onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
               aria-label="Sort photos"
-              className="h-8 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              className="h-8 w-full min-w-0 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
             >
               <option value="date-desc">Newest first</option>
               <option value="date-asc">Oldest first</option>
@@ -166,7 +166,7 @@ export function PhotoGrid({
       </div>
 
       {Array.from(groupedPhotos.entries()).map(([groupKey, groupPhotos]) => (
-        <div key={groupKey} className="mb-1">
+        <div key={groupKey} className="mb-1 min-w-0 max-w-full overflow-x-hidden">
           {showGroupHeaders && (
             <div className="mb-1.5 flex items-center gap-2 py-1">
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
@@ -177,7 +177,7 @@ export function PhotoGrid({
               </span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+          <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5 overflow-x-hidden md:grid-cols-3">
             {groupPhotos.map((photo) => (
               <PhotoCard
                 key={`${photo.layerId}-${photo.objectId}`}

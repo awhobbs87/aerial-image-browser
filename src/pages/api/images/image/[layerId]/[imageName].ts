@@ -25,6 +25,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   }
 
   const cleanImageName = imageName.replace(/\.tif$/i, '');
+  const escapedImageName = cleanImageName.replace(/'/g, "''");
 
   const widthParam = url.searchParams.get('width');
   const heightParam = url.searchParams.get('height');
@@ -39,7 +40,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   // Query ArcGIS for both THUMBNAIL_LINK and DOWNLOAD_LINK
   const queryParams = new URLSearchParams({
     f: 'json',
-    where: `IMAGE_NAME='${cleanImageName}.tif'`,
+    where: `IMAGE_NAME='${escapedImageName}.tif' OR IMAGE_NAME='${escapedImageName}'`,
     outFields: 'THUMBNAIL_LINK,DOWNLOAD_LINK',
     returnGeometry: 'false',
   });

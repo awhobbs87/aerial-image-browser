@@ -11,6 +11,7 @@ import {
 import { geocodeSearch, type GeocodingResult } from '@/lib/geocoding';
 import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useFilterStore } from '@/stores/filterStore';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 interface SearchBarProps {
@@ -67,6 +68,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const { query, setQuery, setLocation } = useSearchStore();
   const { searchFocused, setSearchFocused } = useUIStore();
+  const resetFilters = useFilterStore((state) => state.resetFilters);
 
   const [inputValue, setInputValue] = useState(query);
   const [results, setResults] = useState<GeocodingResult[]>([]);
@@ -129,6 +131,7 @@ export function SearchBar({
     (lat: number, lon: number, label: string) => {
       setQuery(label);
       setInputValue(label);
+      resetFilters();
       setLocation(lat, lon);
       setResults([]);
       setSearchFocused(false);
@@ -136,7 +139,7 @@ export function SearchBar({
       addRecentSearch({ label, lat, lon });
       onLocationSelect?.(lat, lon, label);
     },
-    [setQuery, setLocation, setSearchFocused, onLocationSelect],
+    [setQuery, resetFilters, setLocation, setSearchFocused, onLocationSelect],
   );
 
   const handleClearRecents = (e: React.MouseEvent) => {

@@ -2,7 +2,8 @@
   "name": "tas-aerial-browser",
   "account_id": "7330403de4c2446fd5f3cc58548a9cd4",
   "main": "@astrojs/cloudflare/entrypoints/server",
-  "workers_dev": true,
+  "workers_dev": false,
+  "preview_urls": false,
   "compatibility_date": "2025-05-21",
   "compatibility_flags": ["nodejs_compat"],
 
@@ -12,12 +13,24 @@
       "pattern": "aerial-explorer.awhq.uk/*",
       "zone_name": "awhq.uk",
     },
+    {
+      "pattern": "aerial-api.awhq.uk/*",
+      "zone_name": "awhq.uk",
+    },
   ],
 
   // Observability (logs, tail workers)
   "observability": {
     "enabled": true,
   },
+
+  // Service bindings
+  "services": [
+    {
+      "binding": "TIFF_TILE_SERVICE",
+      "service": "tas-aerial-tiff-tiles",
+    },
+  ],
 
   // Analytics Engine
   "analytics_engine_datasets": [

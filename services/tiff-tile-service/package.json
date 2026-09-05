@@ -1,0 +1,20 @@
+{
+  "name": "@tas-aerial-explorer/tiff-tile-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "deploy:dry-run": "wrangler deploy --config wrangler.jsonc --dry-run"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.25",
+    "geotiff": "^2.1.3",
+    "sharp": "^0.34.5"
+  }
+}

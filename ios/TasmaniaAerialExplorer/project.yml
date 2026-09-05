@@ -1,0 +1,79 @@
+name: TasmaniaAerialExplorer
+options:
+  bundleIdPrefix: uk.awhq
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+targets:
+  TasmaniaAerialExplorer:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
+    sources:
+      - path: TasmaniaAerialExplorer/App
+      - path: TasmaniaAerialExplorer/DesignSystem
+        optional: true
+      - path: TasmaniaAerialExplorer/Domain
+      - path: TasmaniaAerialExplorer/Infrastructure
+      - path: TasmaniaAerialExplorer/Features
+    resources:
+      - path: TasmaniaAerialExplorer/Resources/Assets.xcassets
+      - path: TasmaniaAerialExplorer/Resources/LaunchScreen.storyboard
+    info:
+      path: TasmaniaAerialExplorer/App/Info.plist
+      properties:
+        CFBundleDisplayName: Tas Aerial
+        APIBaseURL: $(API_BASE_URL)
+        CFAccessClientID: $(CF_ACCESS_CLIENT_ID)
+        CFAccessClientSecret: $(CF_ACCESS_CLIENT_SECRET)
+        NSLocationWhenInUseUsageDescription: Tasmania Aerial Explorer uses your location to open the map around you and search nearby aerial imagery.
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uk.awhq.TasmaniaAerialExplorer
+        PRODUCT_NAME: TasmaniaAerialExplorer
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_ASSET_PATHS: TasmaniaAerialExplorer/PreviewContent
+    scheme:
+      testTargets:
+        - TasmaniaAerialExplorerTests
+  TasmaniaAerialExplorerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TasmaniaAerialExplorerTests
+    dependencies:
+      - target: TasmaniaAerialExplorer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uk.awhq.TasmaniaAerialExplorerTests
+        GENERATE_INFOPLIST_FILE: YES
+  TasmaniaAerialExplorerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TasmaniaAerialExplorerUITests
+    dependencies:
+      - target: TasmaniaAerialExplorer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uk.awhq.TasmaniaAerialExplorerUITests
+        GENERATE_INFOPLIST_FILE: YES
