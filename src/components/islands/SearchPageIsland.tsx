@@ -89,16 +89,18 @@ function SearchPageContent() {
     lat !== null && lon !== null ? [lon, lat] : undefined;
 
   return (
-    <div className="search-layout">
-      <div className="search-map">
-        <MapView
-          className="map-fill"
-          center={center}
-          zoom={center ? 14 : undefined}
-          onBoundsChange={handleBoundsChange}
-          onClick={handleMapClick}
-          onMapReady={handleMapReady}
-        />
+    <div className="search-layout relative h-[calc(100dvh-var(--mobile-nav-height,0px))] overflow-hidden overscroll-none md:h-dvh">
+      <div className="absolute inset-x-0 top-0 h-[clamp(240px,42dvh,360px)] touch-none md:fixed md:inset-y-0 md:left-[var(--sidebar-width)] md:h-full">
+        <ErrorBoundary>
+          <MapView
+            className="h-full w-full rounded-none"
+            center={center}
+            zoom={center ? 14 : undefined}
+            onBoundsChange={handleBoundsChange}
+            onClick={handleMapClick}
+            onMapReady={handleMapReady}
+          />
+        </ErrorBoundary>
         <PhotoFootprints
           map={mapInstance}
           photos={photos}
@@ -107,9 +109,9 @@ function SearchPageContent() {
         />
       </div>
 
-      <div className="search-panel">
-        <div className="search-panel-header">
-          <div className="search-panel-bar">
+      <div className="absolute inset-x-0 top-[clamp(240px,42dvh,360px)] bottom-0 z-1 flex min-h-0 flex-col overflow-hidden rounded-t-3xl border border-border bg-white shadow-2xl dark:bg-popover md:inset-x-auto md:top-4 md:bottom-4 md:left-4 md:w-[clamp(410px,33vw,480px)] md:rounded-2xl">
+        <div className="relative z-20 shrink-0 border-b border-border bg-white p-3 dark:bg-popover">
+          <div className="flex items-center gap-2 [&>:first-child]:min-w-0 [&>:first-child]:flex-1">
             <SearchBar size="md" onLocationSelect={handleLocationSelect} />
             <Tooltip label="AI search">
               <button
@@ -126,6 +128,7 @@ function SearchPageContent() {
                 type="button"
                 onClick={() => setFilterPanelOpen(!filterPanelOpen)}
                 aria-label="Toggle filters"
+                aria-expanded={filterPanelOpen}
                 className={cn(
                   'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
                   filterPanelOpen
@@ -139,13 +142,12 @@ function SearchPageContent() {
           </div>
         </div>
 
-        {isDesktop && filterPanelOpen && (
-          <div className="search-panel-filters">
-            <FilterPanel onClose={() => setFilterPanelOpen(false)} />
-          </div>
-        )}
-
-        <div className="search-panel-content">
+        <div className="isolate min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain p-4">
+          {isDesktop && filterPanelOpen && (
+            <div className="mb-4 border-b border-border">
+              <FilterPanel onClose={() => setFilterPanelOpen(false)} />
+            </div>
+          )}
           <SearchResults
             query={query}
             hasLocation={hasLocation}

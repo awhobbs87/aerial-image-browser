@@ -32,7 +32,7 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 | ----------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
 | Meta-framework    | Astro 6                                     | Islands architecture, file-based routing, Cloudflare adapter v13         |
 | UI framework      | React 19                                    | Islands via `client:load` / `client:visible` / `client:only="react"`     |
-| Component library | Radix primitives + local components         | Radix for accessible dialogs/tooltips/sheets; native Tailwind-styled controls elsewhere |
+| Component library | Kibo UI + shadcn/ui + Radix primitives      | Kibo for advanced components, shadcn for base controls, local Tailwind components for domain-specific map/viewer UI |
 | Styling           | Tailwind CSS v4                             | Official `@tailwindcss/vite` plugin. Tailwind utilities are the styling source of truth |
 | Map               | MapLibre GL JS                              | Vector tiles, GPU-accelerated, native mobile gestures                    |
 | State management  | Zustand 5                                   | Replaces 30+ useState hooks. Persist middleware for localStorage         |
@@ -490,6 +490,11 @@ const r2 = env.TIFF_STORAGE;
 - [x] Run mobile visual/metric pass for landing search focus and search map route -- 2026-05-18
 - [x] Run mobile focused-search regression for landing no-scroll and hidden tab bar while keyboard is active -- 2026-05-18
 - [x] Run visual regression pass and holistic responsive polish for remaining app routes on mobile and desktop -- 2026-09-06
+- [x] Add global pointer/hover interaction contract and modernize search/filter controls -- 2026-09-06
+- [x] Establish Kibo UI/shadcn foundation and migrate shared theme, overlay, metadata, and comparison components -- 2026-09-06
+
+- [x] Strengthen dark surface hierarchy, refine cards/controls/overlays, and align responsive navigation/results layout -- 2026-09-11
+- [x] Replace the decorative wireframe with a smooth orange geographic dot globe; remove landing feature cards/footer -- 2026-09-11
 
 ### Phase 8: Native iOS App
 
@@ -544,6 +549,29 @@ const r2 = env.TIFF_STORAGE;
 - [x] Add native in-memory tile cache -- 2026-05-24
 - [ ] Add native disk tile cache for recently viewed images
 
+### Phase 9: Cloudflare Account Audit & Hardening
+
+- [x] Diagnose and fix the remaining Firefox authorization/root redirect loop -- 2026-09-11; resolved after Access logout and fresh login; authenticated landing, reload and map verified, user confirmed.
+
+- [x] Fix browser Access login redirect to disabled Workers hostname -- 2026-09-11; disabled eager redirect cookies on the existing Access app, preserving all protected hostnames and policies. API readback and authenticated browser round-trip checks passed; user confirmed recovery.
+
+- [x] Perform read-only Cloudflare account inventory, security, reliability, usage, and cost audit -- 2026-09-06
+- [x] Record full audit report in `docs/CLOUDFLARE_ACCOUNT_AUDIT_2026-09-06.md` -- 2026-09-06
+- [ ] Replace and rotate the overprivileged account-wide Keychain API token
+- [ ] Revoke stale `acc_zone_rw` and `Add Subs` tokens after dependency checks
+- [ ] Correct Access policy Include/Require logic and require MFA/device posture where appropriate
+- [ ] Replace the embedded iOS Access service token with short-lived user/device-bound authentication
+- [ ] Fix `andrewhobbs.org` SPF and consolidate DMARC to a single policy record
+- [ ] Rotate hard-coded Slack and Google Chat webhook URLs and move them exclusively to Worker secrets
+- [ ] Repair or disable failing Email Routing Worker rules
+- [ ] Remove the abandoned pending zone and its Advanced Certificate Manager subscription if unintended
+- [ ] Reconcile dangling Tunnel DNS records and stale Access applications
+- [ ] Harden zone TLS/HTTPS/DNSSEC and response security headers
+- [ ] Remove or narrow the global `andrewhobbs.org` cache bypass rule
+- [ ] Repair or remove stale Logpush jobs and add log-retention lifecycle rules
+- [ ] Review and remove unused Workers, Pages projects, KV namespaces, D1 databases, R2 buckets, and account lists
+- [ ] Require signed Cloudflare Stream URLs if the Valentine's video is intended to be private
+
 ---
 
 ## Architectural Decisions Log
@@ -577,6 +605,12 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-05-25 | Disable `workers_dev` and preview URLs for both new Workers | The app Worker should only be reachable on the production custom route, and the TIFF tile Worker should only be reachable through the Worker service binding; observability remains enabled for both |
 | 2026-06-01 | Use `aerial-api.awhq.uk/v1/*` with Cloudflare Access service-token auth for the native app | Separates browser/WARP policy from native API policy while keeping the tile Worker private behind the app Worker binding |
 | 2026-09-06 | Use one restrained neutral shell, 8px content-card radius, amber interaction accent, and shared responsive page utilities across the web app | A consistent system improves scanability and mobile behavior while preserving map and imagery as the dominant product surfaces |
+| 2026-09-06 | Define pointer cursors and hover feedback globally for semantic interactive elements | Centralizing the baseline prevents new links, buttons, selects, and Radix triggers from silently shipping without desktop affordances while component styles can still provide stronger local states |
+| 2026-09-06 | Adopt Kibo UI as an advanced component layer on top of shadcn/ui rather than treating it as a drop-in theme | Kibo's official registry requires shadcn CSS-variable mode and intentionally supplements base primitives; map, TIFF viewer, and multi-select domain controls remain local where Kibo has no behaviorally equivalent component |
+
+| 2026-09-11 | Disable eager redirect cookies for the browser Access application | Prevent sign-in from visiting the disabled workers.dev endpoint while retaining Access protection on every existing hostname; issue cookies when each hostname is visited instead |
+| 2026-09-11 | Use opaque slate panel/card levels with explicit borders and matched nested radii | The previous dark white washes flattened controls into the panel; 16px photo frames with 8px image corners preserve consistent insets |
+| 2026-09-11 | Precompute dot positions from public-domain Natural Earth 1:50m country polygons | Real geography replaces approximate blobs without runtime map downloads; the same 23,434 positions serve WebGL and Canvas fallback, with one visibility-aware animation loop |
 
 ---
 
@@ -1039,6 +1073,16 @@ Append a summary after each working session so the next session has context.
 
 ### Session 20 -- 2026-09-06
 
+- Performed a read-only Cloudflare account audit using the account-owned API token stored in macOS Keychain; no Cloudflare configuration was changed.
+- Audited account membership/tokens/billing, four zones, DNS, DNSSEC, TLS, modern rulesets, Workers and 30-day invocation analytics, Pages, KV, D1, R2 storage/operations/lifecycle/public domains, Containers, Access policies, Gateway, Tunnels, Email Routing, Logpush, notifications, Stream, Images, and public HTTP/TLS behavior.
+- Added the complete prioritized report at `docs/CLOUDFLARE_ACCOUNT_AUDIT_2026-09-06.md`.
+- Critical findings include an account-wide write-capable Keychain token, overly broad Access Include rules, an SPF `+all` record plus duplicate DMARC records, hard-coded Slack/Google Chat webhook URLs in deployed Workers, and a long-lived Access service token embedded in the iOS client path.
+- Reliability/dead-config findings include three Email Workers with 100% error rates, a route targeting a missing Worker, a pending zero-traffic zone with Business/ACM entitlements, dangling Tunnel CNAMEs, stale Access apps, an unprotected 502 TIFF hostname, obsolete Pages/Workers/KV/D1/R2 resources, and stale Logpush jobs.
+- Performance findings include a match-all cache bypass on the static `andrewhobbs.org` Pages site, weak cleartext/TLS settings on `nohello.fyi`, disabled DNSSEC on two active zones, sparse security headers, and R2 buckets without retention lifecycle rules.
+- The audit token was expanded during the session to allow zone inspection. Cloudflare's legacy Page Rules endpoint still rejects account-owned tokens; modern Rulesets were fully inspected.
+
+### Session 20 -- 2026-09-06
+
 - Completed a holistic web UI polish pass across landing, search/map, favorites, timeline, compare, photo preview, and full image viewer surfaces.
 - Added shared Tailwind page, header, eyebrow, and empty-state utilities; moved the app canvas to a quieter neutral surface and tightened typography rendering and focus behavior.
 - Expanded desktop navigation to include Timeline, made active-route matching work for nested routes, added clearer active indicators, and aligned desktop/mobile chrome to a 72px responsive layout contract.
@@ -1048,6 +1092,52 @@ Append a summary after each working session so the next session has context.
 - Updated dialogs, photo preview, comparison tools, timeline cards, and full-resolution viewer controls with consistent radii, safe-area-aware placement, and stronger contrast.
 - Visual QA completed at 390x844 and 1440x900 for landing, search fallback, favorites, timeline, and compare. Headless Chromium cannot create the MapLibre WebGL context, so the map itself remains covered by real-browser/manual QA rather than headless screenshots.
 - Verification passed: `npm run lint`, `npm run type-check`, `npm run test` (215 tests), `npm run build`, and `git diff --check`. Production build retains the existing warning for client chunks over 500 kB.
+
+### Session 21 -- 2026-09-06
+
+- Added a global interaction contract covering enabled links, buttons, selects, summaries, role-based buttons, associated labels, range controls, and file inputs with pointer cursors and hover feedback; disabled controls retain a not-allowed cursor.
+- Replaced the search panel's oversized scale pills with compact two-line selection tiles, clear selected/check states, and preserved full accessible names.
+- Reworked the photo count/group/sort row into an unclipped stacked toolbar with explicit labels, compact rectangular controls, custom icons, and responsive two-column geometry.
+- Applied the same image-type, date-field, and scale-tile language to the expanded desktop/mobile FilterPanel.
+- Browser QA passed at 1440x900 and 390x844 against a live Hobart search. An automated computed-style audit found zero pointer-cursor failures across live semantic clickable elements, and selected/hover states were visually checked.
+- Verification passed: `npm run lint`, `npm run type-check`, `npm run test` (215 tests), `npm run build`, formatting, and `git diff --check`. The first test run caught changed accessible scale names; adding the original full labels through `aria-label` resolved it.
+- Deployed the interaction-polish build to `aerial-explorer.awhq.uk/*` and `aerial-api.awhq.uk/*`; Cloudflare Worker version `edd97098-49ab-419d-a796-54e1c67041a2` is live, and production smoke checks returned HTTP 200.
+
+### Session 22 -- 2026-09-06
+
+- Added shadcn/ui CSS-variable mode, registry configuration, semantic Tailwind color/radius tokens, shared class merging, and the runtime dependencies required by Kibo UI.
+- Installed Kibo `Comparison`, `Theme Switcher`, and `Pill` components from the official registry and generated their shadcn button, badge, avatar, dialog, and tooltip dependencies locally.
+- Migrated the comparison slider to Kibo with added Arrow/Home/End keyboard support; moved theme selection to a Kibo three-mode popover while retaining the app's existing `auto` preference contract.
+- Migrated Worker version metadata, result counts, group counts, and photo-type metadata to Kibo pills; migrated common result actions, dialogs, bottom sheets, and tooltips to shadcn-backed primitives.
+- Kept MapLibre, OpenSeadragon, search autocomplete, and multi-select scale/layer controls local because Kibo does not provide behaviorally equivalent primitives; its current Choicebox registry implementation is radio-only.
+- Browser QA passed for the Hobart search at desktop and 390x844 mobile sizes in light and dark modes. No horizontal overflow or sub-44px visible buttons were found, and the mobile sheet exposes exactly one close action.
+- Verification passed: `npm run lint`, `npm run type-check`, `npm run test` (215 tests), and `npm run build`. The existing client chunk-size warning remains.
+- Deployed the Kibo/shadcn migration to `aerial-explorer.awhq.uk/*` and `aerial-api.awhq.uk/*`; Cloudflare Worker version `3e2a2b33-82b1-4f45-8cd5-35f4eebc10a9` is live. Anonymous post-deploy smoke checks are intercepted by the existing Access/WARP policy before reaching the Worker.
+
+### Session 23 -- 2026-09-11
+
+- Investigated the reported Cloudflare “There is nothing here yet” page after signing into `aerial-explorer.awhq.uk`.
+- Confirmed Access app `6aa8df98-4995-4da3-bfe3-63441cfa1dee` includes the production domain plus legacy Pages and Workers domains; the app audience matches the reported callback. The Workers API confirms workers.dev and preview URLs are disabled.
+- Cloudflare documents that legacy multi-domain apps with five or fewer domains preemptively redirect through each hostname to set authorization cookies. The disabled Workers endpoint therefore breaks the post-login chain.
+- Updated only `eager_redirect_cookie_setting` to `false` through the Cloudflare API. Saved a restricted-permission pre-change backup in the local temporary directory. Readback confirmed the setting and equality of policies, audience, domains, destinations, identity-provider settings, and session duration. No Worker deployment or application source change was required.
+- A fresh in-app browser visit reaches the expected Tas Aerial Browser sign-in page on the team domain. Full authenticated callback verification requires the user to sign in again from the production root URL; the old nonce/state URL must not be reused.
+- Reference: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/#multi-domain-applications
+
+---
+
+### Session 24 -- 2026-09-11
+
+- [x] Polish web surfaces, controls, cards, overlays and responsive layouts; strengthen dark-mode contrast -- 2026-09-11.
+- Firefox authorization loop resolved after Access logout and fresh login; authenticated landing, reload and map verified, and user confirmed working.
+
+- [x] Replace approximate wireframe globe with high-definition orange country dots inspired by the Cloudflare About page -- 2026-09-11.
+
+- Raised dark panels, cards, inputs and overlays with explicit borders; increased card/metadata readability and corrected photo image/card corner geometry after user feedback.
+- Unified tablet navigation at 768px, added desktop navigation labels, bounded the desktop results panel with internal scrolling, and kept mobile scale controls in the filter sheet to expose more photos.
+- Added labeled full-viewer action and image-failure feedback to the preview, improved bottom-sheet sizing/accessibility, preserved independent favorite keyboard actions, and contained map failures so search/results remain usable.
+- Replaced the old wireframe/blob globe with real country/coastline dots, antialiased orange point sprites, hidden rear faces, a Canvas fallback, and elapsed-time rotation. Reduced motion, off-screen/hidden-tab pauses, resize cleanup and animation teardown are supported. Removed the three desktop feature cards and landing footer at the user’s request, leaving search and the globe as the focus.
+- Verification: unit tests (216), lint, type-check and production build passed. Navigation/theme E2E: 19 passed, 1 intentional mobile-only theme-toggle skip. Updated stale E2E probes for client hydration, current labels and Tailwind v4 OKLCH colors. Browser QA covered desktop light/dark, 375px mobile, live Hobart map/results, preview, filter sheet, landing and empty favorites/timeline/compare pages; no horizontal overflow. Globe captures remain identical under reduced motion and change during rotation.
+- The existing large-client-chunk build warning remains. Timeline and compare route content remains the existing placeholder workflow; this pass does not implement those unfinished features. Unrelated untracked Cloudflare audit documents were preserved outside the UI commit.
 
 ---
 
@@ -1059,3 +1149,4 @@ Track anything that needs resolution. Remove items when resolved (but note the r
 - Replace the prototype embedded service-token approach before public release; long-lived service tokens in iOS app bundles are not durable secrets.
 - Repair/update the local CoreSimulator runtime before running device-specific `xcodebuild test` again.
 - Complete manual simulator UI pass after accepting the location permission prompt, or enable Computer Use permissions for automated clicking.
+- Complete the Cloudflare hardening and dead-resource cleanup tasks tracked in Phase 9. The 2026-09-06 audit was read-only and made no account changes.

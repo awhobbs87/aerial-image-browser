@@ -26,7 +26,7 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
   };
 
   return (
-    <div className="rounded-2xl border border-slate-950/10 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-2xl border border-slate-950/10 bg-white/75 p-4 dark:border-border dark:bg-card">
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-bold text-slate-950 dark:text-slate-50">TIFF Conversion</h3>
 
@@ -52,7 +52,7 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-950/10 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-950/5 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-950/10 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-950/5 dark:border-border dark:text-slate-200 dark:hover:bg-white/10"
             >
               <IconUpload size={16} />
               Upload TIFF

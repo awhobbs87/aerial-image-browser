@@ -11,10 +11,10 @@ export function MobileFilterSheet() {
       onOpenChange={setFilterPanelOpen}
       title="Filters"
       sheet="bottom"
-      className="overflow-hidden"
+      className="flex flex-col overflow-hidden"
     >
-      <div className="max-h-[calc(82dvh-3.25rem)] overflow-y-auto">
-        <FilterPanel onClose={() => setFilterPanelOpen(false)} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <FilterPanel />
       </div>
     </Dialog>
   );

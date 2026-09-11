@@ -60,7 +60,7 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
 
   return (
     <div ref={containerRef}>
-      <div className="sticky top-0 z-5 -mx-1 overflow-x-auto border-b border-slate-950/7 bg-white/88 px-1 py-2 backdrop-blur-xl dark:border-white/8 dark:bg-[#070b12]/88">
+      <div className="sticky top-0 z-5 -mx-1 overflow-x-auto border-b border-slate-950/7 bg-white/88 px-1 py-2 backdrop-blur-xl dark:border-border dark:bg-popover">
         <div className="flex gap-1">
           {years
             .filter((y) => y > 0)
@@ -99,7 +99,7 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
                     key={`${photo.layerId}-${photo.objectId}`}
                     type="button"
                     onClick={() => onPhotoClick?.(photo)}
-                    className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-white/9 dark:bg-white/5"
+                    className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card"
                   >
                     <img
                       src={`/api/images/thumbnail/${photo.layerId}/${photo.name}`}

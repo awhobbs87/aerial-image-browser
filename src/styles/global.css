@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (
   &:where([data-theme='dark'], [data-theme='dark'] *, html.dark, html.dark *)
@@ -22,6 +23,74 @@
   --color-sky-900: #0c4a6e;
   --color-slate-950: #0f172a;
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.978 0.003 247.858);
+  --foreground: oklch(0.208 0.042 265.755);
+  --card: oklch(1 0 0 / 82%);
+  --card-foreground: oklch(0.208 0.042 265.755);
+  --popover: oklch(1 0 0 / 96%);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.274 0.041 260.031);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.94 0.008 247.896);
+  --secondary-foreground: oklch(0.274 0.041 260.031);
+  --muted: oklch(0.94 0.008 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.879 0.169 91.605 / 34%);
+  --accent-foreground: oklch(0.279 0.077 45.635);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.208 0.042 265.755 / 11%);
+  --input: oklch(0.208 0.042 265.755 / 14%);
+  --ring: oklch(0.769 0.188 70.08);
+}
+
+html[data-theme='dark'] {
+  --background: #0c121c;
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: #202d3e;
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: #172231;
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.984 0.003 247.858);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(1 0 0 / 8%);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(1 0 0 / 8%);
+  --muted-foreground: #afbdd0;
+  --accent: oklch(0.769 0.188 70.08 / 18%);
+  --accent-foreground: oklch(0.924 0.12 95.746);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #3a4a60;
+  --input: #465970;
+  --ring: oklch(0.769 0.188 70.08);
 }
 
 *,
@@ -83,8 +152,8 @@ body {
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   font-family: var(--font-sans);
-  background: #f6f7f9;
-  color: #0f172a;
+  background: var(--background);
+  color: var(--foreground);
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   text-rendering: optimizeLegibility;
 }
@@ -123,8 +192,8 @@ body {
 }
 
 html[data-theme='dark'] body {
-  background: #070b12;
-  color: #f8fafc;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 ::selection {
@@ -137,6 +206,70 @@ input,
 select,
 textarea {
   -webkit-tap-highlight-color: transparent;
+}
+
+:where(
+  a[href],
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  [role='button']:not([aria-disabled='true']),
+  label[for],
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='reset']:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='range']:not(:disabled),
+  input[type='file']:not(:disabled)
+) {
+  cursor: pointer;
+}
+
+:where(button, select, input):disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(
+    a[href],
+    button:not(:disabled),
+    select:not(:disabled),
+    summary,
+    [role='button']:not([aria-disabled='true']),
+    label[for],
+    input[type='file']:not(:disabled)
+  ) {
+    transition-property: color, background-color, border-color, box-shadow, filter, transform;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  :where(
+    a[href],
+    button:not(:disabled),
+    select:not(:disabled),
+    summary,
+    [role='button']:not([aria-disabled='true']),
+    label[for],
+    input[type='file']:not(:disabled)
+  ):hover {
+    filter: brightness(0.96) saturate(1.04);
+  }
+
+  html[data-theme='dark']
+    :where(
+      a[href],
+      button:not(:disabled),
+      select:not(:disabled),
+      summary,
+      [role='button']:not([aria-disabled='true']),
+      label[for],
+      input[type='file']:not(:disabled)
+    ):hover {
+    filter: brightness(1.12) saturate(1.06);
+  }
 }
 
 :focus-visible {
@@ -175,7 +308,7 @@ textarea {
   justify-content: center;
   gap: 0.75rem;
   border: 1px dashed rgba(15, 23, 42, 0.14);
-  border-radius: 0.5rem;
+  border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.52);
   padding: 2rem;
   text-align: center;
@@ -183,7 +316,7 @@ textarea {
 
 html[data-theme='dark'] .app-empty-state {
   border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--card);
 }
 
 /* Map containers should fill their parent */

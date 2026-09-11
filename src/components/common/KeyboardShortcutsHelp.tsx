@@ -46,14 +46,14 @@ export function KeyboardShortcutsHelp({ opened, onClose }: KeyboardShortcutsHelp
             {SHORTCUTS.map((shortcut) => (
               <tr
                 key={shortcut.description}
-                className="border-t border-slate-950/10 dark:border-white/10"
+                className="border-t border-slate-950/10 dark:border-border"
               >
                 <td className="px-2 py-2">
                   <div className="flex flex-wrap items-center gap-1">
                     {shortcut.keys.map((key, i) => (
                       <span key={i} className="inline-flex items-center gap-1">
                         {i > 0 && <span className="text-xs text-slate-400">+</span>}
-                        <kbd className="rounded-md border border-slate-950/10 bg-slate-950/5 px-1.5 py-0.5 text-xs font-bold dark:border-white/10 dark:bg-white/10">
+                        <kbd className="rounded-md border border-slate-950/10 bg-slate-950/5 px-1.5 py-0.5 text-xs font-bold dark:border-border dark:bg-white/10">
                           {key}
                         </kbd>
                       </span>

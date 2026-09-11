@@ -1,12 +1,10 @@
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
-import { IconAdjustments, IconMapPin, IconPhotoSearch } from '@tabler/icons-react';
-import { useUIStore } from '@/stores/uiStore';
+import { IconCheck, IconMapPin, IconPhotoSearch } from '@tabler/icons-react';
 import { SCALE_CATEGORIES } from '@/types/photo';
 import type { EnhancedPhoto } from '@/types/photo';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { Tooltip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/cn';
+import { Button } from '@/components/shadcn/button';
 
 interface SearchResultsProps {
   query: string;
@@ -34,6 +32,13 @@ function shortLocation(raw: string): { primary: string; secondary: string } {
   };
 }
 
+const SCALE_DISPLAY = {
+  'very-detailed': { title: 'Very detailed', range: 'Up to 1:5,000' },
+  detailed: { title: 'Detailed', range: '1:5,000-15,000' },
+  standard: { title: 'Standard', range: '1:15,000-40,000' },
+  overview: { title: 'Overview', range: 'Over 1:40,000' },
+} as const;
+
 export function SearchResults({
   query,
   hasLocation,
@@ -44,10 +49,8 @@ export function SearchResults({
   onPhotoClick,
   onPhotoCompare,
 }: SearchResultsProps) {
-  const { setFilterPanelOpen } = useUIStore();
   const { layers, startYear, endYear, scaleCategories, toggleScaleCategory, resetFilters } =
     useFilterStore();
-  const isDesktop = useMediaQuery('(min-width: 48em)');
   const filtersActive =
     layers.length !== 3 ||
     ![0, 1, 2].every((layerId) => layers.includes(layerId)) ||
@@ -58,7 +61,7 @@ export function SearchResults({
   if (!hasLocation) {
     return (
       <div className="flex min-h-52 flex-col items-center justify-center gap-2 py-10 text-center">
-        <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950/5 text-slate-400 dark:bg-white/6">
+        <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950/5 text-slate-400 dark:bg-card">
           <IconMapPin size={21} stroke={1.6} />
         </div>
         <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
@@ -87,11 +90,11 @@ export function SearchResults({
   return (
     <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
       {/* Location header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-950/7 pt-1 pb-3 dark:border-white/8">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-950/7 pt-1 pb-3 dark:border-border">
         <div className="flex min-w-0 items-start gap-1.5">
           <IconMapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
           <div className="min-w-0">
-            <p className="truncate text-sm leading-tight font-semibold text-slate-900 dark:text-slate-50">
+            <p className="truncate text-lg leading-tight font-semibold text-slate-900 dark:text-slate-50">
               {loc.primary}
             </p>
             {loc.secondary && (
@@ -101,37 +104,59 @@ export function SearchResults({
             )}
           </div>
         </div>
-        {!isDesktop && (
-          <Tooltip label="Filters">
-            <button
-              type="button"
-              onClick={() => setFilterPanelOpen(true)}
-              aria-label="Open filters"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            >
-              <IconAdjustments size={16} />
-            </button>
-          </Tooltip>
-        )}
       </div>
 
-      {/* Always-visible scale filter row */}
-      <div className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {SCALE_CATEGORIES.map((cat) => (
-          <button
-            key={cat.key}
-            type="button"
-            onClick={() => toggleScaleCategory(cat.key)}
-            className={cn(
-              'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
-              scaleCategories.includes(cat.key)
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'bg-slate-950/5 text-slate-600 hover:bg-slate-950/10 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12',
-            )}
-          >
-            {cat.label}
-          </button>
-        ))}
+      <div className="hidden md:block">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">
+            Photo scale
+          </p>
+          {scaleCategories.length > 0 && (
+            <button
+              type="button"
+              onClick={() => scaleCategories.forEach(toggleScaleCategory)}
+              className="min-h-0 min-w-0 rounded px-1.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-white"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {SCALE_CATEGORIES.map((cat) => {
+            const selected = scaleCategories.includes(cat.key);
+            const display = SCALE_DISPLAY[cat.key];
+
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                aria-label={cat.label}
+                aria-pressed={selected}
+                onClick={() => toggleScaleCategory(cat.key)}
+                className={cn(
+                  'relative flex min-h-13 min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
+                  selected
+                    ? 'border-amber-500/55 bg-amber-400/13 text-slate-950 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.08)] dark:border-amber-300/70 dark:bg-amber-300/20 dark:text-white'
+                    : 'border-slate-950/8 bg-white/55 text-slate-700 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:text-slate-200 dark:hover:border-white/16 dark:hover:bg-white/7',
+                )}
+              >
+                <span className="max-w-[calc(100%-1rem)] truncate text-xs font-bold">
+                  {display.title}
+                </span>
+                <span className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                  {display.range}
+                </span>
+                {selected && (
+                  <IconCheck
+                    size={14}
+                    stroke={2.4}
+                    className="absolute top-2 right-2 text-amber-600 dark:text-amber-300"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {!isLoading && photos.length === 0 && filtersActive ? (
@@ -144,13 +169,12 @@ export function SearchResults({
             <p className="max-w-72 text-sm text-slate-500 dark:text-slate-400">
               Clear filters to check all imagery for this location.
             </p>
-            <button
-              type="button"
+            <Button
               onClick={resetFilters}
-              className="mt-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+              className="mt-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm"
             >
               Clear filters
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

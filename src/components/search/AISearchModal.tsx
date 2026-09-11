@@ -113,7 +113,7 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
               if (e.key === 'Enter' && !isProcessing) handleSubmit();
             }}
             placeholder="e.g., Find aerial photos of Sandy Bay from the 1950s"
-            className="h-11 w-full rounded-2xl border border-slate-950/10 bg-white pr-14 pl-10 text-sm outline-none transition focus:border-sky-600/50 focus:ring-3 focus:ring-sky-600/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-50"
+            className="h-11 w-full rounded-2xl border border-slate-950/10 bg-white pr-14 pl-10 text-sm outline-none transition focus:border-sky-600/50 focus:ring-3 focus:ring-sky-600/10 dark:border-border dark:bg-card dark:text-slate-50"
             autoFocus
           />
           <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[10px] font-bold text-slate-400">
@@ -140,7 +140,7 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
         </div>
 
         {parsed && (
-          <div className="rounded-2xl border border-slate-950/10 bg-slate-950/[0.02] p-3 dark:border-white/10 dark:bg-white/5">
+          <div className="rounded-2xl border border-slate-950/10 bg-slate-950/[0.02] p-3 dark:border-border dark:bg-card">
             <p className="mb-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
               Parsed query
             </p>

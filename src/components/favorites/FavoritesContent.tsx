@@ -7,7 +7,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
 
   return (
-    <article className="group overflow-hidden rounded-lg border border-slate-950/9 bg-white/78 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)] dark:border-white/9 dark:bg-white/4 dark:hover:border-white/14">
+    <article className="group overflow-hidden rounded-2xl border border-slate-950/9 bg-white/78 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)] dark:border-border dark:bg-card dark:hover:border-white/14">
       <a
         href={`/viewer/${photo.layerId}/${photo.name}`}
         className="block overflow-hidden bg-slate-950"
@@ -91,7 +91,7 @@ export function FavoritesContent() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between border-b border-slate-950/8 pb-3 dark:border-white/8">
+      <div className="flex items-center justify-between border-b border-slate-950/8 pb-3 dark:border-border">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {favorites.length} {favorites.length === 1 ? 'photo' : 'photos'} saved
         </p>

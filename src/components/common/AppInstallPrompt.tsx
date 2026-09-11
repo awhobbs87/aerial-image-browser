@@ -40,7 +40,7 @@ export function AppInstallPrompt() {
   if (!deferredPrompt || dismissed) return null;
 
   return (
-    <div className="fixed bottom-20 left-1/2 z-1000 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-slate-950/10 bg-white/95 p-3 text-slate-950 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-50">
+    <div className="fixed bottom-20 left-1/2 z-1000 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-slate-950/10 bg-white/95 p-3 text-slate-950 shadow-xl backdrop-blur-xl dark:border-border dark:bg-slate-950/95 dark:text-slate-50">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <IconDownload size={20} className="shrink-0 text-sky-600" />

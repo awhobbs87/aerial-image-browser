@@ -96,4 +96,12 @@ describe('PhotoCard', () => {
     render(<PhotoCard photo={undatedPhoto} />);
     expect(screen.getByText('Undated')).toBeInTheDocument();
   });
+  it('opens with Space without opening when a favorite key event bubbles', () => {
+    const handleClick = vi.fn<(photo: EnhancedPhoto) => void>();
+    render(<PhotoCard photo={mockPhoto} onClick={handleClick} />);
+    fireEvent.keyDown(screen.getByLabelText('Add to favorites'), { key: 'Enter' });
+    expect(handleClick).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('article'), { key: ' ' });
+    expect(handleClick).toHaveBeenCalledWith(mockPhoto);
+  });
 });

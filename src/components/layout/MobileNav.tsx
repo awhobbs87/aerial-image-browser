@@ -27,7 +27,7 @@ export function MobileNav() {
   }, []);
 
   return (
-    <nav className="app-chrome-nav fixed right-0 bottom-0 left-0 z-nav flex h-[calc(72px+env(safe-area-inset-bottom))] items-center justify-around border-t border-slate-950/8 bg-white/94 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:hidden dark:border-white/8 dark:bg-[#070b12]/94">
+    <nav className="app-chrome-nav fixed right-0 bottom-0 left-0 z-nav flex h-[calc(72px+env(safe-area-inset-bottom))] items-center justify-around border-t border-slate-950/8 bg-white/94 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-2xl md:hidden dark:border-border dark:bg-popover">
       {navItems.map((item) => {
         const isActive = active === item.href;
         return (

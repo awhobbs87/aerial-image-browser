@@ -48,6 +48,7 @@ export function PhotoPreviewModal({
 }: PhotoPreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const isGallery = Boolean(photos && photos.length > 1);
@@ -63,6 +64,7 @@ export function PhotoPreviewModal({
     const id = window.requestAnimationFrame(() => {
       setCurrentIndex(initialIndex);
       setImageLoaded(false);
+      setImageError(false);
     });
     return () => window.cancelAnimationFrame(id);
   }, [opened, initialIndex]);
@@ -70,6 +72,7 @@ export function PhotoPreviewModal({
   const handlePrev = useCallback(() => {
     if (isGallery && currentIndex > 0) {
       setImageLoaded(false);
+      setImageError(false);
       setCurrentIndex((i) => i - 1);
     }
   }, [currentIndex, isGallery]);
@@ -77,6 +80,7 @@ export function PhotoPreviewModal({
   const handleNext = useCallback(() => {
     if (isGallery && currentIndex < photoList.length - 1) {
       setImageLoaded(false);
+      setImageError(false);
       setCurrentIndex((i) => i + 1);
     }
   }, [currentIndex, isGallery, photoList.length]);
@@ -116,7 +120,7 @@ export function PhotoPreviewModal({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      className="grid h-[calc(100dvh-16px)] w-[calc(100vw-16px)] max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-lg p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)]"
+      className="grid h-[88dvh] w-full max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)] sm:max-w-[68rem]"
     >
       <div className="relative min-h-0 bg-slate-950">
         <button
@@ -129,14 +133,21 @@ export function PhotoPreviewModal({
         </button>
 
         <div className="relative flex h-full min-h-[14rem] items-center justify-center sm:h-[min(68vh,42rem)]">
-          {!imageLoaded && (
+          {!imageLoaded && !imageError && (
             <span className="absolute h-8 w-8 animate-spin rounded-full border-3 border-white/20 border-t-white" />
           )}
+          {imageError && (
+            <p role="status" className="max-w-64 px-4 text-center text-sm text-slate-300">
+              Preview unavailable. Open the full viewer to try the original image.
+            </p>
+          )}
           <img
+            key={thumbnailUrl}
             className="max-h-full max-w-full object-contain transition-opacity duration-150"
             src={thumbnailUrl}
             alt={current.name}
             onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
             style={{ opacity: imageLoaded ? 1 : 0 }}
           />
 
@@ -171,7 +182,7 @@ export function PhotoPreviewModal({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-col gap-3 border-t border-slate-950/10 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between sm:pb-3">
+      <div className="flex min-h-0 flex-col gap-3 border-t border-slate-950/10 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] dark:border-border dark:bg-popover sm:flex-row sm:items-center sm:justify-between sm:pb-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <p className="shrink-0 text-lg font-bold text-slate-950 dark:text-slate-50">
@@ -224,9 +235,10 @@ export function PhotoPreviewModal({
               type="button"
               onClick={handleViewFull}
               aria-label="Open full viewer"
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500"
             >
               <IconMaximize size={18} />
+              Open full viewer
             </button>
           </Tooltip>
         </div>

@@ -16,16 +16,29 @@ function luminance(value: string) {
 }
 
 async function readThemeState(page: Page) {
+  await expect(page.locator('input[placeholder*="Search"]')).toBeVisible();
   return page.evaluate(() => {
     const root = document.documentElement;
     const h1 = document.querySelector('h1');
     const lead = document.querySelector('h1 + p');
-    const card = document.querySelector('aside > div');
-    const searchFrame = document.querySelector('form[role="search"]')?.parentElement;
+    const searchFrame = document.querySelector('input[placeholder*="Search"]')?.parentElement;
 
-    if (!h1 || !lead || !card || !searchFrame) {
+    if (!h1 || !lead || !searchFrame) {
       throw new Error('Landing page theme probes were not found');
     }
+
+    // Canvas resolves Tailwind v4's OKLCH/OKLab colors to sRGB for these probes.
+    const toRgb = (color: string) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = root.getAttribute('data-theme') === 'dark' ? '#0c121c' : '#f8fafc';
+      context.fillRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+      return `rgb(${r}, ${g}, ${b})`;
+    };
 
     return {
       theme: root.getAttribute('data-theme'),
@@ -33,9 +46,8 @@ async function readThemeState(page: Page) {
       hasDarkClass: root.classList.contains('dark'),
       storedPreference: localStorage.getItem('theme-preference'),
       explicitPreference: localStorage.getItem('theme-preference-explicit'),
-      h1Color: getComputedStyle(h1).color,
-      leadColor: getComputedStyle(lead).color,
-      cardBg: getComputedStyle(card).backgroundColor,
+      h1Color: toRgb(getComputedStyle(h1).color),
+      leadColor: toRgb(getComputedStyle(lead).color),
       searchFrameBg: getComputedStyle(searchFrame).backgroundColor,
     };
   });
@@ -121,6 +133,7 @@ test.describe('theme detection and contrast', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     await page.getByRole('button', { name: 'Theme: auto' }).click();
+    await page.getByRole('button', { name: 'Light theme' }).click();
 
     const state = await readThemeState(page);
     expect(state.explicitPreference).toBe('true');

@@ -16,7 +16,7 @@ test.describe('Navigation', () => {
   test('timeline page loads', async ({ page }) => {
     await page.goto('/timeline');
     await expect(page).toHaveTitle(/Timeline/);
-    await expect(page.locator('h1')).toContainText('Timeline');
+    await expect(page.locator('h1')).toContainText(/timeline/i);
   });
 
   test('compare page loads', async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe('Navigation', () => {
     // Only runs in desktop project (1440px)
     await page.goto('/');
     if (page.viewportSize()!.width >= 768) {
-      await expect(page.locator('nav')).toBeVisible();
+      await expect(page.locator('nav:visible')).toBeVisible();
     }
   });
 });

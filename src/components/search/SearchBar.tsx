@@ -241,7 +241,7 @@ export function SearchBar({
           onFocus={() => setSearchFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full rounded-[1.1rem] border border-slate-950/10 bg-gradient-to-b from-white/96 to-slate-100/90 pr-12 pl-12 text-slate-950 outline-none transition duration-150 placeholder:text-slate-500 focus:border-amber-500/38 focus:bg-white focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-white/10 dark:to-white/5 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-white/10 dark:focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]}`}
+          className={`w-full rounded-[1.1rem] border border-slate-950/10 bg-gradient-to-b from-white/96 to-slate-100/90 pr-12 pl-12 text-slate-950 outline-none transition duration-150 placeholder:text-slate-500 focus:border-amber-500/38 focus:bg-white focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(15,23,42,0.08)] dark:border-border dark:from-card dark:to-card dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-white/10 dark:focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]}`}
         />
         <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center justify-center">
           {isSearching ? (
@@ -265,7 +265,7 @@ export function SearchBar({
         createPortal(
           <div
             ref={dropdownRef}
-            className="fixed z-dropdown overflow-x-hidden overflow-y-auto rounded-2xl border border-slate-950/10 bg-white/95 py-1.5 shadow-[0_18px_48px_rgba(15,23,42,0.2)] backdrop-blur-xl overscroll-contain dark:border-white/10 dark:bg-slate-950/95"
+            className="fixed z-dropdown overflow-x-hidden overflow-y-auto rounded-2xl border border-slate-950/10 bg-white/95 py-1.5 shadow-[0_18px_48px_rgba(15,23,42,0.2)] backdrop-blur-xl overscroll-contain dark:border-border dark:bg-popover"
             style={{
               top: dropdownRect.bottom + 8,
               left: Math.max(8, dropdownRect.left),

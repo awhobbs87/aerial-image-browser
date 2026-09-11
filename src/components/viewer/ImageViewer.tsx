@@ -186,7 +186,7 @@ export function ImageViewer({
   const layerLabel = layerId === 0 ? 'Aerial' : layerId === 1 ? 'Ortho' : 'Digital';
 
   return (
-    <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 sm:h-dvh">
+    <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 md:h-dvh">
       <div ref={containerRef} className="h-full w-full" />
 
       {loading && (
@@ -195,14 +195,14 @@ export function ImageViewer({
         </div>
       )}
 
-      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
+      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
         <ViewerButton label="Back to results" onClick={handleBack}>
           <IconArrowLeft size={iconSize} />
         </ViewerButton>
       </div>
 
       {ready && (
-        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 max-h-[calc(100%-7rem)] overflow-y-auto rounded-xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
           <div className="flex flex-col gap-1">
             <ViewerButton label="Zoom in" onClick={() => viewerRef.current?.viewport?.zoomBy(1.5)}>
               <IconZoomIn size={iconSize} />
@@ -225,7 +225,7 @@ export function ImageViewer({
             </ViewerButton>
 
             {expanded && (
-              <div className="flex flex-col gap-1 border-t border-slate-950/10 pt-1 dark:border-white/10">
+              <div className="flex flex-col gap-1 border-t border-slate-950/10 pt-1 dark:border-border">
                 <ViewerButton
                   label="Rotate left 90"
                   onClick={() => applyRotation((rotation - 90 + 360) % 360)}
@@ -277,13 +277,14 @@ export function ImageViewer({
       )}
 
       {finetuneOpen && (
-        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-18 z-20 w-56 rounded-lg border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:bg-[#070b12]/95">
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-18 z-20 w-56 rounded-lg border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:bg-popover">
           <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
             <span>Rotation</span>
-            <span>{rotation}deg</span>
+            <span>{rotation}°</span>
           </div>
           <input
             type="range"
+            aria-label="Image rotation"
             value={rotation}
             onChange={(e) => applyRotation(Number(e.currentTarget.value))}
             min={0}
@@ -294,7 +295,7 @@ export function ImageViewer({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-lg border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-xl dark:bg-[#070b12]/88">
+      <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-lg border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-xl dark:bg-popover">
         <div className="flex items-center gap-2 overflow-hidden text-xs">
           {year ? (
             <span className="font-bold text-slate-950 dark:text-slate-50">{year}</span>
@@ -319,7 +320,7 @@ export function ImageViewer({
           <span className="shrink-0 text-slate-400">|</span>
           <span className="shrink-0 text-slate-500 dark:text-slate-400">{zoom}x</span>
           {rotation !== 0 && (
-            <span className="shrink-0 text-slate-500 dark:text-slate-400">{rotation}deg</span>
+            <span className="shrink-0 text-slate-500 dark:text-slate-400">{rotation}°</span>
           )}
           {usingTiff && <span className="shrink-0 font-bold text-sky-600">Full res</span>}
         </div>

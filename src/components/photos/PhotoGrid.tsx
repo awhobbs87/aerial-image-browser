@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
-import { IconArrowsSort, IconLayoutList } from '@tabler/icons-react';
+import { IconArrowsSort, IconChevronDown, IconLayoutList } from '@tabler/icons-react';
 import type { EnhancedPhoto } from '@/types/photo';
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoCard } from './PhotoCard';
 import { PhotoSkeleton } from './PhotoSkeleton';
+import { Pill } from '@/components/kibo-ui/pill';
+import { Button } from '@/components/shadcn/button';
 
 type GroupBy = 'decade' | 'year' | 'none';
 
@@ -98,7 +100,7 @@ export function PhotoGrid({
 
   if (isLoading && photos.length === 0) {
     return (
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2.5 ">
         <PhotoSkeleton count={6} />
       </div>
     );
@@ -123,44 +125,61 @@ export function PhotoGrid({
 
   return (
     <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
-      <div className="flex min-w-0 max-w-full flex-col gap-2 pb-1 sm:flex-row sm:items-center sm:justify-between">
-        <span className="min-w-0 truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+      <div className="flex min-w-0 max-w-full flex-col gap-2.5 border-y border-slate-950/7 py-3 dark:border-border">
+        <Pill
+          variant="outline"
+          className="border-border bg-card/58 px-2 py-1 text-xs font-bold text-muted-foreground uppercase backdrop-blur-xl"
+        >
           {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
-        </span>
-        <div className="grid min-w-0 max-w-full grid-cols-2 gap-1.5 sm:flex">
-          <label className="relative min-w-0">
-            <IconLayoutList
-              size={12}
-              className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-slate-400"
-            />
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.currentTarget.value as GroupBy)}
-              aria-label="Group photos by"
-              className="h-8 w-full min-w-0 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-            >
-              <option value="decade">By decade</option>
-              <option value="year">By year</option>
-              <option value="none">No grouping</option>
-            </select>
+        </Pill>
+        <div className="grid min-w-0 grid-cols-2 gap-2">
+          <label className="min-w-0">
+            <span className="mb-1 block text-xs font-semibold text-slate-400">Group</span>
+            <span className="relative flex min-w-0 items-center rounded-xl border border-slate-950/9 bg-white/72 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:hover:border-white/16 dark:hover:bg-white/8">
+              <IconLayoutList
+                size={15}
+                className="pointer-events-none absolute left-3 text-slate-400"
+              />
+              <select
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.currentTarget.value as GroupBy)}
+                aria-label="Group photos by"
+                className="h-11 w-full min-w-0 appearance-none bg-transparent pr-8 pl-9 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-amber-500/25 dark:text-slate-200"
+              >
+                <option value="decade">Decade</option>
+                <option value="year">Year</option>
+                <option value="none">None</option>
+              </select>
+              <IconChevronDown
+                size={14}
+                className="pointer-events-none absolute right-2.5 text-slate-400"
+              />
+            </span>
           </label>
-          <label className="relative min-w-0">
-            <IconArrowsSort
-              size={12}
-              className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-slate-400"
-            />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
-              aria-label="Sort photos"
-              className="h-8 w-full min-w-0 rounded-full border border-slate-950/10 bg-white/80 pr-7 pl-7 text-[11px] font-semibold text-slate-700 outline-none transition hover:bg-white focus:border-sky-600/40 focus:ring-3 focus:ring-sky-600/10 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-            >
-              <option value="date-desc">Newest first</option>
-              <option value="date-asc">Oldest first</option>
-              <option value="scale-asc">Scale (large)</option>
-              <option value="scale-desc">Scale (small)</option>
-              <option value="name">Name</option>
-            </select>
+          <label className="min-w-0">
+            <span className="mb-1 block text-xs font-semibold text-slate-400">Sort</span>
+            <span className="relative flex min-w-0 items-center rounded-xl border border-slate-950/9 bg-white/72 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:hover:border-white/16 dark:hover:bg-white/8">
+              <IconArrowsSort
+                size={15}
+                className="pointer-events-none absolute left-3 text-slate-400"
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
+                aria-label="Sort photos"
+                className="h-11 w-full min-w-0 appearance-none bg-transparent pr-8 pl-9 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-amber-500/25 dark:text-slate-200"
+              >
+                <option value="date-desc">Newest first</option>
+                <option value="date-asc">Oldest first</option>
+                <option value="scale-asc">Largest scale</option>
+                <option value="scale-desc">Smallest scale</option>
+                <option value="name">Name</option>
+              </select>
+              <IconChevronDown
+                size={14}
+                className="pointer-events-none absolute right-2.5 text-slate-400"
+              />
+            </span>
           </label>
         </div>
       </div>
@@ -172,12 +191,12 @@ export function PhotoGrid({
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {groupKey}
               </span>
-              <span className="text-[11px] font-bold text-sky-700 dark:text-sky-400">
+              <Pill className="bg-sky-500/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
                 {groupPhotos.length}
-              </span>
+              </Pill>
             </div>
           )}
-          <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5 overflow-x-hidden md:grid-cols-3">
+          <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5 overflow-x-hidden ">
             {groupPhotos.map((photo) => (
               <PhotoCard
                 key={`${photo.layerId}-${photo.objectId}`}
@@ -192,14 +211,14 @@ export function PhotoGrid({
 
       {canLoadMore && (
         <div className="flex justify-center py-3">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="h-9 rounded-full px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 disabled:cursor-wait disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+            className="rounded-lg px-4 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:cursor-wait"
           >
             {isLoading ? 'Loading...' : 'Load more photos'}
-          </button>
+          </Button>
         </div>
       )}
     </div>
