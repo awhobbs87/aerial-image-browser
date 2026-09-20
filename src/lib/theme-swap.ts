@@ -19,6 +19,7 @@ export function applyThemeToRoot(root: HTMLElement, preference?: ThemePreference
   const pref = preference ?? readStoredPreference();
   const resolved = resolveTheme(pref);
   root.setAttribute('data-theme', resolved);
+  root.setAttribute('data-mode', resolved);
   root.setAttribute('data-theme-preference', pref);
   root.classList.toggle('dark', resolved === 'dark');
 }

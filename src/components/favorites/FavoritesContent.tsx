@@ -1,4 +1,7 @@
-import { IconHeart, IconTrash } from '@tabler/icons-react';
+import { HeartIcon, TrashIcon } from '@phosphor-icons/react';
+import { Badge } from '@cloudflare/kumo/components/badge';
+import { Button, LinkButton } from '@cloudflare/kumo/components/button';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 import { useFavoritesStore } from '../../stores/favoritesStore';
 import { formatDate, formatScale, getLayerTypeLabel } from '../../lib/format';
 import type { EnhancedPhoto } from '../../types/photo';
@@ -7,7 +10,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-slate-950/9 bg-white/78 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)] dark:border-border dark:bg-card dark:hover:border-white/14">
+    <LayerCard className="group overflow-hidden rounded-2xl border border-slate-950/9 bg-white/78 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)] dark:border-border dark:bg-card dark:hover:border-white/14">
       <a
         href={`/viewer/${photo.layerId}/${photo.name}`}
         className="block overflow-hidden bg-slate-950"
@@ -25,29 +28,31 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
           <h3 className="min-w-0 truncate text-sm font-bold text-slate-950 dark:text-slate-50">
             {photo.name}
           </h3>
-          <button
+          <Button
             type="button"
             onClick={() => removeFavorite(photo.objectId, photo.layerId)}
             aria-label={`Remove ${photo.name} from favorites`}
+            icon={TrashIcon}
+            variant="ghost"
+            shape="square"
+            size="lg"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
-          >
-            <IconTrash size={16} />
-          </button>
+          />
         </div>
 
         <div className="flex flex-wrap gap-1">
-          <span className="rounded-full bg-sky-600/10 px-2 py-0.5 text-[11px] font-bold text-sky-700 dark:text-sky-300">
+          <Badge variant="info" className="text-[11px] font-bold">
             {getLayerTypeLabel(photo.layerId)}
-          </span>
+          </Badge>
           {photo.year > 0 && (
-            <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+            <Badge variant="secondary" className="text-[11px] font-bold">
               {photo.year}
-            </span>
+            </Badge>
           )}
           {photo.scale > 0 && (
-            <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+            <Badge variant="secondary" className="text-[11px] font-bold">
               {formatScale(photo.scale)}
-            </span>
+            </Badge>
           )}
         </div>
 
@@ -57,7 +62,7 @@ function FavoriteCard({ photo }: { photo: EnhancedPhoto }) {
           </p>
         )}
       </div>
-    </article>
+    </LayerCard>
   );
 }
 
@@ -65,7 +70,7 @@ function EmptyState() {
   return (
     <div className="app-empty-state">
       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/8 text-rose-500 ring-1 ring-rose-500/12">
-        <IconHeart size={24} stroke={1.5} />
+        <HeartIcon size={24} />
       </div>
       <div>
         <h2 className="text-base font-bold text-slate-600 dark:text-slate-300">No favorites yet</h2>
@@ -73,12 +78,9 @@ function EmptyState() {
           Heart a photo from search results to save it here for quick access.
         </p>
       </div>
-      <a
-        href="/search"
-        className="mt-2 inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
-      >
+      <LinkButton href="/search" variant="primary" size="lg" className="mt-2">
         Search photos
-      </a>
+      </LinkButton>
     </div>
   );
 }
@@ -95,14 +97,15 @@ export function FavoritesContent() {
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {favorites.length} {favorites.length === 1 ? 'photo' : 'photos'} saved
         </p>
-        <button
+        <Button
           type="button"
           onClick={clearFavorites}
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-slate-500 transition hover:bg-red-500/8 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:text-slate-400"
+          icon={TrashIcon}
+          variant="secondary-destructive"
+          size="lg"
         >
-          <IconTrash size={14} />
           Clear all
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 min-[30rem]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

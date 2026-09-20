@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconDownload,
-  IconMaximize,
-  IconHeart,
-  IconHeartFilled,
-  IconX,
-} from '@tabler/icons-react';
+  ArrowsOutIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  DownloadSimpleIcon,
+  HeartIcon,
+  XIcon,
+} from '@phosphor-icons/react';
+import { Button, LinkButton } from '@cloudflare/kumo/components/button';
+import { Badge } from '@cloudflare/kumo/components/badge';
+import { Loader } from '@cloudflare/kumo/components/loader';
 import { useFavoritesStore } from '@/stores/favoritesStore';
 import { formatScale } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
@@ -47,8 +49,8 @@ export function PhotoPreviewModal({
   initialIndex = 0,
 }: PhotoPreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null);
+  const [errorImageUrl, setErrorImageUrl] = useState<string | null>(null);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const isGallery = Boolean(photos && photos.length > 1);
@@ -63,24 +65,18 @@ export function PhotoPreviewModal({
     if (!opened) return undefined;
     const id = window.requestAnimationFrame(() => {
       setCurrentIndex(initialIndex);
-      setImageLoaded(false);
-      setImageError(false);
     });
     return () => window.cancelAnimationFrame(id);
   }, [opened, initialIndex]);
 
   const handlePrev = useCallback(() => {
     if (isGallery && currentIndex > 0) {
-      setImageLoaded(false);
-      setImageError(false);
       setCurrentIndex((i) => i - 1);
     }
   }, [currentIndex, isGallery]);
 
   const handleNext = useCallback(() => {
     if (isGallery && currentIndex < photoList.length - 1) {
-      setImageLoaded(false);
-      setImageError(false);
       setCurrentIndex((i) => i + 1);
     }
   }, [currentIndex, isGallery, photoList.length]);
@@ -100,6 +96,8 @@ export function PhotoPreviewModal({
 
   const thumbnailUrl =
     current.thumbnailUrl || `/api/images/thumbnail/${current.layerId}/${current.name}`;
+  const imageLoaded = loadedImageUrl === thumbnailUrl;
+  const imageError = errorImageUrl === thumbnailUrl;
   const scaleStr = formatScale(current.scale);
   const project = shortProject(current.layerName);
   const typeLabel = filmLabel(current.type);
@@ -123,18 +121,20 @@ export function PhotoPreviewModal({
       className="grid h-[88dvh] w-full max-w-[68rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden p-0 sm:h-auto sm:max-h-[86dvh] sm:w-[min(94vw,68rem)] sm:max-w-[68rem]"
     >
       <div className="relative min-h-0 bg-slate-950">
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label="Close preview"
+          icon={XIcon}
+          variant="ghost"
+          shape="square"
+          size="lg"
           className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-lg bg-black/52 text-white backdrop-blur-md transition hover:bg-black/72 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          <IconX size={20} />
-        </button>
+        />
 
         <div className="relative flex h-full min-h-[14rem] items-center justify-center sm:h-[min(68vh,42rem)]">
           {!imageLoaded && !imageError && (
-            <span className="absolute h-8 w-8 animate-spin rounded-full border-3 border-white/20 border-t-white" />
+            <Loader size="lg" aria-label="Loading photo preview" className="absolute text-white" />
           )}
           {imageError && (
             <p role="status" className="max-w-64 px-4 text-center text-sm text-slate-300">
@@ -146,8 +146,11 @@ export function PhotoPreviewModal({
             className="max-h-full max-w-full object-contain transition-opacity duration-150"
             src={thumbnailUrl}
             alt={current.name}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
+            onLoad={() => {
+              setLoadedImageUrl(thumbnailUrl);
+              setErrorImageUrl(null);
+            }}
+            onError={() => setErrorImageUrl(thumbnailUrl)}
             style={{ opacity: imageLoaded ? 1 : 0 }}
           />
 
@@ -159,24 +162,28 @@ export function PhotoPreviewModal({
 
           {isGallery && (
             <>
-              <button
+              <Button
                 className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-black/48 text-white backdrop-blur-md transition hover:bg-black/70 disabled:opacity-30"
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
                 aria-label="Previous photo"
                 type="button"
-              >
-                <IconChevronLeft size={24} />
-              </button>
-              <button
+                icon={CaretLeftIcon}
+                variant="ghost"
+                shape="square"
+                size="lg"
+              />
+              <Button
                 className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-black/48 text-white backdrop-blur-md transition hover:bg-black/70 disabled:opacity-30"
                 onClick={handleNext}
                 disabled={currentIndex === photoList.length - 1}
                 aria-label="Next photo"
                 type="button"
-              >
-                <IconChevronRight size={24} />
-              </button>
+                icon={CaretRightIcon}
+                variant="ghost"
+                shape="square"
+                size="lg"
+              />
             </>
           )}
         </div>
@@ -189,9 +196,9 @@ export function PhotoPreviewModal({
               {current.year > 0 ? current.year : 'Undated'}
             </p>
             {typeLabel && (
-              <span className="truncate rounded-full bg-sky-600/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+              <Badge variant="info" className="truncate text-xs font-bold">
                 {typeLabel}
-              </span>
+              </Badge>
             )}
           </div>
           {project && (
@@ -204,42 +211,44 @@ export function PhotoPreviewModal({
         </div>
         <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
           <Tooltip label={isFavorite ? 'Remove favorite' : 'Add favorite'}>
-            <button
+            <Button
               type="button"
               onClick={() => toggleFavorite(current)}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              icon={<HeartIcon size={18} weight={isFavorite ? 'fill' : 'regular'} />}
+              variant="ghost"
+              shape="square"
+              size="lg"
               className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            >
-              {isFavorite ? (
-                <IconHeartFilled size={18} className="text-rose-500" />
-              ) : (
-                <IconHeart size={18} />
-              )}
-            </button>
+            />
           </Tooltip>
           {current.tiffUrl && (
             <Tooltip label="Download TIFF">
-              <a
+              <LinkButton
                 href={current.tiffUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                external
                 aria-label="Download TIFF"
+                icon={DownloadSimpleIcon}
+                variant="ghost"
+                shape="square"
+                size="lg"
                 className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-              >
-                <IconDownload size={18} />
-              </a>
+              />
             </Tooltip>
           )}
           <Tooltip label="Full viewer">
-            <button
+            <Button
               type="button"
               onClick={handleViewFull}
               aria-label="Open full viewer"
+              icon={ArrowsOutIcon}
+              variant="primary"
+              size="lg"
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500"
             >
-              <IconMaximize size={18} />
               Open full viewer
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>

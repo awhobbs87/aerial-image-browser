@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { IconArrowsSort, IconChevronDown, IconLayoutList } from '@tabler/icons-react';
+import { Badge } from '@cloudflare/kumo/components/badge';
+import { Button } from '@cloudflare/kumo/components/button';
+import { Select } from '@cloudflare/kumo/components/select';
 import type { EnhancedPhoto } from '@/types/photo';
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoCard } from './PhotoCard';
 import { PhotoSkeleton } from './PhotoSkeleton';
-import { Pill } from '@/components/kibo-ui/pill';
-import { Button } from '@/components/shadcn/button';
 
 type GroupBy = 'decade' | 'year' | 'none';
 
@@ -126,61 +126,33 @@ export function PhotoGrid({
   return (
     <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
       <div className="flex min-w-0 max-w-full flex-col gap-2.5 border-y border-slate-950/7 py-3 dark:border-border">
-        <Pill
+        <Badge
           variant="outline"
           className="border-border bg-card/58 px-2 py-1 text-xs font-bold text-muted-foreground uppercase backdrop-blur-xl"
         >
           {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
-        </Pill>
+        </Badge>
         <div className="grid min-w-0 grid-cols-2 gap-2">
-          <label className="min-w-0">
-            <span className="mb-1 block text-xs font-semibold text-slate-400">Group</span>
-            <span className="relative flex min-w-0 items-center rounded-xl border border-slate-950/9 bg-white/72 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:hover:border-white/16 dark:hover:bg-white/8">
-              <IconLayoutList
-                size={15}
-                className="pointer-events-none absolute left-3 text-slate-400"
-              />
-              <select
-                value={groupBy}
-                onChange={(e) => setGroupBy(e.currentTarget.value as GroupBy)}
-                aria-label="Group photos by"
-                className="h-11 w-full min-w-0 appearance-none bg-transparent pr-8 pl-9 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-amber-500/25 dark:text-slate-200"
-              >
-                <option value="decade">Decade</option>
-                <option value="year">Year</option>
-                <option value="none">None</option>
-              </select>
-              <IconChevronDown
-                size={14}
-                className="pointer-events-none absolute right-2.5 text-slate-400"
-              />
-            </span>
-          </label>
-          <label className="min-w-0">
-            <span className="mb-1 block text-xs font-semibold text-slate-400">Sort</span>
-            <span className="relative flex min-w-0 items-center rounded-xl border border-slate-950/9 bg-white/72 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:hover:border-white/16 dark:hover:bg-white/8">
-              <IconArrowsSort
-                size={15}
-                className="pointer-events-none absolute left-3 text-slate-400"
-              />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.currentTarget.value as typeof sortBy)}
-                aria-label="Sort photos"
-                className="h-11 w-full min-w-0 appearance-none bg-transparent pr-8 pl-9 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-amber-500/25 dark:text-slate-200"
-              >
-                <option value="date-desc">Newest first</option>
-                <option value="date-asc">Oldest first</option>
-                <option value="scale-asc">Largest scale</option>
-                <option value="scale-desc">Smallest scale</option>
-                <option value="name">Name</option>
-              </select>
-              <IconChevronDown
-                size={14}
-                className="pointer-events-none absolute right-2.5 text-slate-400"
-              />
-            </span>
-          </label>
+          <Select
+            label="Group"
+            size="lg"
+            value={groupBy}
+            onValueChange={(value) => value && setGroupBy(value as GroupBy)}
+            items={{ decade: 'Decade', year: 'Year', none: 'None' }}
+          />
+          <Select
+            label="Sort"
+            size="lg"
+            value={sortBy}
+            onValueChange={(value) => value && setSortBy(value as typeof sortBy)}
+            items={{
+              'date-desc': 'Newest first',
+              'date-asc': 'Oldest first',
+              'scale-asc': 'Largest scale',
+              'scale-desc': 'Smallest scale',
+              name: 'Name',
+            }}
+          />
         </div>
       </div>
 
@@ -191,9 +163,9 @@ export function PhotoGrid({
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {groupKey}
               </span>
-              <Pill className="bg-sky-500/10 px-2 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+              <Badge variant="info" className="px-2 py-0.5 text-xs font-bold">
                 {groupPhotos.length}
-              </Pill>
+              </Badge>
             </div>
           )}
           <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5 overflow-x-hidden ">
@@ -213,11 +185,12 @@ export function PhotoGrid({
         <div className="flex justify-center py-3">
           <Button
             variant="ghost"
+            size="base"
             onClick={handleLoadMore}
+            loading={isLoading}
             disabled={isLoading}
-            className="rounded-lg px-4 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:cursor-wait"
           >
-            {isLoading ? 'Loading...' : 'Load more photos'}
+            Load more photos
           </Button>
         </div>
       )}

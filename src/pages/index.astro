@@ -1,7 +1,7 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
 import { LandingSearchIsland } from '../components/islands/LandingSearchIsland';
-import { DotMatrixGlobeIsland } from '../components/islands/DotMatrixGlobeIsland';
+import { KumoGlobeIsland } from '../components/islands/KumoGlobeIsland';
 ---
 
 <AppLayout title="Tasmania Aerial Photo Explorer">
@@ -10,9 +10,9 @@ import { DotMatrixGlobeIsland } from '../components/islands/DotMatrixGlobeIsland
   >
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
       <div
-        class="absolute top-[8.5rem] right-[-34%] h-[118vw] w-[118vw] opacity-70 sm:top-[6%] sm:right-[-4%] sm:h-[min(108vw,760px)] sm:w-[min(108vw,760px)] sm:opacity-100"
+        class="absolute top-[7.25rem] right-[-43%] h-[136vw] w-[136vw] opacity-85 sm:top-[1%] sm:right-[-8%] sm:h-[min(118vw,900px)] sm:w-[min(118vw,900px)] sm:opacity-100"
       >
-        <DotMatrixGlobeIsland client:only="react" />
+        <KumoGlobeIsland client:only="react" />
       </div>
     </div>
     <div

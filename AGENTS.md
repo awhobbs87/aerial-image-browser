@@ -28,20 +28,20 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 
 ## Tech Stack
 
-| Layer             | Technology                                  | Notes                                                                    |
-| ----------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
-| Meta-framework    | Astro 6                                     | Islands architecture, file-based routing, Cloudflare adapter v13         |
-| UI framework      | React 19                                    | Islands via `client:load` / `client:visible` / `client:only="react"`     |
+| Layer             | Technology                                  | Notes                                                                                                               |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Meta-framework    | Astro 6                                     | Islands architecture, file-based routing, Cloudflare adapter v13                                                    |
+| UI framework      | React 19                                    | Islands via `client:load` / `client:visible` / `client:only="react"`                                                |
 | Component library | Kibo UI + shadcn/ui + Radix primitives      | Kibo for advanced components, shadcn for base controls, local Tailwind components for domain-specific map/viewer UI |
-| Styling           | Tailwind CSS v4                             | Official `@tailwindcss/vite` plugin. Tailwind utilities are the styling source of truth |
-| Map               | MapLibre GL JS                              | Vector tiles, GPU-accelerated, native mobile gestures                    |
-| State management  | Zustand 5                                   | Replaces 30+ useState hooks. Persist middleware for localStorage         |
-| Server state      | TanStack Query v5                           | Photo search caching, layer metadata                                     |
-| API layer         | Astro native endpoints                      | Replaces Hono. `import { env } from 'cloudflare:workers'` for bindings   |
-| Image viewer      | OpenSeadragon 5                             | Deep-zoom for large TIFF/WebP images                                     |
-| Testing           | Vitest + React Testing Library + Playwright | Unit, component, and e2e                                                 |
-| Runtime           | Cloudflare Workers (`workerd`)              | R2, KV, D1, Workers AI. Dev server runs `workerd` via Astro 6            |
-| Node version      | 22 (required by Astro 6)                    | `.nvmrc` set to `22`                                                     |
+| Styling           | Tailwind CSS v4                             | Official `@tailwindcss/vite` plugin. Tailwind utilities are the styling source of truth                             |
+| Map               | MapLibre GL JS                              | Vector tiles, GPU-accelerated, native mobile gestures                                                               |
+| State management  | Zustand 5                                   | Replaces 30+ useState hooks. Persist middleware for localStorage                                                    |
+| Server state      | TanStack Query v5                           | Photo search caching, layer metadata                                                                                |
+| API layer         | Astro native endpoints                      | Replaces Hono. `import { env } from 'cloudflare:workers'` for bindings                                              |
+| Image viewer      | OpenSeadragon 5                             | Deep-zoom for large TIFF/WebP images                                                                                |
+| Testing           | Vitest + React Testing Library + Playwright | Unit, component, and e2e                                                                                            |
+| Runtime           | Cloudflare Workers (`workerd`)              | R2, KV, D1, Workers AI. Dev server runs `workerd` via Astro 6                                                       |
+| Node version      | 22 (required by Astro 6)                    | `.nvmrc` set to `22`                                                                                                |
 
 ---
 
@@ -189,19 +189,19 @@ aerial-image-browser/
 
 | Command                    | What it does                                                                            |
 | -------------------------- | --------------------------------------------------------------------------------------- |
-| `npm run dev`              | Start Astro dev server (runs `workerd` via Cloudflare adapter -- bindings work locally) |
-| `npm run build`            | Build for production                                                                    |
-| `npm run preview`          | Preview production build locally (also runs `workerd`)                                  |
-| `npm run deploy`           | Build + deploy to Cloudflare Workers                                                    |
-| `npm run db:migrate`       | Apply D1 migrations (production)                                                        |
-| `npm run db:migrate:local` | Apply D1 migrations (local dev)                                                         |
-| `npm run test`             | Run all tests (unit + integration + e2e)                                                |
-| `npm run test:unit`        | Vitest unit tests only                                                                  |
-| `npm run test:e2e`         | Playwright e2e tests                                                                    |
-| `npm run lint`             | ESLint check                                                                            |
-| `npm run lint:fix`         | ESLint auto-fix                                                                         |
-| `npm run type-check`       | TypeScript type checking                                                                |
-| `npm run format`           | Prettier format                                                                         |
+| `pnpm run dev`              | Start Astro dev server (runs `workerd` via Cloudflare adapter -- bindings work locally) |
+| `pnpm run build`            | Build for production                                                                    |
+| `pnpm run preview`          | Preview production build locally (also runs `workerd`)                                  |
+| `pnpm run deploy`           | Build + deploy to Cloudflare Workers                                                    |
+| `pnpm run db:migrate`       | Apply D1 migrations (production)                                                        |
+| `pnpm run db:migrate:local` | Apply D1 migrations (local dev)                                                         |
+| `pnpm run test`             | Run all tests (unit + integration + e2e)                                                |
+| `pnpm run test:unit`        | Vitest unit tests only                                                                  |
+| `pnpm run test:e2e`         | Playwright e2e tests                                                                    |
+| `pnpm run lint`             | ESLint check                                                                            |
+| `pnpm run lint:fix`         | ESLint auto-fix                                                                         |
+| `pnpm run type-check`       | TypeScript type checking                                                                |
+| `pnpm run format`           | Prettier format                                                                         |
 
 ---
 
@@ -278,7 +278,7 @@ const r2 = env.TIFF_STORAGE;
 - **Unit tests** (Vitest): Stores, lib utilities, formatters, API client. Located in `tests/unit/`.
 - **Component tests** (Vitest + React Testing Library + jsdom): Interactive components (FilterPanel, SearchBar, PhotoCard). Located alongside components as `*.test.tsx` or in `tests/unit/`.
 - **E2e tests** (Playwright): Full user flows -- search, view photo, compare, filter. Mobile (375px) and desktop (1440px) viewports. Located in `tests/e2e/`.
-- **Run before every PR**: `npm run test && npm run type-check && npm run lint`.
+- **Run before every PR**: `pnpm run test && pnpm run type-check && pnpm run lint`.
 - **Coverage targets**: Stores 90%+, lib utilities 80%+, components 70%+, e2e covers all primary user flows.
 
 ---
@@ -338,7 +338,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Set up Playwright config -- 2026-03-15
 - [x] Set up ESLint + Prettier (flat config) -- 2026-03-15
 - [x] Set up Husky + lint-staged -- 2026-03-15
-- [ ] Verify `npm run dev` starts and `workerd` serves a page
+- [ ] Verify `pnpm run dev` starts and `workerd` serves a page
 
 ### Phase 1: Backend Port (API Routes)
 
@@ -369,7 +369,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Create API routes: Search history CRUD (KV-backed) -- 2026-03-15
 - [x] Add CORS middleware (Astro middleware in `src/middleware.ts`) -- 2026-03-15
 - [x] Write unit tests for lib modules (arcgis, cache, auth, format, search-helpers) -- 2026-03-15
-- [ ] Verify all API routes work with `npm run dev` (workerd)
+- [ ] Verify all API routes work with `pnpm run dev` (workerd)
 
 ### Phase 2: Core Frontend -- Search & Map
 
@@ -444,6 +444,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] `prefers-reduced-motion` compliance check (verified in global.css) -- 2026-03-15
 - [x] iOS Safari quirks pass (safe area insets, overscroll-behavior, -webkit-overflow-scrolling) -- 2026-03-15
 - [x] Mobile thumbnail preview modal viewport containment pass -- 2026-05-18
+- [x] Fix photo-preview cached-image race that could leave a decoded thumbnail hidden behind the loading spinner -- 2026-09-21
 - [x] Mobile viewport/gesture overhaul for landing and search routes -- 2026-05-18
 - [x] Anchor mobile bottom navigation with explicit viewport reserve and no search-route document scroll -- 2026-05-18
 - [x] Fix MapLibre mobile pinch/rotate competition with page scroll (`touch-action: none` on map canvas/container) -- 2026-05-18
@@ -495,6 +496,14 @@ const r2 = env.TIFF_STORAGE;
 
 - [x] Strengthen dark surface hierarchy, refine cards/controls/overlays, and align responsive navigation/results layout -- 2026-09-11
 - [x] Replace the decorative wireframe with a smooth orange geographic dot globe; remove landing feature cards/footer -- 2026-09-11
+- [x] Replace the custom Three.js/canvas globe with Kumo `GlobeMap` and remove bespoke globe data/rendering dependencies -- 2026-09-20
+- [x] Deploy the Kumo globe replacement to the production Cloudflare Worker routes -- 2026-09-20 (`5c896994-8813-4ee5-9862-63fa49fd4daa`)
+- [x] Maximize Kumo globe emphasis with denser dot-like hatching, stronger orange, larger framing, and a slower Tasmania-centered rotation -- 2026-09-20
+- [x] Begin Kumo component migration with the desktop sidebar rail, primary location search InputGroup, Kumo theme plumbing, and Phosphor shell/search icons -- 2026-09-20
+- [x] Move map search to Kumo `CommandPalette`, add a Kumo `Toolbar`, make the desktop sidebar collapsible/resizable, and migrate map/photo dialogs, buttons, and cards to Kumo primitives -- 2026-09-20
+- [x] Deploy the refined Kumo globe and expanded Kumo shell/component migration to production -- 2026-09-20 (`8e413b94-f106-4d7e-86e4-bf0cdc712481`)
+- [x] Complete route-by-route Kumo/Phosphor migration for remaining filters, forms, buttons, overlays, and domain controls where Kumo has a behaviorally equivalent primitive -- 2026-09-21
+- [x] Deploy the complete Kumo/Phosphor component migration to production -- 2026-09-21 (`d52b7748-eb1a-4d71-bf2b-bddefb90d559`)
 
 ### Phase 8: Native iOS App
 
@@ -578,39 +587,43 @@ const r2 = env.TIFF_STORAGE;
 
 Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 
-| Date       | Decision                                                          | Reason                                                                                                                                  |
-| ---------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-15 | Astro 6 + Cloudflare adapter v13 over Astro 5                     | `workerd` in dev, no more Pages proxy, Vite 7 Environment API, built-in fonts                                                           |
-| 2026-03-15 | Mantine 8 over MUI v7                                             | ~40% smaller bundle (CSS Modules vs Emotion runtime), built-in `colorScheme: 'auto'`, better mobile components (BottomSheet), 50+ hooks |
-| 2026-03-15 | MapLibre GL over Leaflet                                          | GPU-accelerated, native pinch/rotate/tilt, vector tiles, smoother mobile experience                                                     |
-| 2026-03-15 | Zustand over React Context                                        | Lightweight, no boilerplate, persist middleware, works outside React tree, no re-render cascades                                        |
-| 2026-03-15 | Astro API routes over Hono                                        | One deployment (no separate Worker), bindings via `cloudflare:workers`, file-based routing, eliminates proxy layer                      |
-| 2026-03-15 | Native `fetch` over Axios                                         | Axios is 13KB for no benefit in modern browsers. Cloudflare Workers use fetch natively                                                  |
-| 2026-03-15 | Workers (not Pages) deployment                                    | Cloudflare recommends Workers for new projects. Pages support deprecated in adapter v13                                                 |
-| 2026-03-15 | `@tabler/icons-react` over `lucide-react` + `@mui/icons-material` | Single icon set, standard for Mantine ecosystem, tree-shakeable                                                                         |
-| 2026-05-16 | Tailwind CSS v4 over Mantine CSS Modules                          | User requested a pure Tailwind direction after dark-mode inconsistencies exposed the cost of mixing Mantine theme state with CSS `light-dark()` |
-| 2026-05-16 | Wireframe globe uses Three.js with 2D canvas fallback              | Real browsers get the 3D renderer; automated/headless or WebGL-restricted environments still render the high-resolution rotating globe for QA |
-| 2026-05-18 | Mobile search uses a fixed viewport shell with an internally scrolling results panel | Prevents the document scroll container from competing with the fixed bottom nav and MapLibre touch gestures on mobile |
-| 2026-05-18 | Hide the mobile tab bar while the landing search input is focused | iOS Safari can otherwise keep fixed chrome above the keyboard and expose a blank scroll gap beneath it |
-| 2026-05-24 | Native iOS app will be a fresh SwiftUI/Liquid Glass design, using the web app only as backend/architecture reference | A direct web UI port would produce a non-native iOS experience and conflict with Apple HIG/Liquid Glass guidance |
-| 2026-05-24 | Use XcodeGen for the initial iOS project scaffold | Keeps the Xcode project repeatable and avoids hand-editing `project.pbxproj` |
-| 2026-05-24 | Native `/api/v1` endpoints wrap existing backend services instead of replacing them | Gives iOS a stable app-shaped contract while preserving the existing web API and ArcGIS integration |
-| 2026-05-24 | Native TIFF endpoint resolves ArcGIS `DOWNLOAD_LINK` before using constructed LIST scan URLs | Constructed `LandTasFilms` URLs work for some historical scans but not all ortho/digital records |
-| 2026-05-24 | Do not use Cloudflare Image Resizing as a TIFF tile generator | Image Resizing does not convert source TIFFs into viewport tiles; generated WebP tiles must come from TIFF-aware decoding/generation |
-| 2026-05-24 | Reuse the GeoTIFFTileSource/geotiff.js approach conceptually for TIFF byte-range tile extraction | The existing web viewer proves range-aware TIFF reads; the native API should move TIFF-aware work behind Cloudflare-generated tiles |
-| 2026-05-24 | Delegate native WebP tile encoding to the TIFF conversion service instead of encoding inside the Worker route | `geotiff.js` can read TIFF metadata/ranges in the Worker, but local workerd exposed that `OffscreenCanvas` is unavailable for WebP encoding; the Worker should cache/proxy generated tiles rather than be the encoder |
-| 2026-05-24 | Implement the first tile generator as a Node service using `geotiff` and `sharp` | Node gives a reliable WebP encoder today while preserving the range-aware TIFF read approach; this can be deployed as the existing conversion service or promoted to a Cloudflare Container |
-| 2026-05-25 | Auto-focus MapKit on the user's current location when permission is granted | Matches expected maps-app behavior and makes the search center immediately relevant on launch |
-| 2026-05-25 | Deploy the TIFF tile generator as a separate Cloudflare Container-backed Worker and bind it to the app Worker | Keeps the public iOS API in the Astro Worker while putting native image-processing dependencies in the runtime designed for containers |
-| 2026-05-25 | Disable `workers_dev` and preview URLs for both new Workers | The app Worker should only be reachable on the production custom route, and the TIFF tile Worker should only be reachable through the Worker service binding; observability remains enabled for both |
-| 2026-06-01 | Use `aerial-api.awhq.uk/v1/*` with Cloudflare Access service-token auth for the native app | Separates browser/WARP policy from native API policy while keeping the tile Worker private behind the app Worker binding |
-| 2026-09-06 | Use one restrained neutral shell, 8px content-card radius, amber interaction accent, and shared responsive page utilities across the web app | A consistent system improves scanability and mobile behavior while preserving map and imagery as the dominant product surfaces |
-| 2026-09-06 | Define pointer cursors and hover feedback globally for semantic interactive elements | Centralizing the baseline prevents new links, buttons, selects, and Radix triggers from silently shipping without desktop affordances while component styles can still provide stronger local states |
-| 2026-09-06 | Adopt Kibo UI as an advanced component layer on top of shadcn/ui rather than treating it as a drop-in theme | Kibo's official registry requires shadcn CSS-variable mode and intentionally supplements base primitives; map, TIFF viewer, and multi-select domain controls remain local where Kibo has no behaviorally equivalent component |
+| Date       | Decision                                                                                                                                     | Reason                                                                                                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-15 | Astro 6 + Cloudflare adapter v13 over Astro 5                                                                                                | `workerd` in dev, no more Pages proxy, Vite 7 Environment API, built-in fonts                                                                                                                                                 |
+| 2026-03-15 | Mantine 8 over MUI v7                                                                                                                        | ~40% smaller bundle (CSS Modules vs Emotion runtime), built-in `colorScheme: 'auto'`, better mobile components (BottomSheet), 50+ hooks                                                                                       |
+| 2026-03-15 | MapLibre GL over Leaflet                                                                                                                     | GPU-accelerated, native pinch/rotate/tilt, vector tiles, smoother mobile experience                                                                                                                                           |
+| 2026-03-15 | Zustand over React Context                                                                                                                   | Lightweight, no boilerplate, persist middleware, works outside React tree, no re-render cascades                                                                                                                              |
+| 2026-03-15 | Astro API routes over Hono                                                                                                                   | One deployment (no separate Worker), bindings via `cloudflare:workers`, file-based routing, eliminates proxy layer                                                                                                            |
+| 2026-03-15 | Native `fetch` over Axios                                                                                                                    | Axios is 13KB for no benefit in modern browsers. Cloudflare Workers use fetch natively                                                                                                                                        |
+| 2026-03-15 | Workers (not Pages) deployment                                                                                                               | Cloudflare recommends Workers for new projects. Pages support deprecated in adapter v13                                                                                                                                       |
+| 2026-03-15 | `@tabler/icons-react` over `lucide-react` + `@mui/icons-material`                                                                            | Single icon set, standard for Mantine ecosystem, tree-shakeable                                                                                                                                                               |
+| 2026-05-16 | Tailwind CSS v4 over Mantine CSS Modules                                                                                                     | User requested a pure Tailwind direction after dark-mode inconsistencies exposed the cost of mixing Mantine theme state with CSS `light-dark()`                                                                               |
+| 2026-05-16 | Wireframe globe uses Three.js with 2D canvas fallback                                                                                        | Real browsers get the 3D renderer; automated/headless or WebGL-restricted environments still render the high-resolution rotating globe for QA                                                                                 |
+| 2026-05-18 | Mobile search uses a fixed viewport shell with an internally scrolling results panel                                                         | Prevents the document scroll container from competing with the fixed bottom nav and MapLibre touch gestures on mobile                                                                                                         |
+| 2026-05-18 | Hide the mobile tab bar while the landing search input is focused                                                                            | iOS Safari can otherwise keep fixed chrome above the keyboard and expose a blank scroll gap beneath it                                                                                                                        |
+| 2026-05-24 | Native iOS app will be a fresh SwiftUI/Liquid Glass design, using the web app only as backend/architecture reference                         | A direct web UI port would produce a non-native iOS experience and conflict with Apple HIG/Liquid Glass guidance                                                                                                              |
+| 2026-05-24 | Use XcodeGen for the initial iOS project scaffold                                                                                            | Keeps the Xcode project repeatable and avoids hand-editing `project.pbxproj`                                                                                                                                                  |
+| 2026-05-24 | Native `/api/v1` endpoints wrap existing backend services instead of replacing them                                                          | Gives iOS a stable app-shaped contract while preserving the existing web API and ArcGIS integration                                                                                                                           |
+| 2026-05-24 | Native TIFF endpoint resolves ArcGIS `DOWNLOAD_LINK` before using constructed LIST scan URLs                                                 | Constructed `LandTasFilms` URLs work for some historical scans but not all ortho/digital records                                                                                                                              |
+| 2026-05-24 | Do not use Cloudflare Image Resizing as a TIFF tile generator                                                                                | Image Resizing does not convert source TIFFs into viewport tiles; generated WebP tiles must come from TIFF-aware decoding/generation                                                                                          |
+| 2026-05-24 | Reuse the GeoTIFFTileSource/geotiff.js approach conceptually for TIFF byte-range tile extraction                                             | The existing web viewer proves range-aware TIFF reads; the native API should move TIFF-aware work behind Cloudflare-generated tiles                                                                                           |
+| 2026-05-24 | Delegate native WebP tile encoding to the TIFF conversion service instead of encoding inside the Worker route                                | `geotiff.js` can read TIFF metadata/ranges in the Worker, but local workerd exposed that `OffscreenCanvas` is unavailable for WebP encoding; the Worker should cache/proxy generated tiles rather than be the encoder         |
+| 2026-05-24 | Implement the first tile generator as a Node service using `geotiff` and `sharp`                                                             | Node gives a reliable WebP encoder today while preserving the range-aware TIFF read approach; this can be deployed as the existing conversion service or promoted to a Cloudflare Container                                   |
+| 2026-05-25 | Auto-focus MapKit on the user's current location when permission is granted                                                                  | Matches expected maps-app behavior and makes the search center immediately relevant on launch                                                                                                                                 |
+| 2026-05-25 | Deploy the TIFF tile generator as a separate Cloudflare Container-backed Worker and bind it to the app Worker                                | Keeps the public iOS API in the Astro Worker while putting native image-processing dependencies in the runtime designed for containers                                                                                        |
+| 2026-05-25 | Disable `workers_dev` and preview URLs for both new Workers                                                                                  | The app Worker should only be reachable on the production custom route, and the TIFF tile Worker should only be reachable through the Worker service binding; observability remains enabled for both                          |
+| 2026-06-01 | Use `aerial-api.awhq.uk/v1/*` with Cloudflare Access service-token auth for the native app                                                   | Separates browser/WARP policy from native API policy while keeping the tile Worker private behind the app Worker binding                                                                                                      |
+| 2026-09-06 | Use one restrained neutral shell, 8px content-card radius, amber interaction accent, and shared responsive page utilities across the web app | A consistent system improves scanability and mobile behavior while preserving map and imagery as the dominant product surfaces                                                                                                |
+| 2026-09-06 | Define pointer cursors and hover feedback globally for semantic interactive elements                                                         | Centralizing the baseline prevents new links, buttons, selects, and Radix triggers from silently shipping without desktop affordances while component styles can still provide stronger local states                          |
+| 2026-09-06 | Adopt Kibo UI as an advanced component layer on top of shadcn/ui rather than treating it as a drop-in theme                                  | Kibo's official registry requires shadcn CSS-variable mode and intentionally supplements base primitives; map, TIFF viewer, and multi-select domain controls remain local where Kibo has no behaviorally equivalent component |
 
 | 2026-09-11 | Disable eager redirect cookies for the browser Access application | Prevent sign-in from visiting the disabled workers.dev endpoint while retaining Access protection on every existing hostname; issue cookies when each hostname is visited instead |
 | 2026-09-11 | Use opaque slate panel/card levels with explicit borders and matched nested radii | The previous dark white washes flattened controls into the panel; 16px photo frames with 8px image corners preserve consistent insets |
 | 2026-09-11 | Precompute dot positions from public-domain Natural Earth 1:50m country polygons | Real geography replaces approximate blobs without runtime map downloads; the same 23,434 positions serve WebGL and Canvas fallback, with one visibility-aware animation loop |
+| 2026-09-20 | Use Kumo `GlobeMap` for the landing globe instead of a bespoke Three.js/canvas renderer | Kumo provides the requested SVG-only Natural Earth globe, reduced-motion-aware auto-rotation, and maintained rendering while removing custom geography generation and Three.js dependencies |
+| 2026-09-20 | Adopt Kumo incrementally through its official Tailwind theme/source integration, while retaining the custom mobile bottom tab bar | Kumo's sidebar is a strong fit for the desktop rail but its mobile drawer conflicts with the product's always-visible mobile navigation rule; sharing Phosphor icons and theme state keeps both shells coherent without changing mobile information architecture |
+| 2026-09-20 | Use Kumo `CommandPalette` inside a Kumo `Toolbar` for map search and actions, with the desktop sidebar width synchronized through a shared CSS variable | The command palette gives map search native keyboard/results behavior, while one width contract lets Kumo's collapse and resize states reflow the Astro shell without duplicating layout state |
+| 2026-09-21 | Use Kumo for every behaviorally equivalent web UI primitive and retain domain-native controls only where Kumo has no replacement | A single component system removes Kibo/shadcn/Radix styling drift while MapLibre, OpenSeadragon, the image-comparison interaction, and native file/range inputs preserve capabilities that Kumo does not implement |
 
 ---
 
@@ -1138,6 +1151,90 @@ Append a summary after each working session so the next session has context.
 - Replaced the old wireframe/blob globe with real country/coastline dots, antialiased orange point sprites, hidden rear faces, a Canvas fallback, and elapsed-time rotation. Reduced motion, off-screen/hidden-tab pauses, resize cleanup and animation teardown are supported. Removed the three desktop feature cards and landing footer at the user’s request, leaving search and the globe as the focus.
 - Verification: unit tests (216), lint, type-check and production build passed. Navigation/theme E2E: 19 passed, 1 intentional mobile-only theme-toggle skip. Updated stale E2E probes for client hydration, current labels and Tailwind v4 OKLCH colors. Browser QA covered desktop light/dark, 375px mobile, live Hobart map/results, preview, filter sheet, landing and empty favorites/timeline/compare pages; no horizontal overflow. Globe captures remain identical under reduced motion and change during rotation.
 - The existing large-client-chunk build warning remains. Timeline and compare route content remains the existing placeholder workflow; this pass does not implement those unfinished features. Unrelated untracked Cloudflare audit documents were preserved outside the UI commit.
+
+### Session 25 -- 2026-09-20
+
+- Reviewed Kumo Maps and confirmed `GlobeMap` is an MIT-licensed, SVG-only Natural Earth globe that does not require ECharts at runtime.
+- Replaced the landing page's custom Three.js/canvas dot globe with a granular Kumo `GlobeMap` import, retaining the orange light/dark palette, transparent ocean, slow rotation, and Tasmania-first orientation.
+- Kept the background globe decorative and non-draggable so it cannot intercept landing search interactions; Kumo's reduced-motion and off-screen animation behavior remains active.
+- Removed the obsolete custom globe renderer, generated coordinate data, generator script, and direct `three`/`@types/three` dependencies.
+- Browser QA passed at 1440x900 and 390x844 in dark mode plus desktop light mode: the SVG globe fills its square hero frame, theme colors update correctly, the page has no horizontal overflow, and no browser warnings/errors were logged.
+- Verification passed: formatting, lint, type-check, 216 unit/component tests, and the production build. The existing large-client-chunk build warning remains.
+
+### Session 26 -- 2026-09-20
+
+- Deployed the Kumo globe replacement with `npm run deploy` using authenticated Wrangler 4.92.0.
+- Cloudflare activated Worker version `5c896994-8813-4ee5-9862-63fa49fd4daa` on `aerial-explorer.awhq.uk/*` and `aerial-api.awhq.uk/*`; the TIFF tile service was unchanged.
+- Production root and `/api/version` both reached Cloudflare and returned the expected Access authentication redirect for an anonymous curl request, confirming route reachability while preserving the existing Access policy.
+- The production build passed during deployment. The existing client chunk-size warning remains.
+
+### Session 27 -- 2026-09-20
+
+- Inspected Kumo's bundled globe implementation and confirmed its canonical land mask is 360x180, or one cell per geographic degree; Tasmania therefore has only roughly 3-4 mask cells across each dimension and cannot gain detailed coastline fidelity from additional display pixels.
+- Increased the globe's mobile and desktop frame sizes, added a 1.16x internal SVG zoom, strengthened the orange palette and glow, and tightened `landHatchSpacing` to Kumo's minimum of 3.
+- Converted the continuous diagonal hatch appearance to fine round dot-like marks with a short dash pattern and reduced stroke width.
+- Recentered the initial projection precisely on Tasmania and slowed automatic rotation from 2 to 0.35 degrees per second so the island remains the visual focus much longer.
+- Browser QA passed at 1280x720 and 390x844 in dark mode: the denser marks render as fine dots, the enlarged globe remains balanced behind the hero, the document has no horizontal overflow, and no browser warnings/errors were logged.
+- Verification passed: formatting, lint, type-check, 216 unit/component tests, and the production build. This refinement is not yet deployed.
+
+### Session 28 -- 2026-09-20
+
+- Added Kumo's official Tailwind source/theme integration and synchronized the app's resolved light/dark theme to Kumo's `data-mode` attribute without changing the existing preference contract.
+- Rebuilt the desktop navigation as Kumo's native expanded 260px sidebar with `Sidebar.Provider`, `Sidebar`, `Sidebar.Content`, `Sidebar.Menu`, `Sidebar.MenuButton`, and `Sidebar.Footer` primitives, retaining active-route state, version metadata, and theme control. Removed the old TAS rail badge and updated the desktop content offset to match.
+- Kept the required always-visible mobile bottom tab bar rather than enabling Kumo's mobile drawer; migrated both desktop and mobile navigation icons to Phosphor.
+- Replaced the main geocoding field with Kumo `InputGroup`, including start/end addons, while preserving debounce, keyboard navigation, result portal positioning, recent searches, presets, loading, and clear behavior.
+- Migrated the shared theme toggle and search-result icons to Phosphor and added `@phosphor-icons/react` as a direct dependency.
+- Browser QA passed in desktop dark/light and 390x844 mobile dark modes. The Kumo search field returns live Hobart suggestions, the expanded desktop sidebar keeps native icon/label alignment on both landing and live MapLibre routes, the mobile tab bar remains anchored, and the page has no visible responsive regression.
+- Verification passed: formatting, lint, type-check, 216 unit/component tests, and production build. The existing large-client-chunk build warning remains. These Kumo shell/input changes and the Session 27 globe refinement are not yet deployed.
+
+### Session 29 -- 2026-09-20
+
+- Replaced the map route's inline geocoding field with Kumo `CommandPalette`, including debounced Tasmania geocoding, popular-location defaults, keyboard-ready result rows, loading/empty states, and URL/store synchronization after selection.
+- Rebuilt the map action row as a Kumo `Toolbar`; migrated the AI-search field, suggestions, primary action, and icons to Kumo/Phosphor.
+- Made the desktop Kumo sidebar collapsible to icon mode and resizable from 200-360px, synchronized its live width into the Astro content offset, and kept the mobile layout at zero sidebar width.
+- Reimplemented the shared overlay shell with Kumo `Dialog`, fixed portalled overlay stacking above persistent navigation, and migrated photo-preview actions to Kumo buttons.
+- Migrated photo result surfaces to Kumo `LayerCard` and favorite actions to Kumo buttons while retaining existing card interaction and accessibility behavior.
+- Browser QA passed for desktop sidebar collapse/expand and resize, desktop and mobile command-palette overlays, live Huonville selection/URL synchronization, mobile Kumo AI dialog, and photo preview. The temporary mobile viewport override was reset after testing.
+- Verification passed: formatting, lint, type-check, 216 unit/component tests, and production build. The existing large-client-chunk build warning remains. These changes are not yet deployed.
+
+### Session 30 -- 2026-09-20
+
+- Deployed the refined Tasmania-centered Kumo globe and the expanded Kumo migration with `npm run deploy` using Wrangler 4.92.0.
+- Cloudflare activated Worker version `8e413b94-f106-4d7e-86e4-bf0cdc712481` on `aerial-explorer.awhq.uk/*` and `aerial-api.awhq.uk/*`; the TIFF tile service was unchanged.
+- The production build passed during deployment. Wrangler uploaded 35 new or modified static assets and reported an 11ms Worker startup time; the existing large-client-chunk warning remains.
+- Anonymous smoke checks reached Cloudflare: the production root and `/api/version` returned the expected Access login redirect, while the protected native health route returned the expected Access denial without credentials.
+
+### Session 31 -- 2026-09-20
+
+- Audited the remaining web UI for a complete Kumo migration without changing application code.
+- The remaining inventory includes 20 production component files with non-Kumo controls or icons, 31 raw button elements, four raw inputs, two raw selects, 13 Tabler-icon consumers, and five Kibo consumers.
+- Most reusable primitives map directly to Kumo Button, Select, Checkbox, Input, Autocomplete, Popover, Tooltip, Badge, Loader, LayerCard, LayerDialog, Tabs, and Toolbar components.
+- MapLibre, OpenSeadragon, the image comparison slider, native file/range inputs, navigation progress, skeletons, and domain-specific photo/map interaction surfaces require retained application behavior with Kumo tokens and controls around them because Kumo has no behaviorally equivalent full replacement.
+- A complete replaceable-primitives migration should include route-by-route browser QA, accessibility and keyboard checks, unit/e2e updates, dependency removal, bundle comparison, and a final production deployment. No code or deployment changes were made during this audit.
+
+### Session 32 -- 2026-09-21
+
+- Completed the replaceable-primitives migration across all production web component surfaces. Buttons, selects, inputs, badges, tooltips, popovers, tabs, dialogs, cards, loaders, skeletons, meters, the command palette, toolbar, and sidebar now use Kumo components where Kumo has a behaviorally equivalent primitive.
+- Standardized application icons on Phosphor and removed the remaining Tabler and Lucide consumers. Removed obsolete Kibo/shadcn wrappers and their direct Radix, class-variance-authority, and `cn` dependencies; the image-comparison interaction now lives with the app's compare components and retains only its domain behavior.
+- Retained MapLibre, OpenSeadragon, the custom before/after comparison interaction, the hidden TIFF file input, and the viewer rotation range input because Kumo does not provide equivalent domain engines or native input replacements. These surfaces use Kumo controls and theme tokens around the retained behavior.
+- Fixed Kumo button stretching in desktop/mobile scale and layer grids, restored the Kumo popover trigger's accessible child content, and raised Kumo popover portal wrappers above the persistent sidebar stacking context.
+- Browser QA passed on a live Hobart result set for the expanded and collapsed desktop sidebar, Kumo command palette, theme popover, filter popover, results/select controls, mobile 390x844 map/results layout, mobile filter sheet, and photo-preview modal. The temporary viewport override was reset.
+- Verification passed: formatting, lint, type-check, 216 unit/component tests, production build, and `git diff --check`. The existing large-client-chunk build warning remains. This full migration is not yet deployed.
+
+### Session 33 -- 2026-09-21
+
+- Applied the Cloudflare and Wrangler deployment guidance, confirmed Wrangler 4.92.0 authentication against the Andrew Hobbs Lab Account, and completed a successful production dry run with all expected KV, D1, R2, AI, Analytics Engine, asset, version-metadata, and TIFF service bindings.
+- Deployed the complete Kumo/Phosphor migration with `npm run deploy`. Cloudflare uploaded 34 new or modified assets and activated Worker version `d52b7748-eb1a-4d71-bf2b-bddefb90d559` on `aerial-explorer.awhq.uk/*` and `aerial-api.awhq.uk/*`; the TIFF tile service was unchanged.
+- Verified the deployed version through `wrangler versions view`. Anonymous smoke checks reached Cloudflare: the production root and `/api/version` returned the expected Access login redirects, while the protected native health route returned the expected unauthenticated 403 response.
+- The production build passed during deployment. The existing client chunk-size warning remains.
+
+### Session 34 -- 2026-09-21
+
+- Reproduced the reported production photo-preview loading issue locally with Hobart photo `1439_183`. Browser inspection confirmed the JPEG had fully decoded at 1628x1523 while React still rendered it at zero opacity.
+- Identified a cached-image race: the modal image's `onLoad` could set the boolean loaded state before the deferred opening animation-frame reset, which then returned the modal to a permanent loading state despite a successful 200 response.
+- Replaced the fragile booleans with URL-keyed loaded/error state. Gallery changes now derive loading state from the active thumbnail URL, so stale callbacks or resets cannot hide a successfully loaded image.
+- Added a regression test that fires a cached-image load before the deferred opening callback and verifies the image remains visible afterward.
+- Browser QA passed for direct opening of `1439_183` plus next/previous cached gallery navigation. Verification passed: lint, type-check, all 217 unit/component tests, and production build. The existing client chunk-size warning remains. This fix is not yet deployed.
 
 ---
 

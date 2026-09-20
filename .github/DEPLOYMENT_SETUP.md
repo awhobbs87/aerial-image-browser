@@ -15,9 +15,9 @@ The workflow at `.github/workflows/deploy-workers.yml` runs on every push to `ma
 
 1. Checkout repo
 2. Install Node 22
-3. `npm ci`
-4. `npx astro build`
-5. `npx wrangler deploy`
+3. `pnpm install --frozen-lockfile`
+4. `pnpm exec astro build`
+5. `pnpm exec wrangler deploy`
 
 ### Required GitHub Secret
 
@@ -38,7 +38,7 @@ Add one secret in **Settings → Secrets and variables → Actions**:
 ## Manual Deploy
 
 ```bash
-npm run deploy
+pnpm run deploy
 ```
 
 This runs `astro build && wrangler deploy` in one step.
@@ -46,7 +46,7 @@ This runs `astro build && wrangler deploy` in one step.
 ## Local Development
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Starts the Astro dev server backed by `workerd`. All Cloudflare bindings (KV, D1, R2, AI) work locally via the values in `.dev.vars` and `wrangler.jsonc`.
@@ -57,10 +57,10 @@ Copy `.dev.vars.example` to `.dev.vars` and fill in any local secrets before run
 
 ```bash
 # Local
-npm run db:migrate:local
+pnpm run db:migrate:local
 
 # Production
-npm run db:migrate
+pnpm run db:migrate
 ```
 
 ## Wrangler Secrets
@@ -68,7 +68,7 @@ npm run db:migrate
 Secrets that cannot go in `wrangler.jsonc` must be set via the CLI:
 
 ```bash
-npx wrangler secret put TIFF_CONVERSION_SERVICE_URL
+pnpm exec wrangler secret put TIFF_CONVERSION_SERVICE_URL
 ```
 
 ## Bindings Summary

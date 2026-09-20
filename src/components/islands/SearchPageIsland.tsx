@@ -1,7 +1,8 @@
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react';
-import { IconAdjustments, IconSparkles } from '@tabler/icons-react';
+import { FunnelSimpleIcon, SparkleIcon } from '@phosphor-icons/react';
+import { Toolbar } from '@cloudflare/kumo/components/toolbar';
 import type maplibregl from 'maplibre-gl';
-import { SearchBar } from '../search/SearchBar';
+import { MapSearchCommandPalette } from '../search/MapSearchCommandPalette';
 import { SearchResults } from '../search/SearchResults';
 import { MapView } from '../map/MapView';
 import { PhotoFootprints } from '../map/PhotoFootprints';
@@ -15,8 +16,6 @@ import { usePhotos } from '@/hooks/usePhotos';
 import type { EnhancedPhoto } from '@/types/photo';
 import type { MapBounds } from '@/types/map';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { cn } from '@/lib/cn';
 
 const PhotoPreviewModal = lazy(async () => {
   const module = await import('../photos/PhotoPreviewModal');
@@ -111,38 +110,26 @@ function SearchPageContent() {
 
       <div className="absolute inset-x-0 top-[clamp(240px,42dvh,360px)] bottom-0 z-1 flex min-h-0 flex-col overflow-hidden rounded-t-3xl border border-border bg-white shadow-2xl dark:bg-popover md:inset-x-auto md:top-4 md:bottom-4 md:left-4 md:w-[clamp(410px,33vw,480px)] md:rounded-2xl">
         <div className="relative z-20 shrink-0 border-b border-border bg-white p-3 dark:bg-popover">
-          <div className="flex items-center gap-2 [&>:first-child]:min-w-0 [&>:first-child]:flex-1">
-            <SearchBar size="md" onLocationSelect={handleLocationSelect} />
-            <Tooltip label="AI search">
-              <button
-                type="button"
-                onClick={() => setAiSearchOpen(true)}
-                aria-label="AI search"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition duration-100 hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-              >
-                <IconSparkles size={18} />
-              </button>
-            </Tooltip>
-            <Tooltip label={filterPanelOpen ? 'Hide filters' : 'Show filters'}>
-              <button
-                type="button"
-                onClick={() => setFilterPanelOpen(!filterPanelOpen)}
-                aria-label="Toggle filters"
-                aria-expanded={filterPanelOpen}
-                className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
-                  filterPanelOpen
-                    ? 'bg-sky-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',
-                )}
-              >
-                <IconAdjustments size={18} />
-              </button>
-            </Tooltip>
-          </div>
+          <Toolbar className="w-full">
+            <MapSearchCommandPalette onLocationSelect={handleLocationSelect} />
+            <Toolbar.Button
+              icon={SparkleIcon}
+              onClick={() => setAiSearchOpen(true)}
+              aria-label="AI search"
+              title="AI search"
+            />
+            <Toolbar.Button
+              icon={FunnelSimpleIcon}
+              onClick={() => setFilterPanelOpen(!filterPanelOpen)}
+              aria-label={filterPanelOpen ? 'Hide filters' : 'Show filters'}
+              aria-expanded={filterPanelOpen}
+              title={filterPanelOpen ? 'Hide filters' : 'Show filters'}
+              data-active={filterPanelOpen || undefined}
+            />
+          </Toolbar>
         </div>
 
-        <div className="isolate min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain p-4">
+        <div className="isolate min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain py-4 pr-4 pl-5">
           {isDesktop && filterPanelOpen && (
             <div className="mb-4 border-b border-border">
               <FilterPanel onClose={() => setFilterPanelOpen(false)} />

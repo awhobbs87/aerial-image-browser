@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { IconCurrentLocation, IconMap, IconSatellite } from '@tabler/icons-react';
+import { CrosshairIcon, GlobeHemisphereWestIcon, MapTrifoldIcon } from '@phosphor-icons/react';
+import { Button } from '@cloudflare/kumo/components/button';
 import { TASMANIA_DEFAULT_VIEWPORT } from '@/types/map';
 import type { MapBounds } from '@/types/map';
 import { isResolvedDark, subscribeToResolvedTheme } from '@/lib/theme';
@@ -206,29 +207,32 @@ export function MapView({
 
       <div className="absolute top-3 right-3 z-2 flex flex-col gap-2">
         <Tooltip label={satellite ? 'Map view' : 'Satellite view'} side="left">
-          <button
+          <Button
             type="button"
             onClick={handleToggleSatellite}
             aria-label={satellite ? 'Switch to map view' : 'Switch to satellite view'}
+            variant="secondary"
+            shape="square"
+            size="lg"
             className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-950/10 bg-white/90 text-slate-700 shadow-md backdrop-blur-xl transition duration-100 hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-popover dark:text-slate-200 dark:hover:bg-slate-900"
           >
-            {satellite ? <IconMap size={18} /> : <IconSatellite size={18} />}
-          </button>
+            {satellite ? <MapTrifoldIcon size={18} /> : <GlobeHemisphereWestIcon size={18} />}
+          </Button>
         </Tooltip>
         <Tooltip label="My location" side="left">
-          <button
+          <Button
             type="button"
             onClick={handleLocateMe}
             disabled={locating}
             aria-label="My location"
+            variant="secondary"
+            shape="square"
+            size="lg"
+            loading={locating}
             className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-950/10 bg-white/90 text-slate-700 shadow-md backdrop-blur-xl transition duration-100 hover:bg-white hover:text-slate-950 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-popover dark:text-slate-200 dark:hover:bg-slate-900"
           >
-            {locating ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
-            ) : (
-              <IconCurrentLocation size={18} />
-            )}
-          </button>
+            {!locating && <CrosshairIcon size={18} />}
+          </Button>
         </Tooltip>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { EnhancedPhoto } from '@/types/photo';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 
 interface CompareSideBySideProps {
   photoA: EnhancedPhoto;
@@ -7,7 +8,7 @@ interface CompareSideBySideProps {
 
 function Pane({ photo }: { photo: EnhancedPhoto }) {
   return (
-    <div className="relative min-h-72 flex-1 overflow-hidden rounded-lg border border-slate-950/8 bg-slate-950/5 shadow-sm dark:border-border dark:bg-card">
+    <LayerCard className="relative min-h-72 flex-1 overflow-hidden rounded-lg border border-slate-950/8 bg-slate-950/5 p-0 shadow-sm dark:border-border dark:bg-card">
       <img
         src={`/api/images/thumbnail/${photo.layerId}/${photo.name}`}
         alt={photo.name}
@@ -20,7 +21,7 @@ function Pane({ photo }: { photo: EnhancedPhoto }) {
           {photo.year} | Scale 1:{photo.scale?.toLocaleString()}
         </p>
       </div>
-    </div>
+    </LayerCard>
   );
 }
 

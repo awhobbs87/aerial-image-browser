@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVerticalIcon } from 'lucide-react';
+import { DotsSixVerticalIcon } from '@phosphor-icons/react';
 import { type MotionValue, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import {
   type ComponentProps,
@@ -13,7 +13,7 @@ import {
   useContext,
   useState,
 } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 type ImageComparisonContextType = {
   sliderPosition: number;
@@ -200,7 +200,7 @@ export const ComparisonHandle = ({ className, children, ...props }: ComparisonHa
           <div className="-translate-x-1/2 absolute left-1/2 h-full w-1 bg-background" />
           {mode === 'drag' && (
             <div className="z-50 flex items-center justify-center rounded-sm bg-background px-0.5 py-1">
-              <GripVerticalIcon className="h-4 w-4 select-none text-muted-foreground" />
+              <DotsSixVerticalIcon className="h-4 w-4 select-none text-muted-foreground" />
             </div>
           )}
         </>

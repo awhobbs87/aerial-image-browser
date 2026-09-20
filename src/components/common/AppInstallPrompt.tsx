@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { IconDownload, IconX } from '@tabler/icons-react';
+import { DownloadSimpleIcon, XIcon } from '@phosphor-icons/react';
+import { Button } from '@cloudflare/kumo/components/button';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -40,10 +42,10 @@ export function AppInstallPrompt() {
   if (!deferredPrompt || dismissed) return null;
 
   return (
-    <div className="fixed bottom-20 left-1/2 z-1000 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-slate-950/10 bg-white/95 p-3 text-slate-950 shadow-xl backdrop-blur-xl dark:border-border dark:bg-slate-950/95 dark:text-slate-50">
+    <LayerCard className="fixed bottom-20 left-1/2 z-1000 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 p-3 shadow-xl backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <IconDownload size={20} className="shrink-0 text-sky-600" />
+          <DownloadSimpleIcon size={20} className="shrink-0 text-kumo-accent" />
           <div className="min-w-0">
             <p className="text-sm font-bold">Install App</p>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -52,23 +54,20 @@ export function AppInstallPrompt() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={handleInstall}
-            className="h-8 rounded-full bg-sky-600 px-3 text-xs font-bold text-white transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-          >
+          <Button type="button" onClick={handleInstall} variant="primary" size="sm">
             Install
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleDismiss}
             aria-label="Dismiss"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-          >
-            <IconX size={15} />
-          </button>
+            icon={XIcon}
+            variant="ghost"
+            shape="square"
+            size="sm"
+          />
         </div>
       </div>
-    </div>
+    </LayerCard>
   );
 }

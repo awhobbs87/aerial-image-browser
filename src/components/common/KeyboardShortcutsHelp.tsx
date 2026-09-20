@@ -1,4 +1,4 @@
-import { IconKeyboard } from '@tabler/icons-react';
+import { KeyboardIcon } from '@phosphor-icons/react';
 import { Dialog } from '@/components/ui/Dialog';
 
 interface KeyboardShortcutsHelpProps {
@@ -28,7 +28,7 @@ export function KeyboardShortcutsHelp({ opened, onClose }: KeyboardShortcutsHelp
       }}
       title={
         <span className="inline-flex items-center gap-2">
-          <IconKeyboard size={18} />
+          <KeyboardIcon size={18} />
           Keyboard Shortcuts
         </span>
       }

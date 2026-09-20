@@ -1,4 +1,6 @@
-import { IconCheck, IconRefresh, IconX } from '@tabler/icons-react';
+import { CheckIcon, ArrowCounterClockwiseIcon, XIcon } from '@phosphor-icons/react';
+import { Button } from '@cloudflare/kumo/components/button';
+import { Input } from '@cloudflare/kumo/components/input';
 import { useFilterStore } from '@/stores/filterStore';
 import { SCALE_CATEGORIES } from '@/types/photo';
 import { FilterPresets } from './FilterPresets';
@@ -41,26 +43,28 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         {hasActiveFilters ? (
-          <button
+          <Button
             type="button"
             onClick={resetFilters}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+            variant="ghost"
+            size="sm"
+            icon={ArrowCounterClockwiseIcon}
           >
-            <IconRefresh size={12} />
             Reset filters
-          </button>
+          </Button>
         ) : (
           <span />
         )}
         {onClose && (
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-          >
-            <IconX size={14} />
-          </button>
+            variant="ghost"
+            shape="square"
+            size="sm"
+            icon={XIcon}
+          />
         )}
       </div>
 
@@ -81,20 +85,21 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
         </h3>
         <div className="grid grid-cols-3 gap-1.5">
           {LAYER_OPTIONS.map((layer) => (
-            <button
+            <Button
               key={layer.id}
               type="button"
+              variant="outline"
               onClick={() => toggleLayer(layer.id)}
               aria-pressed={layers.includes(layer.id)}
               className={cn(
-                'rounded-xl border px-2.5 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
+                'h-auto min-h-11 w-full rounded-xl px-2.5 py-2 text-xs font-semibold',
                 layers.includes(layer.id)
                   ? 'border-amber-500/45 bg-amber-400/13 text-slate-950 dark:border-amber-300/40 dark:bg-amber-300/20 dark:text-white'
                   : 'border-slate-950/8 bg-white/55 text-slate-600 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:text-slate-300 dark:hover:border-white/16 dark:hover:bg-white/7',
               )}
             >
               {layer.label}
-            </button>
+            </Button>
           ))}
         </div>
       </section>
@@ -107,7 +112,7 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
           Date range
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          <input
+          <Input
             type="number"
             placeholder="From"
             aria-label="From year"
@@ -117,9 +122,9 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
             }
             min={1946}
             max={new Date().getFullYear()}
-            className="h-11 rounded-xl border border-slate-950/10 bg-white/72 px-3 text-sm text-slate-950 outline-none focus:border-amber-500/50 focus:ring-3 focus:ring-amber-500/10 dark:border-border dark:bg-card dark:text-slate-50"
+            size="lg"
           />
-          <input
+          <Input
             type="number"
             placeholder="To"
             aria-label="To year"
@@ -129,7 +134,7 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
             }
             min={1946}
             max={new Date().getFullYear()}
-            className="h-11 rounded-xl border border-slate-950/10 bg-white/72 px-3 text-sm text-slate-950 outline-none focus:border-amber-500/50 focus:ring-3 focus:ring-amber-500/10 dark:border-border dark:bg-card dark:text-slate-50"
+            size="lg"
           />
         </div>
       </section>
@@ -147,31 +152,32 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
             const [title, range] = SCALE_LABELS[cat.key];
 
             return (
-              <button
+              <Button
                 key={cat.key}
                 type="button"
+                variant="outline"
                 aria-label={cat.label}
                 aria-pressed={selected}
                 onClick={() => toggleScaleCategory(cat.key)}
                 className={cn(
-                  'relative flex min-h-13 min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
+                  'relative h-auto min-h-13 w-full min-w-0 flex-col items-start justify-center rounded-xl px-3 py-2 text-left',
                   selected
                     ? 'border-amber-500/55 bg-amber-400/13 text-slate-950 dark:border-amber-300/70 dark:bg-amber-300/20 dark:text-white'
                     : 'border-slate-950/8 bg-white/55 text-slate-700 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:text-slate-200 dark:hover:border-white/16 dark:hover:bg-white/7',
                 )}
               >
                 <span className="max-w-[calc(100%-1rem)] truncate text-xs font-bold">{title}</span>
-                <span className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                <span className="mt-0.5 w-full truncate text-[11px] text-slate-500 dark:text-slate-400">
                   {range}
                 </span>
                 {selected && (
-                  <IconCheck
+                  <CheckIcon
                     size={14}
-                    stroke={2.4}
+                    weight="bold"
                     className="absolute top-2 right-2 text-amber-600 dark:text-amber-300"
                   />
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>

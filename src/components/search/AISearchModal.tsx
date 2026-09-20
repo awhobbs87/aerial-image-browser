@@ -1,5 +1,13 @@
 import { useState, useCallback } from 'react';
-import { IconSparkles, IconSearch, IconMapPin, IconCalendar, IconZoom } from '@tabler/icons-react';
+import {
+  CalendarBlankIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  SparkleIcon,
+  TrendUpIcon,
+} from '@phosphor-icons/react';
+import { Button } from '@cloudflare/kumo/components/button';
+import { InputGroup } from '@cloudflare/kumo/components/input-group';
 import { api } from '@/lib/api-client';
 import { geocodeSearch } from '@/lib/geocoding';
 import { useSearchStore } from '@/stores/searchStore';
@@ -91,7 +99,7 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
       }}
       title={
         <span className="inline-flex items-center gap-2">
-          <IconSparkles size={18} />
+          <SparkleIcon size={18} />
           AI Search
         </span>
       }
@@ -101,25 +109,24 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
           Describe what you're looking for in natural language.
         </p>
 
-        <div className="relative">
-          <IconSearch
-            size={18}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
-          />
-          <input
+        <InputGroup size="lg">
+          <InputGroup.Addon>
+            <MagnifyingGlassIcon size={18} className="text-kumo-subtle" />
+          </InputGroup.Addon>
+          <InputGroup.Input
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !isProcessing) handleSubmit();
             }}
             placeholder="e.g., Find aerial photos of Sandy Bay from the 1950s"
-            className="h-11 w-full rounded-2xl border border-slate-950/10 bg-white pr-14 pl-10 text-sm outline-none transition focus:border-sky-600/50 focus:ring-3 focus:ring-sky-600/10 dark:border-border dark:bg-card dark:text-slate-50"
+            aria-label="Describe the aerial photography to find"
             autoFocus
           />
-          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+          <InputGroup.Suffix className="text-[10px] font-bold text-kumo-subtle">
             {isProcessing ? '...' : 'Enter'}
-          </span>
-        </div>
+          </InputGroup.Suffix>
+        </InputGroup>
 
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-slate-500 dark:text-slate-400">Try:</span>
@@ -128,14 +135,16 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
             'High resolution photos of Launceston',
             'Port Arthur historical aerials',
           ].map((suggestion) => (
-            <button
+            <Button
               key={suggestion}
               type="button"
               onClick={() => setQuery(suggestion)}
-              className="rounded-full bg-sky-600/10 px-2 py-1 text-xs font-bold text-sky-700 transition hover:bg-sky-600/15 dark:text-sky-300"
+              variant="ghost"
+              size="sm"
+              className="rounded-full text-kumo-accent"
             >
               {suggestion}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -146,12 +155,12 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
             </p>
             <div className="flex flex-wrap gap-3 text-sm text-slate-700 dark:text-slate-200">
               <span className="inline-flex items-center gap-1.5">
-                <IconMapPin size={14} />
+                <MapPinIcon size={14} />
                 {parsed.location}
               </span>
               {(parsed.startYear || parsed.endYear) && (
                 <span className="inline-flex items-center gap-1.5">
-                  <IconCalendar size={14} />
+                  <CalendarBlankIcon size={14} />
                   {parsed.startYear || '...'} - {parsed.endYear || '...'}
                 </span>
               )}
@@ -162,7 +171,7 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
               )}
               {parsed.resolution && (
                 <span className="inline-flex items-center gap-1.5">
-                  <IconZoom size={14} />
+                  <TrendUpIcon size={14} />
                   {parsed.resolution} res
                 </span>
               )}
@@ -176,19 +185,18 @@ export function AISearchModal({ opened, onClose, onSearch }: AISearchModalProps)
           </div>
         )}
 
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={!query.trim() || isProcessing}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+          loading={isProcessing}
+          icon={SparkleIcon}
+          variant="primary"
+          size="lg"
+          className="w-full"
         >
-          {isProcessing ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <IconSparkles size={16} />
-          )}
           Search with AI
-        </button>
+        </Button>
       </div>
     </Dialog>
   );

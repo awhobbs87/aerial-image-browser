@@ -1,4 +1,5 @@
 import { useFilterStore } from '@/stores/filterStore';
+import { Button } from '@cloudflare/kumo/components/button';
 import type { ScaleCategory } from '@/types/photo';
 import { cn } from '@/lib/cn';
 
@@ -73,19 +74,21 @@ export function FilterPresets() {
   return (
     <div className="flex flex-wrap gap-1.5">
       {PRESETS.map((preset) => (
-        <button
+        <Button
           key={preset.label}
           type="button"
+          size="sm"
+          variant={isActive(preset) ? 'primary' : 'ghost'}
           onClick={() => applyPreset(preset)}
           className={cn(
-            'rounded-full px-2.5 py-1 text-xs font-semibold transition duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600',
+            'rounded-full px-2.5 text-xs font-semibold',
             isActive(preset)
               ? 'bg-sky-600 text-white shadow-sm'
               : 'bg-slate-950/5 text-slate-600 hover:bg-slate-950/10 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12',
           )}
         >
           {preset.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

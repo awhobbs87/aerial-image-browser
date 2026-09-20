@@ -1,9 +1,20 @@
+@source '../../node_modules/@cloudflare/kumo/dist/**/*.{js,jsx,ts,tsx}';
+@import '@cloudflare/kumo/styles/tailwind';
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
 @custom-variant dark (
   &:where([data-theme='dark'], [data-theme='dark'] *, html.dark, html.dark *)
 );
+
+/* Keep Kumo portalled overlays above the persistent navigation chrome. */
+[data-base-ui-portal] > .fixed {
+  z-index: var(--z-index-modal);
+}
+
+[data-base-ui-portal] > [role='presentation']:has(> .kumo-popover-popup) {
+  z-index: var(--z-index-dropdown);
+}
 
 @theme {
   --z-index-nav: 100;

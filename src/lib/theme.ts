@@ -25,6 +25,7 @@ export function applyTheme(preference: ThemePreference): ResolvedTheme {
   const resolved = resolveTheme(preference);
   const root = document.documentElement;
   root.setAttribute('data-theme', resolved);
+  root.setAttribute('data-mode', resolved);
   root.setAttribute('data-theme-preference', preference);
   root.classList.toggle('dark', resolved === 'dark');
   return resolved;

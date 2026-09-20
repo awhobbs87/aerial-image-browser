@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { Tabs } from '@cloudflare/kumo/components/tabs';
 import type { EnhancedPhoto } from '@/types/photo';
-import { cn } from '@/lib/cn';
 
 interface ThenNowProps {
   photo: EnhancedPhoto;
@@ -18,26 +18,14 @@ export function ThenNow({ photo }: ThenNowProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-center">
-        <div className="inline-flex rounded-lg border border-slate-950/8 bg-white/72 p-1 shadow-sm dark:border-border dark:bg-card">
-          {[
-            ['then', `Then (${photo.year || 'Historical'})`],
-            ['now', 'Now (Satellite)'],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setView(value as 'then' | 'now')}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm font-bold transition duration-100',
-                view === value
-                  ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-slate-50'
-                  : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          value={view}
+          onValueChange={(value) => setView(value as 'then' | 'now')}
+          tabs={[
+            { value: 'then', label: `Then (${photo.year || 'Historical'})` },
+            { value: 'now', label: 'Now (Satellite)' },
+          ]}
+        />
       </div>
 
       <div className="aspect-4/3 overflow-hidden rounded-lg border border-slate-950/8 bg-slate-950/5 shadow-sm dark:border-border dark:bg-card">

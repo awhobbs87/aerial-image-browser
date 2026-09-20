@@ -12,6 +12,7 @@ describe('theme', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-mode');
     document.documentElement.removeAttribute('data-theme-preference');
   });
 
@@ -41,6 +42,7 @@ describe('theme', () => {
   it('applies resolved theme to documentElement', () => {
     applyTheme('dark');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement.getAttribute('data-mode')).toBe('dark');
     expect(document.documentElement.getAttribute('data-theme-preference')).toBe('dark');
   });
 

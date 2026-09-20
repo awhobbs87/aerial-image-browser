@@ -1,5 +1,8 @@
 import { useMemo, useRef } from 'react';
-import { IconCalendar } from '@tabler/icons-react';
+import { CalendarBlankIcon } from '@phosphor-icons/react';
+import { Badge } from '@cloudflare/kumo/components/badge';
+import { Button } from '@cloudflare/kumo/components/button';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 import type { EnhancedPhoto } from '@/types/photo';
 
 interface PhotoTimelineProps {
@@ -65,14 +68,16 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
           {years
             .filter((y) => y > 0)
             .map((year) => (
-              <button
+              <Button
                 key={year}
                 type="button"
                 onClick={() => scrollToYear(year)}
-                className="shrink-0 rounded-full bg-slate-950/5 px-3 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-950/10 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white/7 dark:text-slate-300 dark:hover:bg-white/12"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 rounded-full text-xs font-bold"
               >
                 {year}
-              </button>
+              </Button>
             ))}
         </div>
       </div>
@@ -82,23 +87,30 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
           <section key={year} id={`timeline-year-${year}`} className="relative pl-10">
             <div className="absolute top-0 bottom-0 left-4 w-px bg-sky-600/25" />
             <div className="absolute top-0 left-0 flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
-              <IconCalendar size={15} />
+              <CalendarBlankIcon size={15} />
             </div>
             <div className="mb-2 flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-950 dark:text-slate-50">
                 {year || 'Unknown'}
               </h3>
-              <span className="rounded-full bg-slate-950/5 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-white/10 dark:text-slate-300">
+              <Badge variant="secondary" className="text-xs font-bold">
                 {yearPhotos.length}
-              </span>
+              </Badge>
             </div>
             <div className="overflow-x-auto pb-2">
               <div className="flex gap-2">
                 {yearPhotos.map((photo) => (
-                  <button
+                  <LayerCard
                     key={`${photo.layerId}-${photo.objectId}`}
-                    type="button"
                     onClick={() => onPhotoClick?.(photo)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onPhotoClick?.(photo);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                     className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card"
                   >
                     <img
@@ -110,7 +122,7 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
                     <span className="block truncate px-2 py-1 text-xs text-slate-600 dark:text-slate-300">
                       {photo.name}
                     </span>
-                  </button>
+                  </LayerCard>
                 ))}
               </div>
             </div>

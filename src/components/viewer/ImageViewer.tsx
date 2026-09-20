@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  IconZoomIn,
-  IconZoomOut,
-  IconZoomReset,
-  IconRotateClockwise,
-  IconRotate2,
-  IconFlipVertical,
-  IconFlipHorizontal,
-  IconMaximize,
-  IconDownload,
-  IconArrowLeft,
-  IconAdjustments,
-  IconDots,
-} from '@tabler/icons-react';
+  ArrowCounterClockwiseIcon,
+  ArrowLeftIcon,
+  ArrowClockwiseIcon,
+  CornersOutIcon,
+  CrosshairSimpleIcon,
+  DotsThreeIcon,
+  DownloadSimpleIcon,
+  FlipHorizontalIcon,
+  FlipVerticalIcon,
+  MagnifyingGlassMinusIcon,
+  MagnifyingGlassPlusIcon,
+  SlidersHorizontalIcon,
+} from '@phosphor-icons/react';
+import { Button, LinkButton } from '@cloudflare/kumo/components/button';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
+import { Loader } from '@cloudflare/kumo/components/loader';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
@@ -51,13 +54,26 @@ function ViewerButton({
   return (
     <Tooltip label={label} side="left">
       {href ? (
-        <a href={href} aria-label={label} className={className}>
+        <LinkButton
+          href={href}
+          aria-label={label}
+          shape="square"
+          variant="ghost"
+          className={className}
+        >
           {children}
-        </a>
+        </LinkButton>
       ) : (
-        <button type="button" onClick={onClick} aria-label={label} className={className}>
+        <Button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          shape="square"
+          variant={active ? 'primary' : 'ghost'}
+          className={className}
+        >
           {children}
-        </button>
+        </Button>
       )}
     </Tooltip>
   );
@@ -191,13 +207,13 @@ export function ImageViewer({
 
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <span className="h-9 w-9 animate-spin rounded-full border-3 border-white/20 border-t-white" />
+          <Loader size="lg" aria-label="Loading image" className="text-white" />
         </div>
       )}
 
       <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
         <ViewerButton label="Back to results" onClick={handleBack}>
-          <IconArrowLeft size={iconSize} />
+          <ArrowLeftIcon size={iconSize} />
         </ViewerButton>
       </div>
 
@@ -205,23 +221,23 @@ export function ImageViewer({
         <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 max-h-[calc(100%-7rem)] overflow-y-auto rounded-xl border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
           <div className="flex flex-col gap-1">
             <ViewerButton label="Zoom in" onClick={() => viewerRef.current?.viewport?.zoomBy(1.5)}>
-              <IconZoomIn size={iconSize} />
+              <MagnifyingGlassPlusIcon size={iconSize} />
             </ViewerButton>
             <ViewerButton
               label="Zoom out"
               onClick={() => viewerRef.current?.viewport?.zoomBy(0.67)}
             >
-              <IconZoomOut size={iconSize} />
+              <MagnifyingGlassMinusIcon size={iconSize} />
             </ViewerButton>
             <ViewerButton label="Reset view" onClick={handleReset}>
-              <IconZoomReset size={iconSize} />
+              <CrosshairSimpleIcon size={iconSize} />
             </ViewerButton>
             <ViewerButton
               label={expanded ? 'Fewer controls' : 'More controls'}
               onClick={() => setExpanded((e) => !e)}
               active={expanded}
             >
-              <IconDots size={iconSize} />
+              <DotsThreeIcon size={iconSize} />
             </ViewerButton>
 
             {expanded && (
@@ -230,44 +246,44 @@ export function ImageViewer({
                   label="Rotate left 90"
                   onClick={() => applyRotation((rotation - 90 + 360) % 360)}
                 >
-                  <IconRotate2 size={iconSize} style={{ transform: 'scaleX(-1)' }} />
+                  <ArrowCounterClockwiseIcon size={iconSize} />
                 </ViewerButton>
                 <ViewerButton
                   label="Rotate right 90"
                   onClick={() => applyRotation((rotation + 90) % 360)}
                 >
-                  <IconRotateClockwise size={iconSize} />
+                  <ArrowClockwiseIcon size={iconSize} />
                 </ViewerButton>
                 <ViewerButton
                   label="Flip horizontal"
                   onClick={() => setFlippedH((f) => !f)}
                   active={flippedH}
                 >
-                  <IconFlipHorizontal size={iconSize} />
+                  <FlipHorizontalIcon size={iconSize} />
                 </ViewerButton>
                 <ViewerButton
                   label="Flip vertical"
                   onClick={() => setFlippedV((f) => !f)}
                   active={flippedV}
                 >
-                  <IconFlipVertical size={iconSize} />
+                  <FlipVerticalIcon size={iconSize} />
                 </ViewerButton>
                 <ViewerButton
                   label="Fine-tune rotation"
                   onClick={() => setFinetuneOpen((o) => !o)}
                   active={finetuneOpen}
                 >
-                  <IconAdjustments size={iconSize} />
+                  <SlidersHorizontalIcon size={iconSize} />
                 </ViewerButton>
                 <ViewerButton
                   label="Fullscreen"
                   onClick={() => viewerRef.current?.setFullScreen(!viewerRef.current?.isFullPage())}
                 >
-                  <IconMaximize size={iconSize} />
+                  <CornersOutIcon size={iconSize} />
                 </ViewerButton>
                 {tiffUrl && (
                   <ViewerButton label="Download TIFF" href={tiffUrl}>
-                    <IconDownload size={iconSize} />
+                    <DownloadSimpleIcon size={iconSize} />
                   </ViewerButton>
                 )}
               </div>
@@ -277,7 +293,7 @@ export function ImageViewer({
       )}
 
       {finetuneOpen && (
-        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-18 z-20 w-56 rounded-lg border border-white/10 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:bg-popover">
+        <LayerCard className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-18 z-20 w-56 rounded-lg p-3 shadow-xl backdrop-blur-xl">
           <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
             <span>Rotation</span>
             <span>{rotation}°</span>
@@ -292,7 +308,7 @@ export function ImageViewer({
             step={1}
             className="w-full accent-sky-600"
           />
-        </div>
+        </LayerCard>
       )}
 
       <div className="absolute bottom-3 left-1/2 z-20 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-lg border border-white/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-xl dark:bg-popover">

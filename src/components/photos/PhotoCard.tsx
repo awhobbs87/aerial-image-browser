@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
-import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
+import { HeartIcon } from '@phosphor-icons/react';
+import { Button } from '@cloudflare/kumo/components/button';
+import { Badge } from '@cloudflare/kumo/components/badge';
+import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 import { useFavoritesStore } from '@/stores/favoritesStore';
 import { useUIStore } from '@/stores/uiStore';
 import { formatScale } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
-import { Pill } from '@/components/kibo-ui/pill';
 
 interface PhotoCardProps {
   photo: EnhancedPhoto;
@@ -52,7 +54,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
   );
 
   return (
-    <div
+    <LayerCard
       className="group relative min-w-0 max-w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-950/10 bg-white p-2 shadow-sm outline-none transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_12px_28px_rgba(15,23,42,0.11)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/14"
       onClick={handleCardClick}
       onMouseEnter={() => setHoveredPhotoId(photo.objectId)}
@@ -75,21 +77,27 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
           loading="lazy"
         />
 
-        <button
+        <Button
           className={`absolute top-2 right-2 z-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-950/52 text-white/80 opacity-100 backdrop-blur-md transition duration-100 hover:bg-slate-950/75 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white  ${
             isFavorite ? 'text-rose-400 opacity-100 hover:text-rose-300' : ''
           }`}
           onClick={handleFavoriteClick}
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           type="button"
+          variant="ghost"
+          shape="circle"
+          size="lg"
         >
-          {isFavorite ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
-        </button>
+          <HeartIcon size={16} weight={isFavorite ? 'fill' : 'regular'} />
+        </Button>
 
         {typeLabel && (
-          <Pill className="absolute top-2 left-2 z-3 rounded-md border-white/10 bg-slate-950/52 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white/90 backdrop-blur-md">
+          <Badge
+            variant="neutral"
+            className="absolute top-2 left-2 z-3 rounded-md bg-slate-950/52 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white/90 backdrop-blur-md"
+          >
             {typeLabel}
-          </Pill>
+          </Badge>
         )}
 
         <div className="pointer-events-none absolute inset-0 z-2 hidden flex-col justify-end bg-linear-to-t from-black/65 to-transparent p-2.5 opacity-0 transition duration-150 group-hover:opacity-100 md:flex">
@@ -113,6 +121,6 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
           <span className="truncate">{photo.name}</span>
         </span>
       </div>
-    </div>
+    </LayerCard>
   );
 }

@@ -41,13 +41,13 @@ Container image: `/Users/awhob/dev/tas-aerial-explorer/services/tiff-tile-servic
 Run the tile generator:
 
 ```bash
-npm run dev:tiff-tiles
+pnpm run dev:tiff-tiles
 ```
 
 Run the app Worker:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 `.dev.vars` should point the app Worker at the local tile service:
@@ -63,14 +63,14 @@ The app Worker prefers that local URL over the service binding when it is set to
 Deploy the tile service first, then the app Worker:
 
 ```bash
-npm run deploy:tiff-tiles
-npm run deploy
+pnpm run deploy:tiff-tiles
+pnpm run deploy
 ```
 
 Or deploy both in order:
 
 ```bash
-npm run deploy:cloudflare
+pnpm run deploy:cloudflare
 ```
 
 The app Worker `TIFF_TILE_SERVICE` binding points at the deployed `tas-aerial-tiff-tiles` Worker. In Cloudflare, the normal production path should not need `TIFF_CONVERSION_SERVICE_URL`.

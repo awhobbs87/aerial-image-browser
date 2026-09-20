@@ -73,7 +73,7 @@ actor APIClient {
       (data, response) = try await session.data(for: request)
     } catch let urlError as URLError {
       if url.host == "localhost" || url.host == "127.0.0.1" {
-        throw APIError.transport("Local API unavailable. Start `npm run dev` from the repo root, then try again.")
+        throw APIError.transport("Local API unavailable. Start `pnpm run dev` from the repo root, then try again.")
       }
 
       throw APIError.transport(urlError.localizedDescription)

@@ -53,6 +53,7 @@ const {
         const applyTo = (root, pref) => {
           const resolved = resolve(pref ?? readPref());
           root.setAttribute('data-theme', resolved);
+          root.setAttribute('data-mode', resolved);
           root.setAttribute('data-theme-preference', pref ?? readPref());
           root.classList.toggle('dark', resolved === 'dark');
         };

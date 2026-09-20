@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react';
-import { IconClockHour4, IconHeart, IconMap, IconSearch } from '@tabler/icons-react';
+import {
+  ClockCounterClockwiseIcon,
+  HeartIcon,
+  MagnifyingGlassIcon,
+  MapTrifoldIcon,
+  type Icon,
+} from '@phosphor-icons/react';
 
 interface NavItem {
   label: string;
-  icon: typeof IconSearch;
+  icon: Icon;
   href: string;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Search', icon: IconSearch, href: '/' },
-  { label: 'Map', icon: IconMap, href: '/search' },
-  { label: 'Timeline', icon: IconClockHour4, href: '/timeline' },
-  { label: 'Favorites', icon: IconHeart, href: '/favorites' },
+  { label: 'Search', icon: MagnifyingGlassIcon, href: '/' },
+  { label: 'Map', icon: MapTrifoldIcon, href: '/search' },
+  { label: 'Timeline', icon: ClockCounterClockwiseIcon, href: '/timeline' },
+  { label: 'Favorites', icon: HeartIcon, href: '/favorites' },
 ];
 
 export function MobileNav() {
@@ -46,7 +52,7 @@ export function MobileNav() {
             <span
               className={`inline-flex h-7 w-10 items-center justify-center rounded-full ${isActive ? 'bg-amber-400/20 dark:bg-amber-300/14' : ''}`}
             >
-              <item.icon size={21} stroke={isActive ? 2.2 : 1.8} />
+              <item.icon size={21} weight={isActive ? 'fill' : 'regular'} />
             </span>
             <span className="leading-tight">{item.label}</span>
           </a>

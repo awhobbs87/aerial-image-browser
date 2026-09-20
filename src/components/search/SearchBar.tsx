@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  IconSearch,
-  IconMapPin,
-  IconX,
-  IconCurrentLocation,
-  IconHistory,
-  IconTrash,
-} from '@tabler/icons-react';
+  ClockCounterClockwiseIcon,
+  CrosshairIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  TrashIcon,
+  XIcon,
+} from '@phosphor-icons/react';
+import { InputGroup } from '@cloudflare/kumo/components/input';
+import { Button } from '@cloudflare/kumo/components/button';
 import { geocodeSearch, type GeocodingResult } from '@/lib/geocoding';
 import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -230,33 +232,38 @@ export function SearchBar({
   return (
     <div ref={wrapperRef} className="relative w-full">
       <div ref={anchorRef} className="relative">
-        <IconSearch
-          size={18}
-          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-slate-500 dark:text-slate-400"
-        />
-        <input
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.currentTarget.value)}
-          onFocus={() => setSearchFocused(true)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className={`w-full rounded-[1.1rem] border border-slate-950/10 bg-gradient-to-b from-white/96 to-slate-100/90 pr-12 pl-12 text-slate-950 outline-none transition duration-150 placeholder:text-slate-500 focus:border-amber-500/38 focus:bg-white focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(15,23,42,0.08)] dark:border-border dark:from-card dark:to-card dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-white/10 dark:focus:shadow-[0_0_0_4px_rgba(245,158,11,0.13),0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]}`}
-        />
-        <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center justify-center">
-          {isSearching ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-amber-500 dark:border-slate-700 dark:border-t-amber-300" />
-          ) : inputValue ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label="Clear search"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            >
-              <IconX size={14} />
-            </button>
-          ) : null}
-        </div>
+        <InputGroup
+          size="lg"
+          className={`rounded-[1.1rem] border border-slate-950/10 bg-gradient-to-b from-white/96 to-slate-100/90 text-slate-950 shadow-none ring-0 transition duration-150 focus-within:border-amber-500/38 focus-within:bg-white focus-within:ring-4 focus-within:ring-amber-500/13 focus-within:shadow-[0_8px_20px_rgba(15,23,42,0.08)] dark:border-border dark:from-card dark:to-card dark:text-slate-50 dark:focus-within:bg-white/10 dark:focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]}`}
+        >
+          <InputGroup.Addon align="start" className="pl-4 text-slate-500 dark:text-slate-400">
+            <MagnifyingGlassIcon size={18} />
+          </InputGroup.Addon>
+          <InputGroup.Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.currentTarget.value)}
+            onFocus={() => setSearchFocused(true)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            className="h-full min-w-0 flex-1 bg-transparent px-3 text-inherit ring-0 placeholder:text-slate-500 focus:ring-0 dark:placeholder:text-slate-400"
+          />
+          <InputGroup.Addon align="end" className="pr-2">
+            {isSearching ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-amber-500 dark:border-slate-700 dark:border-t-amber-300" />
+            ) : inputValue ? (
+              <InputGroup.Button
+                type="button"
+                onClick={handleClear}
+                aria-label="Clear search"
+                icon={XIcon}
+                variant="ghost"
+                shape="circle"
+              />
+            ) : null}
+          </InputGroup.Addon>
+        </InputGroup>
       </div>
 
       {showDropdown &&
@@ -277,10 +284,11 @@ export function SearchBar({
             {showResults && (
               <div className="flex flex-col">
                 {results.map((result, i) => (
-                  <button
+                  <Button
                     key={result.placeId}
                     type="button"
-                    className={`${resultClass} ${activeIndex === i ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
+                    variant="ghost"
+                    className={`${resultClass} h-auto rounded-none ${activeIndex === i ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleSelect(result.lat, result.lon, result.displayName);
@@ -288,7 +296,7 @@ export function SearchBar({
                     onMouseEnter={() => setActiveIndex(i)}
                   >
                     <div className="flex min-w-0 items-start gap-1.5">
-                      <IconMapPin size={13} className="mt-0.5 shrink-0 text-slate-400" />
+                      <MapPinIcon size={13} className="mt-0.5 shrink-0 text-slate-400" />
                       <div className="min-w-0">
                         <div className="truncate text-xs font-semibold">
                           {result.displayName.split(',')[0]}
@@ -298,7 +306,7 @@ export function SearchBar({
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -313,22 +321,24 @@ export function SearchBar({
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Recent
                       </span>
-                      <button
+                      <Button
                         type="button"
                         onClick={handleClearRecents}
                         aria-label="Clear recent searches"
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-950/5 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-                      >
-                        <IconTrash size={11} />
-                      </button>
+                        icon={TrashIcon}
+                        variant="ghost"
+                        shape="circle"
+                        size="sm"
+                      />
                     </div>
                     {recents.map((item) => {
                       const idx = idleIdx++;
                       return (
-                        <button
+                        <Button
                           key={`recent-${item.lat}-${item.lon}`}
                           type="button"
-                          className={`${resultClass} ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
+                          variant="ghost"
+                          className={`${resultClass} h-auto rounded-none ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
                           onMouseDown={(e) => {
                             e.preventDefault();
                             handleSelect(item.lat, item.lon, item.label);
@@ -336,10 +346,10 @@ export function SearchBar({
                           onMouseEnter={() => setActiveIndex(idx)}
                         >
                           <span className="flex items-center gap-1.5">
-                            <IconHistory size={12} className="text-slate-400" />
+                            <ClockCounterClockwiseIcon size={12} className="text-slate-400" />
                             <span className="text-xs">{item.label.split(',')[0]}</span>
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </>
@@ -352,10 +362,11 @@ export function SearchBar({
                 {POPULAR_LOCATIONS.map((preset) => {
                   const idx = idleIdx++;
                   return (
-                    <button
+                    <Button
                       key={preset.label}
                       type="button"
-                      className={`${resultClass} ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
+                      variant="ghost"
+                      className={`${resultClass} h-auto rounded-none ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         handleSelect(preset.lat, preset.lon, preset.label);
@@ -363,10 +374,10 @@ export function SearchBar({
                       onMouseEnter={() => setActiveIndex(idx)}
                     >
                       <span className="flex items-center gap-1.5">
-                        <IconCurrentLocation size={12} className="text-slate-400" />
+                        <CrosshairIcon size={12} className="text-slate-400" />
                         <span className="text-xs">{preset.label}</span>
                       </span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

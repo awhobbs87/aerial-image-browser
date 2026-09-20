@@ -1,4 +1,4 @@
-import { Comparison, ComparisonHandle, ComparisonItem } from '@/components/kibo-ui/comparison';
+import { Comparison, ComparisonHandle, ComparisonItem } from './ImageComparison';
 import type { EnhancedPhoto } from '@/types/photo';
 
 interface CompareSliderProps {

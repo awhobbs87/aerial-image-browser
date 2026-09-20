@@ -1,3 +1,5 @@
+import { Loader } from '@cloudflare/kumo/components/loader';
+
 interface LoadingOverlayProps {
   visible: boolean;
   message?: string;
@@ -16,7 +18,7 @@ export function LoadingOverlay({ visible, message, fullPage = false }: LoadingOv
       }
     >
       <div className="flex flex-col items-center gap-3">
-        <span className="h-8 w-8 animate-spin rounded-full border-3 border-sky-600/20 border-t-sky-600" />
+        <Loader size="lg" aria-label={message || 'Loading'} />
         {message && (
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{message}</p>
         )}
