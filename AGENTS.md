@@ -1318,6 +1318,7 @@ Append a summary after each working session so the next session has context.
 - Removed all mobile positioning overrides and the keyboard-inset document mutation. The mobile sheet now owns its geometry, focus trap, backdrop, close control, dynamic viewport sizing, safe-area behavior and vertical swipe transition.
 - Visual WebKit QA at 390px confirmed the sheet spans exactly `x=0` to `x=390` and remains bounded after the viewport contracts from 664px to 364px to simulate the software keyboard. Focused Chromium/WebKit search flows pass.
 - Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active desktop/mobile/WebKit Playwright scenarios when run serially (16 intentional skips). Parallel Astro dev-server execution exposed an unrelated Vite SSR React prebundle race, so the clean full-suite result used one worker.
+- Deployed mobile-only search-sheet commit `761cad8`; Cloudflare uploaded 36 changed static assets and activated Worker version `292fabb7-fdd1-4763-b0a4-6633ddc36cbd` on both production routes.
 
 ---
 
