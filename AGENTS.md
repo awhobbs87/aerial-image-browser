@@ -1311,6 +1311,7 @@ Append a summary after each working session so the next session has context.
 - The first deployed correction still failed on the user's iPhone despite passing Chromium. Replaced the `:has()`-selected override with an explicit `data-map-search-open` document state, numeric `translate: 0 0`, and important fixed-edge positioning to eliminate WebKit selector/cascade ambiguity.
 - Installed Playwright WebKit locally and added a focused `mobile-webkit` project; both Chromium mobile and WebKit/iPhone geometry checks keep the palette horizontally contained and above the simulated keyboard.
 - Hardened-fix validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active Playwright scenarios including the new WebKit/iPhone run (16 intentional skips).
+- Deployed the WebKit-hardened commit `7d5f3f4`; Cloudflare uploaded seven changed static assets and activated Worker version `e53405e7-75d1-48f3-bcf6-326382714880` on both production routes.
 
 ---
 
