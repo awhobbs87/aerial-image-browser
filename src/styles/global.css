@@ -427,9 +427,13 @@ html.dark::view-transition-group(root) {
     top: auto;
     bottom: var(--search-keyboard-inset, 0px);
     left: 0;
+    right: 0;
     width: 100%;
+    max-width: none;
     max-height: calc(100dvh - var(--search-keyboard-inset, 0px) - 16px);
+    translate: none;
     transform: none;
+    margin-inline: 0;
     border-radius: 1.25rem 1.25rem 0 0;
     padding-bottom: env(safe-area-inset-bottom);
   }

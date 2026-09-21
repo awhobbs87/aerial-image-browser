@@ -45,6 +45,31 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/images/metadata/**', (route) => route.fulfill({ json: photo }));
   await page.route('**/api/images/tiff-proxy/**', (route) => route.fulfill({ status: 404 }));
 });
+
+test('keeps the location command palette inside the mobile viewport', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Mobile viewport regression');
+
+  await page.goto('/search');
+  await page.getByRole('button', { name: 'Search for a location' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
+
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty('--search-keyboard-inset', '300px'),
+  );
+  const keyboardBox = await dialog.boundingBox();
+  expect(keyboardBox).not.toBeNull();
+  expect(keyboardBox!.y + keyboardBox!.height).toBeLessThanOrEqual(viewport!.height - 300 + 1);
+});
+
 test('address search persists recents and populates timeline after navigation and reload', async ({
   page,
 }, info) => {

@@ -529,6 +529,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Share persistent recent searches across landing and map search, with clear and error states -- 2026-09-22.
 - [x] Inspect TIFF georeferencing; provide truthful location reference and exact image pins only where supported -- 2026-09-22.
 - [x] Improve mobile search sheets, image/list rendering and map interaction; verify desktop/mobile flows -- 2026-09-22.
+- [x] Fix Kumo command-palette horizontal clipping when the mobile keyboard is open and add viewport-geometry regression coverage -- 2026-09-22.
 
 ### Phase 8: Native iOS App
 
@@ -653,6 +654,7 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-22 | Use Tasmania LIST SearchService for forward geocoding and retain Nominatim only for reverse labels | LIST supplies authoritative Tasmania-only address, road, locality, and named-feature results; exact-name queries are merged ahead of partial matches so common places such as Hobart are not displaced by generic features |
 | 2026-09-22 | Present search coordinates and survey footprints as a location reference rather than projecting an address pin onto historical scans | The archive exposes survey polygons but not a reliable image-pixel transform for every scan; showing the searched point on a modern map and the footprint is useful without implying false precision |
 | 2026-09-22 | Retain the latest raw location-search result in a bounded five-minute tab-session cache | Astro island remounts can recreate query clients during route transitions; a one-entry session fallback preserves loaded cards, filters, and scroll position without another large API request |
+| 2026-09-22 | Reset both CSS `translate` and legacy `transform` when adapting Kumo's centered command palette into a mobile bottom sheet | Kumo's Tailwind v4 `-translate-x-1/2` uses the independent `translate` property, so clearing only `transform` leaves the full-width sheet shifted half a viewport off-screen |
 
 ---
 
@@ -1296,6 +1298,13 @@ Append a summary after each working session so the next session has context.
 - Improved mobile reliability with a keyboard-aware Kumo search sheet, 44px suggestion targets, bounded MapLibre interaction, lower-cost card effects, viewport-aware list rendering, and a collision-free top viewer control group.
 - Restored same-tab search result reuse across Astro island remounts with a bounded five-minute memory/session cache, retaining filtered cards and scroll position without a second search request.
 - Validation passed: formatting, lint, type-check, 241 unit/component tests, production build, all 35 active desktop/mobile Playwright scenarios (15 existing skips), direct live LIST/API smoke checks, and desktop visual QA for the address map and populated timeline. The viewer reference test now waits for the actual survey footprint layer before capture.
+
+### Session 38 -- 2026-09-22
+
+- Reproduced the reported iPhone location-search clipping as a Kumo/Tailwind v4 transform mismatch: the mobile override cleared `transform`, while Kumo's centered dialog retained `translate: -50%` and rendered at `x = -168.75px` in the 375px regression viewport.
+- Converted the mobile command palette into an explicitly edge-anchored sheet by resetting `translate`, both horizontal insets, maximum width, transform and inline margins while retaining keyboard-aware bottom positioning and safe-area padding.
+- Added a mobile Playwright geometry regression that asserts the sheet remains horizontally contained and above a simulated 300px software keyboard.
+- Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 36 active desktop/mobile Playwright scenarios (16 intentional skips).
 
 ---
 
