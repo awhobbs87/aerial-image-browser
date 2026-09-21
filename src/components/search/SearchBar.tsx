@@ -98,11 +98,6 @@ export function SearchBar({
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [searchFocused, setSearchFocused]);
 
-  // Load recents when dropdown opens
-  useEffect(() => {
-    if (searchFocused) setRecents(getRecentSearches());
-  }, [searchFocused]);
-
   // Geocode on debounced input
   useEffect(() => {
     if (!debouncedValue || debouncedValue.length < 2) {
@@ -110,7 +105,9 @@ export function SearchBar({
       return () => clearTimeout(id);
     }
     let cancelled = false;
-    setIsSearching(true);
+    queueMicrotask(() => {
+      if (!cancelled) setIsSearching(true);
+    });
     geocodeSearch(debouncedValue, 5)
       .then((r) => {
         if (!cancelled) {
@@ -155,10 +152,7 @@ export function SearchBar({
   const showDropdown = showResults || showIdle;
 
   useEffect(() => {
-    if (!showDropdown) {
-      setDropdownRect(null);
-      return undefined;
-    }
+    if (!showDropdown) return undefined;
 
     const updateRect = () => {
       const anchor = anchorRef.current;
@@ -226,6 +220,11 @@ export function SearchBar({
     inputRef.current?.focus();
   };
 
+  const handleFocus = () => {
+    setRecents(getRecentSearches());
+    setSearchFocused(true);
+  };
+
   // Track the flat index for idle items
   let idleIdx = 0;
 
@@ -243,7 +242,7 @@ export function SearchBar({
             ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.currentTarget.value)}
-            onFocus={() => setSearchFocused(true)}
+            onFocus={handleFocus}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             aria-label={placeholder}

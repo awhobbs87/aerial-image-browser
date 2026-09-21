@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { FeatureCollection } from 'geojson';
 import type maplibregl from 'maplibre-gl';
 import type { EnhancedPhoto } from '@/types/photo';
 
@@ -26,7 +27,7 @@ export function PhotoFootprints({
   useEffect(() => {
     if (!map) return;
 
-    const geojson: GeoJSON.FeatureCollection = {
+    const geojson: FeatureCollection = {
       type: 'FeatureCollection',
       features: photos
         .filter((p) => p.rings && p.rings.length > 0)

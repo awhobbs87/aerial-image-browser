@@ -32,7 +32,7 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 | ----------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Meta-framework    | Astro 6                                     | Islands architecture, file-based routing, Cloudflare adapter v13                                                    |
 | UI framework      | React 19                                    | Islands via `client:load` / `client:visible` / `client:only="react"`                                                |
-| Component library | Kibo UI + shadcn/ui + Radix primitives      | Kibo for advanced components, shadcn for base controls, local Tailwind components for domain-specific map/viewer UI |
+| Component library | Kumo UI + Phosphor Icons                     | Kumo for shared primitives and shell components; local Tailwind components only for domain-specific map/viewer behavior |
 | Styling           | Tailwind CSS v4                             | Official `@tailwindcss/vite` plugin. Tailwind utilities are the styling source of truth                             |
 | Map               | MapLibre GL JS                              | Vector tiles, GPU-accelerated, native mobile gestures                                                               |
 | State management  | Zustand 5                                   | Replaces 30+ useState hooks. Persist middleware for localStorage                                                    |
@@ -42,6 +42,7 @@ Tasmania Aerial Photo Explorer: a web application that queries Tasmania's ArcGIS
 | Testing           | Vitest + React Testing Library + Playwright | Unit, component, and e2e                                                                                            |
 | Runtime           | Cloudflare Workers (`workerd`)              | R2, KV, D1, Workers AI. Dev server runs `workerd` via Astro 6                                                       |
 | Node version      | 22 (required by Astro 6)                    | `.nvmrc` set to `22`                                                                                                |
+| Package manager   | pnpm 11                                     | Root web app is pinned through `packageManager`; the standalone TIFF container service keeps its npm lockfile       |
 
 ---
 
@@ -53,6 +54,8 @@ aerial-image-browser/
 |-- astro.config.mjs                  # Astro 6 config (Cloudflare adapter, React, fonts)
 |-- wrangler.jsonc                    # Cloudflare bindings (KV, D1, R2, AI)
 |-- package.json                      # Single package (no monorepo)
+|-- pnpm-lock.yaml                    # Root web-app dependency lockfile
+|-- pnpm-workspace.yaml               # Isolates the repo and approves required native build scripts
 |-- tsconfig.json
 |-- .nvmrc                            # Node 22
 |-- migrations/                       # D1 schema migrations
@@ -504,6 +507,8 @@ const r2 = env.TIFF_STORAGE;
 - [x] Deploy the refined Kumo globe and expanded Kumo shell/component migration to production -- 2026-09-20 (`8e413b94-f106-4d7e-86e4-bf0cdc712481`)
 - [x] Complete route-by-route Kumo/Phosphor migration for remaining filters, forms, buttons, overlays, and domain controls where Kumo has a behaviorally equivalent primitive -- 2026-09-21
 - [x] Deploy the complete Kumo/Phosphor component migration to production -- 2026-09-21 (`d52b7748-eb1a-4d71-bf2b-bddefb90d559`)
+- [x] Shift the search-results panel contents 4px right for consistent left-side breathing room -- 2026-09-21
+- [x] Migrate the root web application, CI workflow, deployment documentation, and Playwright server command to pnpm 11 -- 2026-09-21
 
 ### Phase 8: Native iOS App
 
@@ -624,6 +629,7 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-20 | Adopt Kumo incrementally through its official Tailwind theme/source integration, while retaining the custom mobile bottom tab bar | Kumo's sidebar is a strong fit for the desktop rail but its mobile drawer conflicts with the product's always-visible mobile navigation rule; sharing Phosphor icons and theme state keeps both shells coherent without changing mobile information architecture |
 | 2026-09-20 | Use Kumo `CommandPalette` inside a Kumo `Toolbar` for map search and actions, with the desktop sidebar width synchronized through a shared CSS variable | The command palette gives map search native keyboard/results behavior, while one width contract lets Kumo's collapse and resize states reflow the Astro shell without duplicating layout state |
 | 2026-09-21 | Use Kumo for every behaviorally equivalent web UI primitive and retain domain-native controls only where Kumo has no replacement | A single component system removes Kibo/shadcn/Radix styling drift while MapLibre, OpenSeadragon, the image-comparison interaction, and native file/range inputs preserve capabilities that Kumo does not implement |
+| 2026-09-21 | Use pnpm 11 for the root web application while leaving the standalone TIFF tile service on npm | The root gains a deterministic pnpm lockfile and isolated dependency graph, while the separately containerized service continues to match its existing `package-lock.json` and Docker `npm ci` workflow |
 
 ---
 
@@ -1235,6 +1241,15 @@ Append a summary after each working session so the next session has context.
 - Replaced the fragile booleans with URL-keyed loaded/error state. Gallery changes now derive loading state from the active thumbnail URL, so stale callbacks or resets cannot hide a successfully loaded image.
 - Added a regression test that fires a cached-image load before the deferred opening callback and verifies the image remains visible afterward.
 - Browser QA passed for direct opening of `1439_183` plus next/previous cached gallery navigation. Verification passed: lint, type-check, all 217 unit/component tests, and production build. The existing client chunk-size warning remains. This fix is not yet deployed.
+
+### Session 35 -- 2026-09-21
+
+- Increased the search results scroll container's left padding from 16px to 20px, shifting the full filter, toolbar, heading, and photo-card column 4px right without changing the map boundary or mobile shell.
+- Migrated the root web application to pnpm 11 with a committed lockfile, repository-local workspace boundary, approved `esbuild`/`sharp`/`workerd` install scripts, pnpm-based CI and deployment documentation, and a pnpm Playwright development server command.
+- Kept `services/tiff-tile-service` on npm because it is an independently containerized package whose Docker build intentionally uses its own `package-lock.json` and `npm ci`.
+- Aligned `@cloudflare/workers-types` with the resolved Wrangler peer requirement and pinned the last stable Testing Library DOM matcher release after pnpm surfaced the withdrawn 6.10 release warning.
+- pnpm's isolated dependency graph exposed an implicit GeoJSON type dependency and stricter React hook/ref checks; declared `@types/geojson` directly and corrected the affected map/search state synchronization rather than relying on npm hoisting or suppressing the rules.
+- Verification passed: frozen install, peer check, formatting, lint, type-check, all 217 unit/component tests, production build, and a live desktop Hobart search visual pass. The adjusted panel has even left breathing room and no visible clipping or alignment regression.
 
 ---
 

@@ -65,7 +65,9 @@ export function MapView({
   const [locating, setLocating] = useState(false);
   const [satellite, setSatellite] = useState(true);
 
-  satelliteRef.current = satellite;
+  useEffect(() => {
+    satelliteRef.current = satellite;
+  }, [satellite]);
 
   const showMarker = useCallback((lngLat: [number, number]) => {
     const map = mapRef.current;
