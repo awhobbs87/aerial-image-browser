@@ -56,9 +56,12 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
 
   return (
     <LayerCard
-      className="group relative min-w-0 max-w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-950/10 bg-white p-2 shadow-sm outline-none transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_12px_28px_rgba(15,23,42,0.11)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/14"
+      className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_230px] min-w-0 max-w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-950/10 bg-white p-2 shadow-sm outline-none transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_12px_28px_rgba(15,23,42,0.11)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/14"
       onClick={handleCardClick}
-      onMouseEnter={() => setHoveredPhotoId(photo.objectId, photo.layerId)}
+      onMouseEnter={() => {
+        if (window.matchMedia('(hover: hover)').matches)
+          setHoveredPhotoId(photo.objectId, photo.layerId);
+      }}
       onMouseLeave={() => setHoveredPhotoId(null)}
       role="article"
       tabIndex={0}
@@ -82,7 +85,7 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
         />
 
         <Button
-          className={`absolute top-2 right-2 z-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-950/52 text-white/80 opacity-100 backdrop-blur-md transition duration-100 hover:bg-slate-950/75 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white  ${
+          className={`absolute top-2 right-2 z-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-950/52 text-white/80 opacity-100 md:backdrop-blur-md transition duration-100 hover:bg-slate-950/75 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white  ${
             isFavorite ? 'text-rose-400 opacity-100 hover:text-rose-300' : ''
           }`}
           onClick={handleFavoriteClick}
@@ -98,7 +101,7 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
         {typeLabel && (
           <Badge
             variant="neutral"
-            className="absolute top-2 left-2 z-3 rounded-md bg-slate-950/52 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white/90 backdrop-blur-md"
+            className="absolute top-2 left-2 z-3 rounded-md bg-slate-950/52 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white/90 md:backdrop-blur-md"
           >
             {typeLabel}
           </Badge>

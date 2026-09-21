@@ -1,3 +1,4 @@
+import { useSearchStore } from '@/stores/searchStore';
 import { navigate } from 'astro:transitions/client';
 import { photoImageUrl } from '@/lib/photo-images';
 import { useState, useEffect, useCallback } from 'react';
@@ -105,6 +106,12 @@ export function PhotoPreviewModal({
 
   const handleViewFull = () => {
     const params = new URLSearchParams();
+    const location = useSearchStore.getState();
+    if (location.lat !== null && location.lon !== null) {
+      params.set('lat', String(location.lat));
+      params.set('lon', String(location.lon));
+      params.set('q', location.query);
+    }
     if (current.year > 0) params.set('year', String(current.year));
     if (current.scale) params.set('scale', String(current.scale));
     if (current.layerName) params.set('project', current.layerName);

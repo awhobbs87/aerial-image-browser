@@ -19,6 +19,63 @@ interface UsePhotosOptions {
   enabled?: boolean;
 }
 
+interface BrowserPhotoCacheEntry {
+  data: SearchData;
+  updatedAt: number;
+}
+
+type PhotoCacheWindow = Window & {
+  __tasAerialPhotoCache?: Map<string, BrowserPhotoCacheEntry>;
+};
+const PHOTO_SESSION_KEY = 'tas-aerial-photo-cache-v1';
+
+function getBrowserPhotoCache() {
+  if (typeof window === 'undefined') return undefined;
+  const browserWindow = window as PhotoCacheWindow;
+  return (browserWindow.__tasAerialPhotoCache ??= new Map());
+}
+
+function readBrowserPhotos(key: string) {
+  const cache = getBrowserPhotoCache();
+  let entry = cache?.get(key);
+  if (!entry && typeof sessionStorage !== 'undefined') {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(PHOTO_SESSION_KEY) || 'null') as
+        | (BrowserPhotoCacheEntry & { key: string })
+        | null;
+      if (stored?.key === key) {
+        entry = stored;
+        cache?.set(key, stored);
+      }
+    } catch {
+      /* Storage may be unavailable or contain an interrupted write. */
+    }
+  }
+  if (!entry) return undefined;
+  if (Date.now() - entry.updatedAt < 5 * 60 * 1000) return entry;
+  cache?.delete(key);
+  try {
+    sessionStorage.removeItem(PHOTO_SESSION_KEY);
+  } catch {
+    /* Storage may be unavailable. */
+  }
+  return undefined;
+}
+
+function rememberBrowserPhotos(key: string, data: SearchData) {
+  const cache = getBrowserPhotoCache();
+  if (!cache) return;
+  cache.delete(key);
+  const entry = { data, updatedAt: Date.now() };
+  cache.set(key, entry);
+  if (cache.size > 3) cache.delete(cache.keys().next().value!);
+  try {
+    sessionStorage.setItem(PHOTO_SESSION_KEY, JSON.stringify({ key, ...entry }));
+  } catch {
+    /* Keep the in-memory cache when storage quota or privacy settings reject the write. */
+  }
+}
+
 function usePhotoSelection() {
   const filters = useFilterStore(
     useShallow(({ layers, startYear, endYear, scaleCategories }) => ({
@@ -40,18 +97,27 @@ function usePhotoSelection() {
 export function usePhotos(options: UsePhotosOptions = {}) {
   const { lat, lon } = useSearchStore(useShallow(({ lat, lon }) => ({ lat, lon })));
   const select = usePhotoSelection();
+  const browserCacheKey = lat !== null && lon !== null ? `${lat}:${lon}` : '';
+  const browserCache = browserCacheKey ? readBrowserPhotos(browserCacheKey) : undefined;
   return useQuery({
     queryKey: ['photos', 'location', lat, lon],
     queryFn: async ({ signal }): Promise<SearchData> => {
       if (lat === null || lon === null) throw new Error('No location set');
-      return (
+      const cached = readBrowserPhotos(`${lat}:${lon}`);
+      if (cached) return cached.data;
+      const data = (
         await api.get<SearchResponse>('/api/search/location', { lat, lon, layers: '0,1,2' }, signal)
       ).data;
+      rememberBrowserPhotos(`${lat}:${lon}`, data);
+      return data;
     },
     select,
     enabled: lat !== null && lon !== null && options.enabled !== false,
+    initialData: browserCache?.data,
+    initialDataUpdatedAt: browserCache?.updatedAt,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
   });
 }
 
@@ -71,5 +137,6 @@ export function usePhotosByBounds(
     select,
     enabled: bounds !== null && options.enabled !== false,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
   });
 }

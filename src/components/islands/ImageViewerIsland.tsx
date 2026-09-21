@@ -1,7 +1,9 @@
+import type { SearchReference } from '../viewer/LocationReference';
 import { AppProviders } from '../common/AppProviders';
 import { ImageViewer } from '../viewer/ImageViewer';
 
 interface ImageViewerIslandProps {
+  reference?: SearchReference;
   imageUrl: string;
   layerId: number;
   imageName: string;
@@ -13,6 +15,7 @@ interface ImageViewerIslandProps {
 }
 
 export function ImageViewerIsland({
+  reference,
   imageUrl,
   layerId,
   imageName,
@@ -25,6 +28,7 @@ export function ImageViewerIsland({
   return (
     <AppProviders>
       <ImageViewer
+        reference={reference}
         imageUrl={imageUrl}
         layerId={layerId}
         imageName={imageName}

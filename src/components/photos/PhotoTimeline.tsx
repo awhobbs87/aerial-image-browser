@@ -1,3 +1,4 @@
+import { photoImageUrl, photoCardSources } from '@/lib/photo-images';
 import { useMemo, useRef } from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react';
 import { Badge } from '@cloudflare/kumo/components/badge';
@@ -28,7 +29,9 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
 
   const scrollToYear = (year: number) => {
     document.getElementById(`timeline-year-${year}`)?.scrollIntoView({
-      behavior: 'smooth',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
       block: 'start',
     });
   };
@@ -84,7 +87,11 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
 
       <div className="mt-4 flex flex-col gap-6">
         {groupedByYear.map(([year, yearPhotos]) => (
-          <section key={year} id={`timeline-year-${year}`} className="relative pl-10">
+          <section
+            key={year}
+            id={`timeline-year-${year}`}
+            className="relative scroll-mt-20 pl-10 [content-visibility:auto] [contain-intrinsic-size:auto_190px]"
+          >
             <div className="absolute top-0 bottom-0 left-4 w-px bg-sky-600/25" />
             <div className="absolute top-0 left-0 flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
               <CalendarBlankIcon size={15} />
@@ -114,7 +121,10 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
                     className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card"
                   >
                     <img
-                      src={`/api/images/thumbnail/${photo.layerId}/${photo.name}`}
+                      src={photoImageUrl(photo, 'card-320')}
+                      srcSet={photoCardSources(photo)}
+                      sizes="144px"
+                      decoding="async"
                       alt={photo.name}
                       loading="lazy"
                       className="h-24 w-full object-cover"

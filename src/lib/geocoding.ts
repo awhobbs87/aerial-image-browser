@@ -1,9 +1,7 @@
 /**
  * Nominatim geocoding service for Tasmania.
- * Searches OpenStreetMap data with Tasmania bounding box bias.
+ * Uses authoritative LIST addresses and named places through the application API.
  */
-
-import { TASMANIA_BOUNDS } from '@/types/map';
 
 export interface GeocodingResult {
   placeId: string;
@@ -22,46 +20,12 @@ export async function geocodeSearch(
   limit = 5,
   signal?: AbortSignal,
 ): Promise<GeocodingResult[]> {
-  const params = new URLSearchParams({
-    q: query,
-    format: 'json',
-    limit: String(limit),
-    addressdetails: '1',
-    viewbox: `${TASMANIA_BOUNDS.west},${TASMANIA_BOUNDS.south},${TASMANIA_BOUNDS.east},${TASMANIA_BOUNDS.north}`,
-    bounded: '0', // Prefer but don't restrict to viewbox
-    countrycodes: 'au',
-  });
-
-  const response = await fetch(`${NOMINATIM_BASE}/search?${params}`, {
+  const response = await fetch(`/api/geocoding/search?${new URLSearchParams({ q: query })}`, {
     signal,
-    headers: {
-      'User-Agent': 'TasmaniaAerialPhotoExplorer/4.0',
-    },
   });
-
-  if (!response.ok) {
-    throw new Error(`Geocoding failed: ${response.status}`);
-  }
-
-  const data = (await response.json()) as Array<{
-    place_id: number;
-    display_name: string;
-    lat: string;
-    lon: string;
-    type: string;
-    importance: number;
-    boundingbox: [string, string, string, string];
-  }>;
-
-  return data.map((item) => ({
-    placeId: String(item.place_id),
-    displayName: item.display_name,
-    lat: parseFloat(item.lat),
-    lon: parseFloat(item.lon),
-    type: item.type,
-    importance: item.importance,
-    boundingBox: item.boundingbox.map(Number) as [number, number, number, number],
-  }));
+  if (!response.ok)
+    throw new Error('Tasmania location search is temporarily unavailable. Please try again.');
+  return ((await response.json()) as GeocodingResult[]).slice(0, limit);
 }
 
 export async function reverseGeocode(lat: number, lon: number): Promise<GeocodingResult | null> {

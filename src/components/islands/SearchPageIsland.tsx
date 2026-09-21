@@ -1,3 +1,4 @@
+import { useSearchLocation } from '@/hooks/useSearchLocation';
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { FunnelSimpleIcon, SparkleIcon } from '@phosphor-icons/react';
 import { Toolbar } from '@cloudflare/kumo/components/toolbar';
@@ -30,20 +31,19 @@ const AISearchModal = lazy(async () => {
 });
 
 function SearchPageContent() {
-  const { lat, lon, query, setLocation, setQuery } = useSearchStore(
-    useShallow(({ lat, lon, query, setLocation, setQuery }) => ({
+  const { lat, lon, query, setLocation } = useSearchStore(
+    useShallow(({ lat, lon, query, setLocation }) => ({
       lat,
       lon,
       query,
       setLocation,
-      setQuery,
     })),
   );
   const filterPanelOpen = useUIStore((s) => s.filterPanelOpen);
   const setFilterPanelOpen = useUIStore((s) => s.setFilterPanelOpen);
   const isDesktop = useMediaQuery('(min-width: 48em)');
 
-  const [urlReady, setUrlReady] = useState(false);
+  const urlReady = useSearchLocation();
   const [mapEnabled, setMapEnabled] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const filters = useFilterStore(
@@ -70,40 +70,6 @@ function SearchPageContent() {
   const { data, isLoading, error } = usePhotos({ enabled: hasLocation && urlReady });
   const photos = useMemo(() => data?.photos ?? [], [data]);
   const total = data?.count ?? 0;
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlLat = params.get('lat');
-    const urlLon = params.get('lon');
-    const urlQ = params.get('q');
-    let active = true;
-    queueMicrotask(() => {
-      if (!active) return;
-      if (urlLat && urlLon && Number.isFinite(Number(urlLat)) && Number.isFinite(Number(urlLon))) {
-        setLocation(Number(urlLat), Number(urlLon));
-        setQuery(urlQ || '');
-      }
-      setUrlReady(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, [setLocation, setQuery]);
-
-  useEffect(() => {
-    if (!urlReady) return;
-    const params = new URLSearchParams();
-    if (lat !== null && lon !== null) {
-      params.set('lat', String(lat));
-      params.set('lon', String(lon));
-    }
-    if (query) params.set('q', query);
-    const qs = params.toString();
-    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    if (newUrl !== `${window.location.pathname}${window.location.search}`) {
-      window.history.replaceState(window.history.state, '', newUrl);
-    }
-  }, [lat, lon, query, urlReady]);
 
   useEffect(() => {
     if (!urlReady || isLoading || !resultsRef.current) return;
@@ -156,7 +122,10 @@ function SearchPageContent() {
                 className="h-full w-full rounded-none"
                 center={center}
                 zoom={center ? 14 : undefined}
-                onClick={setLocation}
+                onClick={(lat, lon) => {
+                  setLocation(lat, lon);
+                  useSearchStore.getState().setQuery('Selected map location');
+                }}
                 onMapReady={handleMapReady}
               />
             )}

@@ -3,12 +3,13 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { CrosshairIcon, GlobeHemisphereWestIcon, MapTrifoldIcon } from '@phosphor-icons/react';
 import { Button } from '@cloudflare/kumo/components/button';
-import { TASMANIA_DEFAULT_VIEWPORT } from '@/types/map';
+import { TASMANIA_DEFAULT_VIEWPORT, TASMANIA_BOUNDS } from '@/types/map';
 import type { MapBounds } from '@/types/map';
 import { isResolvedDark, subscribeToResolvedTheme } from '@/lib/theme';
 import { Tooltip } from '@/components/ui/Tooltip';
 
 interface MapViewProps {
+  readOnly?: boolean;
   onBoundsChange?: (bounds: MapBounds) => void;
   onClick?: (lat: number, lon: number) => void;
   onMapReady?: (map: maplibregl.Map) => void;
@@ -51,6 +52,7 @@ const CARTO_ATTR =
 const SAT_ATTR = '&copy; <a href="https://www.esri.com">Esri</a> World Imagery';
 
 export function MapView({
+  readOnly = false,
   onBoundsChange,
   onClick,
   onMapReady,
@@ -92,6 +94,12 @@ export function MapView({
       center: center || TASMANIA_DEFAULT_VIEWPORT.center,
       zoom: zoom ?? TASMANIA_DEFAULT_VIEWPORT.zoom,
       attributionControl: false,
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      renderWorldCopies: false,
+      maxBounds: [
+        [TASMANIA_BOUNDS.west, TASMANIA_BOUNDS.south],
+        [TASMANIA_BOUNDS.east, TASMANIA_BOUNDS.north],
+      ],
       dragPan: true,
       dragRotate: true,
       touchZoomRotate: true,
@@ -111,6 +119,7 @@ export function MapView({
     });
 
     map.on('click', (e) => {
+      if (readOnly) return;
       const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
       showMarker(lngLat);
       onClick?.(e.lngLat.lat, e.lngLat.lng);
@@ -150,7 +159,12 @@ export function MapView({
   const centerLat = center?.[1];
   useEffect(() => {
     if (!mapRef.current || !center) return;
-    mapRef.current.flyTo({ center, zoom: zoom ?? mapRef.current.getZoom() });
+    mapRef.current.flyTo({
+      center,
+      zoom: zoom ?? mapRef.current.getZoom(),
+      duration: 350,
+      essential: false,
+    });
     showMarker(center);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerLng, centerLat, zoom, showMarker]);
@@ -199,7 +213,7 @@ export function MapView({
   }, [onClick, showMarker]);
 
   return (
-    <div className={`relative h-full min-h-[300px] w-full overflow-hidden ${className || ''}`}>
+    <div className={`relative h-full min-h-0 w-full overflow-hidden ${className || ''}`}>
       <div
         ref={containerRef}
         className="h-full w-full touch-none overscroll-none [&_canvas]:outline-none"
@@ -221,21 +235,23 @@ export function MapView({
             {satellite ? <MapTrifoldIcon size={18} /> : <GlobeHemisphereWestIcon size={18} />}
           </Button>
         </Tooltip>
-        <Tooltip label="My location" side="left">
-          <Button
-            type="button"
-            onClick={handleLocateMe}
-            disabled={locating}
-            aria-label="My location"
-            variant="secondary"
-            shape="square"
-            size="lg"
-            loading={locating}
-            className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-950/10 bg-white/90 text-slate-700 shadow-md backdrop-blur-xl transition duration-100 hover:bg-white hover:text-slate-950 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-popover dark:text-slate-200 dark:hover:bg-slate-900"
-          >
-            {!locating && <CrosshairIcon size={18} />}
-          </Button>
-        </Tooltip>
+        {!readOnly && (
+          <Tooltip label="My location" side="left">
+            <Button
+              type="button"
+              onClick={handleLocateMe}
+              disabled={locating}
+              aria-label="My location"
+              variant="secondary"
+              shape="square"
+              size="lg"
+              loading={locating}
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-950/10 bg-white/90 text-slate-700 shadow-md backdrop-blur-xl transition duration-100 hover:bg-white hover:text-slate-950 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-popover dark:text-slate-200 dark:hover:bg-slate-900"
+            >
+              {!locating && <CrosshairIcon size={18} />}
+            </Button>
+          </Tooltip>
+        )}
       </div>
     </div>
   );

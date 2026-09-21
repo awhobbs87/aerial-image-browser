@@ -301,7 +301,8 @@ const r2 = env.TIFF_STORAGE;
 | Service                              | Purpose                        | Notes                                      |
 | ------------------------------------ | ------------------------------ | ------------------------------------------ |
 | ArcGIS REST (Tasmania LIST)          | Aerial photo data source       | Three layers: 0=aerial, 1=ortho, 2=digital |
-| Nominatim (OpenStreetMap)            | Geocoding                      | Tasmania-biased bounding box               |
+| Tasmania LIST SearchService          | Forward geocoding              | Tasmania-only addresses, roads, localities, and named places |
+| Nominatim (OpenStreetMap)            | Reverse geocoding fallback     | Used only to label selected map coordinates |
 | Custom TIFF service (`tiff.awhq.uk`) | URL/upload TIFF conversion     | 10-minute timeout                          |
 | Cloudflare Workers AI                | Search enhancement, NL parsing | Llama 3 8B Instruct                        |
 | Esri World Imagery                   | Map tiles + satellite export   | Used in Then vs Now comparison             |
@@ -521,6 +522,14 @@ const r2 = env.TIFF_STORAGE;
 - [x] Repair bounded service-worker caching, timeout and offline behavior.
 - [x] Verify regressions, production bundle changes and desktop/mobile flows; evaluate authorized Cloudflare services.
 
+### Search, Timeline and Mobile Reliability -- 2026-09-21
+
+- [x] Replace placeholder timeline with the current location's filtered photo chronology -- 2026-09-22.
+- [x] Restrict geocoding to Tasmania and verify numbered/street-only Jeannette Court searches against LIST -- 2026-09-22.
+- [x] Share persistent recent searches across landing and map search, with clear and error states -- 2026-09-22.
+- [x] Inspect TIFF georeferencing; provide truthful location reference and exact image pins only where supported -- 2026-09-22.
+- [x] Improve mobile search sheets, image/list rendering and map interaction; verify desktop/mobile flows -- 2026-09-22.
+
 ### Phase 8: Native iOS App
 
 - [x] Create `ios/` folder for native app planning and future Xcode project -- 2026-05-24
@@ -641,6 +650,9 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-20 | Use Kumo `CommandPalette` inside a Kumo `Toolbar` for map search and actions, with the desktop sidebar width synchronized through a shared CSS variable | The command palette gives map search native keyboard/results behavior, while one width contract lets Kumo's collapse and resize states reflow the Astro shell without duplicating layout state |
 | 2026-09-21 | Use Kumo for every behaviorally equivalent web UI primitive and retain domain-native controls only where Kumo has no replacement | A single component system removes Kibo/shadcn/Radix styling drift while MapLibre, OpenSeadragon, the image-comparison interaction, and native file/range inputs preserve capabilities that Kumo does not implement |
 | 2026-09-21 | Use pnpm 11 for the root web application while leaving the standalone TIFF tile service on npm | The root gains a deterministic pnpm lockfile and isolated dependency graph, while the separately containerized service continues to match its existing `package-lock.json` and Docker `npm ci` workflow |
+| 2026-09-22 | Use Tasmania LIST SearchService for forward geocoding and retain Nominatim only for reverse labels | LIST supplies authoritative Tasmania-only address, road, locality, and named-feature results; exact-name queries are merged ahead of partial matches so common places such as Hobart are not displaced by generic features |
+| 2026-09-22 | Present search coordinates and survey footprints as a location reference rather than projecting an address pin onto historical scans | The archive exposes survey polygons but not a reliable image-pixel transform for every scan; showing the searched point on a modern map and the footprint is useful without implying false precision |
+| 2026-09-22 | Retain the latest raw location-search result in a bounded five-minute tab-session cache | Astro island remounts can recreate query clients during route transitions; a one-entry session fallback preserves loaded cards, filters, and scroll position without another large API request |
 
 ---
 
@@ -1274,6 +1286,16 @@ Append a summary after each working session so the next session has context.
 - Regression coverage includes no geometry rebuild on hover, pagination/error cache policy, local filters/query reuse, responsive image/fallback policy, service-worker expiry/limits/auth/range bypass, and desktop/mobile navigation, scroll restoration, preview/viewer and delayed-map flows. Fixed pre-hydration landing focus recovery and updated older E2E selectors for the existing Kumo UI.
 - Validation: 235 unit/component tests, type-check, lint and production build pass. All active browser scenarios pass across desktop/mobile; 15 existing skipped scenarios remain. Production Core Web Vitals and a successful real TIFF upgrade have not been benchmarked in this session.
 - Detailed outcomes and Cloudflare configuration are recorded in `docs/PERFORMANCE_2026-09-21.md`.
+
+### Session 37 -- 2026-09-22
+
+- Replaced the placeholder timeline with the active location's filtered photo chronology, year navigation, responsive image variants, photo-preview flow, and persisted location/query state across navigation and reload.
+- Replaced forward Nominatim search with a cached Tasmania LIST SearchService endpoint covering address geocodes and named features. Added abbreviation normalization, exact house-number matching, Tasmania bounds validation, exact-name ranking, deduplication, cancellation, visible empty/error states, and shared bounded recent searches across landing and map command-palette search.
+- Verified live LIST results for `9 Jeannette Ct Lenah Valley`, street-only `Jeannette Court`, and `Hobart`; the exact address resolved to LIST object 107804 at approximately -42.867175, 147.281318, and exact Hobart locality results now rank before generic partial features.
+- Added viewer location context that carries the searched coordinate through the preview route, loads the selected photo's current ArcGIS metadata, and overlays its survey footprint against modern satellite imagery. The UI explicitly explains that historical scan rotation/distortion prevents a truthful address-to-pixel pin without a reliable transform.
+- Improved mobile reliability with a keyboard-aware Kumo search sheet, 44px suggestion targets, bounded MapLibre interaction, lower-cost card effects, viewport-aware list rendering, and a collision-free top viewer control group.
+- Restored same-tab search result reuse across Astro island remounts with a bounded five-minute memory/session cache, retaining filtered cards and scroll position without a second search request.
+- Validation passed: formatting, lint, type-check, 241 unit/component tests, production build, all 35 active desktop/mobile Playwright scenarios (15 existing skips), direct live LIST/API smoke checks, and desktop visual QA for the address map and populated timeline. The viewer reference test now waits for the actual survey footprint layer before capture.
 
 ---
 

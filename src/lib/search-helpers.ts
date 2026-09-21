@@ -59,7 +59,7 @@ export function enhancePhoto(feature: ArcGISFeature, layerId: number): EnhancedP
 
   // Primary: derive year from fly date timestamp.
   // Fallback: parse the project/layer name for an embedded year (e.g. "Hobart 82" → 1982).
-  let year = flyDate > 0 ? new Date(flyDate).getFullYear() : 0;
+  let year = flyDate !== 0 && Number.isFinite(flyDate) ? new Date(flyDate).getUTCFullYear() : 0;
   if (year === 0) {
     year = extractYearFromLayerName(layerName);
   }

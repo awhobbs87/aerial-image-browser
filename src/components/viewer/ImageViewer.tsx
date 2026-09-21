@@ -1,5 +1,7 @@
+import { Dialog } from '@/components/ui/Dialog';
+import type { SearchReference } from './LocationReference';
 import { navigate } from 'astro:transitions/client';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
 import {
   ArrowCounterClockwiseIcon,
   ArrowLeftIcon,
@@ -21,7 +23,12 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
 
+const LocationReference = lazy(async () => ({
+  default: (await import('./LocationReference')).LocationReference,
+}));
+
 interface ImageViewerProps {
+  reference?: SearchReference;
   imageUrl: string;
   layerId: number;
   imageName: string;
@@ -81,6 +88,7 @@ function ViewerButton({
 }
 
 export function ImageViewer({
+  reference,
   imageUrl,
   layerId,
   imageName,
@@ -97,6 +105,7 @@ export function ImageViewer({
   const [rotation, setRotation] = useState(0);
   const [flippedH, setFlippedH] = useState(false);
   const [flippedV, setFlippedV] = useState(false);
+  const [referenceOpen, setReferenceOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [imageOpened, setImageOpened] = useState(false);
@@ -228,6 +237,19 @@ export function ImageViewer({
 
   return (
     <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 md:h-dvh">
+      <Dialog open={referenceOpen} onOpenChange={setReferenceOpen} title="Location reference">
+        {referenceOpen && (
+          <Suspense
+            fallback={
+              <p className="p-4" role="status">
+                Loading reference map…
+              </p>
+            }
+          >
+            <LocationReference layerId={layerId} imageName={imageName} reference={reference} />
+          </Suspense>
+        )}
+      </Dialog>
       {!imageOpened && (
         <img
           src={imageUrl}
@@ -246,10 +268,13 @@ export function ImageViewer({
         </div>
       )}
 
-      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
+      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-20 flex items-center gap-1 rounded-lg border border-white/10 bg-white/90 p-1 shadow-lg backdrop-blur-xl dark:bg-popover">
         <ViewerButton label="Back to results" onClick={handleBack}>
           <ArrowLeftIcon size={iconSize} />
         </ViewerButton>
+        <Button variant="ghost" size="sm" onClick={() => setReferenceOpen(true)}>
+          Location reference
+        </Button>
       </div>
 
       {ready && (

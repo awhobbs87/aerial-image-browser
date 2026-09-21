@@ -1,3 +1,6 @@
+import { getRecentSearches, addRecentSearch, clearRecentSearches } from '@/lib/recent-searches';
+import { Button } from '@cloudflare/kumo/components/button';
+import { useFilterStore } from '@/stores/filterStore';
 import { useEffect, useMemo, useState } from 'react';
 import { MagnifyingGlassIcon, MapPinIcon } from '@phosphor-icons/react';
 import { CommandPalette } from '@cloudflare/kumo/components/command-palette';
@@ -10,6 +13,7 @@ interface LocationCommand {
   id: string;
   title: string;
   description: string;
+  recent?: boolean;
   lat: number;
   lon: number;
 }
@@ -64,12 +68,14 @@ export function MapSearchCommandPalette({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<LocationCommand[]>([]);
+  const [recents, setRecents] = useState<LocationCommand[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 220);
 
   useEffect(() => {
     const trimmed = debouncedSearch.trim();
-    if (trimmed.length < 2) {
+    if (!open || trimmed.length < 2) {
       return undefined;
     }
 
@@ -79,8 +85,11 @@ export function MapSearchCommandPalette({
       .then((items) => {
         if (active) setResults(items.map(toCommand));
       })
-      .catch(() => {
-        if (active) setResults([]);
+      .catch((err: unknown) => {
+        if (active) {
+          setResults([]);
+          setError(err instanceof Error ? err.message : 'Search unavailable. Please try again.');
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -90,15 +99,40 @@ export function MapSearchCommandPalette({
       active = false;
       controller.abort();
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const viewport = window.visualViewport;
+    const update = () =>
+      document.documentElement.style.setProperty(
+        '--search-keyboard-inset',
+        `${Math.max(0, window.innerHeight - (viewport?.height || window.innerHeight) - (viewport?.offsetTop || 0))}px`,
+      );
+    update();
+    viewport?.addEventListener('resize', update);
+    viewport?.addEventListener('scroll', update);
+    return () => {
+      viewport?.removeEventListener('resize', update);
+      viewport?.removeEventListener('scroll', update);
+      document.documentElement.style.removeProperty('--search-keyboard-inset');
+    };
+  }, [open]);
 
   const items = useMemo(
-    () => (search.trim().length >= 2 ? results : POPULAR_LOCATIONS),
-    [results, search],
+    () =>
+      search.trim().length >= 2
+        ? search === debouncedSearch
+          ? results
+          : []
+        : [...recents, ...POPULAR_LOCATIONS],
+    [results, search, debouncedSearch, recents],
   );
 
   const selectLocation = (item: LocationCommand) => {
     const label = item.description ? `${item.title}, ${item.description}` : item.title;
+    addRecentSearch({ label, lat: item.lat, lon: item.lon });
+    useFilterStore.getState().resetFilters();
     setQuery(label);
     setLocation(item.lat, item.lon);
     onLocationSelect?.(item.lat, item.lon, label);
@@ -111,7 +145,19 @@ export function MapSearchCommandPalette({
       <Toolbar.Button
         disabled={disabled}
         icon={MagnifyingGlassIcon}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setRecents(
+            getRecentSearches().map((r, i) => ({
+              id: `recent-${i}`,
+              title: r.label,
+              description: '',
+              lat: r.lat,
+              lon: r.lon,
+              recent: true,
+            })),
+          );
+          setOpen(true);
+        }}
         aria-label="Search for a location"
         className="min-w-0 flex-1 justify-start"
       >
@@ -131,6 +177,8 @@ export function MapSearchCommandPalette({
         value={search}
         onValueChange={(value) => {
           setSearch(value);
+          setResults([]);
+          setError('');
           setLoading(value.trim().length >= 2);
         }}
         itemToStringValue={(item) => item.title}
@@ -139,12 +187,17 @@ export function MapSearchCommandPalette({
         getSelectableItems={(paletteItems) => paletteItems}
       >
         <CommandPalette.Input
-          placeholder="Search towns, suburbs and landmarks..."
+          placeholder="Search addresses, towns and landmarks..."
           aria-label="Search Tasmania locations"
           autoComplete="off"
           spellCheck={false}
         />
-        <CommandPalette.List>
+        <CommandPalette.List className="max-h-[min(55dvh,24rem)] overscroll-contain">
+          {search.trim().length < 2 && recents.length > 0 && (
+            <p className="px-2 py-2 text-xs text-muted-foreground">
+              Recent searches and popular places
+            </p>
+          )}
           {loading ? (
             <CommandPalette.Loading>Searching Tasmania...</CommandPalette.Loading>
           ) : (
@@ -154,7 +207,7 @@ export function MapSearchCommandPalette({
                   key={item.id}
                   value={item}
                   title={item.title}
-                  description={item.description}
+                  description={item.recent ? 'Recent search' : item.description}
                   icon={<MapPinIcon size={18} />}
                   onClick={() => selectLocation(item)}
                   showArrow={false}
@@ -166,11 +219,29 @@ export function MapSearchCommandPalette({
             <CommandPalette.Empty>
               {search.trim().length < 2
                 ? 'Start typing to search Tasmania'
-                : 'No matching locations found'}
+                : error || 'No matching Tasmanian locations. Try a street name and suburb.'}
             </CommandPalette.Empty>
           )}
         </CommandPalette.List>
-        <CommandPalette.Footer />
+        <div className="flex items-center justify-between gap-2 border-t border-border bg-card p-2">
+          <span className="text-xs text-muted-foreground">
+            Addresses and places © LIST Tasmania
+          </span>
+          {recents.length > 0 && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                clearRecentSearches();
+                setRecents([]);
+              }}
+            >
+              Clear recent searches
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Close search
+          </Button>
+        </div>
       </CommandPalette.Root>
     </>
   );

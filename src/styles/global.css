@@ -420,3 +420,17 @@ html.dark::view-transition-group(root) {
 .nav-progress-bar {
   animation: nav-progress-slide 0.9s ease-in-out infinite;
 }
+
+/* Keep location suggestions above the mobile keyboard and within thumb reach. */
+@media (max-width: 47.99em) {
+  [role='dialog']:has(input[aria-label='Search Tasmania locations']) {
+    top: auto;
+    bottom: var(--search-keyboard-inset, 0px);
+    left: 0;
+    width: 100%;
+    max-height: calc(100dvh - var(--search-keyboard-inset, 0px) - 16px);
+    transform: none;
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

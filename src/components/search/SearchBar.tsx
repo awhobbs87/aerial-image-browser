@@ -1,3 +1,9 @@
+import {
+  getRecentSearches,
+  addRecentSearch,
+  clearRecentSearches,
+  type RecentSearch,
+} from '@/lib/recent-searches';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -27,41 +33,13 @@ const POPULAR_LOCATIONS = [
   { label: 'Launceston', lat: -41.4332, lon: 147.1441 },
 ];
 
-interface RecentSearch {
-  label: string;
-  lat: number;
-  lon: number;
-}
-
-const RECENT_KEY = 'tas-aerial-recent-searches';
-const MAX_RECENT = 5;
 const inputSizeClasses = {
   sm: 'h-11 text-sm',
   md: 'h-11 text-base',
   lg: 'h-12 text-base',
 };
 const resultClass =
-  'mx-1.5 flex min-h-10 w-[calc(100%-0.75rem)] cursor-pointer items-center rounded-xl border-0 bg-transparent px-3 py-2 text-left font-sans text-sm text-slate-800 transition hover:bg-amber-400/12 dark:text-slate-100 dark:hover:bg-amber-300/12';
-
-function getRecentSearches(): RecentSearch[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function addRecentSearch(item: RecentSearch) {
-  const existing = getRecentSearches().filter(
-    (r) => !(Math.abs(r.lat - item.lat) < 0.001 && Math.abs(r.lon - item.lon) < 0.001),
-  );
-  const updated = [item, ...existing].slice(0, MAX_RECENT);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
-}
-
-function clearRecentSearches() {
-  localStorage.removeItem(RECENT_KEY);
-}
+  'mx-1.5 flex min-h-11 w-[calc(100%-0.75rem)] cursor-pointer items-center rounded-xl border-0 bg-transparent px-3 py-2 text-left font-sans text-sm text-slate-800 transition hover:bg-amber-400/12 dark:text-slate-100 dark:hover:bg-amber-300/12';
 
 export function SearchBar({
   onLocationSelect,
@@ -73,6 +51,8 @@ export function SearchBar({
   const resetFilters = useFilterStore((state) => state.resetFilters);
 
   const [inputValue, setInputValue] = useState(query);
+  const [searchError, setSearchError] = useState('');
+  const [resultsQuery, setResultsQuery] = useState('');
   const [results, setResults] = useState<GeocodingResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -113,24 +93,33 @@ export function SearchBar({
 
   // Geocode on debounced input
   useEffect(() => {
-    if (!debouncedValue || debouncedValue.length < 2) {
+    if (!searchFocused || !debouncedValue || debouncedValue.length < 2) {
       const id = setTimeout(() => setResults([]), 0);
       return () => clearTimeout(id);
     }
     const controller = new AbortController();
     let cancelled = false;
     queueMicrotask(() => {
-      if (!cancelled) setIsSearching(true);
+      if (!cancelled) {
+        setIsSearching(true);
+        setSearchError('');
+      }
     });
     geocodeSearch(debouncedValue, 5, controller.signal)
       .then((r) => {
         if (!cancelled) {
+          setResultsQuery(debouncedValue);
           setResults(r);
           setActiveIndex(-1);
         }
       })
-      .catch(() => {
-        if (!cancelled) setResults([]);
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setResults([]);
+          setSearchError(
+            error instanceof Error ? error.message : 'Search unavailable. Please try again.',
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setIsSearching(false);
@@ -139,7 +128,7 @@ export function SearchBar({
       cancelled = true;
       controller.abort();
     };
-  }, [debouncedValue]);
+  }, [debouncedValue, searchFocused]);
 
   const handleSelect = useCallback(
     (lat: number, lon: number, label: string) => {
@@ -162,9 +151,9 @@ export function SearchBar({
     setRecents([]);
   };
 
-  const showResults = searchFocused && results.length > 0;
+  const showResults = searchFocused && results.length > 0 && inputValue === resultsQuery;
   const showIdle = searchFocused && inputValue.length === 0;
-  const showDropdown = showResults || showIdle;
+  const showDropdown = showResults || showIdle || (searchFocused && inputValue.length >= 2);
 
   useEffect(() => {
     if (!showDropdown) return undefined;
@@ -294,6 +283,13 @@ export function SearchBar({
               maxHeight: dropdownMaxHeight,
             }}
           >
+            {searchFocused && inputValue.length >= 2 && !showResults && (
+              <p className="px-4 py-3 text-sm text-muted-foreground" role="status">
+                {isSearching || inputValue !== debouncedValue
+                  ? 'Searching Tasmania…'
+                  : searchError || 'No matching Tasmanian locations. Try a street and suburb.'}
+              </p>
+            )}
             {/* Geocode results */}
             {showResults && (
               <div className="flex flex-col">
@@ -303,8 +299,7 @@ export function SearchBar({
                     type="button"
                     variant="ghost"
                     className={`${resultClass} h-auto rounded-none ${activeIndex === i ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       handleSelect(result.lat, result.lon, result.displayName);
                     }}
                     onMouseEnter={() => setActiveIndex(i)}
@@ -353,8 +348,7 @@ export function SearchBar({
                           type="button"
                           variant="ghost"
                           className={`${resultClass} h-auto rounded-none ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
+                          onClick={() => {
                             handleSelect(item.lat, item.lon, item.label);
                           }}
                           onMouseEnter={() => setActiveIndex(idx)}
@@ -381,8 +375,7 @@ export function SearchBar({
                       type="button"
                       variant="ghost"
                       className={`${resultClass} h-auto rounded-none ${activeIndex === idx ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         handleSelect(preset.lat, preset.lon, preset.label);
                       }}
                       onMouseEnter={() => setActiveIndex(idx)}

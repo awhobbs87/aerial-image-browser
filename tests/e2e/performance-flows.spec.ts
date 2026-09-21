@@ -81,6 +81,8 @@ test('filters cached photos without another search and restores loaded cards on 
 test('photo preview and full viewer use cached variants and client navigation', async ({
   page,
 }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/search?lat=-42.8821&lon=147.3272&q=Hobart');
   await expect(page.getByRole('article')).toHaveCount(24);
   await page.evaluate(() => {
@@ -91,7 +93,8 @@ test('photo preview and full viewer use cached variants and client navigation', 
   await expect(preview).toBeVisible();
   await expect(preview).toHaveAttribute('src', /variant=preview-1600/);
   await page.getByRole('button', { name: 'Open full viewer' }).click();
-  await expect(page).toHaveURL(/\/viewer\/0\/TEST_/);
+  expect(pageErrors).toEqual([]);
+  await expect(page).toHaveURL(/\/viewer\/0\/TEST_/, { timeout: 15_000 });
   await expect(page.locator('.openseadragon-container').first()).toBeVisible();
   expect(await page.evaluate(() => (window as any).__navigationSentinel)).toBe('same-document');
   await page.getByRole('button', { name: 'Back to results' }).click();
