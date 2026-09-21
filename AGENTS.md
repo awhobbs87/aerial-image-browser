@@ -1305,6 +1305,7 @@ Append a summary after each working session so the next session has context.
 - Converted the mobile command palette into an explicitly edge-anchored sheet by resetting `translate`, both horizontal insets, maximum width, transform and inline margins while retaining keyboard-aware bottom positioning and safe-area padding.
 - Added a mobile Playwright geometry regression that asserts the sheet remains horizontally contained and above a simulated 300px software keyboard.
 - Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 36 active desktop/mobile Playwright scenarios (16 intentional skips).
+- Deployed commit `bd024b0` to the production Cloudflare Worker after confirming the user was testing the still-unpatched production URL. Worker version `f451500a-57d1-43f1-984b-c5f836c0a9b2` is active on both production routes; the emitted production stylesheet contains the corrected `translate: none` rule.
 
 ---
 
