@@ -54,6 +54,7 @@ test('keeps the location command palette inside the mobile viewport', async ({ p
 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
+  await page.waitForTimeout(500);
   const box = await dialog.boundingBox();
   const viewport = page.viewportSize();
 
@@ -62,9 +63,7 @@ test('keeps the location command palette inside the mobile viewport', async ({ p
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
 
-  await page.evaluate(() =>
-    document.documentElement.style.setProperty('--search-keyboard-inset', '300px'),
-  );
+  await page.setViewportSize({ width: viewport!.width, height: viewport!.height - 300 });
   const keyboardBox = await dialog.boundingBox();
   expect(keyboardBox).not.toBeNull();
   expect(keyboardBox!.y + keyboardBox!.height).toBeLessThanOrEqual(viewport!.height - 300 + 1);

@@ -531,6 +531,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Improve mobile search sheets, image/list rendering and map interaction; verify desktop/mobile flows -- 2026-09-22.
 - [x] Fix Kumo command-palette horizontal clipping when the mobile keyboard is open and add viewport-geometry regression coverage -- 2026-09-22.
 - [x] Harden the mobile command-palette override for iOS/WebKit with explicit open state, forced numeric positioning, and a WebKit regression project -- 2026-09-22.
+- [x] Replace the mobile map-search dialog with a dedicated Kumo `LayerDialog` bottom sheet while retaining `CommandPalette` on desktop -- 2026-09-22.
 
 ### Phase 8: Native iOS App
 
@@ -657,6 +658,7 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-22 | Retain the latest raw location-search result in a bounded five-minute tab-session cache | Astro island remounts can recreate query clients during route transitions; a one-entry session fallback preserves loaded cards, filters, and scroll position without another large API request |
 | 2026-09-22 | Reset both CSS `translate` and legacy `transform` when adapting Kumo's centered command palette into a mobile bottom sheet | Kumo's Tailwind v4 `-translate-x-1/2` uses the independent `translate` property, so clearing only `transform` leaves the full-width sheet shifted half a viewport off-screen |
 | 2026-09-22 | Mark map-search state on the document and use a numeric, important mobile position override instead of relying on `:has()` and `translate: none` | The first correction passed Chromium but did not resolve the reported iPhone behavior; an explicit state hook and `translate: 0 0` remove selector and WebKit cascade ambiguity, while a focused Playwright WebKit project keeps that browser path covered |
+| 2026-09-22 | Use Kumo `LayerDialog` plus `CommandPalette.Panel` for mobile map search and reserve `CommandPalette.Root` for desktop | Repeated CSS overrides against the desktop palette's centered portal remained unreliable on the user's iPhone; Kumo's native mobile drawer owns fixed-edge geometry, focus trapping, safe-area behavior, dismissal and vertical swipe mechanics without inheriting desktop horizontal transforms |
 
 ---
 
@@ -1312,6 +1314,10 @@ Append a summary after each working session so the next session has context.
 - Installed Playwright WebKit locally and added a focused `mobile-webkit` project; both Chromium mobile and WebKit/iPhone geometry checks keep the palette horizontally contained and above the simulated keyboard.
 - Hardened-fix validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active Playwright scenarios including the new WebKit/iPhone run (16 intentional skips).
 - Deployed the WebKit-hardened commit `7d5f3f4`; Cloudflare uploaded seven changed static assets and activated Worker version `e53405e7-75d1-48f3-bcf6-326382714880` on both production routes.
+- After the hardened desktop-dialog override still failed on the user's device, split map search by viewport: desktop retains `CommandPalette.Root`, while mobile now uses Kumo's purpose-built `LayerDialog` bottom sheet containing `CommandPalette.Panel` for the same keyboard navigation and result behavior.
+- Removed all mobile positioning overrides and the keyboard-inset document mutation. The mobile sheet now owns its geometry, focus trap, backdrop, close control, dynamic viewport sizing, safe-area behavior and vertical swipe transition.
+- Visual WebKit QA at 390px confirmed the sheet spans exactly `x=0` to `x=390` and remains bounded after the viewport contracts from 664px to 364px to simulate the software keyboard. Focused Chromium/WebKit search flows pass.
+- Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active desktop/mobile/WebKit Playwright scenarios when run serially (16 intentional skips). Parallel Astro dev-server execution exposed an unrelated Vite SSR React prebundle race, so the clean full-suite result used one worker.
 
 ---
 

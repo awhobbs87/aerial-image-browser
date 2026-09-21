@@ -420,22 +420,3 @@ html.dark::view-transition-group(root) {
 .nav-progress-bar {
   animation: nav-progress-slide 0.9s ease-in-out infinite;
 }
-
-/* Keep location suggestions above the mobile keyboard and within thumb reach. */
-@media (max-width: 47.99em) {
-  html[data-map-search-open='true'] [role='dialog'] {
-    position: fixed !important;
-    top: auto !important;
-    right: 0 !important;
-    bottom: var(--search-keyboard-inset, 0px) !important;
-    left: 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    max-height: calc(100dvh - var(--search-keyboard-inset, 0px) - 16px);
-    translate: 0 0 !important;
-    transform: none !important;
-    margin-inline: 0 !important;
-    border-radius: 1.25rem 1.25rem 0 0;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
