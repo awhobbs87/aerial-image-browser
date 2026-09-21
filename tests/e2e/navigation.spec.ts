@@ -34,7 +34,7 @@ test.describe('Navigation', () => {
     // Only runs in desktop project (1440px)
     await page.goto('/');
     if (page.viewportSize()!.width >= 768) {
-      await expect(page.locator('nav:visible')).toBeVisible();
+      await expect(page.getByRole('complementary', { name: 'Primary navigation' })).toBeVisible();
     }
   });
 });

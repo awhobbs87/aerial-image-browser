@@ -510,6 +510,17 @@ const r2 = env.TIFF_STORAGE;
 - [x] Shift the search-results panel contents 4px right for consistent left-side breathing room -- 2026-09-21
 - [x] Migrate the root web application, CI workflow, deployment documentation, and Playwright server command to pnpm 11 -- 2026-09-21
 
+### Performance Implementation -- 2026-09-21
+
+- [x] Stabilize map footprint updates and isolate hover rendering.
+- [x] Cache complete ArcGIS searches and filter cached results locally; cancel superseded requests.
+- [x] Consolidate responsive card/preview images with metadata, R2 and edge caching.
+- [x] Render viewer preview immediately and upgrade to TIFF progressively.
+- [x] Split map startup from search controls and hydrate navigation by viewport.
+- [x] Preserve query cache, search scroll and loaded cards across client navigation.
+- [x] Repair bounded service-worker caching, timeout and offline behavior.
+- [x] Verify regressions, production bundle changes and desktop/mobile flows; evaluate authorized Cloudflare services.
+
 ### Phase 8: Native iOS App
 
 - [x] Create `ios/` folder for native app planning and future Xcode project -- 2026-05-24
@@ -632,6 +643,8 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-21 | Use pnpm 11 for the root web application while leaving the standalone TIFF tile service on npm | The root gains a deterministic pnpm lockfile and isolated dependency graph, while the separately containerized service continues to match its existing `package-lock.json` and Docker `npm ci` workflow |
 
 ---
+
+Performance decisions (2026-09-21): cache complete geographic results for 15 minutes at KV and apply UI filters locally; share QueryClient only in the browser, never between SSR requests. Use bounded named Images presets and persist variants in existing R2 plus edge cache. Keep the TIFF byte-range route outside the service worker. Preserve search view state in bounded browser memory across Astro navigation, rather than persisting large geographic datasets to localStorage.
 
 ## Session Notes
 
@@ -1250,6 +1263,17 @@ Append a summary after each working session so the next session has context.
 - Aligned `@cloudflare/workers-types` with the resolved Wrangler peer requirement and pinned the last stable Testing Library DOM matcher release after pnpm surfaced the withdrawn 6.10 release warning.
 - pnpm's isolated dependency graph exposed an implicit GeoJSON type dependency and stricter React hook/ref checks; declared `@types/geojson` directly and corrected the affected map/search state synchronization rather than relying on npm hoisting or suppressing the rules.
 - Verification passed: frozen install, peer check, formatting, lint, type-check, all 217 unit/component tests, production build, and a live desktop Hobart search visual pass. The adjusted panel has even left breathing room and no visible clipping or alignment regression.
+
+
+### Session 36 -- 2026-09-21
+
+- Implemented performance audit items 1–7: stable feature-state map hover, complete paginated ArcGIS searches cached in KV, local filter selection with cancellation, responsive image variants cached in R2/edge, immediate viewer previews with progressive TIFF upgrades, deferred map code and viewport navigation hydration, retained browser query/results state across Astro navigation, and bounded service-worker caching/offline handling.
+- Enabled Cloudflare Image Transformations on the Enterprise `awhq.uk` zone with the user's authorization and verified the setting. Web Analytics was already enabled. Added the Workers `IMAGES` binding; application changes require the normal deployment pipeline after this commit.
+- Local production measurements: the main search chunk is 353,819 bytes (77,920 gzip), with MapLibre in a separate 1,076,596-byte chunk. AppLayout CSS is 215,952 bytes (33,418 gzip). Splitting improves control startup; it does not eliminate the later map download.
+- Real-source smoke tests returned a 22,114-byte card image for photo `1439_183`, versus its 254,999-byte JPEG. Verified both R2 and edge cache hits. Fixed immutable edge-response headers and buffered only bounded background cache copies to satisfy R2's known-length requirement.
+- Regression coverage includes no geometry rebuild on hover, pagination/error cache policy, local filters/query reuse, responsive image/fallback policy, service-worker expiry/limits/auth/range bypass, and desktop/mobile navigation, scroll restoration, preview/viewer and delayed-map flows. Fixed pre-hydration landing focus recovery and updated older E2E selectors for the existing Kumo UI.
+- Validation: 235 unit/component tests, type-check, lint and production build pass. All active browser scenarios pass across desktop/mobile; 15 existing skipped scenarios remain. Production Core Web Vitals and a successful real TIFF upgrade have not been benchmarked in this session.
+- Detailed outcomes and Cloudflare configuration are recorded in `docs/PERFORMANCE_2026-09-21.md`.
 
 ---
 

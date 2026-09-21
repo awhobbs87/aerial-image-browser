@@ -30,6 +30,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     build: {
       minify: false,
+      cssMinify: true,
     },
     worker: {
       // Must be 'es' for code-splitting compatibility; geotiff-tilesource's
@@ -49,8 +50,8 @@ export default defineConfig({
   },
 
   prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport',
+    prefetchAll: false,
+    defaultStrategy: 'hover',
   },
 
   experimental: {

@@ -50,9 +50,10 @@ export const api = {
   async get<T>(
     path: string,
     params?: Record<string, string | number | boolean | undefined>,
+    signal?: AbortSignal,
   ): Promise<T> {
     const url = buildUrl(path, params);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     return handleResponse<T>(response);
   },
 

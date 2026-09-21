@@ -1,3 +1,4 @@
+import { navigate } from 'astro:transitions/client';
 import { useCallback } from 'react';
 import { SearchBar } from './SearchBar';
 
@@ -8,7 +9,9 @@ import { SearchBar } from './SearchBar';
  */
 export function LandingSearchBar() {
   const handleLocationSelect = useCallback((lat: number, lon: number, label: string) => {
-    window.location.href = `/search?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&q=${encodeURIComponent(label)}`;
+    void navigate(
+      `/search?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&q=${encodeURIComponent(label)}`,
+    );
   }, []);
 
   return <SearchBar size="lg" onLocationSelect={handleLocationSelect} />;

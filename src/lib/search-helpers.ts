@@ -55,7 +55,7 @@ export function extractYearFromLayerName(layerName: string): number {
 export function enhancePhoto(feature: ArcGISFeature, layerId: number): EnhancedPhoto {
   const a = feature.attributes;
   const flyDate = (a.FLY_DATE ?? a.CAPTURE_START_DATE ?? 0) as number;
-  const layerName = (a.PROJ_NAME ?? '') as string;
+  const layerName = (a.PROJ_NAME ?? a.PROJECT_NAME ?? '') as string;
 
   // Primary: derive year from fly date timestamp.
   // Fallback: parse the project/layer name for an embedded year (e.g. "Hobart 82" → 1982).

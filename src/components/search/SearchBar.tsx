@@ -98,17 +98,31 @@ export function SearchBar({
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [searchFocused, setSearchFocused]);
 
+  // SSR inputs can receive focus and typing before React attaches its handlers.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const input = inputRef.current;
+      if (input && document.activeElement === input) {
+        setSearchFocused(true);
+        setRecents(getRecentSearches());
+        setInputValue(input.value);
+      }
+    }, 0);
+    return () => clearTimeout(id);
+  }, [setSearchFocused]);
+
   // Geocode on debounced input
   useEffect(() => {
     if (!debouncedValue || debouncedValue.length < 2) {
       const id = setTimeout(() => setResults([]), 0);
       return () => clearTimeout(id);
     }
+    const controller = new AbortController();
     let cancelled = false;
     queueMicrotask(() => {
       if (!cancelled) setIsSearching(true);
     });
-    geocodeSearch(debouncedValue, 5)
+    geocodeSearch(debouncedValue, 5, controller.signal)
       .then((r) => {
         if (!cancelled) {
           setResults(r);
@@ -123,6 +137,7 @@ export function SearchBar({
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [debouncedValue]);
 

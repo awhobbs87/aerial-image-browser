@@ -74,6 +74,9 @@
     },
   ],
 
+  // Resize cached source JPEGs without exposing R2 publicly.
+  "images": { "binding": "IMAGES" },
+
   // Workers AI
   "ai": {
     "binding": "AI",

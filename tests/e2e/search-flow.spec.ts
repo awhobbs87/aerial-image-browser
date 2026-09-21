@@ -6,8 +6,8 @@ test.describe('Search Flow', () => {
     const searchInput = page.locator('input[placeholder*="Search"]');
     await searchInput.focus();
     // Should show preset locations dropdown
-    await expect(page.getByText('Popular locations')).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText('Hobart')).toBeVisible();
+    await expect(page.getByText('Popular', { exact: true })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Hobart', exact: true })).toBeVisible();
   });
 
   test('typing in search bar shows geocoding results', async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe('Search Flow', () => {
     await page.goto('/');
     const searchInput = page.locator('input[placeholder*="Search"]');
     await searchInput.focus();
-    await page.getByText('Hobart').click();
+    await page.getByRole('button', { name: 'Hobart', exact: true }).click();
     await expect(page).toHaveURL(/\/search\?lat=/);
   });
 

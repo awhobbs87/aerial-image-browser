@@ -4,6 +4,7 @@ import path from 'node:path';
 export default defineConfig({
   resolve: {
     alias: {
+      'astro:transitions/client': path.resolve(__dirname, './tests/mocks/astro-navigation.ts'),
       '@/': path.resolve(__dirname, './src') + '/',
     },
   },

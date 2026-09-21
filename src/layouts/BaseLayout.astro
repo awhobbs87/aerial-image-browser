@@ -74,11 +74,19 @@ const {
   <body>
     <NavigationProgress client:only="react" />
     <ThemeSyncIsland client:only="react" transition:persist="app-theme" />
-    <NavigationIsland client:only="react" transition:persist="app-nav" />
+    <NavigationIsland
+      initialPath={Astro.url.pathname}
+      client:media="(min-width: 48em)"
+      transition:persist="app-nav"
+    />
     <main id="main-content" transition:name="main-content">
       <slot />
     </main>
-    <MobileNavIsland client:only="react" transition:persist="app-mobile-nav" />
+    <MobileNavIsland
+      initialPath={Astro.url.pathname}
+      client:media="(max-width: 47.99em)"
+      transition:persist="app-mobile-nav"
+    />
     <ServiceWorkerRegistration client:only="react" />
   </body>
 </html>

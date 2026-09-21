@@ -40,10 +40,8 @@ function isVersionResponse(value: unknown): value is VersionResponse {
   );
 }
 
-export function Navigation() {
-  const [active, setActive] = useState(
-    typeof window !== 'undefined' ? window.location.pathname : '/',
-  );
+export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
+  const [active, setActive] = useState(initialPath);
   const [version, setVersion] = useState<VersionResponse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(260);
@@ -66,8 +64,10 @@ export function Navigation() {
     };
     syncWidth();
     desktop.addEventListener('change', syncWidth);
+    document.addEventListener('astro:after-swap', syncWidth);
     return () => {
       desktop.removeEventListener('change', syncWidth);
+      document.removeEventListener('astro:after-swap', syncWidth);
       root.style.removeProperty('--sidebar-width');
     };
   }, [sidebarOpen, sidebarWidth]);

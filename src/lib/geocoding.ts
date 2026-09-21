@@ -17,7 +17,11 @@ export interface GeocodingResult {
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 
-export async function geocodeSearch(query: string, limit = 5): Promise<GeocodingResult[]> {
+export async function geocodeSearch(
+  query: string,
+  limit = 5,
+  signal?: AbortSignal,
+): Promise<GeocodingResult[]> {
   const params = new URLSearchParams({
     q: query,
     format: 'json',
@@ -29,6 +33,7 @@ export async function geocodeSearch(query: string, limit = 5): Promise<Geocoding
   });
 
   const response = await fetch(`${NOMINATIM_BASE}/search?${params}`, {
+    signal,
     headers: {
       'User-Agent': 'TasmaniaAerialPhotoExplorer/4.0',
     },

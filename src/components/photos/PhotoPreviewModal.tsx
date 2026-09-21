@@ -1,3 +1,5 @@
+import { navigate } from 'astro:transitions/client';
+import { photoImageUrl } from '@/lib/photo-images';
 import { useState, useEffect, useCallback } from 'react';
 import {
   ArrowsOutIcon,
@@ -94,8 +96,7 @@ export function PhotoPreviewModal({
 
   if (!current) return null;
 
-  const thumbnailUrl =
-    current.thumbnailUrl || `/api/images/thumbnail/${current.layerId}/${current.name}`;
+  const thumbnailUrl = photoImageUrl(current, 'preview-1600');
   const imageLoaded = loadedImageUrl === thumbnailUrl;
   const imageError = errorImageUrl === thumbnailUrl;
   const scaleStr = formatScale(current.scale);
@@ -109,7 +110,9 @@ export function PhotoPreviewModal({
     if (current.layerName) params.set('project', current.layerName);
     if (current.type) params.set('type', current.type);
     const qs = params.toString();
-    window.location.href = `/viewer/${current.layerId}/${current.name}${qs ? `?${qs}` : ''}`;
+    void navigate(
+      `/viewer/${current.layerId}/${encodeURIComponent(current.name)}${qs ? `?${qs}` : ''}`,
+    );
   };
 
   return (
@@ -145,6 +148,7 @@ export function PhotoPreviewModal({
             key={thumbnailUrl}
             className="max-h-full max-w-full object-contain transition-opacity duration-150"
             src={thumbnailUrl}
+            decoding="async"
             alt={current.name}
             onLoad={() => {
               setLoadedImageUrl(thumbnailUrl);

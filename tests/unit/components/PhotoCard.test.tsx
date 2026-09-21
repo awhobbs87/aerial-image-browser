@@ -57,7 +57,9 @@ describe('PhotoCard', () => {
   it('renders the thumbnail image with correct src', () => {
     render(<PhotoCard photo={mockPhoto} />);
     const img = screen.getByAltText('Aerial photo TEST_PHOTO_001');
-    expect(img).toHaveAttribute('src', '/thumb/0/TEST_PHOTO_001');
+    expect(img).toHaveAttribute('src', '/api/images/thumbnail/0/TEST_PHOTO_001?variant=card-320');
+    expect(img.getAttribute('srcset')).toContain('variant=card-640 640w');
+    expect(img).toHaveAttribute('decoding', 'async');
   });
 
   it('renders type badge', () => {

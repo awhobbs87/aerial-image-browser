@@ -20,7 +20,7 @@ import {
   jsonSuccess,
 } from '@/lib/search-helpers';
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, locals }) => {
   const url = new URL(request.url);
 
   // Parse and validate coordinates
@@ -40,7 +40,11 @@ export const GET: APIRoute = async ({ request }) => {
   const filters = parseFilterParams(url);
 
   try {
-    const client = new ArcGISClient(env.API_BASE_URL);
+    const client = new ArcGISClient(env.API_BASE_URL, {
+      kv: env.PHOTO_CACHE,
+      signal: request.signal,
+      defer: locals.cfContext ? (task) => locals.cfContext.waitUntil(task) : undefined,
+    });
 
     // Query all requested layers in parallel
     const results = await Promise.all(

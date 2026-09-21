@@ -38,7 +38,8 @@ describe('ArcGISClient', () => {
       expect(calledUrl).toContain('geometryType=esriGeometryPoint');
       expect(calledUrl).toContain('inSR=4326');
       expect(calledUrl).toContain('spatialRel=esriSpatialRelIntersects');
-      expect(calledUrl).toContain('outFields=*');
+      expect(new URL(calledUrl).searchParams.get('outFields')).toContain('THUMBNAIL_LINK');
+      expect(new URL(calledUrl).searchParams.get('outFields')).not.toBe('*');
       expect(calledUrl).toContain('returnGeometry=true');
       expect(calledUrl).toContain('outSR=4326');
       expect(calledUrl).toContain('f=json');
@@ -63,17 +64,13 @@ describe('ArcGISClient', () => {
         status: 500,
       });
 
-      await expect(client.queryByPoint(0, 147.0, -42.0))
-        .rejects
-        .toThrow('ArcGIS API error: 500');
+      await expect(client.queryByPoint(0, 147.0, -42.0)).rejects.toThrow('ArcGIS API error: 500');
     });
   });
 
   describe('queryByBounds', () => {
     it('constructs correct URL with envelope geometry', async () => {
-      const mockFeatures = [
-        { attributes: { OBJECTID: 5 }, geometry: { rings: [] } },
-      ];
+      const mockFeatures = [{ attributes: { OBJECTID: 5 }, geometry: { rings: [] } }];
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -118,9 +115,9 @@ describe('ArcGISClient', () => {
         status: 403,
       });
 
-      await expect(client.queryByBounds(0, 146.0, -43.0, 148.0, -41.0))
-        .rejects
-        .toThrow('ArcGIS API error: 403');
+      await expect(client.queryByBounds(0, 146.0, -43.0, 148.0, -41.0)).rejects.toThrow(
+        'ArcGIS API error: 403',
+      );
     });
   });
 
@@ -146,9 +143,7 @@ describe('ArcGISClient', () => {
         status: 404,
       });
 
-      await expect(client.getLayers())
-        .rejects
-        .toThrow('ArcGIS API error: 404');
+      await expect(client.getLayers()).rejects.toThrow('ArcGIS API error: 404');
     });
   });
 
@@ -156,9 +151,7 @@ describe('ArcGISClient', () => {
     it('propagates network errors from fetch', async () => {
       fetchSpy.mockRejectedValue(new Error('Network failure'));
 
-      await expect(client.queryByPoint(0, 147.0, -42.0))
-        .rejects
-        .toThrow('Network failure');
+      await expect(client.queryByPoint(0, 147.0, -42.0)).rejects.toThrow('Network failure');
     });
   });
 });

@@ -17,6 +17,7 @@ declare module 'geotiff-tilesource' {
  */
 
 interface CloudflareEnv {
+  IMAGES?: ImagesBinding;
   /** KV namespace for layer metadata cache, search history */
   PHOTO_CACHE: KVNamespace;
 

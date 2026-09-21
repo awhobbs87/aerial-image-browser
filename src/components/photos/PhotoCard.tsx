@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { HeartIcon } from '@phosphor-icons/react';
 import { Button } from '@cloudflare/kumo/components/button';
 import { Badge } from '@cloudflare/kumo/components/badge';
@@ -6,6 +6,7 @@ import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 import { useFavoritesStore } from '@/stores/favoritesStore';
 import { useUIStore } from '@/stores/uiStore';
 import { formatScale } from '@/lib/format';
+import { photoImageUrl, photoCardSources } from '@/lib/photo-images';
 import type { EnhancedPhoto } from '@/types/photo';
 
 interface PhotoCardProps {
@@ -31,12 +32,12 @@ function filmLabel(type: string): string | null {
   return null;
 }
 
-export function PhotoCard({ photo, onClick }: PhotoCardProps) {
+export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const isFavorite = useFavoritesStore((s) => s.isFavorite(photo.objectId, photo.layerId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const setHoveredPhotoId = useUIStore((s) => s.setHoveredPhotoId);
 
-  const thumbnailSrc = photo.thumbnailUrl || `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
+  const thumbnailSrc = photoImageUrl(photo, 'card-320');
   const scaleDisplay = formatScale(photo.scale);
   const project = shortProject(photo.layerName);
   const typeLabel = filmLabel(photo.type);
@@ -57,7 +58,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
     <LayerCard
       className="group relative min-w-0 max-w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-950/10 bg-white p-2 shadow-sm outline-none transition duration-150 hover:-translate-y-0.5 hover:border-slate-950/14 hover:shadow-[0_12px_28px_rgba(15,23,42,0.11)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/14"
       onClick={handleCardClick}
-      onMouseEnter={() => setHoveredPhotoId(photo.objectId)}
+      onMouseEnter={() => setHoveredPhotoId(photo.objectId, photo.layerId)}
       onMouseLeave={() => setHoveredPhotoId(null)}
       role="article"
       tabIndex={0}
@@ -73,6 +74,9 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
         <img
           className="block h-full w-full object-cover transition duration-200 group-hover:scale-[1.025] group-hover:brightness-105"
           src={thumbnailSrc}
+          srcSet={photoCardSources(photo)}
+          sizes="(min-width: 768px) 220px, calc((100vw - 72px) / 2)"
+          decoding="async"
           alt={`Aerial photo ${photo.name}`}
           loading="lazy"
         />
@@ -123,4 +127,4 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
       </div>
     </LayerCard>
   );
-}
+});

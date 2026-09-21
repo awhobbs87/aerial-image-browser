@@ -132,8 +132,11 @@ test.describe('theme detection and contrast', () => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
+    await expect(
+      page.locator('astro-island[component-export=NavigationIsland]'),
+    ).not.toHaveAttribute('ssr');
     await page.getByRole('button', { name: 'Theme: auto' }).click();
-    await page.getByRole('button', { name: 'Light theme' }).click();
+    await page.getByRole('tab', { name: 'Light', exact: true }).click();
 
     const state = await readThemeState(page);
     expect(state.explicitPreference).toBe('true');

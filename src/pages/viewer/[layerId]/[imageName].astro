@@ -7,7 +7,7 @@ const cleanName = imageName?.replace(/\.\w+$/, '') || '';
 const layerIdNum = parseInt(layerId || '0');
 
 // Fallback JPEG for initial display while TIFF loads
-const imageUrl = `/api/images/image/${layerId}/${cleanName}?width=2400&quality=95`;
+const imageUrl = `/api/images/thumbnail/${layerId}/${encodeURIComponent(cleanName)}?variant=preview-1600`;
 
 // TIFF proxy that supports HTTP range requests (needed by GeoTIFFTileSource).
 const tiffProxyUrl = `/api/images/tiff-proxy/${layerId}/${cleanName}`;

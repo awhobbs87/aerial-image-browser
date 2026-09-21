@@ -1,138 +1,125 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { FeatureCollection } from 'geojson';
 import type maplibregl from 'maplibre-gl';
 import type { EnhancedPhoto } from '@/types/photo';
+import { useUIStore } from '@/stores/uiStore';
 
 interface PhotoFootprintsProps {
   map: maplibregl.Map | null;
   photos: EnhancedPhoto[];
-  hoveredPhotoId: number | null;
   onPhotoClick?: (photo: EnhancedPhoto) => void;
 }
-
 const SOURCE_ID = 'photo-footprints';
-const HOVER_FILL_ID = 'photo-footprints-hover-fill';
-const HOVER_LINE_ID = 'photo-footprints-hover-line';
+const FILL_ID = 'photo-footprints-hover-fill';
+const LINE_ID = 'photo-footprints-hover-line';
+const photoId = (photo: EnhancedPhoto) => `${photo.layerId}:${photo.objectId}`;
 
-export function PhotoFootprints({
-  map,
-  photos,
-  hoveredPhotoId,
-  onPhotoClick,
-}: PhotoFootprintsProps) {
-  const prevHoveredId = useRef<number | null>(null);
-  const layersAdded = useRef(false);
-
-  // Sync GeoJSON source data whenever photos change
-  useEffect(() => {
-    if (!map) return;
-
-    const geojson: FeatureCollection = {
+export function PhotoFootprints({ map, photos, onPhotoClick }: PhotoFootprintsProps) {
+  const { hoveredPhotoId, hoveredPhotoLayerId } = useUIStore(
+    useShallow((s) => ({
+      hoveredPhotoId: s.hoveredPhotoId,
+      hoveredPhotoLayerId: s.hoveredPhotoLayerId,
+    })),
+  );
+  const geojson = useMemo<FeatureCollection>(
+    () => ({
       type: 'FeatureCollection',
       features: photos
-        .filter((p) => p.rings && p.rings.length > 0)
-        .map((photo) => ({
-          type: 'Feature' as const,
-          id: photo.objectId,
-          properties: {
-            objectId: photo.objectId,
-            layerId: photo.layerId,
-            name: photo.name,
-          },
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: photo.rings,
-          },
+        .filter((p) => p.rings?.length)
+        .map((p) => ({
+          type: 'Feature',
+          id: photoId(p),
+          properties: { photoId: photoId(p) },
+          geometry: { type: 'Polygon', coordinates: p.rings },
         })),
-    };
+    }),
+    [photos],
+  );
+  const lookup = useMemo(() => new Map(photos.map((p) => [photoId(p), p])), [photos]);
 
-    const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(geojson);
+  const restoreHover = useEffectEvent(() => {
+    if (!map?.getSource(SOURCE_ID) || hoveredPhotoId === null || hoveredPhotoLayerId === null)
       return;
-    }
-
-    // First time: create source + layers
-    map.addSource(SOURCE_ID, {
-      type: 'geojson',
-      data: geojson,
-      promoteId: 'objectId',
-    });
-
-    // Hover fill — completely invisible by default (feature-state driven)
-    map.addLayer({
-      id: HOVER_FILL_ID,
-      type: 'fill',
-      source: SOURCE_ID,
-      paint: {
-        'fill-color': '#0ea5e9',
-        'fill-opacity': [
-          'case',
-          ['boolean', ['feature-state', 'hover'], false],
-          0.15,
-          0, // invisible unless hovered
-        ],
-      },
-    });
-
-    // Hover outline — only visible on hovered feature
-    map.addLayer({
-      id: HOVER_LINE_ID,
-      type: 'line',
-      source: SOURCE_ID,
-      paint: {
-        'line-color': '#0ea5e9',
-        'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 0],
-        'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.9, 0],
-      },
-    });
-
-    layersAdded.current = true;
-
-    // Click handler on fill
-    const handleClick = (
-      e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
-    ) => {
-      const feat = e.features?.[0];
-      if (!feat) return;
-      const objectId = feat.properties?.objectId as number;
-      const photo = photos.find((p) => p.objectId === objectId);
+    map.setFeatureState(
+      { source: SOURCE_ID, id: `${hoveredPhotoLayerId}:${hoveredPhotoId}` },
+      { hover: true },
+    );
+  });
+  const handleClick = useEffectEvent(
+    (event: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
+      const photo = lookup.get(String(event.features?.[0]?.properties?.photoId));
       if (photo) onPhotoClick?.(photo);
-    };
+    },
+  );
 
-    map.on('click', HOVER_FILL_ID, handleClick);
-    map.on('mouseenter', HOVER_FILL_ID, () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', HOVER_FILL_ID, () => {
-      map.getCanvas().style.cursor = '';
-    });
-  }, [map, photos, onPhotoClick]);
-
-  // Drive feature-state hover on/off
   useEffect(() => {
-    if (!map || !map.getSource(SOURCE_ID)) return;
-
-    // Clear previous
-    if (prevHoveredId.current !== null) {
-      try {
-        map.setFeatureState({ source: SOURCE_ID, id: prevHoveredId.current }, { hover: false });
-      } catch {
-        /* feature may no longer exist */
+    if (!map) return;
+    const sync = () => {
+      const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+      if (source) source.setData(geojson);
+      else {
+        map.addSource(SOURCE_ID, { type: 'geojson', data: geojson });
+        map.addLayer({
+          id: FILL_ID,
+          type: 'fill',
+          source: SOURCE_ID,
+          paint: {
+            'fill-color': '#0ea5e9',
+            'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.15, 0],
+          },
+        });
+        map.addLayer({
+          id: LINE_ID,
+          type: 'line',
+          source: SOURCE_ID,
+          paint: {
+            'line-color': '#0ea5e9',
+            'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 0],
+            'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.9, 0],
+          },
+        });
       }
-    }
+      restoreHover();
+    };
+    if (map.getSource(SOURCE_ID) || map.isStyleLoaded()) sync();
+    else map.once('idle', sync);
+    map.on('style.load', sync);
+    return () => {
+      map.off('style.load', sync);
+      map.off('idle', sync);
+    };
+  }, [map, geojson]);
 
-    // Set new
-    if (hoveredPhotoId !== null) {
-      try {
-        map.setFeatureState({ source: SOURCE_ID, id: hoveredPhotoId }, { hover: true });
-      } catch {
-        /* feature may not exist yet */
-      }
-    }
+  useEffect(() => {
+    if (!map) return;
+    const click = (
+      event: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
+    ) => handleClick(event);
+    const enter = () => {
+      map.getCanvas().style.cursor = 'pointer';
+    };
+    const leave = () => {
+      map.getCanvas().style.cursor = '';
+    };
+    map.on('click', FILL_ID, click);
+    map.on('mouseenter', FILL_ID, enter);
+    map.on('mouseleave', FILL_ID, leave);
+    return () => {
+      map.off('click', FILL_ID, click);
+      map.off('mouseenter', FILL_ID, enter);
+      map.off('mouseleave', FILL_ID, leave);
+    };
+  }, [map]);
 
-    prevHoveredId.current = hoveredPhotoId;
-  }, [map, hoveredPhotoId]);
-
+  useEffect(() => {
+    if (!map?.getSource(SOURCE_ID) || hoveredPhotoId === null || hoveredPhotoLayerId === null)
+      return;
+    const target = { source: SOURCE_ID, id: `${hoveredPhotoLayerId}:${hoveredPhotoId}` };
+    map.setFeatureState(target, { hover: true });
+    return () => {
+      if (map.getSource(SOURCE_ID)) map.setFeatureState(target, { hover: false });
+    };
+  }, [map, hoveredPhotoId, hoveredPhotoLayerId]);
   return null;
 }

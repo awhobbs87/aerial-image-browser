@@ -9,13 +9,14 @@ interface UIState {
   mapExpanded: boolean;
   /** objectId of the photo card currently being hovered — drives map footprint highlight */
   hoveredPhotoId: number | null;
+  hoveredPhotoLayerId: number | null;
 
   setViewMode: (mode: ViewMode) => void;
   toggleFilterPanel: () => void;
   setFilterPanelOpen: (open: boolean) => void;
   setSearchFocused: (focused: boolean) => void;
   setMapExpanded: (expanded: boolean) => void;
-  setHoveredPhotoId: (id: number | null) => void;
+  setHoveredPhotoId: (id: number | null, layerId?: number) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -24,11 +25,13 @@ export const useUIStore = create<UIState>((set) => ({
   searchFocused: false,
   mapExpanded: false,
   hoveredPhotoId: null,
+  hoveredPhotoLayerId: null,
 
   setViewMode: (viewMode) => set({ viewMode }),
   toggleFilterPanel: () => set((s) => ({ filterPanelOpen: !s.filterPanelOpen })),
   setFilterPanelOpen: (filterPanelOpen) => set({ filterPanelOpen }),
   setSearchFocused: (searchFocused) => set({ searchFocused }),
   setMapExpanded: (mapExpanded) => set({ mapExpanded }),
-  setHoveredPhotoId: (hoveredPhotoId) => set({ hoveredPhotoId }),
+  setHoveredPhotoId: (hoveredPhotoId, layerId) =>
+    set({ hoveredPhotoId, hoveredPhotoLayerId: layerId ?? null }),
 }));

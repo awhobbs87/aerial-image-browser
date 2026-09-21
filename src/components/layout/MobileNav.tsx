@@ -20,10 +20,8 @@ const navItems: NavItem[] = [
   { label: 'Favorites', icon: HeartIcon, href: '/favorites' },
 ];
 
-export function MobileNav() {
-  const [active, setActive] = useState(
-    typeof window !== 'undefined' ? window.location.pathname : '/',
-  );
+export function MobileNav({ initialPath = '/' }: { initialPath?: string }) {
+  const [active, setActive] = useState(initialPath);
 
   useEffect(() => {
     const syncPath = () => setActive(window.location.pathname);

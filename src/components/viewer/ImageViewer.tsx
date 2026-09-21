@@ -1,3 +1,4 @@
+import { navigate } from 'astro:transitions/client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowCounterClockwiseIcon,
@@ -98,6 +99,8 @@ export function ImageViewer({
   const [flippedV, setFlippedV] = useState(false);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [imageOpened, setImageOpened] = useState(false);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
   const [usingTiff, setUsingTiff] = useState(false);
   const [finetuneOpen, setFinetuneOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -106,43 +109,22 @@ export function ImageViewer({
   useEffect(() => {
     if (!containerRef.current) return;
     let destroyed = false;
+    let zoomTimer: ReturnType<typeof setTimeout> | undefined;
+    let pendingZoom = 1;
 
     async function init() {
+      // Begin both downloads together, but never hold the preview behind TIFF setup.
+      const geoModule = tiffUrl
+        ? import('geotiff-tilesource').catch(() => null)
+        : Promise.resolve(null);
+      const { default: OpenSeadragon } = await import('openseadragon');
       if (destroyed || !containerRef.current) return;
-      const osdMod = await import('openseadragon');
-      if (destroyed) return;
-      const OpenSeadragon = osdMod.default;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let tileSources: any = { type: 'image', url: imageUrl };
-
-      if (tiffUrl) {
-        try {
-          const geoMod = await import('geotiff-tilesource');
-          if (destroyed) return;
-          geoMod.enableGeoTIFFTileSource(OpenSeadragon);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tiffTileSources = await (OpenSeadragon as any).GeoTIFFTileSource.getAllTileSources(
-            tiffUrl,
-            { logLatency: false },
-          );
-          if (!destroyed && tiffTileSources && tiffTileSources.length > 0) {
-            tileSources = tiffTileSources[0];
-            setUsingTiff(true);
-          }
-        } catch (err) {
-          console.warn('GeoTIFF loading failed, falling back to image URL:', err);
-        }
-      }
-
-      if (destroyed || !containerRef.current) return;
-
       const viewer = OpenSeadragon({
         element: containerRef.current,
         prefixUrl: '',
-        tileSources,
+        tileSources: { type: 'image', url: imageUrl },
         showNavigationControl: false,
-        showNavigator: !isMobile,
+        showNavigator: !window.matchMedia('(max-width: 768px)').matches,
         navigatorPosition: 'BOTTOM_RIGHT',
         navigatorSizeRatio: 0.15,
         minZoomLevel: 0.5,
@@ -151,28 +133,71 @@ export function ImageViewer({
         constrainDuringPan: true,
         animationTime: 0.2,
         crossOriginPolicy: 'Anonymous',
-        gestureSettingsTouch: {
-          pinchRotate: false,
-        },
+        gestureSettingsTouch: { pinchRotate: false },
       });
-
       viewer.addHandler('zoom', (event: { zoom: number }) => {
-        setZoom(Math.round(event.zoom * 100) / 100);
+        pendingZoom = Math.round(event.zoom * 100) / 100;
+        if (zoomTimer === undefined)
+          zoomTimer = setTimeout(() => {
+            zoomTimer = undefined;
+            if (!destroyed) setZoom(pendingZoom);
+          }, 100);
       });
-      viewer.addHandler('open', () => setLoading(false));
-      viewer.addHandler('open-failed', () => setLoading(false));
-
+      viewer.addHandler('open', () => {
+        if (!destroyed) {
+          setLoading(false);
+          setImageOpened(true);
+        }
+      });
+      viewer.addHandler('open-failed', () => {
+        if (!destroyed) setLoading(false);
+      });
       viewerRef.current = viewer;
       setReady(true);
-    }
 
-    init();
+      const geoMod = await geoModule;
+      if (!geoMod || !tiffUrl || destroyed) return;
+      try {
+        geoMod.enableGeoTIFFTileSource(OpenSeadragon);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sources = await (OpenSeadragon as any).GeoTIFFTileSource.getAllTileSources(tiffUrl, {
+          logLatency: false,
+        });
+        if (destroyed || !sources?.length) return;
+        // Keep the preview beneath the new tiled image while its first tiles arrive.
+        viewer.addTiledImage({
+          tileSource: sources[0],
+          success: (event) => {
+            const { item } = event as Event & { item: import('openseadragon').TiledImage };
+            if (destroyed) return;
+            setUsingTiff(true);
+            const removePreview = () => {
+              if (destroyed || !item.getFullyLoaded()) return;
+              item.removeHandler('fully-loaded-change', removePreview);
+              for (let i = viewer.world.getItemCount() - 1; i >= 0; i--) {
+                const previous = viewer.world.getItemAt(i);
+                if (previous !== item) viewer.world.removeItem(previous);
+              }
+            };
+            item.addHandler('fully-loaded-change', removePreview);
+            removePreview();
+          },
+        });
+      } catch (error) {
+        console.warn('Full-resolution image unavailable; keeping preview', error);
+      }
+    }
+    void init().catch((error: unknown) => {
+      console.warn('Viewer initialization failed; keeping preview', error);
+      if (!destroyed) setLoading(false);
+    });
     return () => {
       destroyed = true;
+      clearTimeout(zoomTimer);
       viewerRef.current?.destroy();
       viewerRef.current = null;
     };
-  }, [imageUrl, tiffUrl, isMobile]);
+  }, [imageUrl, tiffUrl]);
 
   const applyRotation = useCallback((deg: number) => {
     setRotation(deg);
@@ -195,7 +220,7 @@ export function ImageViewer({
 
   const handleBack = () => {
     if (window.history.length > 1) window.history.back();
-    else window.location.href = '/search';
+    else void navigate('/search');
   };
 
   const iconSize = isMobile ? 16 : 19;
@@ -203,9 +228,19 @@ export function ImageViewer({
 
   return (
     <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 md:h-dvh">
-      <div ref={containerRef} className="h-full w-full" />
+      {!imageOpened && (
+        <img
+          src={imageUrl}
+          alt={`Aerial photo ${imageName}`}
+          decoding="async"
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-contain"
+          onLoad={() => setPreviewLoaded(true)}
+        />
+      )}
+      <div ref={containerRef} className="relative h-full w-full" />
 
-      {loading && (
+      {loading && !previewLoaded && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <Loader size="lg" aria-label="Loading image" className="text-white" />
         </div>

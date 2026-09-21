@@ -7,6 +7,7 @@ import type { EnhancedPhoto } from '@/types/photo';
 import { cn } from '@/lib/cn';
 
 interface SearchResultsProps {
+  restorationKey?: string;
   query: string;
   hasLocation: boolean;
   photos: EnhancedPhoto[];
@@ -40,6 +41,7 @@ const SCALE_DISPLAY = {
 } as const;
 
 export function SearchResults({
+  restorationKey,
   query,
   hasLocation,
   photos,
@@ -178,6 +180,8 @@ export function SearchResults({
         </div>
       ) : (
         <PhotoGrid
+          key={restorationKey}
+          restorationKey={restorationKey}
           photos={photos}
           isLoading={isLoading}
           total={total}

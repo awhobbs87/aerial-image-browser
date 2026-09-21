@@ -15,6 +15,7 @@ interface LocationCommand {
 }
 
 interface MapSearchCommandPaletteProps {
+  disabled?: boolean;
   onLocationSelect?: (lat: number, lon: number, label: string) => void;
 }
 
@@ -53,7 +54,10 @@ function toCommand(result: GeocodingResult): LocationCommand {
   };
 }
 
-export function MapSearchCommandPalette({ onLocationSelect }: MapSearchCommandPaletteProps) {
+export function MapSearchCommandPalette({
+  onLocationSelect,
+  disabled = false,
+}: MapSearchCommandPaletteProps) {
   const currentQuery = useSearchStore((state) => state.query);
   const setQuery = useSearchStore((state) => state.setQuery);
   const setLocation = useSearchStore((state) => state.setLocation);
@@ -69,8 +73,9 @@ export function MapSearchCommandPalette({ onLocationSelect }: MapSearchCommandPa
       return undefined;
     }
 
+    const controller = new AbortController();
     let active = true;
-    geocodeSearch(trimmed, 7)
+    geocodeSearch(trimmed, 7, controller.signal)
       .then((items) => {
         if (active) setResults(items.map(toCommand));
       })
@@ -83,6 +88,7 @@ export function MapSearchCommandPalette({ onLocationSelect }: MapSearchCommandPa
 
     return () => {
       active = false;
+      controller.abort();
     };
   }, [debouncedSearch]);
 
@@ -103,6 +109,7 @@ export function MapSearchCommandPalette({ onLocationSelect }: MapSearchCommandPa
   return (
     <>
       <Toolbar.Button
+        disabled={disabled}
         icon={MagnifyingGlassIcon}
         onClick={() => setOpen(true)}
         aria-label="Search for a location"

@@ -1,3 +1,4 @@
+import { readSearchView, saveSearchView } from '@/lib/search-view';
 import { useState, useMemo } from 'react';
 import { Badge } from '@cloudflare/kumo/components/badge';
 import { Button } from '@cloudflare/kumo/components/button';
@@ -10,6 +11,7 @@ import { PhotoSkeleton } from './PhotoSkeleton';
 type GroupBy = 'decade' | 'year' | 'none';
 
 interface PhotoGridProps {
+  restorationKey?: string;
   photos: EnhancedPhoto[];
   isLoading: boolean;
   total: number;
@@ -35,6 +37,7 @@ function compareGroupKeys(a: string, b: string): number {
 }
 
 export function PhotoGrid({
+  restorationKey,
   photos,
   isLoading,
   total,
@@ -43,9 +46,12 @@ export function PhotoGrid({
   onPhotoClick,
   onPhotoCompare,
 }: PhotoGridProps) {
-  const { sortBy, setSortBy } = useFilterStore();
-  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
-  const [groupBy, setGroupBy] = useState<GroupBy>('decade');
+  const sortBy = useFilterStore((s) => s.sortBy);
+  const setSortBy = useFilterStore((s) => s.setSortBy);
+  const [displayCount, setDisplayCount] = useState(
+    () => readSearchView(restorationKey).displayCount,
+  );
+  const [groupBy, setGroupBy] = useState<GroupBy>(() => readSearchView(restorationKey).groupBy);
 
   const sortedPhotos = useMemo(() => {
     const sorted = [...photos];
@@ -92,7 +98,9 @@ export function PhotoGrid({
   }, [sortedPhotos, displayCount, groupBy]);
 
   const handleLoadMore = () => {
-    setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
+    const next = displayCount + ITEMS_PER_PAGE;
+    setDisplayCount(next);
+    if (restorationKey) saveSearchView(restorationKey, { displayCount: next });
     onLoadMore?.();
   };
 
@@ -137,7 +145,11 @@ export function PhotoGrid({
             label="Group"
             size="lg"
             value={groupBy}
-            onValueChange={(value) => value && setGroupBy(value as GroupBy)}
+            onValueChange={(value) => {
+              if (!value) return;
+              setGroupBy(value as GroupBy);
+              if (restorationKey) saveSearchView(restorationKey, { groupBy: value as GroupBy });
+            }}
             items={{ decade: 'Decade', year: 'Year', none: 'None' }}
           />
           <Select

@@ -1,10 +1,10 @@
-import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react';
+import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { FunnelSimpleIcon, SparkleIcon } from '@phosphor-icons/react';
 import { Toolbar } from '@cloudflare/kumo/components/toolbar';
 import type maplibregl from 'maplibre-gl';
 import { MapSearchCommandPalette } from '../search/MapSearchCommandPalette';
 import { SearchResults } from '../search/SearchResults';
-import { MapView } from '../map/MapView';
+import { useShallow } from 'zustand/react/shallow';
 import { PhotoFootprints } from '../map/PhotoFootprints';
 import { FilterPanel } from '../filters/FilterPanel';
 import { MobileFilterSheet } from '../filters/MobileFilterSheet';
@@ -14,8 +14,11 @@ import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
 import { usePhotos } from '@/hooks/usePhotos';
 import type { EnhancedPhoto } from '@/types/photo';
-import type { MapBounds } from '@/types/map';
+import { useFilterStore } from '@/stores/filterStore';
+import { readSearchView, saveSearchView } from '@/lib/search-view';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+
+const MapView = lazy(async () => ({ default: (await import('../map/MapView')).MapView }));
 
 const PhotoPreviewModal = lazy(async () => {
   const module = await import('../photos/PhotoPreviewModal');
@@ -27,9 +30,36 @@ const AISearchModal = lazy(async () => {
 });
 
 function SearchPageContent() {
-  const { lat, lon, query, setLocation, setQuery } = useSearchStore();
-  const { filterPanelOpen, setFilterPanelOpen, hoveredPhotoId } = useUIStore();
+  const { lat, lon, query, setLocation, setQuery } = useSearchStore(
+    useShallow(({ lat, lon, query, setLocation, setQuery }) => ({
+      lat,
+      lon,
+      query,
+      setLocation,
+      setQuery,
+    })),
+  );
+  const filterPanelOpen = useUIStore((s) => s.filterPanelOpen);
+  const setFilterPanelOpen = useUIStore((s) => s.setFilterPanelOpen);
   const isDesktop = useMediaQuery('(min-width: 48em)');
+
+  const [urlReady, setUrlReady] = useState(false);
+  const [mapEnabled, setMapEnabled] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const filters = useFilterStore(
+    useShallow(({ layers, startYear, endYear, scaleCategories, sortBy }) => ({
+      layers,
+      startYear,
+      endYear,
+      scaleCategories,
+      sortBy,
+    })),
+  );
+  const viewKey = JSON.stringify([lat, lon, query, filters]);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMapEnabled(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -37,7 +67,7 @@ function SearchPageContent() {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
 
   const hasLocation = lat !== null && lon !== null;
-  const { data, isLoading, error } = usePhotos({ enabled: hasLocation });
+  const { data, isLoading, error } = usePhotos({ enabled: hasLocation && urlReady });
   const photos = useMemo(() => data?.photos ?? [], [data]);
   const total = data?.count ?? 0;
 
@@ -46,39 +76,60 @@ function SearchPageContent() {
     const urlLat = params.get('lat');
     const urlLon = params.get('lon');
     const urlQ = params.get('q');
-    if (urlLat && urlLon) setLocation(parseFloat(urlLat), parseFloat(urlLon));
-    if (urlQ) setQuery(urlQ);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      if (urlLat && urlLon && Number.isFinite(Number(urlLat)) && Number.isFinite(Number(urlLon))) {
+        setLocation(Number(urlLat), Number(urlLon));
+        setQuery(urlQ || '');
+      }
+      setUrlReady(true);
+    });
+    return () => {
+      active = false;
+    };
   }, [setLocation, setQuery]);
 
   useEffect(() => {
+    if (!urlReady) return;
     const params = new URLSearchParams();
     if (lat !== null && lon !== null) {
-      params.set('lat', lat.toFixed(5));
-      params.set('lon', lon.toFixed(5));
+      params.set('lat', String(lat));
+      params.set('lon', String(lon));
     }
     if (query) params.set('q', query);
     const qs = params.toString();
     const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     if (newUrl !== `${window.location.pathname}${window.location.search}`) {
-      window.history.replaceState(null, '', newUrl);
+      window.history.replaceState(window.history.state, '', newUrl);
     }
-  }, [lat, lon, query]);
+  }, [lat, lon, query, urlReady]);
 
-  const handleMapClick = (clickLat: number, clickLon: number) => {
-    setLocation(clickLat, clickLon);
-  };
+  useEffect(() => {
+    if (!urlReady || isLoading || !resultsRef.current) return;
+    const element = resultsRef.current;
+    const restore = () => {
+      element.scrollTop = readSearchView(viewKey).scrollTop;
+    };
+    const frame = requestAnimationFrame(restore);
+    const save = () => saveSearchView(viewKey, { scrollTop: element.scrollTop });
+    document.addEventListener('astro:before-swap', save);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener('astro:before-swap', save);
+    };
+  }, [viewKey, urlReady, isLoading]);
 
-  const handleBoundsChange = (_bounds: MapBounds) => {};
-
-  const handleLocationSelect = (_lat: number, _lon: number, _label: string) => {};
-
-  const handlePhotoClick = (photo: EnhancedPhoto) => {
-    const idx = photos.findIndex(
-      (p) => p.objectId === photo.objectId && p.layerId === photo.layerId,
-    );
-    setPreviewIndex(idx >= 0 ? idx : 0);
-    setPreviewOpen(true);
-  };
+  const handlePhotoClick = useCallback(
+    (photo: EnhancedPhoto) => {
+      const idx = photos.findIndex(
+        (p) => p.objectId === photo.objectId && p.layerId === photo.layerId,
+      );
+      setPreviewIndex(idx >= 0 ? idx : 0);
+      setPreviewOpen(true);
+    },
+    [photos],
+  );
 
   const handleMapReady = useCallback((map: maplibregl.Map) => {
     setMapInstance(map);
@@ -91,34 +142,42 @@ function SearchPageContent() {
     <div className="search-layout relative h-[calc(100dvh-var(--mobile-nav-height,0px))] overflow-hidden overscroll-none md:h-dvh">
       <div className="absolute inset-x-0 top-0 h-[clamp(240px,42dvh,360px)] touch-none md:fixed md:inset-y-0 md:left-[var(--sidebar-width)] md:h-full">
         <ErrorBoundary>
-          <MapView
-            className="h-full w-full rounded-none"
-            center={center}
-            zoom={center ? 14 : undefined}
-            onBoundsChange={handleBoundsChange}
-            onClick={handleMapClick}
-            onMapReady={handleMapReady}
-          />
+          <Suspense
+            fallback={
+              <div
+                className="h-full w-full animate-pulse bg-slate-200 dark:bg-slate-900"
+                role="status"
+                aria-label="Loading map"
+              />
+            }
+          >
+            {mapEnabled && (
+              <MapView
+                className="h-full w-full rounded-none"
+                center={center}
+                zoom={center ? 14 : undefined}
+                onClick={setLocation}
+                onMapReady={handleMapReady}
+              />
+            )}
+          </Suspense>
         </ErrorBoundary>
-        <PhotoFootprints
-          map={mapInstance}
-          photos={photos}
-          hoveredPhotoId={hoveredPhotoId}
-          onPhotoClick={handlePhotoClick}
-        />
+        <PhotoFootprints map={mapInstance} photos={photos} onPhotoClick={handlePhotoClick} />
       </div>
 
       <div className="absolute inset-x-0 top-[clamp(240px,42dvh,360px)] bottom-0 z-1 flex min-h-0 flex-col overflow-hidden rounded-t-3xl border border-border bg-white shadow-2xl dark:bg-popover md:inset-x-auto md:top-4 md:bottom-4 md:left-4 md:w-[clamp(410px,33vw,480px)] md:rounded-2xl">
         <div className="relative z-20 shrink-0 border-b border-border bg-white p-3 dark:bg-popover">
           <Toolbar className="w-full">
-            <MapSearchCommandPalette onLocationSelect={handleLocationSelect} />
+            <MapSearchCommandPalette disabled={!urlReady} />
             <Toolbar.Button
+              disabled={!urlReady}
               icon={SparkleIcon}
               onClick={() => setAiSearchOpen(true)}
               aria-label="AI search"
               title="AI search"
             />
             <Toolbar.Button
+              disabled={!urlReady}
               icon={FunnelSimpleIcon}
               onClick={() => setFilterPanelOpen(!filterPanelOpen)}
               aria-label={filterPanelOpen ? 'Hide filters' : 'Show filters'}
@@ -129,13 +188,22 @@ function SearchPageContent() {
           </Toolbar>
         </div>
 
-        <div className="isolate min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain py-4 pr-4 pl-5">
+        <div
+          ref={resultsRef}
+          data-search-results-scroll
+          onScroll={(event) => {
+            if (urlReady && !isLoading)
+              saveSearchView(viewKey, { scrollTop: event.currentTarget.scrollTop });
+          }}
+          className="isolate min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain py-4 pr-4 pl-5"
+        >
           {isDesktop && filterPanelOpen && (
             <div className="mb-4 border-b border-border">
               <FilterPanel onClose={() => setFilterPanelOpen(false)} />
             </div>
           )}
           <SearchResults
+            restorationKey={viewKey}
             query={query}
             hasLocation={hasLocation}
             photos={photos}
