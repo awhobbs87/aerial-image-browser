@@ -103,6 +103,7 @@ export function MapSearchCommandPalette({
 
   useEffect(() => {
     if (!open) return;
+    document.documentElement.dataset.mapSearchOpen = 'true';
     const viewport = window.visualViewport;
     const update = () =>
       document.documentElement.style.setProperty(
@@ -115,6 +116,7 @@ export function MapSearchCommandPalette({
     return () => {
       viewport?.removeEventListener('resize', update);
       viewport?.removeEventListener('scroll', update);
+      delete document.documentElement.dataset.mapSearchOpen;
       document.documentElement.style.removeProperty('--search-keyboard-inset');
     };
   }, [open]);

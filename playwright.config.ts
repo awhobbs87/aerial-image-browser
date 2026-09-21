@@ -28,6 +28,14 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
       },
     },
+    {
+      name: 'mobile-webkit',
+      testMatch: /search-timeline\.spec\.ts/,
+      grep: /keeps the location command palette inside the mobile viewport/,
+      use: {
+        ...devices['iPhone 13'],
+      },
+    },
   ],
 
   webServer: {

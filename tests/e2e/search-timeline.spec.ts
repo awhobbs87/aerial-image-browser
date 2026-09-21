@@ -47,7 +47,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('keeps the location command palette inside the mobile viewport', async ({ page }, info) => {
-  test.skip(info.project.name !== 'mobile', 'Mobile viewport regression');
+  test.skip(!info.project.name.startsWith('mobile'), 'Mobile viewport regression');
 
   await page.goto('/search');
   await page.getByRole('button', { name: 'Search for a location' }).click();

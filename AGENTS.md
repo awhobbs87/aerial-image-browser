@@ -530,6 +530,7 @@ const r2 = env.TIFF_STORAGE;
 - [x] Inspect TIFF georeferencing; provide truthful location reference and exact image pins only where supported -- 2026-09-22.
 - [x] Improve mobile search sheets, image/list rendering and map interaction; verify desktop/mobile flows -- 2026-09-22.
 - [x] Fix Kumo command-palette horizontal clipping when the mobile keyboard is open and add viewport-geometry regression coverage -- 2026-09-22.
+- [x] Harden the mobile command-palette override for iOS/WebKit with explicit open state, forced numeric positioning, and a WebKit regression project -- 2026-09-22.
 
 ### Phase 8: Native iOS App
 
@@ -655,6 +656,7 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 | 2026-09-22 | Present search coordinates and survey footprints as a location reference rather than projecting an address pin onto historical scans | The archive exposes survey polygons but not a reliable image-pixel transform for every scan; showing the searched point on a modern map and the footprint is useful without implying false precision |
 | 2026-09-22 | Retain the latest raw location-search result in a bounded five-minute tab-session cache | Astro island remounts can recreate query clients during route transitions; a one-entry session fallback preserves loaded cards, filters, and scroll position without another large API request |
 | 2026-09-22 | Reset both CSS `translate` and legacy `transform` when adapting Kumo's centered command palette into a mobile bottom sheet | Kumo's Tailwind v4 `-translate-x-1/2` uses the independent `translate` property, so clearing only `transform` leaves the full-width sheet shifted half a viewport off-screen |
+| 2026-09-22 | Mark map-search state on the document and use a numeric, important mobile position override instead of relying on `:has()` and `translate: none` | The first correction passed Chromium but did not resolve the reported iPhone behavior; an explicit state hook and `translate: 0 0` remove selector and WebKit cascade ambiguity, while a focused Playwright WebKit project keeps that browser path covered |
 
 ---
 
@@ -1306,6 +1308,9 @@ Append a summary after each working session so the next session has context.
 - Added a mobile Playwright geometry regression that asserts the sheet remains horizontally contained and above a simulated 300px software keyboard.
 - Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 36 active desktop/mobile Playwright scenarios (16 intentional skips).
 - Deployed commit `bd024b0` to the production Cloudflare Worker after confirming the user was testing the still-unpatched production URL. Worker version `f451500a-57d1-43f1-984b-c5f836c0a9b2` is active on both production routes; the emitted production stylesheet contains the corrected `translate: none` rule.
+- The first deployed correction still failed on the user's iPhone despite passing Chromium. Replaced the `:has()`-selected override with an explicit `data-map-search-open` document state, numeric `translate: 0 0`, and important fixed-edge positioning to eliminate WebKit selector/cascade ambiguity.
+- Installed Playwright WebKit locally and added a focused `mobile-webkit` project; both Chromium mobile and WebKit/iPhone geometry checks keep the palette horizontally contained and above the simulated keyboard.
+- Hardened-fix validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active Playwright scenarios including the new WebKit/iPhone run (16 intentional skips).
 
 ---
 
