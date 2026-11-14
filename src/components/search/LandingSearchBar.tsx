@@ -14,5 +14,12 @@ export function LandingSearchBar() {
     );
   }, []);
 
-  return <SearchBar size="lg" onLocationSelect={handleLocationSelect} />;
+  return (
+    <SearchBar
+      id="landing-location-search"
+      size="lg"
+      translucent
+      onLocationSelect={handleLocationSelect}
+    />
+  );
 }

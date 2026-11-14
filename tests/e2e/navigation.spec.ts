@@ -42,14 +42,27 @@ test.describe('Navigation', () => {
     test.skip((page.viewportSize()?.width ?? 0) < 768, 'Desktop sidebar only');
 
     await page.goto('/search');
-    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    await expect(page.locator('astro-island[component-export=NavigationIsland]')).not.toHaveAttribute(
+      'ssr',
+    );
+    const collapse = page.getByRole('button', { name: 'Collapse sidebar' });
+    await collapse.click();
     const expand = page.getByRole('button', { name: 'Expand sidebar' });
     await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await expect(expand).toBeFocused();
     await page.getByRole('link', { name: 'Map', exact: true }).click({ trial: true });
+    const resize = page.getByRole('button', { name: 'Resize sidebar' });
+    const handle = await resize.boundingBox();
+    const footerButton = await expand.boundingBox();
+    expect(handle).not.toBeNull();
+    expect(footerButton).not.toBeNull();
+    expect(handle!.width).toBeLessThanOrEqual(16);
+    expect(handle!.y + handle!.height).toBeLessThanOrEqual(footerButton!.y);
     await expand.click();
-    await expect(page.getByRole('button', { name: 'Collapse sidebar' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    await collapse.press('Enter');
+    await expect(expand).toBeFocused();
+    await expand.press('Space');
+    await expect(collapse).toHaveAttribute('aria-expanded', 'true');
   });
 });

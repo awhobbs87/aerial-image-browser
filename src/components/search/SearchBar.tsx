@@ -23,9 +23,11 @@ import { useFilterStore } from '@/stores/filterStore';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 interface SearchBarProps {
+  id?: string;
   onLocationSelect?: (lat: number, lon: number, label: string) => void;
   placeholder?: string;
   size?: 'sm' | 'md' | 'lg';
+  translucent?: boolean;
 }
 
 const POPULAR_LOCATIONS = [
@@ -42,9 +44,11 @@ const resultClass =
   'mx-1.5 flex min-h-11 w-[calc(100%-0.75rem)] cursor-pointer items-center rounded-xl border-0 bg-transparent px-3 py-2 text-left font-sans text-sm text-slate-800 transition hover:bg-amber-400/12 dark:text-slate-100 dark:hover:bg-amber-300/12';
 
 export function SearchBar({
+  id,
   onLocationSelect,
   placeholder = 'Search Tasmania...',
   size = 'lg',
+  translucent = false,
 }: SearchBarProps) {
   const { query, setQuery, setLocation } = useSearchStore();
   const { searchFocused, setSearchFocused } = useUIStore();
@@ -61,8 +65,11 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
-  const [dropdownMaxHeight, setDropdownMaxHeight] = useState(320);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    rect: DOMRect;
+    above: boolean;
+    maxHeight: number;
+  } | null>(null);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -164,10 +171,18 @@ export function SearchBar({
       const rect = anchor.getBoundingClientRect();
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
       const viewportOffsetTop = window.visualViewport?.offsetTop ?? 0;
-      const mobileNavReserve = window.matchMedia('(max-width: 47.99em)').matches ? 76 : 16;
-      const available = viewportOffsetTop + viewportHeight - rect.bottom - mobileNavReserve;
-      setDropdownRect(rect);
-      setDropdownMaxHeight(Math.max(176, Math.min(320, available)));
+      const mobile = window.matchMedia('(max-width: 47.99em)').matches;
+      const input = inputRef.current;
+      const navHidden = document.activeElement === input && input?.closest('.landing-page');
+      const bottomMargin = mobile && !navHidden ? 76 : 16;
+      const spaceBelow = viewportOffsetTop + viewportHeight - rect.bottom - bottomMargin;
+      const spaceAbove = rect.top - viewportOffsetTop - 16;
+      const above = spaceBelow < 176 && spaceAbove > spaceBelow;
+      setDropdownPosition({
+        rect,
+        above,
+        maxHeight: Math.max(0, Math.min(320, above ? spaceAbove : spaceBelow)),
+      });
     };
 
     updateRect();
@@ -237,19 +252,24 @@ export function SearchBar({
       <div ref={anchorRef} className="relative">
         <InputGroup
           size="lg"
-          className={`rounded-[1.1rem] border border-slate-950/10 bg-gradient-to-b from-white/96 to-slate-100/90 text-slate-950 shadow-none ring-0 transition duration-150 focus-within:border-amber-500/38 focus-within:bg-white focus-within:ring-4 focus-within:ring-amber-500/13 focus-within:shadow-[0_8px_20px_rgba(15,23,42,0.08)] dark:border-border dark:from-card dark:to-card dark:text-slate-50 dark:focus-within:bg-white/10 dark:focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]}`}
+          className={`rounded-[1.1rem] border border-slate-950/10 text-slate-950 shadow-none ring-0 transition duration-150 focus-within:border-amber-500/38 focus-within:ring-4 focus-within:ring-amber-500/13 focus-within:shadow-[0_8px_20px_rgba(15,23,42,0.08)] dark:border-border dark:text-slate-50 dark:focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.24)] ${inputSizeClasses[size]} ${
+            translucent
+              ? 'min-h-14 rounded-xl border-stone-900/20 bg-white/60 shadow-sm backdrop-blur-[1px] focus-within:bg-white/75 dark:border-white/20 dark:bg-stone-950/48 dark:focus-within:bg-stone-950/65'
+              : 'bg-gradient-to-b from-white/96 to-slate-100/90 focus-within:bg-white dark:from-card dark:to-card dark:focus-within:bg-white/10'
+          }`}
         >
           <InputGroup.Addon align="start" className="pl-4 text-slate-500 dark:text-slate-400">
             <MagnifyingGlassIcon size={18} />
           </InputGroup.Addon>
           <InputGroup.Input
             ref={inputRef}
+            id={id}
             value={inputValue}
             onChange={(e) => setInputValue(e.currentTarget.value)}
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            aria-label={placeholder}
+            aria-label={id ? undefined : placeholder}
             className="h-full min-w-0 flex-1 bg-transparent px-3 text-inherit ring-0 placeholder:text-slate-500 focus:ring-0 dark:placeholder:text-slate-400"
           />
           <InputGroup.Addon align="end" className="pr-2">
@@ -270,17 +290,20 @@ export function SearchBar({
       </div>
 
       {showDropdown &&
-        dropdownRect &&
+        dropdownPosition &&
         typeof document !== 'undefined' &&
         createPortal(
           <div
             ref={dropdownRef}
             className="fixed z-dropdown overflow-x-hidden overflow-y-auto rounded-2xl border border-slate-950/10 bg-white/95 py-1.5 shadow-[0_18px_48px_rgba(15,23,42,0.2)] backdrop-blur-xl overscroll-contain dark:border-border dark:bg-popover"
             style={{
-              top: dropdownRect.bottom + 8,
-              left: Math.max(8, dropdownRect.left),
-              width: Math.min(dropdownRect.width, window.innerWidth - 16),
-              maxHeight: dropdownMaxHeight,
+              top: dropdownPosition.above
+                ? dropdownPosition.rect.top - 8
+                : dropdownPosition.rect.bottom + 8,
+              transform: dropdownPosition.above ? 'translateY(-100%)' : undefined,
+              left: Math.max(8, dropdownPosition.rect.left),
+              width: Math.min(dropdownPosition.rect.width, window.innerWidth - 16),
+              maxHeight: dropdownPosition.maxHeight,
             }}
           >
             {searchFocused && inputValue.length >= 2 && !showResults && (

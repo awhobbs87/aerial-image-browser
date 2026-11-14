@@ -4,7 +4,8 @@ import {
   HeartIcon,
   MagnifyingGlassIcon,
   MapTrifoldIcon,
-  SidebarSimpleIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
   type Icon,
 } from '@phosphor-icons/react';
 import { Sidebar } from '@cloudflare/kumo/components/sidebar';
@@ -103,12 +104,13 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
       minWidth={200}
       maxWidth={360}
       onWidthChange={setSidebarWidth}
+      animationDuration={0}
       mobileBreakpoint={1}
       style={{ width: `${sidebarOpen ? sidebarWidth : 57}px` }}
-      className="app-chrome-nav fixed inset-y-0 left-0 z-nav hidden md:flex"
+      className="app-chrome-nav fixed inset-y-0 left-0 z-nav hidden [--sidebar-footer-height:4rem] data-[state=collapsed]:[--sidebar-footer-height:7rem] md:flex"
     >
-      <Sidebar aria-label="Primary navigation">
-        <Sidebar.Content>
+      <Sidebar id="desktop-sidebar" aria-label="Primary navigation">
+        <Sidebar.Content className="mb-(--sidebar-footer-height)">
           <Sidebar.Group>
             <Sidebar.Menu>
               {navItems.map((item) => {
@@ -132,22 +134,29 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
             </Sidebar.Menu>
           </Sidebar.Group>
         </Sidebar.Content>
-        <Sidebar.Footer className="h-auto min-h-16 justify-between gap-1 py-2 group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-0">
-          <Button
-            type="button"
-            variant="ghost"
-            shape="square"
-            icon={SidebarSimpleIcon}
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-expanded={sidebarOpen}
-            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            onClick={() => setSidebarOpen((open) => !open)}
-          />
-          <div className="group-data-[state=collapsed]/sidebar:hidden">
-            <ThemeToggle />
-          </div>
+      </Sidebar>
+      <Sidebar.ResizeHandle className="inset-y-auto top-0 bottom-(--sidebar-footer-height) z-50 min-w-0!" />
+      <div
+        className={`absolute inset-x-0 bottom-0 z-50 flex h-(--sidebar-footer-height) items-center gap-2 border-t border-kumo-line bg-kumo-base py-1.5 ${
+          sidebarOpen ? 'justify-between px-2' : 'flex-col justify-center'
+        }`}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          shape="square"
+          icon={sidebarOpen ? CaretLeftIcon : CaretRightIcon}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-expanded={sidebarOpen}
+          aria-controls="desktop-sidebar"
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          className="size-11 shrink-0 rounded-xl bg-kumo-tint text-kumo-default hover:bg-kumo-recessed focus-visible:ring-inset"
+          onClick={() => setSidebarOpen((open) => !open)}
+        />
+        <ThemeToggle compact={!sidebarOpen} />
+        {sidebarOpen && (
           <span
-            className="min-w-0 group-data-[state=collapsed]/sidebar:hidden"
+            className="min-w-0"
             title={
               version?.workerVersion.id
                 ? `Worker ${version.workerVersion.id}${version.workerVersion.timestamp ? ` · ${version.workerVersion.timestamp}` : ''}`
@@ -163,9 +172,8 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
               <span className="truncate">{version?.displayVersion ?? '...'}</span>
             </Badge>
           </span>
-        </Sidebar.Footer>
-        <Sidebar.ResizeHandle className="z-50 min-w-0" />
-      </Sidebar>
+        )}
+      </div>
     </Sidebar.Provider>
   );
 }

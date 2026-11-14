@@ -535,10 +535,14 @@ const r2 = env.TIFF_STORAGE;
 
 ### Web Interaction and Performance Follow-up -- 2026-11-15
 
+- [x] Redesign the landing page around location search, with a readable full-globe backdrop and a compact layout for short viewports -- 2026-11-15 (browser verification pending).
+- [x] Make the landing search and shortcut surfaces translucent over the globe in both themes -- 2026-11-15 (browser verification pending).
+- [x] Fit the full globe behind the landing hero at desktop and mobile sizes -- 2026-11-15 (browser verification pending).
 - [x] Restore collapsed desktop sidebar interaction and polish the theme picker and version badge -- 2026-11-15 (implemented; browser verification pending).
 - [x] Show thumbnail loading and error states and fix clipped rings on search results -- 2026-11-15 (thumbnail regressions pass; browser verification pending).
 - [x] Enable client minification and reduce search rendering work -- 2026-11-15 (implemented; performance measurement pending).
 - [ ] Run the Cloudflare-backed build and browser suite, then measure search responsiveness. The local sandbox denied the Cloudflare listener.
+- [x] Move desktop sidebar controls outside the collapsible panel, confine the resize handle, and make the theme picker available at either sidebar width -- 2026-11-15 (browser verification pending).
 
 ### Phase 8: Native iOS App
 
@@ -670,6 +674,8 @@ Record non-obvious decisions here. Format: `[date] Decision: Reason.`
 ---
 
 Performance decisions (2026-09-21): cache complete geographic results for 15 minutes at KV and apply UI filters locally; share QueryClient only in the browser, never between SSR requests. Use bounded named Images presets and persist variants in existing R2 plus edge cache. Keep the TIFF byte-range route outside the service worker. Preserve search view state in bounded browser memory across Astro navigation, rather than persisting large geographic datasets to localStorage.
+
+Desktop sidebar decision (2026-11-15): keep the footer under the fixed sidebar provider as a sibling of the collapsible panel. The rail and map update widths together, the footer keeps the same focusable controls during collapse, and the narrow resize handle stops above the footer. Use a Kumo radio menu for appearance so it can open beside the collapsed rail or above the expanded footer.
 
 ## Session Notes
 
@@ -1336,6 +1342,39 @@ Append a summary after each working session so the next session has context.
 - Enabled minification for the browser build, removed per-card blur and layout animation, and limited session-cache reads to search location changes.
 - On Node 22, all 244 unit/component tests and standalone TypeScript checks passed. Lint, formatting and diff checks passed. The sandbox denied port 9229 for the standard Astro build, Astro check and Playwright server. Browser verification, performance measurement and deployment are pending.
 - Commit and push were requested. The local sandbox denied creation of `.git/index.lock` and could not resolve `github.com`; the GitHub connection returned 403 when creating the commit tree. The changes remain in the working tree.
+
+---
+
+### Session 40 -- 2026-11-15
+
+- The user still saw an inaccessible expand button after the first sidebar fix. Decoupled the footer from Kumo's clipped panel and full-height resize handle. Added an explicit expand chevron, a visible current-theme label in the expanded footer, and an icon trigger in the collapsed footer.
+- Added Playwright assertions for the resize handle's geometry, mouse and keyboard reopening, and theme selection from both rail widths. The sandbox again blocked the Cloudflare listener before Playwright could start. All 244 unit/component tests and standalone TypeScript checks passed on Node 22.
+
+### Session 41 -- 2026-11-15
+
+- Tried to start the local Astro dev server on Node 22. The sandbox returned `EPERM` for Cloudflare's inspector on port 9229 and for a separate loopback-only listener on an ephemeral port. Nothing was serving the app on localhost port 4321.
+
+### Session 42 -- 2026-11-15
+
+- The user started the dev server from their terminal. Reduced the landing surfaces' fill opacity and backdrop blur, eased the globe's foreground fade, and shifted the desktop globe inward to bring its lines behind the hero. The search field opts into the translucent treatment on the landing route.
+- TypeScript, React lint, scoped formatting and all 244 unit/component tests passed. The sandbox could not reach the local dev server for a visual check.
+
+### Session 43 -- 2026-11-15
+
+- Sized the globe relative to the landing area's width and height, centered it on small screens, and offset it slightly right on desktop. Removed the SVG zoom that clipped the sphere within Kumo's own container. Preserved the translucent controls and softened the gradient over the globe's left edge.
+- TypeScript, scoped lint, formatting and diff checks passed. The sandbox could not reach the local preview for browser verification.
+
+---
+
+### Session 44 -- 2026-11-15
+
+- Rebuilt the landing hero with a warm neutral palette, a full-globe backdrop, clearer headings, a visibly labelled search field, location shortcuts, an Open map link and LIST Tasmania attribution. The hero uses an internally scrolling layout when height is constrained.
+- Positioned search suggestions above or below the field based on visual viewport space and added a short-viewport Playwright regression. All 244 unit/component tests, TypeScript, scoped lint and formatting passed. Playwright startup was blocked by the Cloudflare listener sandbox restriction, and the local browser preview refused the connection.
+
+### Session 45 -- 2026-11-15
+
+- Reviewed the pending landing, sidebar and theme changes for commit and push. `git diff --check` passed. Local staging was blocked because the sandbox denied creating `.git/index.lock`.
+- The GitHub connection returned HTTP 403 when creating the commit tree. The changes remain in the local working tree.
 
 ---
 

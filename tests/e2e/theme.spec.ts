@@ -135,17 +135,23 @@ test.describe('theme detection and contrast', () => {
     await expect(
       page.locator('astro-island[component-export=NavigationIsland]'),
     ).not.toHaveAttribute('ssr');
-    await page.getByRole('button', { name: 'Theme: auto' }).click();
-    const lightTab = page.getByRole('tab', { name: 'Light', exact: true });
-    const tab = (await lightTab.boundingBox())!;
-    const tabList = (await page.getByRole('tablist').boundingBox())!;
-    expect(tab.y + tab.height).toBeLessThanOrEqual(tabList.y + tabList.height);
-    await lightTab.click();
+    await page.getByRole('button', { name: 'Theme: System' }).click();
+    await expect(page.getByRole('menuitemradio', { name: 'System' })).toBeChecked();
+    await page.getByRole('menuitemradio', { name: 'Light' }).click();
+    await expect(page.getByRole('menu')).toBeHidden();
 
     const state = await readThemeState(page);
     expect(state.explicitPreference).toBe('true');
     expect(state.storedPreference).toBe('light');
     expect(state.theme).toBe('light');
     expect(state.hasDarkClass).toBe(false);
+
+    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    const themeButton = page.getByRole('button', { name: 'Theme: Light' });
+    await themeButton.press('Enter');
+    await expect(page.getByRole('menuitemradio', { name: 'Light' })).toBeChecked();
+    await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.getByRole('button', { name: 'Theme: Dark' })).toBeFocused();
   });
 });
