@@ -62,6 +62,39 @@ describe('PhotoCard', () => {
     expect(img).toHaveAttribute('decoding', 'async');
   });
 
+  it('shows a spinner until the image loads', () => {
+    render(<PhotoCard photo={mockPhoto} />);
+    const image = screen.getByAltText('Aerial photo TEST_PHOTO_001');
+    expect(screen.getByRole('status', { name: 'Loading thumbnail' })).toBeInTheDocument();
+    expect(image).toHaveStyle({ opacity: '0' });
+
+    fireEvent.load(image);
+    expect(screen.queryByRole('status', { name: 'Loading thumbnail' })).toBeNull();
+    expect(image).toHaveStyle({ opacity: '1' });
+  });
+
+  it('shows an unavailable icon after a failed request', () => {
+    render(<PhotoCard photo={mockPhoto} />);
+    const image = screen.getByAltText('Aerial photo TEST_PHOTO_001');
+    fireEvent.error(image);
+    expect(screen.queryByRole('status', { name: 'Loading thumbnail' })).toBeNull();
+    expect(screen.getByRole('img', { name: 'Thumbnail unavailable' })).toBeInTheDocument();
+    expect(image).toHaveStyle({ opacity: '0' });
+  });
+
+  it('recognises an image already loaded when the ref attaches', () => {
+    const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    const width = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(320);
+    try {
+      render(<PhotoCard photo={mockPhoto} />);
+      expect(screen.queryByRole('status', { name: 'Loading thumbnail' })).toBeNull();
+      expect(screen.getByAltText('Aerial photo TEST_PHOTO_001')).toHaveStyle({ opacity: '1' });
+    } finally {
+      complete.mockRestore();
+      width.mockRestore();
+    }
+  });
+
   it('renders type badge', () => {
     render(<PhotoCard photo={mockPhoto} />);
     expect(screen.getByText('Colour')).toBeInTheDocument();

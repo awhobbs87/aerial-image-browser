@@ -32,6 +32,11 @@ export default defineConfig({
       minify: false,
       cssMinify: true,
     },
+    environments: {
+      client: {
+        build: { minify: 'esbuild' },
+      },
+    },
     worker: {
       // Must be 'es' for code-splitting compatibility; geotiff-tilesource's
       // worker files are pre-built and served from public/assets/ instead.

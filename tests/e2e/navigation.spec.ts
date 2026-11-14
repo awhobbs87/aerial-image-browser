@@ -37,4 +37,19 @@ test.describe('Navigation', () => {
       await expect(page.getByRole('complementary', { name: 'Primary navigation' })).toBeVisible();
     }
   });
+
+  test('collapsed sidebar stays clickable beside the map', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 768, 'Desktop sidebar only');
+
+    await page.goto('/search');
+    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    const expand = page.getByRole('button', { name: 'Expand sidebar' });
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await page.getByRole('link', { name: 'Map', exact: true }).click({ trial: true });
+    await expand.click();
+    await expect(page.getByRole('button', { name: 'Collapse sidebar' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  });
 });

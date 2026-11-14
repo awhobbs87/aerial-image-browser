@@ -132,11 +132,11 @@ export function PhotoGrid({
   const showGroupHeaders = groupBy !== 'none';
 
   return (
-    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
+    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3">
       <div className="flex min-w-0 max-w-full flex-col gap-2.5 border-y border-slate-950/7 py-3 dark:border-border">
         <Badge
-          variant="outline"
-          className="border-border bg-card/58 px-2 py-1 text-xs font-bold text-muted-foreground uppercase backdrop-blur-xl"
+          variant="neutral"
+          className="bg-slate-950/5 px-2 py-1 text-xs font-bold text-muted-foreground uppercase dark:bg-card"
         >
           {total.toLocaleString()} photo{total !== 1 ? 's' : ''}
         </Badge>
@@ -144,6 +144,7 @@ export function PhotoGrid({
           <Select
             label="Group"
             size="lg"
+            className="max-w-full ring-inset shadow-none"
             value={groupBy}
             onValueChange={(value) => {
               if (!value) return;
@@ -155,6 +156,7 @@ export function PhotoGrid({
           <Select
             label="Sort"
             size="lg"
+            className="max-w-full ring-inset shadow-none"
             value={sortBy}
             onValueChange={(value) => value && setSortBy(value as typeof sortBy)}
             items={{
@@ -169,7 +171,7 @@ export function PhotoGrid({
       </div>
 
       {Array.from(groupedPhotos.entries()).map(([groupKey, groupPhotos]) => (
-        <div key={groupKey} className="mb-1 min-w-0 max-w-full overflow-x-hidden">
+        <div key={groupKey} className="mb-1 min-w-0 max-w-full">
           {showGroupHeaders && (
             <div className="mb-1.5 flex items-center gap-2 py-1">
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
@@ -180,7 +182,7 @@ export function PhotoGrid({
               </Badge>
             </div>
           )}
-          <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5 overflow-x-hidden ">
+          <div className="grid min-w-0 max-w-full grid-cols-2 gap-2.5">
             {groupPhotos.map((photo) => (
               <PhotoCard
                 key={`${photo.layerId}-${photo.objectId}`}

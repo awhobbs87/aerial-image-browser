@@ -97,6 +97,7 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
       open={sidebarOpen}
       onOpenChange={setSidebarOpen}
       collapsible="icon"
+      contained
       resizable
       defaultWidth={260}
       minWidth={200}
@@ -131,13 +132,14 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
             </Sidebar.Menu>
           </Sidebar.Group>
         </Sidebar.Content>
-        <Sidebar.Footer className="h-auto min-h-16 justify-between py-2 group-data-[state=collapsed]/sidebar:justify-center">
+        <Sidebar.Footer className="h-auto min-h-16 justify-between gap-1 py-2 group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-0">
           <Button
             type="button"
             variant="ghost"
             shape="square"
             icon={SidebarSimpleIcon}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            aria-expanded={sidebarOpen}
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             onClick={() => setSidebarOpen((open) => !open)}
           />
@@ -145,7 +147,7 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
             <ThemeToggle />
           </div>
           <span
-            className="max-w-32 gap-1.5 truncate border-border bg-card/72 px-2 py-1 text-xs leading-none font-bold text-muted-foreground shadow-sm group-data-[state=collapsed]/sidebar:hidden"
+            className="min-w-0 group-data-[state=collapsed]/sidebar:hidden"
             title={
               version?.workerVersion.id
                 ? `Worker ${version.workerVersion.id}${version.workerVersion.timestamp ? ` · ${version.workerVersion.timestamp}` : ''}`
@@ -153,12 +155,16 @@ export function Navigation({ initialPath = '/' }: { initialPath?: string }) {
             }
             aria-label={`Worker build version ${version?.displayVersion ?? 'loading'}`}
           >
-            <Badge variant={version ? 'success' : 'neutral'} appearance="dot">
-              {version?.displayVersion ?? '...'}
+            <Badge
+              variant={version ? 'success' : 'neutral'}
+              appearance="dot"
+              className="max-w-full bg-kumo-tint px-2 py-1 ring-0"
+            >
+              <span className="truncate">{version?.displayVersion ?? '...'}</span>
             </Badge>
           </span>
         </Sidebar.Footer>
-        <Sidebar.ResizeHandle />
+        <Sidebar.ResizeHandle className="z-50 min-w-0" />
       </Sidebar>
     </Sidebar.Provider>
   );

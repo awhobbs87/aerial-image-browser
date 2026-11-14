@@ -90,7 +90,7 @@ export function SearchResults({
   const loc = shortLocation(query);
 
   return (
-    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3 overflow-x-hidden">
+    <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3">
       {/* Location header */}
       <div className="flex items-start justify-between gap-3 border-b border-slate-950/7 pt-1 pb-3 dark:border-border">
         <div className="flex min-w-0 items-start gap-1.5">
@@ -133,15 +133,15 @@ export function SearchResults({
               <Button
                 key={cat.key}
                 type="button"
-                variant="outline"
+                variant="ghost"
                 aria-label={cat.label}
                 aria-pressed={selected}
                 onClick={() => toggleScaleCategory(cat.key)}
                 className={cn(
-                  'relative flex h-auto min-h-13 w-full min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500',
+                  'relative flex h-auto min-h-13 w-full min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left shadow-none ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-amber-500 focus-visible:ring-0',
                   selected
                     ? 'border-amber-500/55 bg-amber-400/13 text-slate-950 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.08)] dark:border-amber-300/70 dark:bg-amber-300/20 dark:text-white'
-                    : 'border-slate-950/8 bg-white/55 text-slate-700 hover:border-slate-950/16 hover:bg-white dark:border-border dark:bg-card dark:text-slate-200 dark:hover:border-white/16 dark:hover:bg-white/7',
+                    : 'border-transparent bg-slate-950/4 text-slate-700 hover:bg-slate-950/7 dark:bg-card dark:text-slate-200 dark:hover:bg-white/9',
                 )}
               >
                 <span className="max-w-[calc(100%-1rem)] truncate text-xs font-bold">

@@ -23,6 +23,7 @@ export function ThemeToggle() {
         <Popover.Description>Choose how the explorer is displayed.</Popover.Description>
         <Tabs
           className="mt-3"
+          listClassName="h-auto min-h-12"
           activateOnFocus
           value={preference === 'auto' ? 'system' : preference}
           onValueChange={(theme) =>

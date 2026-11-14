@@ -1,10 +1,10 @@
-import { photoImageUrl, photoCardSources } from '@/lib/photo-images';
 import { useMemo, useRef } from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react';
 import { Badge } from '@cloudflare/kumo/components/badge';
 import { Button } from '@cloudflare/kumo/components/button';
 import { LayerCard } from '@cloudflare/kumo/components/layer-card';
 import type { EnhancedPhoto } from '@/types/photo';
+import { PhotoThumbnail } from './PhotoThumbnail';
 
 interface PhotoTimelineProps {
   photos: EnhancedPhoto[];
@@ -118,17 +118,15 @@ export function PhotoTimeline({ photos, isLoading, onPhotoClick }: PhotoTimeline
                     }}
                     role="button"
                     tabIndex={0}
-                    className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card"
+                    className="w-36 shrink-0 overflow-hidden rounded-lg border border-slate-950/9 bg-white text-left shadow-none ring-0 transition-colors hover:border-slate-950/20 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/22"
                   >
-                    <img
-                      src={photoImageUrl(photo, 'card-320')}
-                      srcSet={photoCardSources(photo)}
-                      sizes="144px"
-                      decoding="async"
-                      alt={photo.name}
-                      loading="lazy"
-                      className="h-24 w-full object-cover"
-                    />
+                    <div className="relative h-24 bg-slate-950">
+                      <PhotoThumbnail
+                        photo={photo}
+                        sizes="144px"
+                        className="block h-full w-full object-cover"
+                      />
+                    </div>
                     <span className="block truncate px-2 py-1 text-xs text-slate-600 dark:text-slate-300">
                       {photo.name}
                     </span>

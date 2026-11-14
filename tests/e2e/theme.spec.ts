@@ -136,7 +136,11 @@ test.describe('theme detection and contrast', () => {
       page.locator('astro-island[component-export=NavigationIsland]'),
     ).not.toHaveAttribute('ssr');
     await page.getByRole('button', { name: 'Theme: auto' }).click();
-    await page.getByRole('tab', { name: 'Light', exact: true }).click();
+    const lightTab = page.getByRole('tab', { name: 'Light', exact: true });
+    const tab = (await lightTab.boundingBox())!;
+    const tabList = (await page.getByRole('tablist').boundingBox())!;
+    expect(tab.y + tab.height).toBeLessThanOrEqual(tabList.y + tabList.height);
+    await lightTab.click();
 
     const state = await readThemeState(page);
     expect(state.explicitPreference).toBe('true');

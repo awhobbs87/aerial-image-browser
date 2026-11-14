@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import { api } from '@/lib/api-client';
@@ -98,7 +98,12 @@ export function usePhotos(options: UsePhotosOptions = {}) {
   const { lat, lon } = useSearchStore(useShallow(({ lat, lon }) => ({ lat, lon })));
   const select = usePhotoSelection();
   const browserCacheKey = lat !== null && lon !== null ? `${lat}:${lon}` : '';
-  const browserCache = browserCacheKey ? readBrowserPhotos(browserCacheKey) : undefined;
+  // Session storage can contain a large batch of polygon coordinates. Read it
+  // once per search location instead of parsing it during unrelated renders.
+  const browserCache = useMemo(
+    () => (browserCacheKey ? readBrowserPhotos(browserCacheKey) : undefined),
+    [browserCacheKey],
+  );
   return useQuery({
     queryKey: ['photos', 'location', lat, lon],
     queryFn: async ({ signal }): Promise<SearchData> => {

@@ -533,6 +533,13 @@ const r2 = env.TIFF_STORAGE;
 - [x] Harden the mobile command-palette override for iOS/WebKit with explicit open state, forced numeric positioning, and a WebKit regression project -- 2026-09-22.
 - [x] Replace the mobile map-search dialog with a dedicated Kumo `LayerDialog` bottom sheet while retaining `CommandPalette` on desktop -- 2026-09-22.
 
+### Web Interaction and Performance Follow-up -- 2026-11-15
+
+- [x] Restore collapsed desktop sidebar interaction and polish the theme picker and version badge -- 2026-11-15 (implemented; browser verification pending).
+- [x] Show thumbnail loading and error states and fix clipped rings on search results -- 2026-11-15 (thumbnail regressions pass; browser verification pending).
+- [x] Enable client minification and reduce search rendering work -- 2026-11-15 (implemented; performance measurement pending).
+- [ ] Run the Cloudflare-backed build and browser suite, then measure search responsiveness. The local sandbox denied the Cloudflare listener.
+
 ### Phase 8: Native iOS App
 
 - [x] Create `ios/` folder for native app planning and future Xcode project -- 2026-05-24
@@ -1319,6 +1326,16 @@ Append a summary after each working session so the next session has context.
 - Visual WebKit QA at 390px confirmed the sheet spans exactly `x=0` to `x=390` and remains bounded after the viewport contracts from 664px to 364px to simulate the software keyboard. Focused Chromium/WebKit search flows pass.
 - Validation passed: formatting, lint, type-check, all 241 unit/component tests, production build, and all 37 active desktop/mobile/WebKit Playwright scenarios when run serially (16 intentional skips). Parallel Astro dev-server execution exposed an unrelated Vite SSR React prebundle race, so the clean full-suite result used one worker.
 - Deployed mobile-only search-sheet commit `761cad8`; Cloudflare uploaded 36 changed static assets and activated Worker version `292fabb7-fdd1-4763-b0a4-6633ddc36cbd` on both production routes.
+
+---
+
+### Session 39 -- 2026-11-15
+
+- Anchored Kumo's collapsed rail inside the desktop shell, narrowed the resize handle to free up the controls, and adjusted the theme tabs and version badge.
+- Added shared thumbnail loading and error states for grid and timeline cards. Removed duplicate outlines on results controls and kept keyboard focus visible.
+- Enabled minification for the browser build, removed per-card blur and layout animation, and limited session-cache reads to search location changes.
+- On Node 22, all 244 unit/component tests and standalone TypeScript checks passed. Lint, formatting and diff checks passed. The sandbox denied port 9229 for the standard Astro build, Astro check and Playwright server. Browser verification, performance measurement and deployment are pending.
+- Commit and push were requested. The local sandbox denied creation of `.git/index.lock` and could not resolve `github.com`; the GitHub connection returned 403 when creating the commit tree. The changes remain in the working tree.
 
 ---
 
