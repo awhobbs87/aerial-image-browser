@@ -7,6 +7,12 @@ interface FilterState {
   startYear: number | null;
   endYear: number | null;
   scaleCategories: ScaleCategory[];
+  includeUnknownDates: boolean;
+  includeUnknownScales: boolean;
+  survey: string | null;
+  setSurvey: (survey: string | null) => void;
+  setIncludeUnknownDates: (value: boolean) => void;
+  setIncludeUnknownScales: (value: boolean) => void;
   sortBy: 'date-asc' | 'date-desc' | 'scale-asc' | 'scale-desc' | 'name';
 
   setLayers: (layers: number[]) => void;
@@ -24,6 +30,9 @@ const initialFilters = {
   endYear: null as number | null,
   scaleCategories: [] as ScaleCategory[],
   sortBy: 'date-desc' as const,
+  includeUnknownDates: true,
+  includeUnknownScales: true,
+  survey: null as string | null,
 };
 
 export const useFilterStore = create<FilterState>()(
@@ -31,6 +40,9 @@ export const useFilterStore = create<FilterState>()(
     (set) => ({
       ...initialFilters,
 
+      setSurvey: (survey) => set({ survey }),
+      setIncludeUnknownDates: (includeUnknownDates) => set({ includeUnknownDates }),
+      setIncludeUnknownScales: (includeUnknownScales) => set({ includeUnknownScales }),
       setLayers: (layers) => set({ layers }),
       toggleLayer: (layerId) =>
         set((state) => ({

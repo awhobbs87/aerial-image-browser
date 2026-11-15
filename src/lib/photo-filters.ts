@@ -1,6 +1,9 @@
 import { SCALE_CATEGORIES, type EnhancedPhoto, type ScaleCategory } from '@/types/photo';
 
 export interface PhotoFilters {
+  includeUnknownDates?: boolean;
+  includeUnknownScales?: boolean;
+  survey?: string | null;
   layers: number[];
   startYear: number | null;
   endYear: number | null;
@@ -13,7 +16,9 @@ export function filterPhotos(photos: EnhancedPhoto[], filters: PhotoFilters): En
   );
   return photos.filter((photo) => {
     if (!filters.layers.includes(photo.layerId)) return false;
-    // Preserve undated/unknown-scale records, as the API has always done.
+    if (filters.survey && photo.layerName !== filters.survey) return false;
+    if (!photo.year && filters.includeUnknownDates === false) return false;
+    if (!photo.scale && filters.includeUnknownScales === false) return false;
     if (photo.year > 0 && filters.startYear !== null && photo.year < filters.startYear)
       return false;
     if (photo.year > 0 && filters.endYear !== null && photo.year > filters.endYear) return false;

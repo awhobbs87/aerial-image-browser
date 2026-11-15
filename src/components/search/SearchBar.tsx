@@ -1,3 +1,6 @@
+import { AccountHistory } from './AccountHistory';
+import { geocodingBounds, placeTypeLabel } from '@/lib/search-extent';
+import type { MapBounds } from '@/types/map';
 import {
   getRecentSearches,
   addRecentSearch,
@@ -138,11 +141,12 @@ export function SearchBar({
   }, [debouncedValue, searchFocused]);
 
   const handleSelect = useCallback(
-    (lat: number, lon: number, label: string) => {
+    (lat: number, lon: number, label: string, bounds?: MapBounds | null) => {
       setQuery(label);
       setInputValue(label);
       resetFilters();
       setLocation(lat, lon);
+      useSearchStore.getState().setFrameBounds(bounds || null);
       setResults([]);
       setSearchFocused(false);
       setActiveIndex(-1);
@@ -220,7 +224,7 @@ export function SearchBar({
       e.preventDefault();
       if (showResults) {
         const r = results[activeIndex];
-        if (r) handleSelect(r.lat, r.lon, r.displayName);
+        if (r) handleSelect(r.lat, r.lon, r.displayName, geocodingBounds(r.boundingBox));
       } else if (showIdle) {
         const item = idleItems[activeIndex];
         if (item) handleSelect(item.lat, item.lon, item.label);
@@ -323,7 +327,12 @@ export function SearchBar({
                     variant="ghost"
                     className={`${resultClass} h-auto rounded-none ${activeIndex === i ? 'bg-amber-400/12 dark:bg-amber-300/12' : ''}`}
                     onClick={() => {
-                      handleSelect(result.lat, result.lon, result.displayName);
+                      handleSelect(
+                        result.lat,
+                        result.lon,
+                        result.displayName,
+                        geocodingBounds(result.boundingBox),
+                      );
                     }}
                     onMouseEnter={() => setActiveIndex(i)}
                   >
@@ -334,6 +343,7 @@ export function SearchBar({
                           {result.displayName.split(',')[0]}
                         </div>
                         <div className="truncate text-xs leading-tight text-slate-500 dark:text-slate-400">
+                          {placeTypeLabel(result.type)} ·{' '}
                           {result.displayName.split(',').slice(1, 3).join(',').trim()}
                         </div>
                       </div>
@@ -351,7 +361,7 @@ export function SearchBar({
                   <>
                     <div className="flex items-center justify-between px-3 pt-1.5 pb-0.5">
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Recent
+                        Recent on this device
                       </span>
                       <Button
                         type="button"
@@ -386,6 +396,7 @@ export function SearchBar({
                   </>
                 )}
 
+                <AccountHistory onSelect={handleSelect} />
                 {/* Popular locations */}
                 <span className="px-3 pt-1.5 pb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Popular

@@ -1,7 +1,7 @@
 export interface SearchView {
   scrollTop: number;
   displayCount: number;
-  groupBy: 'decade' | 'year' | 'none';
+  groupBy: 'decade' | 'year' | 'survey' | 'none';
 }
 const initial: SearchView = { scrollTop: 0, displayCount: 24, groupBy: 'decade' };
 const views = new Map<string, SearchView>();

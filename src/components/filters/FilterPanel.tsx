@@ -33,10 +33,22 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
     setDateRange,
     toggleScaleCategory,
     resetFilters,
+    includeUnknownDates,
+    includeUnknownScales,
+    setIncludeUnknownDates,
+    setIncludeUnknownScales,
+    survey,
+    setSurvey,
   } = useFilterStore();
 
   const hasActiveFilters =
-    layers.length < 3 || startYear !== null || endYear !== null || scaleCategories.length > 0;
+    !includeUnknownDates ||
+    !includeUnknownScales ||
+    !!survey ||
+    layers.length < 3 ||
+    startYear !== null ||
+    endYear !== null ||
+    scaleCategories.length > 0;
 
   return (
     <div className="flex flex-col gap-4 p-3">
@@ -68,6 +80,27 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
         )}
       </div>
 
+      {survey && (
+        <Button variant="secondary" onClick={() => setSurvey(null)}>
+          Clear survey: {survey}
+        </Button>
+      )}
+      <div className="flex flex-col gap-2">
+        <Button
+          variant="secondary"
+          aria-pressed={includeUnknownDates}
+          onClick={() => setIncludeUnknownDates(!includeUnknownDates)}
+        >
+          Include unknown dates: {includeUnknownDates ? 'On' : 'Off'}
+        </Button>
+        <Button
+          variant="secondary"
+          aria-pressed={includeUnknownScales}
+          onClick={() => setIncludeUnknownScales(!includeUnknownScales)}
+        >
+          Include unknown scales: {includeUnknownScales ? 'On' : 'Off'}
+        </Button>
+      </div>
       {/* Quick filter presets */}
       <section className="flex flex-col gap-2">
         <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
@@ -141,6 +174,15 @@ export function FilterPanel({ onClose }: FilterPanelProps) {
 
       <div className="h-px bg-slate-950/10 dark:bg-white/10" />
 
+      <p className="text-xs text-muted-foreground">
+        Scale describes the original photography, not guaranteed scan sharpness. Unknown values are
+        included unless switched off above.
+      </p>
+      {startYear !== null && endYear !== null && startYear > endYear && (
+        <p role="alert" className="text-sm text-red-600">
+          The start year must be before the end year.
+        </p>
+      )}
       {/* Scale */}
       <section className="flex flex-col gap-2">
         <h3 className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">

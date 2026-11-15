@@ -9,6 +9,7 @@ import { isResolvedDark, subscribeToResolvedTheme } from '@/lib/theme';
 import { Tooltip } from '@/components/ui/Tooltip';
 
 interface MapViewProps {
+  frameBounds?: MapBounds;
   readOnly?: boolean;
   onBoundsChange?: (bounds: MapBounds) => void;
   onClick?: (lat: number, lon: number) => void;
@@ -52,6 +53,7 @@ const CARTO_ATTR =
 const SAT_ATTR = '&copy; <a href="https://www.esri.com">Esri</a> World Imagery';
 
 export function MapView({
+  frameBounds,
   readOnly = false,
   onBoundsChange,
   onClick,
@@ -64,6 +66,7 @@ export function MapView({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const satelliteRef = useRef(true);
+  const [mapError, setMapError] = useState(false);
   const [locating, setLocating] = useState(false);
   const [satellite, setSatellite] = useState(true);
 
@@ -106,6 +109,9 @@ export function MapView({
       touchPitch: true,
     });
 
+    map.on('error', (event) => {
+      if ('sourceId' in event && event.sourceId === 'base-tiles') setMapError(true);
+    });
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
     map.on('moveend', () => {
@@ -165,9 +171,17 @@ export function MapView({
       duration: 350,
       essential: false,
     });
+    if (frameBounds)
+      mapRef.current.fitBounds(
+        [
+          [frameBounds.west, frameBounds.south],
+          [frameBounds.east, frameBounds.north],
+        ],
+        { padding: 45, maxZoom: 15, duration: 0 },
+      );
     showMarker(center);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centerLng, centerLat, zoom, showMarker]);
+  }, [centerLng, centerLat, zoom, showMarker, frameBounds]);
 
   const handleToggleSatellite = useCallback(() => {
     const map = mapRef.current;
@@ -221,6 +235,30 @@ export function MapView({
         aria-label="Interactive map"
       />
 
+      {mapError && (
+        <div
+          role="status"
+          className="absolute top-3 left-3 z-10 max-w-60 rounded-xl bg-background p-3 text-xs"
+        >
+          Some map tiles could not load. Photo search is still available.
+          <Button
+            variant="ghost"
+            onClick={() => {
+              const map = mapRef.current;
+              if (map)
+                map.setStyle(
+                  buildStyle(
+                    satellite ? SATELLITE_TILES : isResolvedDark() ? DARK_TILES : LIGHT_TILES,
+                    satellite ? SAT_ATTR : CARTO_ATTR,
+                  ),
+                );
+              setMapError(false);
+            }}
+          >
+            Retry map
+          </Button>
+        </div>
+      )}
       <div className="absolute top-3 right-3 z-2 flex flex-col gap-2">
         <Tooltip label={satellite ? 'Map view' : 'Satellite view'} side="left">
           <Button

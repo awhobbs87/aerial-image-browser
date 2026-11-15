@@ -11,6 +11,7 @@ import { FilterPanel } from '../filters/FilterPanel';
 import { MobileFilterSheet } from '../filters/MobileFilterSheet';
 import { AppProviders } from '../common/AppProviders';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { SearchArea } from '../map/SearchArea';
 import { useSearchStore } from '@/stores/searchStore';
 import { useUIStore } from '@/stores/uiStore';
 import { usePhotos } from '@/hooks/usePhotos';
@@ -31,11 +32,13 @@ const AISearchModal = lazy(async () => {
 });
 
 function SearchPageContent() {
-  const { lat, lon, query, setLocation } = useSearchStore(
-    useShallow(({ lat, lon, query, setLocation }) => ({
+  const { lat, lon, query, bounds, frameBounds, setLocation } = useSearchStore(
+    useShallow(({ lat, lon, query, bounds, frameBounds, setLocation }) => ({
       lat,
       lon,
       query,
+      bounds,
+      frameBounds,
       setLocation,
     })),
   );
@@ -47,15 +50,29 @@ function SearchPageContent() {
   const [mapEnabled, setMapEnabled] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const filters = useFilterStore(
-    useShallow(({ layers, startYear, endYear, scaleCategories, sortBy }) => ({
-      layers,
-      startYear,
-      endYear,
-      scaleCategories,
-      sortBy,
-    })),
+    useShallow(
+      ({
+        layers,
+        startYear,
+        endYear,
+        scaleCategories,
+        sortBy,
+        includeUnknownDates,
+        includeUnknownScales,
+        survey,
+      }) => ({
+        layers,
+        startYear,
+        endYear,
+        scaleCategories,
+        sortBy,
+        includeUnknownDates,
+        includeUnknownScales,
+        survey,
+      }),
+    ),
   );
-  const viewKey = JSON.stringify([lat, lon, query, filters]);
+  const viewKey = JSON.stringify([lat, lon, bounds, query, filters]);
   useEffect(() => {
     const frame = requestAnimationFrame(() => setMapEnabled(true));
     return () => cancelAnimationFrame(frame);
@@ -67,7 +84,9 @@ function SearchPageContent() {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
 
   const hasLocation = lat !== null && lon !== null;
-  const { data, isLoading, error } = usePhotos({ enabled: hasLocation && urlReady });
+  const { data, isLoading, isFetching, error, refresh } = usePhotos({
+    enabled: hasLocation && urlReady,
+  });
   const photos = useMemo(() => data?.photos ?? [], [data]);
   const total = data?.count ?? 0;
 
@@ -120,6 +139,7 @@ function SearchPageContent() {
             {mapEnabled && (
               <MapView
                 className="h-full w-full rounded-none"
+                frameBounds={frameBounds || undefined}
                 center={center}
                 zoom={center ? 14 : undefined}
                 onClick={(lat, lon) => {
@@ -131,6 +151,7 @@ function SearchPageContent() {
             )}
           </Suspense>
         </ErrorBoundary>
+        <SearchArea map={mapInstance} />
         <PhotoFootprints map={mapInstance} photos={photos} onPhotoClick={handlePhotoClick} />
       </div>
 
@@ -172,6 +193,11 @@ function SearchPageContent() {
             </div>
           )}
           <SearchResults
+            availablePhotos={data?.availablePhotos}
+            failedLayers={data?.failedLayers}
+            isFetching={isFetching}
+            onRefresh={(failed) => void refresh(failed)}
+            areaSearch={!!bounds}
             restorationKey={viewKey}
             query={query}
             hasLocation={hasLocation}

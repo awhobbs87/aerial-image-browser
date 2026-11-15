@@ -1,4 +1,6 @@
 import { Dialog } from '@/components/ui/Dialog';
+import { usePhotoMetadata } from '@/hooks/usePhotoMetadata';
+import { PhotoDetails } from '@/components/photos/PhotoDetails';
 import type { SearchReference } from './LocationReference';
 import { navigate } from 'astro:transitions/client';
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
@@ -98,6 +100,12 @@ export function ImageViewer({
   project,
   photoType,
 }: ImageViewerProps) {
+  const { data: metadata } = usePhotoMetadata(layerId, imageName);
+  year = metadata?.year ?? year;
+  scale = metadata?.scale ?? scale;
+  project = metadata?.layerName ?? project;
+  photoType = metadata?.type ?? photoType;
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
@@ -111,6 +119,9 @@ export function ImageViewer({
   const [imageOpened, setImageOpened] = useState(false);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [usingTiff, setUsingTiff] = useState(false);
+  const [quality, setQuality] = useState<'loading' | 'preview' | 'full' | 'error'>('loading');
+  const [previewError, setPreviewError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [finetuneOpen, setFinetuneOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -120,6 +131,18 @@ export function ImageViewer({
     let destroyed = false;
     let zoomTimer: ReturnType<typeof setTimeout> | undefined;
     let pendingZoom = 1;
+    const upgradeTimeout = setTimeout(() => {
+      if (!destroyed) setQuality((value) => (value === 'full' ? value : 'preview'));
+    }, 45000);
+    queueMicrotask(() => {
+      if (!destroyed) {
+        setQuality(tiffUrl ? 'loading' : 'preview');
+        setUsingTiff(false);
+        setImageOpened(false);
+        setLoading(true);
+        setPreviewError(false);
+      }
+    });
 
     async function init() {
       // Begin both downloads together, but never hold the preview behind TIFF setup.
@@ -159,29 +182,51 @@ export function ImageViewer({
         }
       });
       viewer.addHandler('open-failed', () => {
-        if (!destroyed) setLoading(false);
+        if (!destroyed) {
+          setLoading(false);
+          setPreviewError(true);
+        }
       });
       viewerRef.current = viewer;
       setReady(true);
 
       const geoMod = await geoModule;
-      if (!geoMod || !tiffUrl || destroyed) return;
+      if (!geoMod || !tiffUrl || destroyed) {
+        if (!destroyed) {
+          setQuality('preview');
+          clearTimeout(upgradeTimeout);
+        }
+        return;
+      }
       try {
         geoMod.enableGeoTIFFTileSource(OpenSeadragon);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sources = await (OpenSeadragon as any).GeoTIFFTileSource.getAllTileSources(tiffUrl, {
           logLatency: false,
         });
-        if (destroyed || !sources?.length) return;
+        if (destroyed) return;
+        if (!sources?.length) throw new Error('No full-resolution image source');
         // Keep the preview beneath the new tiled image while its first tiles arrive.
         viewer.addTiledImage({
           tileSource: sources[0],
+          error: () => {
+            if (!destroyed) {
+              setQuality('preview');
+              clearTimeout(upgradeTimeout);
+            }
+          },
           success: (event) => {
             const { item } = event as Event & { item: import('openseadragon').TiledImage };
             if (destroyed) return;
-            setUsingTiff(true);
+
             const removePreview = () => {
               if (destroyed || !item.getFullyLoaded()) return;
+              setUsingTiff(true);
+              setPreviewError(false);
+              setImageOpened(true);
+              setLoading(false);
+              setQuality('full');
+              clearTimeout(upgradeTimeout);
               item.removeHandler('fully-loaded-change', removePreview);
               for (let i = viewer.world.getItemCount() - 1; i >= 0; i--) {
                 const previous = viewer.world.getItemAt(i);
@@ -193,20 +238,26 @@ export function ImageViewer({
           },
         });
       } catch (error) {
+        if (!destroyed) setQuality('preview');
+        clearTimeout(upgradeTimeout);
         console.warn('Full-resolution image unavailable; keeping preview', error);
       }
     }
     void init().catch((error: unknown) => {
       console.warn('Viewer initialization failed; keeping preview', error);
-      if (!destroyed) setLoading(false);
+      if (!destroyed) {
+        setLoading(false);
+        setQuality('error');
+      }
     });
     return () => {
       destroyed = true;
+      clearTimeout(upgradeTimeout);
       clearTimeout(zoomTimer);
       viewerRef.current?.destroy();
       viewerRef.current = null;
     };
-  }, [imageUrl, tiffUrl]);
+  }, [imageUrl, tiffUrl, attempt]);
 
   const applyRotation = useCallback((deg: number) => {
     setRotation(deg);
@@ -237,6 +288,18 @@ export function ImageViewer({
 
   return (
     <div className="relative h-[calc(100dvh-var(--mobile-nav-height,0px))] w-full overflow-hidden bg-slate-950 md:h-dvh">
+      <Button
+        className="absolute bottom-20 left-3 z-20"
+        variant="secondary"
+        onClick={() => setDetailsOpen(true)}
+      >
+        Photo details
+      </Button>
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen} title="Photo details">
+        <div className="max-h-[70dvh] overflow-y-auto">
+          <PhotoDetails layerId={layerId} imageName={imageName} reference={reference} />
+        </div>
+      </Dialog>
       <Dialog open={referenceOpen} onOpenChange={setReferenceOpen} title="Location reference">
         {referenceOpen && (
           <Suspense
@@ -252,17 +315,53 @@ export function ImageViewer({
       </Dialog>
       {!imageOpened && (
         <img
+          key={attempt}
           src={imageUrl}
           alt={`Aerial photo ${imageName}`}
           decoding="async"
           fetchPriority="high"
           className="absolute inset-0 h-full w-full object-contain"
-          onLoad={() => setPreviewLoaded(true)}
+          onLoad={() => {
+            setPreviewLoaded(true);
+            setPreviewError(false);
+          }}
+          onError={() => {
+            setPreviewError(true);
+            setLoading(false);
+          }}
         />
       )}
       <div ref={containerRef} className="relative h-full w-full" />
 
-      {loading && !previewLoaded && (
+      <div
+        className="absolute bottom-20 right-3 z-20 max-w-[55%] rounded-xl bg-background/95 p-2 text-xs"
+        role="status"
+      >
+        {quality === 'full'
+          ? 'Full resolution'
+          : quality === 'loading'
+            ? 'Preview · Loading full resolution…'
+            : previewError
+              ? 'Image unavailable'
+              : quality === 'error'
+                ? 'Preview only · Viewer unavailable'
+                : 'Preview only · Full resolution unavailable'}
+        {(quality === 'preview' || quality === 'error' || previewError) && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setPreviewLoaded(false);
+              setRotation(0);
+              setFlippedH(false);
+              setFlippedV(false);
+              setAttempt((value) => value + 1);
+            }}
+          >
+            Retry image
+          </Button>
+        )}
+      </div>
+      {loading && !previewLoaded && !previewError && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <Loader size="lg" aria-label="Loading image" className="text-white" />
         </div>

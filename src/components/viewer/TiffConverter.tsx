@@ -7,7 +7,7 @@ import {
 } from '@phosphor-icons/react';
 import { Button, LinkButton } from '@cloudflare/kumo/components/button';
 import { LayerCard } from '@cloudflare/kumo/components/layer-card';
-import { Meter } from '@cloudflare/kumo/components/meter';
+import { Loader } from '@cloudflare/kumo/components/loader';
 import { useTiffConversion } from '@/hooks/useTiffConversion';
 import { formatFileSize } from '@/lib/format';
 
@@ -70,7 +70,10 @@ export function TiffConverter({ tiffUrl, onConversionComplete }: TiffConverterPr
 
         {(status === 'checking' || status === 'converting') && (
           <div className="flex flex-col gap-2">
-            <Meter label={progress} value={status === 'checking' ? 30 : 70} showValue={false} />
+            <div role="status" className="flex items-center gap-2">
+              <Loader />
+              {progress}
+            </div>
           </div>
         )}
 

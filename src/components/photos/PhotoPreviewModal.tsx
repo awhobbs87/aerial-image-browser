@@ -1,3 +1,5 @@
+import { PhotoDetails } from './PhotoDetails';
+import { ComparePhotoButton } from '@/components/compare/ComparePhotoButton';
 import { useSearchStore } from '@/stores/searchStore';
 import { navigate } from 'astro:transitions/client';
 import { photoImageUrl } from '@/lib/photo-images';
@@ -51,6 +53,7 @@ export function PhotoPreviewModal({
   onClose,
   initialIndex = 0,
 }: PhotoPreviewModalProps) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null);
   const [errorImageUrl, setErrorImageUrl] = useState<string | null>(null);
@@ -87,13 +90,15 @@ export function PhotoPreviewModal({
   useEffect(() => {
     if (!opened) return;
     const handleKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest('input, textarea, select, [role=slider]')) return;
+      if (detailsOpen) return;
       if (e.key === 'ArrowLeft') handlePrev();
       else if (e.key === 'ArrowRight') handleNext();
       else if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [opened, handlePrev, handleNext, onClose]);
+  }, [opened, handlePrev, handleNext, onClose, detailsOpen]);
 
   if (!current) return null;
 
@@ -142,6 +147,25 @@ export function PhotoPreviewModal({
           className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-lg bg-black/52 text-white backdrop-blur-md transition hover:bg-black/72 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         />
 
+        {detailsOpen && (
+          <div className="absolute inset-0 z-5 overflow-y-auto bg-background pt-14 text-foreground">
+            <PhotoDetails
+              key={`${current.layerId}:${current.name}`}
+              layerId={current.layerId}
+              imageName={current.name}
+              initial={current}
+              reference={
+                useSearchStore.getState().lat !== null && useSearchStore.getState().lon !== null
+                  ? {
+                      lat: useSearchStore.getState().lat!,
+                      lon: useSearchStore.getState().lon!,
+                      label: useSearchStore.getState().query,
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        )}
         <div className="relative flex h-full min-h-[14rem] items-center justify-center sm:h-[min(68vh,42rem)]">
           {!imageLoaded && !imageError && (
             <Loader size="lg" aria-label="Loading photo preview" className="absolute text-white" />
@@ -220,7 +244,15 @@ export function PhotoPreviewModal({
             <span className="truncate">Ref: {current.name}</span>
           </div>
         </div>
-        <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+        <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
+          <Button
+            variant="secondary"
+            onClick={() => setDetailsOpen(!detailsOpen)}
+            aria-expanded={detailsOpen}
+          >
+            {detailsOpen ? 'Back to photo' : 'Details'}
+          </Button>
+          <ComparePhotoButton photo={current} />
           <Tooltip label={isFavorite ? 'Remove favorite' : 'Add favorite'}>
             <Button
               type="button"

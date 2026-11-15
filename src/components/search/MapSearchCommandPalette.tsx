@@ -1,3 +1,6 @@
+import { AccountHistory } from './AccountHistory';
+import { geocodingBounds, placeTypeLabel } from '@/lib/search-extent';
+import type { MapBounds } from '@/types/map';
 import { getRecentSearches, addRecentSearch, clearRecentSearches } from '@/lib/recent-searches';
 import { Button } from '@cloudflare/kumo/components/button';
 import { useFilterStore } from '@/stores/filterStore';
@@ -15,6 +18,8 @@ interface LocationCommand {
   title: string;
   description: string;
   recent?: boolean;
+  bounds?: MapBounds | null;
+  type?: string;
   lat: number;
   lon: number;
 }
@@ -52,6 +57,8 @@ function toCommand(result: GeocodingResult): LocationCommand {
   const [title, ...rest] = result.displayName.split(',');
   return {
     id: result.placeId,
+    bounds: geocodingBounds(result.boundingBox),
+    type: placeTypeLabel(result.type),
     title: title?.trim() || result.displayName,
     description: rest.slice(0, 2).join(',').trim() || 'Tasmania',
     lat: result.lat,
@@ -127,6 +134,7 @@ export function MapSearchCommandPalette({
     useFilterStore.getState().resetFilters();
     setQuery(label);
     setLocation(item.lat, item.lon);
+    useSearchStore.getState().setFrameBounds(item.bounds || null);
     onLocationSelect?.(item.lat, item.lon, label);
     setOpen(false);
     setSearch('');
@@ -158,7 +166,7 @@ export function MapSearchCommandPalette({
       <CommandPalette.List className="max-h-[min(55dvh,24rem)] overscroll-contain">
         {search.trim().length < 2 && recents.length > 0 && (
           <p className="px-2 py-2 text-xs text-muted-foreground">
-            Recent searches and popular places
+            Recent searches on this device and popular places
           </p>
         )}
         {loading ? (
@@ -170,7 +178,11 @@ export function MapSearchCommandPalette({
                 key={item.id}
                 value={item}
                 title={item.title}
-                description={item.recent ? 'Recent search' : item.description}
+                description={
+                  item.recent
+                    ? 'Recent search on this device'
+                    : [item.type, item.description].filter(Boolean).join(' · ')
+                }
                 icon={<MapPinIcon size={18} />}
                 onClick={() => selectLocation(item)}
                 showArrow={false}
@@ -190,7 +202,7 @@ export function MapSearchCommandPalette({
   );
 
   const searchFooter = (includeClose: boolean) => (
-    <div className="flex items-center justify-between gap-2 border-t border-border bg-card p-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card p-2">
       <span className="text-xs text-muted-foreground">Addresses and places © LIST Tasmania</span>
       {recents.length > 0 && (
         <Button
@@ -203,6 +215,11 @@ export function MapSearchCommandPalette({
           Clear recent searches
         </Button>
       )}
+      <AccountHistory
+        onSelect={(lat, lon, label) =>
+          selectLocation({ id: `history-${lat}:${lon}`, title: label, description: '', lat, lon })
+        }
+      />
       {includeClose && (
         <Button variant="secondary" onClick={() => handleOpenChange(false)}>
           Close search

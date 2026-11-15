@@ -544,6 +544,18 @@ const r2 = env.TIFF_STORAGE;
 - [ ] Run the Cloudflare-backed build and browser suite, then measure search responsiveness. The local sandbox denied the Cloudflare listener.
 - [x] Move desktop sidebar controls outside the collapsible panel, confine the resize handle, and make the theme picker available at either sidebar width -- 2026-11-15 (browser verification pending).
 
+### API Data and Web UI Audit -- 2026-11-16
+
+Implementation scope authorised 2026-11-16: all audit fixes except favourites. Keep favourites storage and behaviour unchanged. Implement search/filter/date correctness, metadata details, availability summaries, geocoder extent/type support, comparison, guarded bounds search, AI interpretation, partial-layer recovery, shared response contracts and active viewer loading states. Search history keeps device-local defaults and gains optional account sync with explicit controls and recovery; favourites remain excluded.
+
+- [x] Trace active web API calls, unused endpoint integrations, returned metadata and UI gaps; record priorities in `docs/API_UI_AUDIT_2026-11-16.md` -- 2026-11-16.
+- [x] Correct date/group ordering, unknown-metadata filter semantics, AI year limits and ignored resolution preferences. Implemented; browser verification pending.
+- [x] Add result availability summaries, structured photo details and explicit viewer quality/recovery states. Implemented; browser verification pending.
+- [x] Connect the currently unmounted comparison flow and explicit bounds search. Implemented; browser verification pending.
+- [x] Define partial-layer/response-check contracts and optional account-backed history integration. Favourites excluded by user instruction.
+- [ ] Complete production build, desktop/mobile browser verification and live upstream performance measurements.
+- Live LIST schema/units verification and production request/latency measurement remain unverified; this audit was source-level only.
+
 ### Phase 8: Native iOS App
 
 - [x] Create `ios/` folder for native app planning and future Xcode project -- 2026-05-24
@@ -1377,6 +1389,24 @@ Append a summary after each working session so the next session has context.
 - The GitHub connection returned HTTP 403 when creating the commit tree. The changes remain in the local working tree.
 
 ---
+
+### Session 46 -- 2026-11-16
+
+- Audited the current web API call paths and returned data against mounted UI consumers. Recorded findings and proposed delivery order in `docs/API_UI_AUDIT_2026-11-16.md`.
+- Confirmed unused comparison, bounds-search and account-backed favourites/history integrations; identified unknown-metadata filter semantics, inconsistent date/group ordering, ignored AI resolution preferences and the AI parser's 2024 year ceiling.
+- Recommended result availability summaries, structured photo details, explicit viewer quality/recovery states and truthful point-versus-area search semantics. These are proposals, not implemented features; historical completion entries above have been retained.
+- Application code was unchanged. Live LIST schema retrieval failed through the web tool; upstream units/additional fields and runtime latency remain unverified. No build or tests were run for this documentation-only analysis.
+
+
+### Session 47 -- 2026-11-16
+
+- Implemented the API/UI audit scope excluding favourites: explicit unknown-date/scale filters, inferred-date provenance, correct group ordering/counts, survey filters, raw-result availability summaries, reviewed AI interpretation and current-year validation.
+- Added shared photo metadata/details, truthful film-number and scale labels, original/preview download actions, coverage reference, viewer upgrade/retry states and TIFF source lookup from the upstream download link.
+- Connected two-photo comparison with session persistence, three comparison modes, image loading/retry states, accessible keyboard slider controls and unaligned-scan/modern-reference caveats.
+- Added explicit bounded-area searches with a drawn extent and URL/session restoration. Geocoder extent frames the map while point search remains the default. Area queries require an explicit action and a maximum 0.2-degree span in each direction.
+- Search endpoints retain successful layers on partial failures. UI retries failed layers, refresh bypasses browser/KV search caches, and stale successful results survive refresh errors. Response checkedAt records the response check, not upstream data freshness. Source-link priming is bounded to eight photos per layer; its production benefit is not yet measured.
+- Device-local history remains the default with explicit optional account sync, import, delete and retry controls. Favourites storage, endpoints and UI were not modified. Separate dependency-file edits present after the interruption were preserved.
+- Validation: 255 unit/component tests and standalone TypeScript checks pass. Source lint and scoped formatting pass; added desktop/mobile browser scenarios remain unexecuted. The latest production build failed in Miniflare with EMFILE (file watcher exhaustion) and a denied Wrangler log write; earlier browser/build attempts were blocked by the sandbox's Cloudflare listener restriction. No visual QA, live latency measurement or deployment is claimed.
 
 ## Blockers & Open Questions
 

@@ -2,7 +2,7 @@
  * API request/response types for Astro endpoints.
  */
 
-import type { EnhancedPhoto, LayerInfo } from './photo';
+import type { EnhancedPhoto } from './photo';
 
 /** Standard API error response */
 export interface ApiError {
@@ -37,8 +37,16 @@ export interface VersionResponse {
 
 /** Layer metadata response */
 export interface LayersResponse {
-  layers: LayerInfo[];
-  cachedAt?: number;
+  success: boolean;
+  data: {
+    layers: {
+      id: number;
+      name: string;
+      description?: string;
+      fields?: { name: string; alias: string; type: string }[];
+    }[];
+  };
+  cached: boolean;
 }
 
 /** User info from CF Access JWT */
@@ -51,14 +59,11 @@ export interface UserInfo {
 export interface LocationSearchParams {
   lat: number;
   lon: number;
-  radius?: number;
   layers?: number[];
   startDate?: string;
   endDate?: string;
   minScale?: number;
   maxScale?: number;
-  offset?: number;
-  limit?: number;
 }
 
 /** Bounds search params */
@@ -72,16 +77,19 @@ export interface BoundsSearchParams {
   endDate?: string;
   minScale?: number;
   maxScale?: number;
-  offset?: number;
-  limit?: number;
 }
 
 /** Search response */
-export interface SearchResponse {
+export interface SearchData {
   photos: EnhancedPhoto[];
-  total: number;
-  hasMore: boolean;
-  searchTime: number;
+  count: number;
+  failedLayers?: number[];
+  complete?: boolean;
+  checkedAt?: number;
+}
+export interface SearchResponse {
+  success: boolean;
+  data: SearchData;
 }
 
 /** Favorite record */

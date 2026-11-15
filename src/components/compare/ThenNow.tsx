@@ -1,3 +1,5 @@
+import { photoImageUrl } from '@/lib/photo-images';
+import { ComparisonImage } from './ComparisonImage';
 import { useState } from 'react';
 import { Tabs } from '@cloudflare/kumo/components/tabs';
 import type { EnhancedPhoto } from '@/types/photo';
@@ -9,10 +11,10 @@ interface ThenNowProps {
 export function ThenNow({ photo }: ThenNowProps) {
   const [view, setView] = useState<'then' | 'now'>('then');
 
-  const historicalUrl = `/api/images/thumbnail/${photo.layerId}/${photo.name}`;
+  const historicalUrl = photoImageUrl(photo, 'preview-1600');
   const satelliteUrl =
     photo.rings && photo.rings[0]
-      ? `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${getBbox(photo.rings)}&size=800,600&format=jpg&f=image`
+      ? `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${getBbox(photo.rings)}&bboxSR=4326&imageSR=3857&size=800,600&format=jpg&f=image`
       : null;
 
   return (
@@ -23,22 +25,22 @@ export function ThenNow({ photo }: ThenNowProps) {
           onValueChange={(value) => setView(value as 'then' | 'now')}
           tabs={[
             { value: 'then', label: `Then (${photo.year || 'Historical'})` },
-            { value: 'now', label: 'Now (Satellite)' },
+            { value: 'now', label: 'Modern reference' },
           ]}
         />
       </div>
 
       <div className="aspect-4/3 overflow-hidden rounded-lg border border-slate-950/8 bg-slate-950/5 shadow-sm dark:border-border dark:bg-card">
         {view === 'then' ? (
-          <img
+          <ComparisonImage
             src={historicalUrl}
             alt={`${photo.name} - Historical`}
             className="h-full w-full object-contain"
           />
         ) : satelliteUrl ? (
-          <img
+          <ComparisonImage
             src={satelliteUrl}
-            alt={`${photo.name} - Current satellite`}
+            alt={`${photo.name} - Modern reference`}
             className="h-full w-full object-contain"
           />
         ) : (
@@ -51,7 +53,7 @@ export function ThenNow({ photo }: ThenNowProps) {
       <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         {view === 'then'
           ? `Historical aerial photo from ${photo.year || 'unknown year'}`
-          : 'Current Esri World Imagery satellite view'}
+          : 'Esri World Imagery reference; capture date unverified. © Esri'}
       </p>
     </div>
   );
@@ -63,7 +65,7 @@ function getBbox(rings: number[][][]): string {
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const point of rings[0]) {
+  for (const point of rings.flat()) {
     if (point[0] < minX) minX = point[0];
     if (point[1] < minY) minY = point[1];
     if (point[0] > maxX) maxX = point[0];

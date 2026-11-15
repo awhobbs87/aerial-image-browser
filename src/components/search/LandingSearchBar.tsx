@@ -9,9 +9,7 @@ import { SearchBar } from './SearchBar';
  */
 export function LandingSearchBar() {
   const handleLocationSelect = useCallback((lat: number, lon: number, label: string) => {
-    void navigate(
-      `/search?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&q=${encodeURIComponent(label)}`,
-    );
+    void navigate(`/search?lat=${lat}&lon=${lon}&q=${encodeURIComponent(label)}`);
   }, []);
 
   return (

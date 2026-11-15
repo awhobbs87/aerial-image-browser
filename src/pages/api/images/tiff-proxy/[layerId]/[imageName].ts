@@ -1,3 +1,4 @@
+import { env } from 'cloudflare:workers';
 import type { APIRoute } from 'astro';
 
 /**
@@ -15,7 +16,13 @@ export const GET: APIRoute = async ({ params, request }) => {
   const layerId = params.layerId;
   const imageName = params.imageName;
 
-  if (!layerId || !imageName) {
+  if (
+    !layerId ||
+    ![0, 1, 2].includes(Number(layerId)) ||
+    !imageName ||
+    imageName.length > 180 ||
+    /[/\\]/.test(imageName)
+  ) {
     return new Response(JSON.stringify({ success: false, error: 'Invalid parameters' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -23,8 +30,6 @@ export const GET: APIRoute = async ({ params, request }) => {
   }
 
   const cleanName = imageName.replace(/\.tif$/i, '');
-  const filmNo = cleanName.split('_')[0] || cleanName;
-  const originUrl = `https://apimages.nre.tas.gov.au/images/LandTasFilms/${filmNo}/Scans/${cleanName}.tif`;
 
   // Build headers to forward to origin — primarily the Range header
   const proxyHeaders: Record<string, string> = {};
@@ -34,8 +39,30 @@ export const GET: APIRoute = async ({ params, request }) => {
   }
 
   try {
+    const key = `photo-tiff-source:v1:${layerId}:${cleanName}`;
+    let originUrl = await env.PHOTO_CACHE.get(key).catch(() => null);
+    if (!originUrl) {
+      const escaped = cleanName.replaceAll("'", "''");
+      const query = new URLSearchParams({
+        f: 'json',
+        where: `IMAGE_NAME='${escaped}.tif' OR IMAGE_NAME='${escaped}'`,
+        outFields: 'DOWNLOAD_LINK',
+        returnGeometry: 'false',
+      });
+      const lookup = await fetch(`${env.API_BASE_URL}/${layerId}/query?${query}`, {
+        signal: request.signal,
+      });
+      if (!lookup.ok) throw new Error('Image metadata unavailable');
+      const data = (await lookup.json()) as {
+        features?: { attributes: { DOWNLOAD_LINK?: string } }[];
+      };
+      originUrl = data.features?.[0]?.attributes.DOWNLOAD_LINK || null;
+      if (!originUrl) return new Response('Original image unavailable', { status: 404 });
+      await env.PHOTO_CACHE.put(key, originUrl, { expirationTtl: 86400 }).catch(() => {});
+    }
     const originResponse = await fetch(originUrl, {
       headers: proxyHeaders,
+      signal: request.signal,
     });
 
     if (!originResponse.ok && originResponse.status !== 206) {

@@ -1,7 +1,12 @@
+import type { MapBounds } from '@/types/map';
 import { create } from 'zustand';
 import type { EnhancedPhoto } from '../types/photo';
 
 interface SearchState {
+  bounds: MapBounds | null;
+  frameBounds: MapBounds | null;
+  setBounds: (bounds: MapBounds) => void;
+  setFrameBounds: (bounds: MapBounds | null) => void;
   query: string;
   lat: number | null;
   lon: number | null;
@@ -23,6 +28,8 @@ interface SearchState {
 }
 
 const initialState = {
+  bounds: null as MapBounds | null,
+  frameBounds: null as MapBounds | null,
   query: '',
   lat: null as number | null,
   lon: null as number | null,
@@ -38,7 +45,16 @@ export const useSearchStore = create<SearchState>((set) => ({
   ...initialState,
 
   setQuery: (query) => set({ query }),
-  setLocation: (lat, lon) => set({ lat, lon }),
+  setLocation: (lat, lon) => set({ lat, lon, bounds: null, frameBounds: null }),
+  setBounds: (bounds) =>
+    set({
+      bounds,
+      frameBounds: null,
+      lat: (bounds.north + bounds.south) / 2,
+      lon: (bounds.east + bounds.west) / 2,
+      query: 'Visible map area',
+    }),
+  setFrameBounds: (frameBounds) => set({ frameBounds }),
   setRadius: (radius) => set({ radius }),
   setPhotos: (photos, total, hasMore) => set({ photos, total, hasMore, error: null }),
   appendPhotos: (photos) => set((state) => ({ photos: [...state.photos, ...photos] })),

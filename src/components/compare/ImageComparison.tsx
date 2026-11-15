@@ -106,44 +106,19 @@ export const Comparison = ({
     }
   };
 
-  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
-    const step = event.shiftKey ? 10 : 2;
-    const nextPosition =
-      event.key === 'ArrowLeft'
-        ? sliderPosition - step
-        : event.key === 'ArrowRight'
-          ? sliderPosition + step
-          : event.key === 'Home'
-            ? 0
-            : event.key === 'End'
-              ? 100
-              : null;
-
-    if (nextPosition === null) return;
-    event.preventDefault();
-    setPosition(nextPosition);
-  };
-
   return (
     <ImageComparisonContext.Provider
-      value={{ sliderPosition, setSliderPosition, motionSliderPosition, mode }}
+      value={{ sliderPosition, setSliderPosition: setPosition, motionSliderPosition, mode }}
     >
       <div
-        aria-label="Comparison slider"
-        aria-valuemax={100}
-        aria-valuemin={0}
-        aria-valuenow={sliderPosition}
         className={cn('relative isolate w-full select-none overflow-hidden', className)}
         onMouseDown={handleDragStart}
         onMouseLeave={handleDragEnd}
         onMouseMove={handleMouseDrag}
         onMouseUp={handleDragEnd}
-        onKeyDown={handleKeyDown}
         onTouchEnd={handleDragEnd}
         onTouchMove={handleTouchDrag}
         onTouchStart={handleDragStart}
-        role="slider"
-        tabIndex={0}
         {...props}
       />
     </ImageComparisonContext.Provider>
@@ -164,9 +139,7 @@ export const ComparisonItem = ({ className, position, ...props }: ComparisonItem
 
   return (
     <motion.div
-      aria-hidden="true"
       className={cn('absolute inset-0 h-full w-full object-cover', className)}
-      role="img"
       style={{
         clipPath: position === 'left' ? leftClipPath : rightClipPath,
       }}
@@ -180,18 +153,47 @@ export type ComparisonHandleProps = ComponentProps<typeof motion.div> & {
 };
 
 export const ComparisonHandle = ({ className, children, ...props }: ComparisonHandleProps) => {
-  const { motionSliderPosition, mode } = useImageComparisonContext();
+  const {
+    motionSliderPosition,
+    mode,
+    sliderPosition,
+    setSliderPosition: setPosition,
+  } = useImageComparisonContext();
+  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
+    if (event.target !== event.currentTarget) return;
+    const step = event.shiftKey ? 10 : 2;
+    const nextPosition =
+      event.key === 'ArrowLeft'
+        ? sliderPosition - step
+        : event.key === 'ArrowRight'
+          ? sliderPosition + step
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? 100
+              : null;
+
+    if (nextPosition === null) return;
+    event.preventDefault();
+    setPosition(nextPosition);
+  };
+
   const left = useTransform(motionSliderPosition, (value) => `${value}%`);
 
   return (
     <motion.div
-      aria-hidden="true"
       className={cn(
-        '-translate-x-1/2 absolute top-0 z-50 flex h-full w-10 items-center justify-center',
+        '-translate-x-1/2 absolute top-0 z-50 flex h-full w-10 items-center justify-center focus-visible:outline-2 focus-visible:outline-amber-500',
         mode === 'drag' && 'cursor-grab active:cursor-grabbing',
         className,
       )}
-      role="presentation"
+      role="slider"
+      aria-label="Comparison slider"
+      aria-valuemax={100}
+      aria-valuemin={0}
+      aria-valuenow={sliderPosition}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       style={{ left }}
       {...props}
     >

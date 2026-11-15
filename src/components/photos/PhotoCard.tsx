@@ -111,6 +111,9 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
       <div className="flex flex-col px-1 pt-2 pb-1">
         <span className="text-lg leading-tight font-bold text-slate-900 dark:text-slate-50">
           {photo.year > 0 ? photo.year : 'Undated'}
+          {photo.year > 0 && !photo.dateFlown && (
+            <span className="ml-1 text-[10px] font-normal text-muted-foreground">estimated</span>
+          )}
         </span>
         {project && (
           <span className="truncate text-xs leading-snug font-medium text-slate-500 dark:text-slate-400">

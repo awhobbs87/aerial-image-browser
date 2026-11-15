@@ -38,6 +38,7 @@ export interface EnhancedPhoto {
   run: string;
   dateFlown: number;
   year: number;
+  dateSource?: 'capture' | 'survey' | 'unknown';
   scale: number;
   filmType: string;
   altitude: number;

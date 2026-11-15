@@ -1,3 +1,4 @@
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { create } from 'zustand';
 import type { EnhancedPhoto } from '../types/photo';
 
@@ -17,16 +18,25 @@ interface ComparisonState {
   clear: () => void;
 }
 
-export const useComparisonStore = create<ComparisonState>((set) => ({
-  mode: 'slider',
-  photoA: null,
-  photoB: null,
-  isSelecting: false,
+export const useComparisonStore = create<ComparisonState>()(
+  persist(
+    (set) => ({
+      mode: 'slider',
+      photoA: null,
+      photoB: null,
+      isSelecting: false,
 
-  setMode: (mode) => set({ mode }),
-  setPhotoA: (photoA) => set({ photoA }),
-  setPhotoB: (photoB) => set({ photoB }),
-  startSelecting: () => set({ isSelecting: true }),
-  stopSelecting: () => set({ isSelecting: false }),
-  clear: () => set({ photoA: null, photoB: null, isSelecting: false }),
-}));
+      setMode: (mode) => set({ mode }),
+      setPhotoA: (photoA) => set({ photoA }),
+      setPhotoB: (photoB) => set({ photoB }),
+      startSelecting: () => set({ isSelecting: true }),
+      stopSelecting: () => set({ isSelecting: false }),
+      clear: () => set({ photoA: null, photoB: null, isSelecting: false }),
+    }),
+    {
+      name: 'tas-aerial-comparison',
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: ({ photoA, photoB, mode }) => ({ photoA, photoB, mode }),
+    },
+  ),
+);

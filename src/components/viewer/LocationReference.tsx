@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { usePhotoMetadata } from '@/hooks/usePhotoMetadata';
 import type maplibregl from 'maplibre-gl';
 import { MapView } from '@/components/map/MapView';
-import type { EnhancedPhoto } from '@/types/photo';
+import { Button } from '@cloudflare/kumo/components/button';
 import { formatScale } from '@/lib/format';
 export interface SearchReference {
   lat: number;
@@ -20,17 +20,7 @@ export function LocationReference({
 }) {
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [footprintReady, setFootprintReady] = useState(false);
-  const { data, isLoading, error } = useQuery<EnhancedPhoto>({
-    queryKey: ['photo-metadata', layerId, imageName],
-    queryFn: async ({ signal }) => {
-      const response = await fetch(
-        `/api/images/metadata/${layerId}/${encodeURIComponent(imageName)}`,
-        { signal },
-      );
-      if (!response.ok) throw new Error('Survey footprint unavailable');
-      return response.json();
-    },
-  });
+  const { data, isLoading, error, refetch } = usePhotoMetadata(layerId, imageName);
   const draw = useCallback(
     (instance: maplibregl.Map) => {
       if (!data?.rings.length || instance.getSource('reference-footprint')) return;
@@ -97,9 +87,13 @@ export function LocationReference({
       {error && (
         <p role="alert">
           Survey footprint unavailable.{' '}
-          {reference ? 'The address marker still shows your search location.' : 'Try again later.'}
+          {reference ? 'The address marker still shows your search location.' : ''}
+          <Button variant="ghost" onClick={() => void refetch()}>
+            Retry metadata
+          </Button>
         </p>
       )}
+      {data && !data.rings.length && <p>No survey footprint is available for this photograph.</p>}
       {data && (
         <p className="text-sm text-muted-foreground">
           {data.year || 'Date unknown'} · {formatScale(data.scale)} · {data.layerName}

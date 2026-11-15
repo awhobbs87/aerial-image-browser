@@ -9,6 +9,8 @@ const DIGITAL_FIELDS = `${COMMON_FIELDS},PROJECT_NAME,CAPTURE_START_DATE`;
 
 interface ClientOptions {
   kv?: KVNamespace;
+  refresh?: boolean;
+  primeMediaSources?: boolean;
   defer?: (task: Promise<unknown>) => void;
   signal?: AbortSignal;
 }
@@ -30,7 +32,9 @@ export class ArcGISClient {
     const key = `search:v2:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
     // Cache failures must not prevent a search. Coordinates are not rounded: small
     // changes can cross footprint boundaries and produce genuinely different results.
-    const cached = await this.options.kv?.get<ArcGISFeature[]>(key, 'json').catch(() => null);
+    const cached = this.options.refresh
+      ? null
+      : await this.options.kv?.get<ArcGISFeature[]>(key, 'json').catch(() => null);
     if (cached) return cached;
     const features: ArcGISFeature[] = [];
     const ids = new Set<unknown>();
@@ -50,6 +54,35 @@ export class ArcGISClient {
         features.push(feature);
       }
       if (!data.exceededTransferLimit) {
+        if (this.options.kv && this.options.primeMediaSources && this.options.defer) {
+          const kv = this.options.kv;
+          const recent = [...features]
+            .sort(
+              (a, b) =>
+                Number(b.attributes.FLY_DATE || b.attributes.CAPTURE_START_DATE || 0) -
+                Number(a.attributes.FLY_DATE || a.attributes.CAPTURE_START_DATE || 0),
+            )
+            .slice(0, 8);
+          this.options.defer(
+            Promise.all(
+              recent.flatMap(({ attributes }) => {
+                const name =
+                  typeof attributes.IMAGE_NAME === 'string'
+                    ? attributes.IMAGE_NAME.replace(/\.tif$/i, '')
+                    : '';
+                if (!name) return [];
+                return [
+                  ['photo-source', attributes.THUMBNAIL_LINK],
+                  ['photo-tiff-source', attributes.DOWNLOAD_LINK],
+                ].flatMap(([prefix, link]) =>
+                  typeof link === 'string' && /^https?:\/\//.test(link)
+                    ? [kv.put(`${prefix}:v1:${layerId}:${name}`, link, { expirationTtl: 86400 })]
+                    : [],
+                );
+              }),
+            ).catch((error: unknown) => console.warn('Photo source priming failed', error)),
+          );
+        }
         if (this.options.kv) {
           const write = this.options.kv
             .put(key, JSON.stringify(features), { expirationTtl: 900 })

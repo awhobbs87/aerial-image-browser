@@ -9,13 +9,12 @@
 
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
+import { collectSearchLayers } from '@/lib/search-response';
 import { ArcGISClient } from '@/lib/arcgis';
 import {
-  enhancePhoto,
   applyFilters,
   parseFilterParams,
   parseLayerIds,
-  sortByDateDesc,
   jsonError,
   jsonSuccess,
 } from '@/lib/search-helpers';
@@ -27,7 +26,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const lat = parseFloat(url.searchParams.get('lat') || '');
   const lon = parseFloat(url.searchParams.get('lon') || '');
 
-  if (isNaN(lat) || isNaN(lon)) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     return jsonError('Invalid coordinates. Provide numeric lat and lon query parameters.', 400);
   }
 
@@ -38,28 +37,23 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   const layers = parseLayerIds(url);
   const filters = parseFilterParams(url);
+  if (!layers.length || layers.some((id) => ![0, 1, 2].includes(id)))
+    return jsonError('Choose a valid imagery layer.', 400);
 
   try {
     const client = new ArcGISClient(env.API_BASE_URL, {
       kv: env.PHOTO_CACHE,
+      primeMediaSources: true,
+      refresh: url.searchParams.get('refresh') === 'true',
       signal: request.signal,
       defer: locals.cfContext ? (task) => locals.cfContext.waitUntil(task) : undefined,
     });
 
-    // Query all requested layers in parallel
-    const results = await Promise.all(
-      layers.map(async (layerId) => {
-        const features = await client.queryByPoint(layerId, lon, lat);
-        return features.map((f) => enhancePhoto(f, layerId));
-      }),
+    const result = await collectSearchLayers(layers, (layerId) =>
+      client.queryByPoint(layerId, lon, lat),
     );
-
-    // Flatten, filter, and sort
-    let photos = results.flat();
-    photos = applyFilters(photos, filters);
-    photos = sortByDateDesc(photos);
-
-    return jsonSuccess({ count: photos.length, photos });
+    const photos = applyFilters(result.photos, filters);
+    return jsonSuccess({ ...result, count: photos.length, photos });
   } catch (error) {
     console.error('Search by location error:', error);
     const message = error instanceof Error ? error.message : 'Search failed';

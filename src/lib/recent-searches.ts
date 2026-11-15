@@ -1,3 +1,4 @@
+import { queueHistorySave } from './history-sync';
 import { isTasmaniaLocation } from './tasmania-geocoder';
 export interface RecentSearch {
   label: string;
@@ -29,6 +30,7 @@ export function addRecentSearch(item: RecentSearch) {
       (r) => Math.abs(r.lat - item.lat) > 0.00001 || Math.abs(r.lon - item.lon) > 0.00001,
     );
     localStorage.setItem(KEY, JSON.stringify([item, ...items].slice(0, 8)));
+    void queueHistorySave(item);
   } catch {
     /* Search remains usable when storage is unavailable. */
   }

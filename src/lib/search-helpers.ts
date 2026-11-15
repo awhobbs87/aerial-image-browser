@@ -4,6 +4,7 @@
  */
 
 import type { ArcGISFeature } from '@/lib/arcgis';
+import { photoDateOrder } from './photo-metadata';
 import { getLayerType } from '@/lib/format';
 import type { EnhancedPhoto } from '@/types/photo';
 
@@ -41,7 +42,7 @@ export function extractYearFromLayerName(layerName: string): number {
     const n = parseInt(twoDigit[1], 10);
     // Aerial surveys in Tasmania started in 1946; treat 46–99 as 1900s, 00–25 as 2000s
     if (n >= 46 && n <= 99) return 1900 + n;
-    if (n >= 0 && n <= 25) return 2000 + n;
+    if (n >= 0 && n <= new Date().getUTCFullYear() % 100) return 2000 + n;
   }
 
   return 0;
@@ -54,7 +55,14 @@ export function extractYearFromLayerName(layerName: string): number {
  */
 export function enhancePhoto(feature: ArcGISFeature, layerId: number): EnhancedPhoto {
   const a = feature.attributes;
-  const flyDate = (a.FLY_DATE ?? a.CAPTURE_START_DATE ?? 0) as number;
+  const flyDate =
+    [a.FLY_DATE, a.CAPTURE_START_DATE].find(
+      (value): value is number =>
+        typeof value === 'number' &&
+        value !== 0 &&
+        Number.isFinite(value) &&
+        Number.isFinite(new Date(value).getTime()),
+    ) ?? 0;
   const layerName = (a.PROJ_NAME ?? a.PROJECT_NAME ?? '') as string;
 
   // Primary: derive year from fly date timestamp.
@@ -74,6 +82,7 @@ export function enhancePhoto(feature: ArcGISFeature, layerId: number): EnhancedP
     run: (a.RUN_NO ?? '') as string,
     dateFlown: flyDate,
     year,
+    dateSource: flyDate ? 'capture' : year ? 'survey' : 'unknown',
     scale: (a.SCALE ?? 0) as number,
     filmType: (a.FILM_NO ?? '') as string,
     altitude: (a.HEIGHT ?? 0) as number,
@@ -159,11 +168,7 @@ export function parseLayerIds(url: URL): number[] {
  * Photos without a date are sorted to the end.
  */
 export function sortByDateDesc(photos: EnhancedPhoto[]): EnhancedPhoto[] {
-  return photos.sort((a, b) => {
-    const aDate = a.dateFlown || 0;
-    const bDate = b.dateFlown || 0;
-    return bDate - aDate;
-  });
+  return photos.sort((a, b) => photoDateOrder(a, b, 'desc'));
 }
 
 /** Create a JSON error response */

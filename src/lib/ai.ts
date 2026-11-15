@@ -29,6 +29,7 @@ export interface ParsedSearchQuery {
   resolution?: 'high' | 'medium' | 'low';
   imageType?: 'aerial' | 'ortho' | 'digital';
   additionalContext?: string;
+  parser?: 'ai' | 'fallback';
 }
 
 export class AIService {
@@ -217,8 +218,8 @@ User Query: "${query}"
 
 Extract:
 1. location: The CLEAN address or place name ONLY - no extra words like "aerial", "photos", "images", "of", "find", "show me", etc. Just the geocodable place name or street address.
-2. startYear: Start year for date filter (optional, 1900-2024)
-3. endYear: End year for date filter (optional, 1900-2024)
+2. startYear: Start year for date filter (optional, 1900-${new Date().getUTCFullYear()})
+3. endYear: End year for date filter (optional, 1900-${new Date().getUTCFullYear()})
 4. resolution: Image quality preference (optional: "high", "medium", or "low")
 5. imageType: Type of imagery (optional: "aerial" for historical aerial photos, "ortho" for orthophotos, "digital" for digital imagery)
 6. additionalContext: Any other relevant context from the query
@@ -280,13 +281,16 @@ CRITICAL RULES:
 
       // Validate and clean up the response
       return {
-        location: parsed.location || query,
+        parser: 'ai',
+        location: typeof parsed.location === 'string' ? parsed.location : query,
         startYear:
-          parsed.startYear && parsed.startYear >= 1900 && parsed.startYear <= 2024
+          parsed.startYear &&
+          parsed.startYear >= 1900 &&
+          parsed.startYear <= new Date().getUTCFullYear()
             ? parsed.startYear
             : undefined,
         endYear:
-          parsed.endYear && parsed.endYear >= 1900 && parsed.endYear <= 2024
+          parsed.endYear && parsed.endYear >= 1900 && parsed.endYear <= new Date().getUTCFullYear()
             ? parsed.endYear
             : undefined,
         resolution: ['high', 'medium', 'low'].includes(parsed.resolution || '')
@@ -316,7 +320,9 @@ CRITICAL RULES:
     let endYear: number | undefined;
 
     // Match patterns like "1940-1960", "between 1940 and 1960", "from 1940 to 1960"
-    const yearRangeMatch = cleanedLocation.match(/(?:between\s+)?(\d{4})\s*[-–—to]+\s*(\d{4})/i);
+    const yearRangeMatch = cleanedLocation.match(
+      /(?:between\s+)?(\d{4})\s*(?:[-\u2013\u2014]|to|and)\s*(\d{4})/i,
+    );
     if (yearRangeMatch) {
       startYear = parseInt(yearRangeMatch[1]);
       endYear = parseInt(yearRangeMatch[2]);
@@ -341,6 +347,12 @@ CRITICAL RULES:
       startYear = year - 5;
       endYear = year + 5;
       cleanedLocation = cleanedLocation.replace(aroundYearMatch[0], '');
+    }
+
+    const exactYearMatch = cleanedLocation.match(/\b(\d{4})\b/);
+    if (exactYearMatch && !startYear) {
+      startYear = endYear = Number(exactYearMatch[1]);
+      cleanedLocation = cleanedLocation.replace(exactYearMatch[0], '');
     }
 
     // Detect resolution
@@ -375,9 +387,14 @@ CRITICAL RULES:
     }
 
     return {
+      parser: 'fallback',
       location: cleanedLocation || query,
-      startYear: startYear && startYear >= 1900 && startYear <= 2024 ? startYear : undefined,
-      endYear: endYear && endYear >= 1900 && endYear <= 2024 ? endYear : undefined,
+      startYear:
+        startYear && startYear >= 1900 && startYear <= new Date().getUTCFullYear()
+          ? startYear
+          : undefined,
+      endYear:
+        endYear && endYear >= 1900 && endYear <= new Date().getUTCFullYear() ? endYear : undefined,
       resolution,
     };
   }

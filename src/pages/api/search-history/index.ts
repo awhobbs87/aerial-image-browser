@@ -1,3 +1,4 @@
+import { isTasmaniaLocation } from '@/lib/tasmania-geocoder';
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { getAccessIdentity } from '@/lib/auth';
@@ -76,7 +77,12 @@ export const POST: APIRoute = async ({ request }) => {
       lon: number;
     };
 
-    if (!query || lat == null || lon == null) {
+    if (
+      typeof query !== 'string' ||
+      !query.trim() ||
+      query.length > 300 ||
+      !isTasmaniaLocation(lat, lon)
+    ) {
       return new Response(
         JSON.stringify({
           success: false,

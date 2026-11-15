@@ -1,20 +1,13 @@
-import { useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import { api } from '@/lib/api-client';
 import { useSearchStore } from '@/stores/searchStore';
 import { useFilterStore } from '@/stores/filterStore';
 import { filterPhotos } from '@/lib/photo-filters';
-import type { EnhancedPhoto } from '@/types/photo';
 
-interface SearchData {
-  count: number;
-  photos: EnhancedPhoto[];
-}
-interface SearchResponse {
-  success: boolean;
-  data: SearchData;
-}
+import type { SearchData, SearchResponse } from '@/types/api';
+import type { MapBounds } from '@/types/map';
 interface UsePhotosOptions {
   enabled?: boolean;
 }
@@ -27,7 +20,7 @@ interface BrowserPhotoCacheEntry {
 type PhotoCacheWindow = Window & {
   __tasAerialPhotoCache?: Map<string, BrowserPhotoCacheEntry>;
 };
-const PHOTO_SESSION_KEY = 'tas-aerial-photo-cache-v1';
+const PHOTO_SESSION_KEY = 'tas-aerial-photo-cache-v2';
 
 function getBrowserPhotoCache() {
   if (typeof window === 'undefined') return undefined;
@@ -78,43 +71,96 @@ function rememberBrowserPhotos(key: string, data: SearchData) {
 
 function usePhotoSelection() {
   const filters = useFilterStore(
-    useShallow(({ layers, startYear, endYear, scaleCategories }) => ({
-      layers,
-      startYear,
-      endYear,
-      scaleCategories,
-    })),
+    useShallow(
+      ({
+        layers,
+        startYear,
+        endYear,
+        scaleCategories,
+        includeUnknownDates,
+        includeUnknownScales,
+        survey,
+      }) => ({
+        layers,
+        startYear,
+        endYear,
+        scaleCategories,
+        includeUnknownDates,
+        includeUnknownScales,
+        survey,
+      }),
+    ),
   );
   return useCallback(
-    (data: SearchData): SearchData => {
+    (data: SearchData) => {
       const photos = filterPhotos(data.photos, filters);
-      return { count: photos.length, photos };
+      return {
+        ...data,
+        count: photos.length,
+        photos,
+        availablePhotos: data.photos,
+        total: data.count,
+      };
     },
     [filters],
   );
 }
 
-export function usePhotos(options: UsePhotosOptions = {}) {
-  const { lat, lon } = useSearchStore(useShallow(({ lat, lon }) => ({ lat, lon })));
+function usePhotoQuery(
+  lat: number | null,
+  lon: number | null,
+  bounds: MapBounds | null,
+  options: UsePhotosOptions,
+) {
+  const client = useQueryClient();
   const select = usePhotoSelection();
-  const browserCacheKey = lat !== null && lon !== null ? `${lat}:${lon}` : '';
-  // Session storage can contain a large batch of polygon coordinates. Read it
-  // once per search location instead of parsing it during unrelated renders.
-  const browserCache = useMemo(
-    () => (browserCacheKey ? readBrowserPhotos(browserCacheKey) : undefined),
-    [browserCacheKey],
-  );
-  return useQuery({
-    queryKey: ['photos', 'location', lat, lon],
+  const key = bounds ? `bounds:${JSON.stringify(bounds)}` : `${lat}:${lon}`;
+  const queryKey = ['photos', bounds ? 'bounds' : 'location', key];
+  const mode = useRef<'normal' | 'refresh' | 'failed'>('normal');
+  const browserCache = useMemo(() => readBrowserPhotos(key), [key]);
+  const result = useQuery({
+    queryKey,
     queryFn: async ({ signal }): Promise<SearchData> => {
-      if (lat === null || lon === null) throw new Error('No location set');
-      const cached = readBrowserPhotos(`${lat}:${lon}`);
-      if (cached) return cached.data;
+      const action = mode.current;
+      const previous = client.getQueryData<SearchData>(queryKey);
+      if (action === 'normal') {
+        const cached = readBrowserPhotos(key);
+        if (cached) return cached.data;
+      }
+      const retryLayers = action === 'failed' ? previous?.failedLayers : undefined;
+      const layers = retryLayers?.length ? retryLayers : [0, 1, 2];
       const data = (
-        await api.get<SearchResponse>('/api/search/location', { lat, lon, layers: '0,1,2' }, signal)
+        await api.get<SearchResponse>(
+          bounds ? '/api/search/bounds' : '/api/search/location',
+          {
+            ...(bounds || { lat: lat!, lon: lon! }),
+            layers: layers.join(','),
+            refresh: action !== 'normal' || undefined,
+          },
+          signal,
+        )
       ).data;
-      rememberBrowserPhotos(`${lat}:${lon}`, data);
-      return data;
+      const merged =
+        retryLayers?.length && previous
+          ? {
+              ...data,
+              photos: [
+                ...previous.photos.filter((photo) => !layers.includes(photo.layerId)),
+                ...data.photos,
+              ],
+            }
+          : data;
+      merged.count = merged.photos.length;
+      if (!merged.failedLayers?.length) rememberBrowserPhotos(key, merged);
+      else {
+        getBrowserPhotoCache()?.delete(key);
+        try {
+          sessionStorage.removeItem(PHOTO_SESSION_KEY);
+        } catch {
+          /* Storage unavailable. */
+        }
+      }
+      return merged;
     },
     select,
     enabled: lat !== null && lon !== null && options.enabled !== false,
@@ -123,25 +169,30 @@ export function usePhotos(options: UsePhotosOptions = {}) {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnMount: false,
+    retry: 1,
   });
+  const refresh = async (failedOnly = false) => {
+    if (result.isFetching) return;
+    mode.current = failedOnly ? 'failed' : 'refresh';
+    try {
+      await result.refetch();
+    } finally {
+      mode.current = 'normal';
+    }
+  };
+  return { ...result, refresh };
 }
-
-export function usePhotosByBounds(
-  bounds: { north: number; south: number; east: number; west: number } | null,
-  options: UsePhotosOptions = {},
-) {
-  const select = usePhotoSelection();
-  return useQuery({
-    queryKey: ['photos', 'bounds', bounds],
-    queryFn: async ({ signal }): Promise<SearchData> => {
-      if (!bounds) throw new Error('No bounds set');
-      return (
-        await api.get<SearchResponse>('/api/search/bounds', { ...bounds, layers: '0,1,2' }, signal)
-      ).data;
-    },
-    select,
-    enabled: bounds !== null && options.enabled !== false,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-  });
+export function usePhotos(options: UsePhotosOptions = {}) {
+  const { lat, lon, bounds } = useSearchStore(
+    useShallow(({ lat, lon, bounds }) => ({ lat, lon, bounds })),
+  );
+  return usePhotoQuery(lat, lon, bounds, options);
+}
+export function usePhotosByBounds(bounds: MapBounds | null, options: UsePhotosOptions = {}) {
+  return usePhotoQuery(
+    bounds ? (bounds.north + bounds.south) / 2 : null,
+    bounds ? (bounds.east + bounds.west) / 2 : null,
+    bounds,
+    options,
+  );
 }

@@ -1,4 +1,5 @@
 ---
+import { CompareIsland } from '../components/islands/CompareIsland';
 import AppLayout from '../layouts/AppLayout.astro';
 ---
 
@@ -15,23 +16,6 @@ import AppLayout from '../layouts/AppLayout.astro';
         </p>
       </div>
     </div>
-    <div class="app-empty-state" id="compare-island">
-      <div
-        class="grid h-12 w-12 grid-cols-2 overflow-hidden rounded-lg ring-1 ring-slate-950/10 dark:ring-white/10"
-      >
-        <span class="bg-amber-400/35"></span><span class="bg-sky-500/30"></span>
-      </div>
-      <h2 class="text-lg font-bold text-slate-900 dark:text-white">Select two photos</h2>
-      <p class="max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-        Open a search result and add imagery to your comparison.
-      </p>
-      <a
-        href="/search"
-        data-astro-prefetch
-        class="mt-2 inline-flex min-h-11 items-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:bg-white dark:text-slate-950"
-      >
-        Browse imagery
-      </a>
-    </div>
+    <CompareIsland client:only="react" />
   </div>
 </AppLayout>

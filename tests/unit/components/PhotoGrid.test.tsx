@@ -82,3 +82,18 @@ describe('PhotoGrid', () => {
     expect(screen.getByText('BRAVO')).toBeInTheDocument();
   });
 });
+
+it('orders decade groups newest first and includes inferred years', () => {
+  useFilterStore.getState().resetFilters();
+  const photos = [
+    makePhoto({ name: 'Older', objectId: 1, year: 1982, dateFlown: 0 }),
+    makePhoto({ name: 'Newer', objectId: 2, year: 2026, dateFlown: Date.UTC(2026, 0, 1) }),
+    makePhoto({ name: 'Undated', objectId: 3, year: 0, dateFlown: 0 }),
+  ];
+  render(<PhotoGrid photos={photos} isLoading={false} total={3} />);
+  expect(screen.getAllByTestId('photo-card').map((element) => element.textContent)).toEqual([
+    'Newer',
+    'Older',
+    'Undated',
+  ]);
+});

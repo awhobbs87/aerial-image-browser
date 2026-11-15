@@ -1,14 +1,18 @@
+import { validBounds, searchableBounds } from '@/lib/search-extent';
+import type { MapBounds } from '@/types/map';
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSearchStore } from '@/stores/searchStore';
 import { isTasmaniaLocation } from '@/lib/tasmania-geocoder';
 const KEY = 'tas-aerial-active-location';
 export function useSearchLocation() {
-  const { lat, lon, query, setLocation, setQuery } = useSearchStore(
-    useShallow(({ lat, lon, query, setLocation, setQuery }) => ({
+  const { lat, lon, query, bounds, frameBounds, setLocation, setQuery } = useSearchStore(
+    useShallow(({ lat, lon, query, bounds, frameBounds, setLocation, setQuery }) => ({
       lat,
       lon,
       query,
+      bounds,
+      frameBounds,
       setLocation,
       setQuery,
     })),
@@ -19,12 +23,20 @@ export function useSearchLocation() {
     queueMicrotask(() => {
       if (!active) return;
       const params = new URLSearchParams(window.location.search);
-      let location: { lat: number; lon: number; query: string } | null = null;
+      let location: {
+        lat: number;
+        lon: number;
+        query: string;
+        bounds?: MapBounds;
+        frameBounds?: MapBounds;
+      } | null = null;
       if (params.has('lat') && params.has('lon'))
         location = {
           lat: Number(params.get('lat')),
           lon: Number(params.get('lon')),
           query: params.get('q') || '',
+          bounds: readBounds(params.get('bounds')),
+          frameBounds: readFrame(params.get('frame')),
         };
       else if (useSearchStore.getState().lat === null) {
         try {
@@ -34,7 +46,16 @@ export function useSearchLocation() {
         }
       }
       if (location && isTasmaniaLocation(location.lat, location.lon)) {
+        const current = useSearchStore.getState();
+        const frame =
+          location.frameBounds ||
+          (current.lat === location.lat && current.lon === location.lon
+            ? current.frameBounds
+            : null);
         setLocation(location.lat, location.lon);
+        if (location.bounds && searchableBounds(location.bounds))
+          current.setBounds(location.bounds);
+        if (validBounds(frame)) current.setFrameBounds(frame);
         setQuery(typeof location.query === 'string' ? location.query : '');
       }
       setReady(true);
@@ -47,14 +68,34 @@ export function useSearchLocation() {
     if (!ready || lat === null || lon === null || !isTasmaniaLocation(lat, lon)) return;
     const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
     if (query) params.set('q', query);
+    if (bounds) params.set('bounds', JSON.stringify(bounds));
+    if (frameBounds) params.set('frame', JSON.stringify(frameBounds));
     const url = `${window.location.pathname}?${params}`;
     if (url !== window.location.pathname + window.location.search)
       window.history.replaceState(window.history.state, '', url);
     try {
-      sessionStorage.setItem(KEY, JSON.stringify({ lat, lon, query }));
+      sessionStorage.setItem(KEY, JSON.stringify({ lat, lon, query, bounds, frameBounds }));
     } catch {
       /* Private browsing. */
     }
-  }, [ready, lat, lon, query]);
+  }, [ready, lat, lon, query, bounds, frameBounds]);
   return ready;
+}
+
+function readBounds(raw: string | null): MapBounds | undefined {
+  try {
+    const value: unknown = JSON.parse(raw || 'null');
+    return searchableBounds(value as MapBounds) ? (value as MapBounds) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readFrame(raw: string | null): MapBounds | undefined {
+  try {
+    const value: unknown = JSON.parse(raw || 'null');
+    return validBounds(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }

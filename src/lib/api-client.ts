@@ -15,20 +15,26 @@ export class ApiError extends Error {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    let errorData: unknown;
-    try {
-      errorData = await response.json();
-    } catch {
-      errorData = await response.text();
-    }
-    const message =
-      typeof errorData === 'object' && errorData !== null && 'error' in errorData
-        ? String((errorData as { error: unknown }).error)
-        : `API error: ${response.status}`;
-    throw new ApiError(response.status, message, errorData);
+  const text = await response.text();
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new ApiError(
+      response.status,
+      response.redirected || text.trimStart().startsWith('<')
+        ? 'Your session may have expired. Reload the page to sign in again.'
+        : 'The service returned an unreadable response. Please try again.',
+    );
   }
-  return response.json() as Promise<T>;
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' && data !== null && 'error' in data
+        ? String(data.error)
+        : `API error: ${response.status}`;
+    throw new ApiError(response.status, message, data);
+  }
+  return data as T;
 }
 
 function buildUrl(

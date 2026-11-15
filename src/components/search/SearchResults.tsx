@@ -1,3 +1,6 @@
+import { ComparisonTray } from '@/components/compare/ComparePhotoButton';
+import { SearchAvailability } from './SearchAvailability';
+import { getLayerTypeLabel } from '@/lib/format';
 import { useFilterStore } from '@/stores/filterStore';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
 import { CheckIcon, ImageSquareIcon, MapPinIcon } from '@phosphor-icons/react';
@@ -7,6 +10,11 @@ import type { EnhancedPhoto } from '@/types/photo';
 import { cn } from '@/lib/cn';
 
 interface SearchResultsProps {
+  availablePhotos?: EnhancedPhoto[];
+  failedLayers?: number[];
+  isFetching?: boolean;
+  onRefresh?: (failedOnly?: boolean) => void;
+  areaSearch?: boolean;
   restorationKey?: string;
   query: string;
   hasLocation: boolean;
@@ -41,6 +49,11 @@ const SCALE_DISPLAY = {
 } as const;
 
 export function SearchResults({
+  availablePhotos,
+  failedLayers = [],
+  isFetching,
+  onRefresh,
+  areaSearch,
   restorationKey,
   query,
   hasLocation,
@@ -51,9 +64,21 @@ export function SearchResults({
   onPhotoClick,
   onPhotoCompare,
 }: SearchResultsProps) {
-  const { layers, startYear, endYear, scaleCategories, toggleScaleCategory, resetFilters } =
-    useFilterStore();
+  const {
+    layers,
+    startYear,
+    endYear,
+    scaleCategories,
+    toggleScaleCategory,
+    resetFilters,
+    includeUnknownDates,
+    includeUnknownScales,
+    survey,
+  } = useFilterStore();
   const filtersActive =
+    !includeUnknownDates ||
+    !includeUnknownScales ||
+    !!survey ||
     layers.length !== 3 ||
     ![0, 1, 2].every((layerId) => layers.includes(layerId)) ||
     startYear !== null ||
@@ -76,13 +101,16 @@ export function SearchResults({
     );
   }
 
-  if (error) {
+  if (error && !photos.length) {
     return (
       <div className="flex min-h-52 flex-col items-center justify-center gap-2 py-10 text-center">
         <p className="text-base font-semibold text-red-600 dark:text-red-400">
           Error loading photos
         </p>
         <p className="max-w-80 text-sm text-slate-500 dark:text-slate-400">{error.message}</p>
+        <Button onClick={() => onRefresh?.()} loading={isFetching}>
+          Try again
+        </Button>
       </div>
     );
   }
@@ -91,6 +119,7 @@ export function SearchResults({
 
   return (
     <div className="flex min-w-0 max-w-full touch-pan-y flex-col gap-3">
+      <ComparisonTray />
       {/* Location header */}
       <div className="flex items-start justify-between gap-3 border-b border-slate-950/7 pt-1 pb-3 dark:border-border">
         <div className="flex min-w-0 items-start gap-1.5">
@@ -108,6 +137,50 @@ export function SearchResults({
         </div>
       </div>
 
+      <p className="text-xs text-muted-foreground">
+        {areaSearch
+          ? 'Photos overlapping the outlined map area'
+          : 'Photos covering the selected point'}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="ghost"
+          onClick={() => onRefresh?.()}
+          loading={isFetching}
+          disabled={isFetching}
+        >
+          Refresh imagery
+        </Button>
+        {filtersActive && (
+          <Button variant="ghost" onClick={resetFilters}>
+            Clear all filters
+          </Button>
+        )}
+        {isFetching && !isLoading && (
+          <span role="status" className="text-xs">
+            Updating imagery…
+          </span>
+        )}
+      </div>
+      {!!failedLayers.length && (
+        <div role="status" className="rounded-xl bg-amber-500/10 p-3 text-sm">
+          Some imagery unavailable: {failedLayers.map(getLayerTypeLabel).join(', ')}. Counts are
+          incomplete.
+          <Button variant="ghost" onClick={() => onRefresh?.(true)} disabled={isFetching}>
+            Retry unavailable layers
+          </Button>
+        </div>
+      )}
+      {error && (
+        <p role="alert">Refresh failed. Showing previously loaded results. {error.message}</p>
+      )}
+      {!isLoading && availablePhotos && (
+        <SearchAvailability
+          photos={availablePhotos}
+          count={total}
+          partial={!!failedLayers.length}
+        />
+      )}
       <div className="hidden md:block">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">

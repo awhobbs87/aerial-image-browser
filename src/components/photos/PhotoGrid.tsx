@@ -1,3 +1,4 @@
+import { photoDateOrder } from '@/lib/photo-metadata';
 import { readSearchView, saveSearchView } from '@/lib/search-view';
 import { useState, useMemo } from 'react';
 import { Badge } from '@cloudflare/kumo/components/badge';
@@ -8,7 +9,7 @@ import { useFilterStore } from '@/stores/filterStore';
 import { PhotoCard } from './PhotoCard';
 import { PhotoSkeleton } from './PhotoSkeleton';
 
-type GroupBy = 'decade' | 'year' | 'none';
+type GroupBy = 'decade' | 'year' | 'survey' | 'none';
 
 interface PhotoGridProps {
   restorationKey?: string;
@@ -25,6 +26,7 @@ const ITEMS_PER_PAGE = 24;
 
 function getGroupKey(photo: EnhancedPhoto, groupBy: GroupBy): string {
   if (groupBy === 'none') return '__all__';
+  if (groupBy === 'survey') return photo.layerName || 'Unknown survey';
   if (photo.year <= 0) return 'Undated';
   if (groupBy === 'year') return String(photo.year);
   return `${Math.floor(photo.year / 10) * 10}s`;
@@ -57,18 +59,10 @@ export function PhotoGrid({
     const sorted = [...photos];
     switch (sortBy) {
       case 'date-desc':
-        sorted.sort((a, b) => {
-          if (!a.dateFlown && b.dateFlown) return 1;
-          if (a.dateFlown && !b.dateFlown) return -1;
-          return (b.dateFlown || 0) - (a.dateFlown || 0);
-        });
+        sorted.sort((a, b) => photoDateOrder(a, b, 'desc'));
         break;
       case 'date-asc':
-        sorted.sort((a, b) => {
-          if (!a.dateFlown && b.dateFlown) return 1;
-          if (a.dateFlown && !b.dateFlown) return -1;
-          return (a.dateFlown || 0) - (b.dateFlown || 0);
-        });
+        sorted.sort((a, b) => photoDateOrder(a, b, 'asc'));
         break;
       case 'scale-asc':
         sorted.sort((a, b) => (a.scale || Infinity) - (b.scale || Infinity));
@@ -83,6 +77,14 @@ export function PhotoGrid({
     return sorted;
   }, [photos, sortBy]);
 
+  const groupTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const photo of sortedPhotos) {
+      const key = getGroupKey(photo, groupBy);
+      totals.set(key, (totals.get(key) || 0) + 1);
+    }
+    return totals;
+  }, [sortedPhotos, groupBy]);
   const groupedPhotos = useMemo(() => {
     const groups: Map<string, EnhancedPhoto[]> = new Map();
     const displayed = sortedPhotos.slice(0, displayCount);
@@ -94,8 +96,16 @@ export function PhotoGrid({
     }
 
     if (groupBy === 'none') return groups;
-    return new Map([...groups.entries()].sort((a, b) => compareGroupKeys(a[0], b[0])));
-  }, [sortedPhotos, displayCount, groupBy]);
+    return new Map(
+      [...groups.entries()].sort((a, b) => {
+        if (a[0] === 'Undated') return 1;
+        if (b[0] === 'Undated') return -1;
+        return (
+          compareGroupKeys(a[0], b[0]) * (groupBy !== 'survey' && sortBy === 'date-desc' ? -1 : 1)
+        );
+      }),
+    );
+  }, [sortedPhotos, displayCount, groupBy, sortBy]);
 
   const handleLoadMore = () => {
     const next = displayCount + ITEMS_PER_PAGE;
@@ -151,7 +161,7 @@ export function PhotoGrid({
               setGroupBy(value as GroupBy);
               if (restorationKey) saveSearchView(restorationKey, { groupBy: value as GroupBy });
             }}
-            items={{ decade: 'Decade', year: 'Year', none: 'None' }}
+            items={{ decade: 'Decade', year: 'Year', survey: 'Survey', none: 'None' }}
           />
           <Select
             label="Sort"
@@ -178,7 +188,7 @@ export function PhotoGrid({
                 {groupKey}
               </span>
               <Badge variant="info" className="px-2 py-0.5 text-xs font-bold">
-                {groupPhotos.length}
+                {groupPhotos.length} of {groupTotals.get(groupKey)}
               </Badge>
             </div>
           )}
