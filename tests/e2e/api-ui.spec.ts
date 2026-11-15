@@ -84,6 +84,8 @@ test('restores area search from a shared URL', async ({ page }) => {
   await page.goto(`/search?lat=-42.85&lon=147.35&bounds=${bounds}`);
   await expect(page.getByText('Photos overlapping the outlined map area')).toBeVisible();
   await expect(page.getByText('Showing 2 of 2 photos')).toBeVisible();
+  await expect(page).toHaveURL(/bounds_west=147\.3/);
+  expect(new URL(page.url()).searchParams.has('bounds')).toBe(false);
   await page.reload();
   await expect(page.getByText('Photos overlapping the outlined map area')).toBeVisible();
 });

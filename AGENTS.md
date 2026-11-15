@@ -1423,6 +1423,13 @@ Append a summary after each working session so the next session has context.
 - Added a small spinner with Reading image information / Loading image tiles stages to the full-resolution viewer status. No invented percentage; preview interaction remains available during loading.
 - Validation: 257 unit/component tests, standalone TypeScript, scoped lint, formatting and diff checks pass. Viewer visual QA and deployment remain pending.
 
+### Session 50 -- 2026-11-16
+
+- The user's Cloudflare event identified OWASP rule 949110 (score 30), with query-argument SQL/character checks and a cookie character check contributing. This confirms a managed-rules block rather than rate limiting; the event screenshot does not expose the exact matched values.
+- Removed JSON serialization from search/frame navigation URLs, a likely contributor to argument false positives. New URLs use individually validated numeric bounds_west/south/east/north and frame_* parameters. Legacy JSON links are read and normalised after hydration; session storage remains unchanged.
+- Added tests for extent round trips, legacy migration, malformed values and area size limits. Added browser assertions for URL normalisation. TypeScript, scoped lint and three focused tests pass; browser/production WAF verification remains pending.
+- No Cloudflare rule or cookie settings changed. Existing browser-history entries may retain blocked URLs until users reopen the clean search page. Cookie-related scoring may require separately inspecting matched values if the block persists.
+
 ## Blockers & Open Questions
 
 Track anything that needs resolution. Remove items when resolved (but note the resolution in Session Notes).

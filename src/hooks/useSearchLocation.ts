@@ -1,4 +1,9 @@
-import { validBounds, searchableBounds } from '@/lib/search-extent';
+import {
+  validBounds,
+  searchableBounds,
+  readExtentParams,
+  writeExtentParams,
+} from '@/lib/search-extent';
 import type { MapBounds } from '@/types/map';
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -35,8 +40,8 @@ export function useSearchLocation() {
           lat: Number(params.get('lat')),
           lon: Number(params.get('lon')),
           query: params.get('q') || '',
-          bounds: readBounds(params.get('bounds')),
-          frameBounds: readFrame(params.get('frame')),
+          bounds: readExtentParams(params, 'bounds'),
+          frameBounds: readExtentParams(params, 'frame'),
         };
       else if (useSearchStore.getState().lat === null) {
         try {
@@ -68,8 +73,8 @@ export function useSearchLocation() {
     if (!ready || lat === null || lon === null || !isTasmaniaLocation(lat, lon)) return;
     const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
     if (query) params.set('q', query);
-    if (bounds) params.set('bounds', JSON.stringify(bounds));
-    if (frameBounds) params.set('frame', JSON.stringify(frameBounds));
+    if (bounds) writeExtentParams(params, 'bounds', bounds);
+    if (frameBounds) writeExtentParams(params, 'frame', frameBounds);
     const url = `${window.location.pathname}?${params}`;
     if (url !== window.location.pathname + window.location.search)
       window.history.replaceState(window.history.state, '', url);
@@ -80,22 +85,4 @@ export function useSearchLocation() {
     }
   }, [ready, lat, lon, query, bounds, frameBounds]);
   return ready;
-}
-
-function readBounds(raw: string | null): MapBounds | undefined {
-  try {
-    const value: unknown = JSON.parse(raw || 'null');
-    return searchableBounds(value as MapBounds) ? (value as MapBounds) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function readFrame(raw: string | null): MapBounds | undefined {
-  try {
-    const value: unknown = JSON.parse(raw || 'null');
-    return validBounds(value) ? value : undefined;
-  } catch {
-    return undefined;
-  }
 }

@@ -28,3 +28,35 @@ export function placeTypeLabel(type: string) {
       ? 'Locality'
       : 'Named place';
 }
+
+// Keep structured JSON out of navigation URLs. Legacy links remain readable.
+export function writeExtentParams(
+  params: URLSearchParams,
+  prefix: 'bounds' | 'frame',
+  bounds: MapBounds,
+) {
+  for (const edge of ['west', 'south', 'east', 'north'] as const)
+    params.set(prefix + '_' + edge, String(bounds[edge]));
+}
+
+export function readExtentParams(
+  params: URLSearchParams,
+  prefix: 'bounds' | 'frame',
+): MapBounds | undefined {
+  const edges = ['west', 'south', 'east', 'north'] as const;
+  let value: unknown;
+  if (edges.some((edge) => params.has(prefix + '_' + edge))) {
+    if (!edges.every((edge) => params.get(prefix + '_' + edge)?.trim())) return undefined;
+    value = Object.fromEntries(
+      edges.map((edge) => [edge, Number(params.get(prefix + '_' + edge))]),
+    );
+  } else {
+    try {
+      value = JSON.parse(params.get(prefix) || 'null');
+    } catch {
+      return undefined;
+    }
+  }
+  if (!validBounds(value)) return undefined;
+  return prefix === 'bounds' && !searchableBounds(value) ? undefined : value;
+}
