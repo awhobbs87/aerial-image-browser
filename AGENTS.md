@@ -1408,6 +1408,12 @@ Append a summary after each working session so the next session has context.
 - Device-local history remains the default with explicit optional account sync, import, delete and retry controls. Favourites storage, endpoints and UI were not modified. Separate dependency-file edits present after the interruption were preserved.
 - Validation: 255 unit/component tests and standalone TypeScript checks pass. Source lint and scoped formatting pass; added desktop/mobile browser scenarios remain unexecuted. The latest production build failed in Miniflare with EMFILE (file watcher exhaustion) and a denied Wrangler log write; earlier browser/build attempts were blocked by the sandbox's Cloudflare listener restriction. No visual QA, live latency measurement or deployment is claimed.
 
+### Session 48 -- 2026-11-16
+
+- Fixed the reported Cloudflare dependency-install failure: removed the unused accidental codex@0.2.3 application dependency and its legacy dependency tree, including ws@0.4.32. Removed the non-boolean ws build-approval placeholder from pnpm-workspace.yaml; retained the existing esbuild/sharp/workerd approvals.
+- Regenerated pnpm-lock.yaml offline without changing remaining dependency versions. A full CI=true pnpm install --frozen-lockfile then succeeded with all required dependency build scripts and no ignored-build error. Husky could not update the sandbox-protected git config, but installation exited successfully.
+- No application source or favourites changes. CI installation/build must be rerun after committing this fix.
+
 ## Blockers & Open Questions
 
 Track anything that needs resolution. Remove items when resolved (but note the resolution in Session Notes).
