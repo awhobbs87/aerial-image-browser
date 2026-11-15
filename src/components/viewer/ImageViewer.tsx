@@ -120,6 +120,7 @@ export function ImageViewer({
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [usingTiff, setUsingTiff] = useState(false);
   const [quality, setQuality] = useState<'loading' | 'preview' | 'full' | 'error'>('loading');
+  const [fullResolutionStage, setFullResolutionStage] = useState('Reading image information…');
   const [previewError, setPreviewError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [finetuneOpen, setFinetuneOpen] = useState(false);
@@ -137,6 +138,7 @@ export function ImageViewer({
     queueMicrotask(() => {
       if (!destroyed) {
         setQuality(tiffUrl ? 'loading' : 'preview');
+        setFullResolutionStage('Reading image information…');
         setUsingTiff(false);
         setImageOpened(false);
         setLoading(true);
@@ -206,6 +208,7 @@ export function ImageViewer({
         });
         if (destroyed) return;
         if (!sources?.length) throw new Error('No full-resolution image source');
+        setFullResolutionStage('Loading image tiles…');
         // Keep the preview beneath the new tiled image while its first tiles arrive.
         viewer.addTiledImage({
           tileSource: sources[0],
@@ -337,6 +340,12 @@ export function ImageViewer({
         className="absolute bottom-20 right-3 z-20 max-w-[55%] rounded-xl bg-background/95 p-2 text-xs"
         role="status"
       >
+        {quality === 'loading' && (
+          <div className="mb-1 flex items-center gap-2">
+            <Loader size="sm" aria-label="Loading full-resolution image" />
+            <span>{fullResolutionStage}</span>
+          </div>
+        )}
         {quality === 'full'
           ? 'Full resolution'
           : quality === 'loading'

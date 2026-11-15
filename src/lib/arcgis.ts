@@ -29,31 +29,69 @@ export class ArcGISClient {
       'SHA-256',
       new TextEncoder().encode(`${this.baseUrl}:${layerId}:${params}`),
     );
-    const key = `search:v2:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+    const key = `search:v3:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
     // Cache failures must not prevent a search. Coordinates are not rounded: small
     // changes can cross footprint boundaries and produce genuinely different results.
     const cached = this.options.refresh
       ? null
       : await this.options.kv?.get<ArcGISFeature[]>(key, 'json').catch(() => null);
     if (cached) return cached;
-    const features: ArcGISFeature[] = [];
-    const ids = new Set<unknown>();
-    for (let page = 0; page < 100; page++) {
-      params.set('resultOffset', String(features.length));
-      const response = await fetch(`${this.baseUrl}/${layerId}/query?${params}`, {
+    // LIST's spatial offset pages can overlap even at exact page-size offsets.
+    // Resolve the complete matching ID set first, then fetch bounded ID batches
+    // without the spatial predicate so pagination cannot skip or repeat matches.
+    let matchingIds: number[] | undefined;
+    if (params.get('geometryType') === 'esriGeometryEnvelope') {
+      const idParams = new URLSearchParams(params);
+      idParams.set('returnIdsOnly', 'true');
+      idParams.set('returnGeometry', 'false');
+      for (const name of ['outFields', 'orderByFields', 'resultRecordCount']) idParams.delete(name);
+      const response = await fetch(`${this.baseUrl}/${layerId}/query?${idParams}`, {
         signal: this.options.signal,
       });
       if (!response.ok) throw new Error(`ArcGIS API error: ${response.status}`);
-      const data = (await response.json()) as ArcGISQueryResponse;
-      if (data.error) throw new Error(data.error.message || 'ArcGIS query failed');
+      const data = (await response.json()) as {
+        objectIds?: number[] | null;
+        error?: { message?: string };
+      };
+      if (data.error) throw new Error(data.error.message || 'ArcGIS ID query failed');
+      if (data.objectIds !== null && !Array.isArray(data.objectIds))
+        throw new Error('ArcGIS returned an invalid ID list');
+      matchingIds = [...new Set(data.objectIds || [])].sort((a, b) => a - b);
+      if (matchingIds.length > 50000)
+        throw new Error('Search area is too large; choose a smaller area');
+      for (const name of ['geometry', 'geometryType', 'inSR', 'spatialRel']) params.delete(name);
+      params.set('resultRecordCount', '500');
+    }
+    const features: ArcGISFeature[] = [];
+    const ids = new Set<unknown>();
+    for (let page = 0; page < 100; page++) {
+      const requestedIds = matchingIds?.slice(page * 500, (page + 1) * 500);
+      if (requestedIds) params.set('objectIds', requestedIds.join(','));
+      else params.set('resultOffset', String(features.length));
+      let data: ArcGISQueryResponse = { features: [] };
+      if (!requestedIds || requestedIds.length) {
+        const response = await fetch(`${this.baseUrl}/${layerId}/query?${params}`, {
+          signal: this.options.signal,
+        });
+        if (!response.ok) throw new Error(`ArcGIS API error: ${response.status}`);
+        data = (await response.json()) as ArcGISQueryResponse;
+        if (data.error) throw new Error(data.error.message || 'ArcGIS query failed');
+      }
       const batch = data.features || [];
+      if (
+        requestedIds &&
+        (data.exceededTransferLimit ||
+          batch.length !== requestedIds.length ||
+          batch.some((feature) => !requestedIds.includes(Number(feature.attributes.OBJECTID))))
+      )
+        throw new Error('ArcGIS returned an incomplete ID batch');
       for (const feature of batch) {
         const id = feature.attributes.OBJECTID;
         if (ids.has(id)) throw new Error('ArcGIS returned a repeated page');
         ids.add(id);
         features.push(feature);
       }
-      if (!data.exceededTransferLimit) {
+      if (matchingIds ? (page + 1) * 500 >= matchingIds.length : !data.exceededTransferLimit) {
         if (this.options.kv && this.options.primeMediaSources && this.options.defer) {
           const kv = this.options.kv;
           const recent = [...features]
@@ -92,7 +130,7 @@ export class ArcGISClient {
         }
         return features;
       }
-      if (!batch.length) throw new Error('ArcGIS returned an incomplete search');
+      if (!matchingIds && !batch.length) throw new Error('ArcGIS returned an incomplete search');
     }
     throw new Error('Search area is too large; choose a smaller area');
   }

@@ -72,14 +72,13 @@ describe('ArcGISClient', () => {
     it('constructs correct URL with envelope geometry', async () => {
       const mockFeatures = [{ attributes: { OBJECTID: 5 }, geometry: { rings: [] } }];
 
-      fetchSpy.mockResolvedValue({
-        ok: true,
-        json: async () => ({ features: mockFeatures }),
-      });
+      fetchSpy
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ objectIds: [5] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ features: mockFeatures }) });
 
       const result = await client.queryByBounds(2, 146.0, -43.0, 148.0, -41.0);
 
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
 
       const calledUrl = fetchSpy.mock.calls[0][0] as string;
       expect(calledUrl).toContain(`${BASE_URL}/2/query`);
@@ -102,7 +101,7 @@ describe('ArcGISClient', () => {
     it('returns empty array when response has no features', async () => {
       fetchSpy.mockResolvedValue({
         ok: true,
-        json: async () => ({}),
+        json: async () => ({ objectIds: [] }),
       });
 
       const result = await client.queryByBounds(0, 146.0, -43.0, 148.0, -41.0);

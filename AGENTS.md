@@ -553,6 +553,7 @@ Implementation scope authorised 2026-11-16: all audit fixes except favourites. K
 - [x] Add result availability summaries, structured photo details and explicit viewer quality/recovery states. Implemented; browser verification pending.
 - [x] Connect the currently unmounted comparison flow and explicit bounds search. Implemented; browser verification pending.
 - [x] Define partial-layer/response-check contracts and optional account-backed history integration. Favourites excluded by user instruction.
+- [x] Repair overlapping LIST spatial pagination for visible-area searches and add a compact full-resolution loading indicator -- 2026-11-16.
 - [ ] Complete production build, desktop/mobile browser verification and live upstream performance measurements.
 - Live LIST schema/units verification and production request/latency measurement remain unverified; this audit was source-level only.
 
@@ -1413,6 +1414,14 @@ Append a summary after each working session so the next session has context.
 - Fixed the reported Cloudflare dependency-install failure: removed the unused accidental codex@0.2.3 application dependency and its legacy dependency tree, including ws@0.4.32. Removed the non-boolean ws build-approval placeholder from pnpm-workspace.yaml; retained the existing esbuild/sharp/workerd approvals.
 - Regenerated pnpm-lock.yaml offline without changing remaining dependency versions. A full CI=true pnpm install --frozen-lockfile then succeeded with all required dependency build scripts and no ignored-build error. Husky could not update the sandbox-protected git config, but installation exited successfully.
 - No application source or favourites changes. CI installation/build must be rerun after committing this fix.
+
+### Session 49 -- 2026-11-16
+
+- Reproduced the reported missing Aerial layer on a live Hobart bounds query (147.28,-42.9 to 147.34,-42.85). LIST returned 992 records from its first 1,000-record spatial page. Both offsets based on returned counts and exact 1,000-record offsets produced overlapping IDs, triggering the duplicate-page guard.
+- Area searches now resolve matching IDs without pagination limits, then fetch verified batches of up to 500 IDs without the spatial predicate. Empty results avoid a feature query; incomplete batches still fail rather than silently losing photos. Kept point-search behaviour unchanged, bumped the search cache namespace, and bounded the area workflow to 50,000 IDs.
+- Live verification retrieved all 3,037 matching IDs across the batches with exact set equality. Added regressions for multi-batch completion, duplicate ID-list entries and incomplete batches.
+- Added a small spinner with Reading image information / Loading image tiles stages to the full-resolution viewer status. No invented percentage; preview interaction remains available during loading.
+- Validation: 257 unit/component tests, standalone TypeScript, scoped lint, formatting and diff checks pass. Viewer visual QA and deployment remain pending.
 
 ## Blockers & Open Questions
 
