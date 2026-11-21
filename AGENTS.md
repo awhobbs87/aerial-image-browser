@@ -1452,6 +1452,12 @@ Append a summary after each working session so the next session has context.
 - Verified the installed raster shader interpolates its brightness endpoints, supporting the inverted range. Added paint/reset and missing-layer checks; all ten focused map-theme, app-theme and footprint tests, TypeScript, scoped ESLint and diff checks pass. Visual readability and frame-time benchmarking remain unverified.
 - Attempted the previously requested commit/push for the hover and provider changes; sandbox denied creation of .git/index.lock. No commit or push was performed by this session.
 
+### Session 54 -- 2026-11-22
+
+- Adjusted topographic dark styling after the user's screenshot showed low-contrast coloured place labels. Removed hue rotation, fully desaturated the raster and raised the inverted brightness endpoints to 1.0/0.14, aiming for brighter text and more visible faint detail.
+- Kept the change within the existing raster shader, with no extra layers, requests or geometry work. Raster text cannot be independently recoloured; the result is deliberately monochrome and still needs visual confirmation.
+- Both focused map-theme tests, standalone TypeScript, scoped formatting and diff checks pass. No commit, push or deployment performed.
+
 ## Blockers & Open Questions
 
 Track anything that needs resolution. Remove items when resolved (but note the resolution in Session Notes).

@@ -2,12 +2,14 @@ import type { Map, RasterLayerSpecification } from 'maplibre-gl';
 
 // The raster shader interpolates between these endpoints. Reversing them
 // darkens the paper background while keeping printed labels light.
+// Desaturate fully before inversion: hue rotation made coloured place names
+// muddy and can clip channels. A raised floor preserves faint raster details.
 export function topographicPaint(dark: boolean): NonNullable<RasterLayerSpecification['paint']> {
   return {
-    'raster-brightness-min': dark ? 0.85 : 0,
-    'raster-brightness-max': dark ? 0.08 : 1,
-    'raster-saturation': dark ? -0.65 : 0,
-    'raster-hue-rotate': dark ? 180 : 0,
+    'raster-brightness-min': dark ? 1 : 0,
+    'raster-brightness-max': dark ? 0.14 : 1,
+    'raster-saturation': dark ? -1 : 0,
+    'raster-hue-rotate': 0,
   };
 }
 

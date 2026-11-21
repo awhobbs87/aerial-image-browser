@@ -10,7 +10,7 @@ it('switches only raster paint and restores unmodified colours in light mode', (
   };
   applyTopographicTheme(map, true);
   expect(map.setPaintProperty).toHaveBeenCalledTimes(4);
-  expect(map.setPaintProperty).toHaveBeenCalledWith('base-tiles', 'raster-brightness-max', 0.08);
+  expect(map.setPaintProperty).toHaveBeenCalledWith('base-tiles', 'raster-brightness-max', 0.14);
   map.setPaintProperty.mockClear();
   applyTopographicTheme(map, false);
   for (const [key, value] of Object.entries(topographicPaint(false)))
