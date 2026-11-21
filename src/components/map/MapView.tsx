@@ -5,7 +5,6 @@ import { CrosshairIcon, GlobeHemisphereWestIcon, MapTrifoldIcon } from '@phospho
 import { Button } from '@cloudflare/kumo/components/button';
 import { TASMANIA_DEFAULT_VIEWPORT, TASMANIA_BOUNDS } from '@/types/map';
 import type { MapBounds } from '@/types/map';
-import { isResolvedDark, subscribeToResolvedTheme } from '@/lib/theme';
 import { Tooltip } from '@/components/ui/Tooltip';
 
 interface MapViewProps {
@@ -20,8 +19,8 @@ interface MapViewProps {
 }
 
 /** Tile URLs */
-const LIGHT_TILES = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
-const DARK_TILES = 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png';
+const TOPOGRAPHIC_TILES =
+  'https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/Topographic/MapServer/tile/{z}/{y}/{x}';
 const SATELLITE_TILES =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
@@ -33,6 +32,7 @@ function buildStyle(tileUrl: string, attribution: string): maplibregl.StyleSpeci
         type: 'raster',
         tiles: [tileUrl],
         tileSize: 256,
+        ...(tileUrl === TOPOGRAPHIC_TILES ? { maxzoom: 18 } : {}),
         attribution,
       },
     },
@@ -48,8 +48,8 @@ function buildStyle(tileUrl: string, attribution: string): maplibregl.StyleSpeci
   };
 }
 
-const CARTO_ATTR =
-  '&copy; <a href="https://carto.com">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>';
+const TOPOGRAPHIC_ATTR =
+  '&copy; <a href="https://www.thelist.tas.gov.au/">State of Tasmania (LIST)</a> · <a href="https://creativecommons.org/licenses/by/3.0/au/">CC BY 3.0 AU</a>';
 const SAT_ATTR = '&copy; <a href="https://www.esri.com">Esri</a> World Imagery';
 
 export function MapView({
@@ -65,14 +65,9 @@ export function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
-  const satelliteRef = useRef(true);
   const [mapError, setMapError] = useState(false);
   const [locating, setLocating] = useState(false);
   const [satellite, setSatellite] = useState(true);
-
-  useEffect(() => {
-    satelliteRef.current = satellite;
-  }, [satellite]);
 
   const showMarker = useCallback((lngLat: [number, number]) => {
     const map = mapRef.current;
@@ -112,7 +107,7 @@ export function MapView({
     map.on('error', (event) => {
       if ('sourceId' in event && event.sourceId === 'base-tiles') setMapError(true);
     });
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
     map.on('moveend', () => {
       const bounds = map.getBounds();
@@ -142,16 +137,7 @@ export function MapView({
       onMapReady?.(map);
     });
 
-    const handleThemeChange = () => {
-      if (satelliteRef.current) return;
-      const tiles = isResolvedDark() ? DARK_TILES : LIGHT_TILES;
-      map.setStyle(buildStyle(tiles, CARTO_ATTR));
-    };
-
-    const unsubTheme = subscribeToResolvedTheme(handleThemeChange);
-
     return () => {
-      unsubTheme();
       resizeObserver.disconnect();
       markerRef.current?.remove();
       markerRef.current = null;
@@ -193,7 +179,7 @@ export function MapView({
     if (newSat) {
       map.setStyle(buildStyle(SATELLITE_TILES, SAT_ATTR));
     } else {
-      map.setStyle(buildStyle(isResolvedDark() ? DARK_TILES : LIGHT_TILES, CARTO_ATTR));
+      map.setStyle(buildStyle(TOPOGRAPHIC_TILES, TOPOGRAPHIC_ATTR));
     }
 
     map.once('style.load', () => {
@@ -248,8 +234,8 @@ export function MapView({
               if (map)
                 map.setStyle(
                   buildStyle(
-                    satellite ? SATELLITE_TILES : isResolvedDark() ? DARK_TILES : LIGHT_TILES,
-                    satellite ? SAT_ATTR : CARTO_ATTR,
+                    satellite ? SATELLITE_TILES : TOPOGRAPHIC_TILES,
+                    satellite ? SAT_ATTR : TOPOGRAPHIC_ATTR,
                   ),
                 );
               setMapError(false);

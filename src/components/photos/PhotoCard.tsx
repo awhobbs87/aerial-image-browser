@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { HeartIcon } from '@phosphor-icons/react';
 import { Button } from '@cloudflare/kumo/components/button';
 import { Badge } from '@cloudflare/kumo/components/badge';
@@ -37,6 +37,13 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const setHoveredPhotoId = useUIStore((s) => s.setHoveredPhotoId);
 
+  const clearHighlight = useCallback(() => {
+    const current = useUIStore.getState();
+    if (current.hoveredPhotoId === photo.objectId && current.hoveredPhotoLayerId === photo.layerId)
+      current.setHoveredPhotoId(null);
+  }, [photo.objectId, photo.layerId]);
+  useEffect(() => clearHighlight, [clearHighlight]);
+
   const scaleDisplay = formatScale(photo.scale);
   const project = shortProject(photo.layerName);
   const typeLabel = filmLabel(photo.type);
@@ -57,11 +64,15 @@ export const PhotoCard = memo(function PhotoCard({ photo, onClick }: PhotoCardPr
     <LayerCard
       className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_230px] min-w-0 max-w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-950/8 bg-white p-2 shadow-none ring-0 outline-none transition-colors hover:border-slate-950/20 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-amber-500 dark:border-border dark:bg-card dark:hover:border-white/22"
       onClick={handleCardClick}
-      onMouseEnter={() => {
-        if (window.matchMedia('(hover: hover)').matches)
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse' || event.pointerType === 'pen')
           setHoveredPhotoId(photo.objectId, photo.layerId);
       }}
-      onMouseLeave={() => setHoveredPhotoId(null)}
+      onPointerLeave={clearHighlight}
+      onFocus={() => setHoveredPhotoId(photo.objectId, photo.layerId)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) clearHighlight();
+      }}
       role="article"
       tabIndex={0}
       aria-label={`Photo: ${photo.name}${photo.year > 0 ? `, ${photo.year}` : ''}`}

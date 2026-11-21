@@ -1,3 +1,4 @@
+import { useUIStore } from '@/stores/uiStore';
 import { render } from '../../test-utils';
 import { screen, fireEvent } from '@testing-library/react';
 import { PhotoCard } from '@/components/photos/PhotoCard';
@@ -139,4 +140,29 @@ describe('PhotoCard', () => {
     fireEvent.keyDown(screen.getByRole('article'), { key: ' ' });
     expect(handleClick).toHaveBeenCalledWith(mockPhoto);
   });
+});
+
+it('highlights the footprint on keyboard focus and clears it when the card unmounts', () => {
+  const view = render(<PhotoCard photo={mockPhoto} />);
+  fireEvent.focus(screen.getByRole('article'));
+  expect(useUIStore.getState()).toMatchObject({ hoveredPhotoId: 1, hoveredPhotoLayerId: 0 });
+  view.unmount();
+  expect(useUIStore.getState().hoveredPhotoId).toBeNull();
+});
+
+it('highlights mouse hover, ignores touch entry and clears on pointer exit', () => {
+  useUIStore.getState().setHoveredPhotoId(null);
+  render(<PhotoCard photo={mockPhoto} />);
+  const card = screen.getByRole('article');
+  const enter = (pointerType: string) => {
+    const event = new Event('pointerover', { bubbles: true });
+    Object.defineProperty(event, 'pointerType', { value: pointerType });
+    fireEvent(card, event);
+  };
+  enter('touch');
+  expect(useUIStore.getState().hoveredPhotoId).toBeNull();
+  enter('mouse');
+  expect(useUIStore.getState()).toMatchObject({ hoveredPhotoId: 1, hoveredPhotoLayerId: 0 });
+  fireEvent.pointerOut(card);
+  expect(useUIStore.getState().hoveredPhotoId).toBeNull();
 });

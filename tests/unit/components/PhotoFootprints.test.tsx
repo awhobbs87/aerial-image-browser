@@ -16,7 +16,7 @@ function mockMap() {
   );
   return {
     getSource: vi.fn<() => typeof source>(() => source),
-    addSource: vi.fn<() => void>(() => {
+    addSource: vi.fn<(...args: any[]) => void>(() => {
       source = { setData: vi.fn<(...args: any[]) => void>() };
     }),
     addLayer: vi.fn<(...args: any[]) => void>(),
@@ -50,6 +50,15 @@ it('hover and callback changes do not rebuild data; style changes restore footpr
   const map = mockMap();
   const click = vi.fn<(...args: any[]) => void>();
   const view = render(<PhotoFootprints map={map as any} photos={photos} onPhotoClick={click} />);
+  expect(map.addSource).toHaveBeenCalledWith(
+    'photo-footprints',
+    expect.objectContaining({
+      promoteId: 'photoId',
+      data: expect.objectContaining({
+        features: [expect.objectContaining({ properties: { photoId: '0:1' } })],
+      }),
+    }),
+  );
   const source = map.getSource()!;
   act(() => useUIStore.getState().setHoveredPhotoId(1, 0));
   view.rerender(
@@ -58,6 +67,15 @@ it('hover and callback changes do not rebuild data; style changes restore footpr
       photos={photos}
       onPhotoClick={vi.fn<(...args: any[]) => void>()}
     />,
+  );
+  act(() => useUIStore.getState().setHoveredPhotoId(1, 2));
+  expect(map.setFeatureState).toHaveBeenCalledWith(
+    { source: 'photo-footprints', id: '0:1' },
+    { hover: false },
+  );
+  expect(map.setFeatureState).toHaveBeenCalledWith(
+    { source: 'photo-footprints', id: '2:1' },
+    { hover: true },
   );
   expect(source.setData).not.toHaveBeenCalled();
   expect(map.setFeatureState).toHaveBeenCalledWith(

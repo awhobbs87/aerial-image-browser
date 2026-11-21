@@ -6,11 +6,7 @@ const IMAGES = `${PREFIX}images-${VERSION}`;
 const TILES = `${PREFIX}tiles-${VERSION}`;
 const OWNED = new Set([SHELL, ASSETS, IMAGES, TILES]);
 const STATIC_ASSETS = ['/offline.html', '/manifest.json', '/icon.svg'];
-const TILE_HOSTS = new Set([
-  'basemaps.cartocdn.com',
-  'tiles.stadiamaps.com',
-  'server.arcgisonline.com',
-]);
+const TILE_HOSTS = new Set(['server.arcgisonline.com']);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(STATIC_ASSETS)));

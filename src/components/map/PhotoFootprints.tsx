@@ -59,7 +59,8 @@ export function PhotoFootprints({ map, photos, onPhotoClick }: PhotoFootprintsPr
       const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
       if (source) source.setData(geojson);
       else {
-        map.addSource(SOURCE_ID, { type: 'geojson', data: geojson });
+        // Preserve composite string IDs through MapLibre's vector-tile pipeline.
+        map.addSource(SOURCE_ID, { type: 'geojson', data: geojson, promoteId: 'photoId' });
         map.addLayer({
           id: FILL_ID,
           type: 'fill',

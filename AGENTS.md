@@ -554,6 +554,7 @@ Implementation scope authorised 2026-11-16: all audit fixes except favourites. K
 - [x] Connect the currently unmounted comparison flow and explicit bounds search. Implemented; browser verification pending.
 - [x] Define partial-layer/response-check contracts and optional account-backed history integration. Favourites excluded by user instruction.
 - [x] Repair overlapping LIST spatial pagination for visible-area searches and add a compact full-resolution loading indicator -- 2026-11-16.
+- [x] Restore thumbnail footprint hover with promoted composite feature IDs and keyboard focus support -- 2026-11-22 (browser visual verification pending).
 - [ ] Complete production build, desktop/mobile browser verification and live upstream performance measurements.
 - Live LIST schema/units verification and production request/latency measurement remain unverified; this audit was source-level only.
 
@@ -1429,6 +1430,20 @@ Append a summary after each working session so the next session has context.
 - Removed JSON serialization from search/frame navigation URLs, a likely contributor to argument false positives. New URLs use individually validated numeric bounds_west/south/east/north and frame_* parameters. Legacy JSON links are read and normalised after hydration; session storage remains unchanged.
 - Added tests for extent round trips, legacy migration, malformed values and area size limits. Added browser assertions for URL normalisation. TypeScript, scoped lint and three focused tests pass; browser/production WAF verification remains pending.
 - No Cloudflare rule or cookie settings changed. Existing browser-history entries may retain blocked URLs until users reopen the clean search page. Cookie-related scoring may require separately inspecting matched values if the block persists.
+
+### Session 51 -- 2026-11-22
+
+- Restored photo-card map highlighting by configuring the GeoJSON source with promoteId: photoId. The installed vector-tile encoder parses raw string IDs as integers, so IDs such as 0:123 lost their object-ID portion; promoting the existing string property preserves the same identity used by feature state.
+- Kept memoised source geometry and feature-state-only hover updates. Hover makes no additional API requests and does not rebuild polygon data or rerender the result grid. Actual frame-time benchmarking remains pending.
+- Card pointer events support mouse and pen without touch-hover updates. Keyboard focus also highlights the footprint, and ownership-checked cleanup clears it on exit, blur or unmount without clearing another card's highlight.
+- Regression coverage checks promoted source identity, unchanged source data on hover, cross-layer IDs, basemap restoration, pointer entry/exit and keyboard/unmount cleanup. All 262 unit/component tests, TypeScript, scoped ESLint, formatting and diff checks pass; browser visual verification and deployment remain pending.
+
+### Session 52 -- 2026-11-22
+
+- Replaced CARTO light and Stadia dark basemaps with the public LIST Topographic cached raster tiles. Satellite imagery and footprint feature-state behaviour are retained. Topographic rendering stays the same in both UI themes; removed theme-triggered basemap reloads.
+- Added State of Tasmania / CC BY 3.0 AU attribution and moved its control to the right so the desktop results panel does not cover it. Set the topographic source maximum native zoom to 18 so deeper zoom uses existing tiles.
+- Removed retired providers from service-worker tile handling. LIST tiles use normal browser HTTP caching, without adding the broader LIST API hostname to the service-worker cache.
+- Verified a live Hobart tile returned HTTP 200, valid PNG data and CORS permission for aerial-explorer.awhq.uk without credentials. TypeScript, scoped ESLint and all eight service-worker/footprint tests pass. Browser visual verification and deployment remain pending.
 
 ## Blockers & Open Questions
 
