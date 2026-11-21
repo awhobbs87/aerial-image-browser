@@ -1,3 +1,5 @@
+import { isResolvedDark, subscribeToResolvedTheme } from '@/lib/theme';
+import { applyTopographicTheme, topographicPaint } from '@/lib/map-theme';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -43,6 +45,7 @@ function buildStyle(tileUrl: string, attribution: string): maplibregl.StyleSpeci
         source: 'base-tiles',
         minzoom: 0,
         maxzoom: 20,
+        ...(tileUrl === TOPOGRAPHIC_TILES ? { paint: topographicPaint(isResolvedDark()) } : {}),
       },
     ],
   };
@@ -68,6 +71,7 @@ export function MapView({
   const [mapError, setMapError] = useState(false);
   const [locating, setLocating] = useState(false);
   const [satellite, setSatellite] = useState(true);
+  const satelliteRef = useRef(true);
 
   const showMarker = useCallback((lngLat: [number, number]) => {
     const map = mapRef.current;
@@ -137,7 +141,15 @@ export function MapView({
       onMapReady?.(map);
     });
 
+    const syncMapTheme = () => {
+      if (!satelliteRef.current) applyTopographicTheme(map, isResolvedDark());
+    };
+    const unsubscribeTheme = subscribeToResolvedTheme(syncMapTheme);
+    map.on('style.load', syncMapTheme);
+
     return () => {
+      unsubscribeTheme();
+      map.off('style.load', syncMapTheme);
       resizeObserver.disconnect();
       markerRef.current?.remove();
       markerRef.current = null;
@@ -174,6 +186,7 @@ export function MapView({
     if (!map) return;
 
     const newSat = !satellite;
+    satelliteRef.current = newSat;
     setSatellite(newSat);
 
     if (newSat) {

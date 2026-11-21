@@ -1445,6 +1445,13 @@ Append a summary after each working session so the next session has context.
 - Removed retired providers from service-worker tile handling. LIST tiles use normal browser HTTP caching, without adding the broader LIST API hostname to the service-worker cache.
 - Verified a live Hobart tile returned HTTP 200, valid PNG data and CORS permission for aerial-explorer.awhq.uk without credentials. TypeScript, scoped ESLint and all eight service-worker/footprint tests pass. Browser visual verification and deployment remain pending.
 
+### Session 53 -- 2026-11-22
+
+- Added dynamic dark styling for LIST Topographic using MapLibre raster paint properties: reversed brightness endpoints, reduced saturation and hue rotation. Light mode restores the original tile colours. This is a raster colour treatment, not a separately designed vector-map style.
+- Applies the resolved app/system theme when switching basemaps, retrying a style, or changing theme. Theme updates use setPaintProperty only, retaining tile sources, camera, markers and footprint geometry. Satellite imagery is excluded.
+- Verified the installed raster shader interpolates its brightness endpoints, supporting the inverted range. Added paint/reset and missing-layer checks; all ten focused map-theme, app-theme and footprint tests, TypeScript, scoped ESLint and diff checks pass. Visual readability and frame-time benchmarking remain unverified.
+- Attempted the previously requested commit/push for the hover and provider changes; sandbox denied creation of .git/index.lock. No commit or push was performed by this session.
+
 ## Blockers & Open Questions
 
 Track anything that needs resolution. Remove items when resolved (but note the resolution in Session Notes).
